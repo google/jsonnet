@@ -23,60 +23,60 @@
 
     </script>
 
+    <script src="prism.js" type="text/javascript">
+    </script>
+
+    <script type="text/javascript">
+    Prism.languages.jsonnet = {
+      'cppcomment': /\/\/.*/g,
+      'comment': /\/\*[\w\W]*?\*\//g,
+      'string': /("|')(\\?.)*?\1/g,
+      'keyword': /\b(self|super)\b|\$/g,
+      'boolean': /\b(true|false)\b/g,
+      'constant': /\bnull\b/g,
+      'error': /\berror\b/g,
+      'special': /\b(local|function|if|then|else|import|for|in)\b/g,
+      'number': /\b[0-9][0-9.eE]*\b/g,
+      'operator': /(\+|\*|\/)+/g,
+    };
+    </script>
+
+    <style type="text/css">
+    .token.comment,
+    .token.cppcomment {
+      color: #040;
+    }
+
+    .token.identifier {
+      color: #000;
+    }
+    .token.operator {
+      color: #000;
+    }
+
+    .token.boolean,
+    .token.number,
+    .token.constant {
+      color: #05a;
+    }
+
+    .token.string {
+      color: #000048;
+    }
+
+    .token.keyword,
+    .token.special {
+      color: blue;
+    }
+
+    .token.error {
+      color: red;
+    }
+    </style>
+
 </head>
 
 <body class="language-jsonnet">
-
-<script src="prism.js" type="text/javascript">
-</script>
-
-<script type="text/javascript">
-Prism.languages.jsonnet = {
-  'cppcomment': /\/\/.*/g,
-  'comment': /\/\*[\w\W]*?\*\//g,
-  'string': /("|')(\\?.)*?\1/g,
-  'keyword': /\b(self|super)\b|\$/g,
-  'boolean': /\b(true|false)\b/g,
-  'constant': /\bnull\b/g,
-  'error': /\berror\b/g,
-  'special': /\b(local|function|if|then|else|import|for|in)\b/g,
-  'number': /\b[0-9][0-9.eE]*\b/g,
-  'operator': /(\+|\*|\/)+/g,
-};
-</script>
-
-<style type="text/css">
-.token.comment,
-.token.cppcomment {
-  color: #040;
-}
-
-.token.identifier {
-  color: #000;
-}
-.token.operator {
-  color: #000;
-}
-
-.token.boolean,
-.token.number,
-.token.constant {
-  color: #05a;
-}
-
-.token.string {
-  color: #000048;
-}
-
-.token.keyword,
-.token.special {
-  color: blue;
-}
-
-.token.error {
-  color: red;
-}
-</style>
 
 <div class="header">
 
