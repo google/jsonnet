@@ -92,6 +92,27 @@ h4 {
     font-size: 1.2em;
 }
 
+.landing-page-example {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.landing-page-example pre {
+    font-size: 10pt;
+    border: 3px solid #421;
+    padding: 8px;
+    margin: 0;
+}
+
+.landing-page-example pre > code.language-jsonnet {
+    font-size: 11pt;
+}
+
+.bigarrow {
+    font-size: 50pt;
+    color: #421;
+}
+
 pre > code.language-jsonnet {
     font-size: 7.5pt;
 }
@@ -99,7 +120,6 @@ pre > code.language-jsonnet {
 code.language-jsonnet {
     font-size: 10pt;
 }
-
 
 .TableHeader {
     padding: 0.3em;

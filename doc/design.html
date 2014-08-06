@@ -96,13 +96,20 @@
 
 <h1>Design Philosophy</h1>
 
-<p> Jsonnet is a lazy, pure, functional, object-oriented, and domain-specific language.  Since it
-has no side-effects, the JSON can be regenerated at any time, and since it is deterministic, this
-will always result in the same output JSON.  Functional languages are ideal for refining and
-processing structured data.  The object oriented features are ideal for deriving variants from
-templates.  The combination of abstraction mechanisms from multiple paradigms makes the language
-very good at keeping large amounts of JSON data under control, and extending JSON in the form of an
-expression language provides good readability.</p>
+<p> <a href="http://www.json.org">JSON</a> has emerged as the defacto standard for communication of
+structured data, both between machines and at the human / machine boundary.  However, in large
+quantities JSON can be unwieldy for humans, with literal or conceptual duplication that needs to be
+kept in sync between different parts of the data structure.  Many people address this by writing
+scripts that generate JSON, but typically these are written in general purpose programming languages
+like Python where maintaining them can be non-trivial.</p>
+
+<p> Jsonnet is a lazy, pure, functional, object-oriented, and domain-specific language that solves
+exactly this problem.  Since it has no side-effects, the JSON can be regenerated at any time, and
+since it is deterministic, this will always result in the same output JSON.  Functional languages
+are ideal for refining and processing structured data.  The object oriented features are ideal for
+deriving variants from templates.  The combination of abstraction mechanisms from multiple paradigms
+makes the language very good at keeping large amounts of JSON data under control, and extending JSON
+in the form of an expression language provides good readability.</p>
 
 <p>The syntax and semantics have been designed to be as conventional as possible to avoid surprises
 and to ease the learning curve.  The language is also no larger than it needs to be, and conforms to
