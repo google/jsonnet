@@ -496,7 +496,7 @@ let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
 <tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</td>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
-<td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
+<tr><td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
 in <code>{</code> <i>desugarfield</i>(<i>field₁</i>, <i>binds''</i>, <i>b</i>), ... <i>desugarfield</i>(<i>fieldₙ</i>, <i>binds''</i>, <i>b</i>)<code>}</code>
 
@@ -519,7 +519,7 @@ let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
 <tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</td>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
-<td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
+<tr><td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
 let <i>expr'''</i> = <code>local</code> <i>binds''</i><code>;</code> <i>desugar</i>(<i>expr'</i>, <code>true</code>) <br/>
 <code>{</code>
@@ -639,7 +639,7 @@ variables in scope of \(e\).  The set \(Γ\) initially contains only <code>std</
 standard library.  In the case of imported files, each jsonnet file is checked independently of the
 other files.</p>
 
-<div class=rules>
+<div class="rules">
 
 <div class="sequent-rule"> \[\rule{chk-lit} {
 } {
@@ -769,7 +769,7 @@ errors (e.g. array bounds errors) as stuck execution.  </p>
 <p>
 Jsonnet values are yielded by executing Jsonnet expressions.  These are not the same as JSON values,
 although there is some overlap.  In particular, they contain functions which are not representable
-in JSON, and both object fields and array elements have yet to be executed to yield values.
+in JSON, and both object fields and array elements have yet to be executed to yield values.</p>
 
 <table>
 <tr><td><s>v</s></td><td>∈</td><td><em>Value</em></td><td>=</td><td>
@@ -811,7 +811,7 @@ expression to be evaluated when the field is accessed.  </p>
 (<code>false</code>, <code>5</code>).  In order to allow substituting objects into
 expressions e, we use the following function to convert:</p>
 
-<div class=rules>
+<div class="rules">
 
 <div class=sequent-rule>
 \[\begin{array}{l}
