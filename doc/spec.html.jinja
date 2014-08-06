@@ -678,7 +678,7 @@ although there is some overlap.  In particular, they contain functions which are
 in JSON, and both object fields and array elements have yet to be executed to yield values.</p>
 
 <table>
-<tr><td><s>v</s></td><td>∈</td><td><em>Value</em></td><td>=</td><td>
+<tr><td><em>v</em></td><td>∈</td><td><em>Value</em></td><td>=</td><td>
 { <code>null</code>, <code>true</code>, <code>false</code> } ∪
 <em>String</em> ∪
 <em>Double</em> ∪
@@ -687,7 +687,7 @@ in JSON, and both object fields and array elements have yet to be executed to yi
 <em>Array</em>
 </td></tr>
 
-<tr><td><s>o</s></td><td>∈</td><td><em>Object</em></td><td>=</td><td>
+<tr><td><em>o</em></td><td>∈</td><td><em>Object</em></td><td>=</td><td>
 <em>String</em> ⇀ (<em>Hidden</em> × <em>Core</em>)
 </td></tr>
 
@@ -699,7 +699,7 @@ in JSON, and both object fields and array elements have yet to be executed to yi
 <code>function (</code> <i>id</i>* <code>)</code> <i>e</i>
 </td></tr>
 
-<tr><td><s>a</s></td><td>∈</td><td><em>Array</em></td><td>::=</td><td>
+<tr><td><em>a</em></td><td>∈</td><td><em>Array</em></td><td>::=</td><td>
 <code>[</code> <i>e₀</i> ... <i>eₙ</i> <code>]</code>
 </td></tr>
 
@@ -1009,7 +1009,7 @@ has its usual meaning.  </p>
 <p>Binary operators can be divided into those that implement boolean arithmetic (short cut
 semantics, see above rules), floating point arithmetic (standard semantics, rules not given above),
 and the various special cases (rules given above): string concatenation, array concatenation,
-manifest equality, and object inheritance.</p> The floating point arithmetic operations are
+manifest equality, and object inheritance. The floating point arithmetic operations are
 standard, except in the case of bitwise operations, where the number is first cast to a 64 bit
 signed integer for the operation, then cast back to a double.</p>
 
@@ -1048,7 +1048,7 @@ Jsonnet objects are lost on the conversion to JSON.  Arrays elements and Object 
 </p>
 
 <table>
-<tr><td><s>j</s></td><td>∈</td><td><em>JValue</em></td><td>=</td><td>
+<tr><td><em>j</em></td><td>∈</td><td><em>JValue</em></td><td>=</td><td>
 { <code>null</code>, <code>true</code>, <code>false</code> } ∪
 <em>String</em> ∪
 <em>Double</em> ∪
@@ -1056,11 +1056,11 @@ Jsonnet objects are lost on the conversion to JSON.  Arrays elements and Object 
 <em>JArray</em>
 </td></tr>
 
-<tr><td><s> </s></td><td> </td><td><em>JObject</em></td><td>=</td><td>
+<tr><td><em> </em></td><td> </td><td><em>JObject</em></td><td>=</td><td>
 <em>String</em> ⇀ <em>JValue</em>
 </td></tr>
 
-<tr><td><s> </s></td><td> </td><td><em>JArray</em></td><td>::=</td><td>
+<tr><td><em> </em></td><td> </td><td><em>JArray</em></td><td>::=</td><td>
 <code>[</code> <i>j₀</i> ... <i>jₙ</i> <code>]</code>
 </td></tr>
 
