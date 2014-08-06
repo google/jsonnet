@@ -494,7 +494,7 @@ the function tracks whether we are within an object.
 where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
 let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
-<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</tr>
+<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</td>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
 <td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
@@ -517,7 +517,7 @@ in <code>{</code> <i>desugarfield</i>(<i>field₁</i>, <i>binds''</i>, <i>b</i>)
 where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
 let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
-<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</tr>
+<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</td>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
 <td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
@@ -622,11 +622,11 @@ Other cases invoke structural recursion.
 <table class="desugar"> <tr><td>
 <i>desugarbinds</i>(<code>local</code> <i>id</i> = <i>expr</i>, <i>b</i>)
 </td><td> = </td><td>
-<code>local</code> <i>id</i> = <i>desugar</i>(<i>expr</i>, <i>b</i>)</code>
+<code>local</code> <i>id</i> = <i>desugar</i>(<i>expr</i>, <i>b</i>)
 
 </td></tr></table>
 
-<h3>Static checking</h3>
+<h3>Static Checking</h3>
 
 <p> After the Jsonnet program is parsed and desugared, a syntax-directed algorithm is employed to
 reject programs that contain certain classes of errors.  Programs are rejected if they use undefined
