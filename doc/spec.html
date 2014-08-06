@@ -142,7 +142,7 @@ href="tutorial.html">tutorial</a>.</p>
 production, with an optional comma after the last element.  The regular * and + have their usual
 meaning, i.e. repetition of productions without comma separation.  </p>
 
-<p><table>
+<table>
 <tr><td><i>expr ∈ Expr</i></td><td>::=</td><td>
 '<code>null</code>' |
 '<code>true</code>' |
@@ -259,9 +259,9 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 <i>expr</i>
 
 </td></tr>
-</table></p>
+</table>
 
-<p><table>
+<table>
 <tr><td><i>field</i></td><td>::=</td><td>
 <i>fieldname</i>
 '<code>:</code>'
@@ -279,9 +279,9 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 
 
 </td></tr>
-</table></p>
+</table>
 
-<p><table>
+<table>
 <tr><td><i>fieldname</i></td><td>::=</td><td>
 <i>id</i> |
 <i>string</i> |
@@ -289,9 +289,9 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 <i>e</i>
 '<code>]</code>'
 </td></tr>
-</table></p>
+</table>
 
-<p><table>
+<table>
 <tr><td><i>bind</i></td><td>::=</td><td>
 <i>id</i>
 '<code>=</code>'
@@ -306,9 +306,9 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 <i>e</i>
 
 </td></tr>
-</table></p>
+</table>
 
-<p><table>
+<table>
 <tr><td><i>symbol</i></td><td>::= (</td><td>
 '<code>+</code>' |
 '<code>-</code>' |
@@ -323,7 +323,7 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 '<code>&gt;</code>'
 )+
 </td></tr>
-</table></p>
+</table>
 
 <p>Additionally, <i>id</i> is defined by regular expression: <tt>[a-zA-Z_][a-zA-Z0-9_]*</tt>.  The
 definition of <i>string</i> is equivalent to the JSON string, including escape characters.  Finally,
@@ -368,7 +368,7 @@ language, so it is reasonable to implement the desugaring in the parser.</p>
 
 <h3>Core Syntax</h3>
 
-<p><table>
+<table>
 <tr><td><i>e ∈ Core</i></td><td>::=</td><td>
 '<code>null</code>' |
 '<code>true</code>' |
@@ -470,7 +470,7 @@ language, so it is reasonable to implement the desugaring in the parser.</p>
 <i>e</i>
 
 </td></tr>
-</table></p>
+</table>
 
 <p>
 In the core language, the set of identifiers now includes <code>$</code>, which is no-longer a
@@ -576,7 +576,7 @@ where <i>arr</i> = <i>desugar</i>(<i>expr'</i>, <i>b</i>) <br/>
 </td></tr><tr><td>
 Other cases invoke structural recursion.
 </td></tr>
-</td></tr></table></p>
+</td></tr></table>
 
 
 <p><table class=desugar> <tr><td>
@@ -600,7 +600,7 @@ Other cases invoke structural recursion.
 </td><td> = </td><td>
 <i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>local</code> <i>binds</i> <code>;</code> <code>function</code> <code>(</code> <i>params</i> <code>)</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
 
-</td></tr></table></p>
+</td></tr></table>
 
 <p><table class=desugar> <tr><td>
 <i>desugarfname</i>(<i>id</i>, <i>b</i>)
@@ -617,14 +617,14 @@ Other cases invoke structural recursion.
 </td><td> = </td><td>
 <code>[</code><i>desugar</i>(<i>expr</i>, <i>b</i>)<code>]</code>
 
-</td></tr></table></p>
+</td></tr></table>
 
 <p><table class=desugar> <tr><td>
 <i>desugarbinds</i>(<code>local</code> <i>id</id> = <i>expr</i>, <i>b</i>)
 </td><td> = </td><td>
 <code>local</code> <i>id</i> = <i>desugar</i>(<i>expr</i>, <i>b</i>)</code>
 
-</td></tr></table></p>
+</td></tr></table>
 
 <h3>Static checking</h3>
 
