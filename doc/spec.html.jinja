@@ -719,7 +719,7 @@ expressions e, we use the following function to convert:</p>
 
 <div class="rules">
 
-<div class=sequent-rule>
+<div class="sequent-rule">
 \[\begin{array}{l}
 exp(o) = \object{[e_1]:o(f_1) \ldots [e_m]:o(f_m), [e_{m+1}]::f_{m+1} \ldots [e_n]::e'_n } \\
 \textrm{where }\\
@@ -790,7 +790,7 @@ calculus</a>.  In the following, assume that y ≠ x.</p>
 </td><td>If any variable matches.
 </td></tr> <tr><td>
 
-(<code>function (...</code><i>y</i><code>...) </code><i>e</i></code>)
+(<code>function (...</code><i>y</i><code>...) </code><i>e</i>)
 [ <i>e'</i> / <i>x</i> ] =
 <code>function (...</code><i>x</i><code>...) </code><i>e</i>[ <i>e'</i> / <i>x</i> ]
 </td><td>If no variable matches.
@@ -863,8 +863,8 @@ v ↓ v
 o = λf∈\{ f_1 \ldots f_n \}.\textrm{let }i\textrm{ such that } f=f_i
 \\
 \hspace{20pt} \left\{\begin{array}{ll}
-(\false, e'_i)  &  \textrm{if }i≤m \\
-(\true,  e'_i)  &  \textrm{otherwise} \\
+(\false, e'_i)  &amp;  \textrm{if }i≤m \\
+(\true,  e'_i)  &amp;  \textrm{otherwise} \\
 \end{array}\right. \\
 } {
 \object{[e_1]:e'_1 \ldots [e_m]:e'_m, [e_{m+1}]::e'_{m+1} \ldots [e_n]::e'_n } ↓ o
@@ -940,8 +940,8 @@ e_s = \super + exp(λf∈dom(o_L). o_L(f)⟦y / \self, z / \super ⟧)
 o = λf∈dom(o_L, o_R).
 \\
 \begin{array}{ll}
-\hspace{20pt} (h, \local{y = \self, z = \super}{e_{body} ⟦e_s / \super⟧})  &  \textrm{if }o_R(f) = (h, e_{body}) \\
-\hspace{20pt} o_L(f)                 &  \textrm{otherwise }f∈dom(o_L) \\
+\hspace{20pt} (h, \local{y = \self, z = \super}{e_{body} ⟦e_s / \super⟧})  &amp;  \textrm{if }o_R(f) = (h, e_{body}) \\
+\hspace{20pt} o_L(f)                 &amp;  \textrm{otherwise }f∈dom(o_L) \\
 \end{array} \\
 } {
 e_L \texttt{ + } e_R ↓ o
