@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Jsonnet documentation</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="stylesheet" href="prism.css" />
+    <link rel="stylesheet" type="text/css" href="doc.css" />
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+</head>
+
+<body class="language-jsonnet">
+
+<script src="prism.js">
+</script>
+
+<script>
+Prism.languages.jsonnet = {
+  'cppcomment': /\/\/.*/g,
+  'comment': /\/\*[\w\W]*?\*\//g,
+  'string': /("|')(\\?.)*?\1/g,
+  'keyword': /\b(self|super)\b|\$/g,
+  'boolean': /\b(true|false)\b/g,
+  'constant': /\bnull\b/g,
+  'error': /\berror\b/g,
+  'special': /\b(local|function|if|then|else|import|for|in)\b/g,
+  'number': /\b[0-9][0-9.eE]*\b/g,
+  'operator': /(\+|\*|\/)+/g,
+};
+</script>
+
+<style>
+.token.comment,
+.token.cppcomment {
+  color: #040;
+}
+
+.token.identifier {
+  color: #000;
+}
+.token.operator {
+  color: #000;
+}
+
+.token.boolean,
+.token.number,
+.token.constant {
+  color: #05a;
+}
+
+.token.string {
+  color: #000048;
+}
+
+.token.keyword,
+.token.special {
+  color: blue;
+}
+
+.token.error {
+  color: red;
+}
+</style>
+
+<div class="header">
+
+<div class="tagline"><i>The data templating language</i></div>
+<div class="title">Jsonnet</div>
+
+<div class="linkbar">
+<a class="linkbarlink" href="index.html">Home</a> |
+<a class="linkbarlink" href="tutorial.html">Tutorial</a> |
+<a class="linkbarlink" href="stdlib.html">Library</a> |
+<a class="linkbarlink" href="implementation.html">Implementation</a> |
+<a class="linkbarlink" href="design.html">Design</a> |
+<a class="linkbarlink" href="spec.html">Spec</a>
+</div>
+
+</div>

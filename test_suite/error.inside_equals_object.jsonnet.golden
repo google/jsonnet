@@ -1,0 +1,3 @@
+RUNTIME ERROR: foobar
+	error.inside_equals_object.jsonnet:18:22-35	object <B>
+	error.inside_equals_object.jsonnet:19:1-6	

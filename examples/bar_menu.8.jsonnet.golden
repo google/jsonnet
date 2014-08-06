@@ -1,0 +1,13 @@
+{
+   "cocktails": {
+      "Negroni": {
+         "ingredients": [
+            { "kind": "Farmers Gin", "qty": 1 },
+            { "kind": "Sweet Red Vermouth", "qty": 1 },
+            { "kind": "Campari", "qty": 1 }
+         ],
+         "garnish": "Orange Peel",
+         "served": "On The Rocks"
+      }
+   }
+}

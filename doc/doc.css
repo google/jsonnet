@@ -1,0 +1,171 @@
+body {
+    background-color:#fffff7;
+    font-family: sans-serif;
+    margin-top:32px;
+    margin-bottom:32px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 784px;
+}
+
+div.header {
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #421;
+}
+
+div.title {
+    padding: 10px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 32pt;
+    color: #ffffff;
+}
+
+div.tagline {
+    padding: 6px;
+    position: absolute;
+    text-align: right;
+    font-size: 12pt;
+    color: #ffffff;
+    width: 754px;
+}
+
+div.tagline i {
+    color: #ffffff;
+}
+
+div.linkbar {
+    padding: 10px;
+    text-align: center;
+    color: #ffffff;
+}
+
+a:link.linkbarlink {
+    color: #faa;
+    margin-left: 1em;
+    margin-right: 1em;
+}
+
+a:visited.linkbarlink {
+    color: #aaa;
+    margin-left: 1em;
+    margin-right: 1em;
+}
+
+h1 {
+    padding: 0.5em;
+    font-weight: bold;
+    border-radius: 4px;
+    background-color: #421;
+    color: #ffffff;
+    font-size: 2em;
+}
+
+h2 {
+    padding: 0.5em;
+    margin-top: 2em;
+    margin-bottom: 1.6em;
+    font-weight: bold;
+    border-radius: 4px;
+    background-color: #421;
+    color: #ffffff;
+    font-size: 1.5em;
+}
+
+h3 {
+    padding: 0.3em;
+    margin-top: 2.0em;
+    margin-bottom: 1.6em;
+    font-weight: bold;
+    border-radius: 3px;
+    background-color: #421;
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+h4 {
+    margin-top: 1.4em;
+    margin-bottom: 0;
+    font-weight: bold;
+    border-radius: 3px;
+    font-size: 1.2em;
+}
+
+pre > code.language-jsonnet {
+    font-size: 7.5pt;
+}
+
+code.language-jsonnet {
+    font-size: 10pt;
+}
+
+
+.TableHeader {
+    padding: 0.3em;
+    border-radius: 1px;
+    background-color: #421;
+    color: #ffffff;
+}
+
+/* Non-terminals */
+i {
+    font-family: sans-serif;
+    font-weight: medium;
+    font-style: italic;
+    color: #008
+}
+
+/* Value sets */
+em {
+    font-family: sans-serif;
+    font-weight: medium;
+    font-style: italic;
+    color: #800
+}
+
+/* Values */
+s {
+    text-decoration: none;
+    font-family: sans-serif;
+    font-weight: medium;
+    font-style: italic;
+    color: #F00
+}
+
+div.sequent-rule {
+    margin:10px;
+    float:left;
+    font-size:75%;
+    /*border:1px solid #000;*/
+}
+
+div.rules {
+    overflow: auto;
+    width:100%
+}
+
+p.copyright {
+    font-style: italic;
+}
+
+p {
+    text-align: justify;
+}
+
+table.desugar {
+    font-size:8pt;
+    border-spacing: 20px;
+    background-color: #f0f0f0;
+}
+
+table.desugar code.language-jsonnet {
+    font-size: 8pt;
+}
+
+table.desugar tr {
+}
+
+li {
+    margin-bottom: 10px;
+}

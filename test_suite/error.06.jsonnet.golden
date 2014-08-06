@@ -1,0 +1,4 @@
+RUNTIME ERROR: Division by zero.
+	error.06.jsonnet:17:13-15	thunk <err>
+	error.06.jsonnet:18:22-24	function <f>
+	error.06.jsonnet:19:1-3	

@@ -1,0 +1,2 @@
+STATIC ERROR: error.string.invalid_escape_unicode_short.jsonnet:17:1: Malformed unicode escape character, should be hex: '
+'

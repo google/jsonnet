@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Jsonnet documentation</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="stylesheet" href="prism.css" />
+    <link rel="stylesheet" type="text/css" href="doc.css" />
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+</head>
+
+<body class="language-jsonnet">
+
+<script src="prism.js">
+</script>
+
+<script>
+Prism.languages.jsonnet = {
+  'cppcomment': /\/\/.*/g,
+  'comment': /\/\*[\w\W]*?\*\//g,
+  'string': /("|')(\\?.)*?\1/g,
+  'keyword': /\b(self|super)\b|\$/g,
+  'boolean': /\b(true|false)\b/g,
+  'constant': /\bnull\b/g,
+  'error': /\berror\b/g,
+  'special': /\b(local|function|if|then|else|import|for|in)\b/g,
+  'number': /\b[0-9][0-9.eE]*\b/g,
+  'operator': /(\+|\*|\/)+/g,
+};
+</script>
+
+<style>
+.token.comment,
+.token.cppcomment {
+  color: #040;
+}
+
+.token.identifier {
+  color: #000;
+}
+.token.operator {
+  color: #000;
+}
+
+.token.boolean,
+.token.number,
+.token.constant {
+  color: #05a;
+}
+
+.token.string {
+  color: #000048;
+}
+
+.token.keyword,
+.token.special {
+  color: blue;
+}
+
+.token.error {
+  color: red;
+}
+</style>
+
+<div class="header">
+
+<div class="tagline"><i>The data templating language</i></div>
+<div class="title">Jsonnet</div>
+
+<div class="linkbar">
+<a class="linkbarlink" href="index.html">Home</a> |
+<a class="linkbarlink" href="tutorial.html">Tutorial</a> |
+<a class="linkbarlink" href="stdlib.html">Library</a> |
+<a class="linkbarlink" href="implementation.html">Implementation</a> |
+<a class="linkbarlink" href="design.html">Design</a> |
+<a class="linkbarlink" href="spec.html">Spec</a>
+</div>
+
+</div>
+
+<h3>News</h3>
+
+<p><b>August 05, 2014</b> Jsonnet is currently in beta.  We are soliciting feedback from programming
+languages experts and potential users.  Based on this feedback we may make backwards-incompatible
+changes to the language in the near future.  After this process, there will be a v1.0 release that
+will maintain backwards compatability.  In the mean time, feel free to check out the code and
+experiment.</p>
+
+
+<h1>Elevator Pitch</h1>
+
+<p> <a href="http://www.json.org"/>JSON</a> has emerged as the defacto standard for communication of
+structured data, both between machines and at the human / machine boundary.  However, in large
+quantities JSON can be unwieldy for humans, with literal or conceptual duplication that needs to be
+kept in sync between different parts of the data structure.  Many people address this by writing
+scripts that generate JSON, but typically these are written in general purpose programming languages
+like Python where maintaining them can be non-trivial.</p>
+
+<p> Jsonnet makes it easy to maintain large amounts of handwritten JSON, by allowing instead the
+writing of concise, elegant, descriptions (hence the name <a
+href="http://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>).  It is a domain specific language
+that is an extension of JSON.  This means that all valid JSON files are also valid Jsonnet files.
+But whereas JSON constructs exist merely to describe data verbatim, the additional constructs in
+Jsonnet exist to generate, translate, and refine data, inline with the verbatim data.  By analogy
+with a templating language, the computation constructs are mixed in with the verbatim data
+constructs, and this makes the overall file easy to understand whether your purpose is to edit the
+verbatim constructs or the generation code.  See the <a href="tutorial.html">tutorial</a> for more
+details.</p>
+
+<p> Jsonnet has an <a href="implementation.html">interpreter</a> that evaluates these new constructs
+and emits standard JSON.  This means that Jsonnet can be used as an organizing layer on top of any
+system that accepts JSON, or extensions of JSON such as <a href="http://www.json.org"/>YAML</a>.</p>
+
+<p> <b>Language features</b>: </p>
+
+<ul>
+<li>Arithmetic, logic, string manipulation, conditional execution...</li>
+<li>Datastructures, mutually recursive functions...</li>
+<li>Specialize and override data: object-orientation based on <a
+href="http://www.bracha.org/oopsla90.pdf">mixins</a>.</li>
+<li>Abstraction and modular composition to enable <a
+href="http://dl.acm.org/citation.cfm?id=808431">programming in the large</a>.</li>
+<li>Import libraries containing utility functions and abstract templates.</li>
+<li>Error propagation provides friendly stack traces.</li>
+<li>Built on solid programming language theory with a formal operational semantics.</li>
+<li>Enormous expressive power, in a small form-factor.</li>
+<li>No permitted side-effects: elaborate your data safely and deterministically.</li>
+</ul>
+
+<h2>Who should use Jsonnet?</h2>
+
+<p>You should use Jsonnet if you have a lot of human-sourced data that you need to organize, or if
+you are writing a tool that inputs that kind of data and you want to help your users be organized.
+Some examples:</p>
+
+<ul>
+
+<li><b>Application configuration</b>:  Use Jsonnet for processing config files that live in /etc.</li>
+
+<li><b>Build systems</b>:  Use Jsonnet for expressing exactly what compiler flags / files /
+libraries go into different variations of a build, e.g. optimized, debug, profiling, different
+platforms, etc.</li>
+
+<li><b>Packaging systems</b>:  Use Jsonnet for configuration that has complex rules about what files are to
+be included in the package depending on the given circumstances.</li>
+
+<li><b>Configuration Management</b>:  Use Jsonnet for configuring the set of packages and daemons
+that comprise each of a variety of unix systems.</li>
+
+<li><b>Cloud deployment</b>:  Use Jsonnet for elegantly expressing variants of a service infrastructure,
+such as production, local test, integration test, load test, etc.</li>
+
+<li><b>All of the above</b>:  Jsonnet is general and re-usable.  Its value grows if it is used in
+more than one domain.</li>
+
+</ul>
+
+<h2>Comparison with YAML</h2>
+
+YAML is also an extension of JSON that generates JSON.  Like Jsonnet, it is intended to improve the
+user experience when data is transfered over the human / machine boundary.  Its syntax is very
+tight; YAML files are much shorter than their JSON equivalents.  However its constructs for
+generating, translating, and refining data are very weak in comparison to Jsonnet.  Moreover, the
+tightness of its syntax makes it hard to extend YAML to add these features.  Therefore, Jsonnet
+builds from JSON and not YAML.
+
+<h2>Provenance, Copyright, License</h2>
+
+<p>Jsonnet was designed and implemented at Google as a 20% project.  It was then then open-sourced
+under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a> license.  Jsonnet is
+not an official Google product.</p>
+
+<div style="margin-bottom: 50px"></div>
+<hr />
+<p class="copyright">
+Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+</p>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+RUNTIME ERROR: Max stack frames exceeded.
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	...
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:18:9-12	function <f>
+	error.recursive_function_nonterm.jsonnet:20:1-5	

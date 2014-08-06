@@ -1,0 +1,1218 @@
+{% include 'header.html.jinja' %}
+{% raw %}
+
+<div style="display:none">
+\[
+\newcommand{\array}[1]{[ #1 ]}
+\newcommand{\assign}[2]{ #1\texttt{ = }#2}
+\newcommand{\binary}[3]{ #1\texttt{ }#2\texttt{ }#3}
+\newcommand{\error}[1]{\texttt{error }#1}
+\newcommand{\false}{\texttt{false}}
+\newcommand{\function}[2]{\texttt{function(}#1\texttt{)} #2}
+\newcommand{\if}[3]{\texttt{if }#1\texttt{ then }#2\texttt{ else }#3}
+\newcommand{\import}[1]{\texttt{import }#1}
+\newcommand{\index}[2]{#1\texttt{[}#2\texttt{]}}
+\newcommand{\local}[2]{\texttt{local }#1\texttt{ ; }#2}
+\newcommand{\null}{\texttt{null}}
+\newcommand{\object}[1]{\{ #1 \}}
+\newcommand{\ocomp}[4]{\object{[#1]:#2\texttt{ for }#3\texttt{ in }#4}}
+\newcommand{\self}{\texttt{self}}
+\newcommand{\super}{\texttt{super}}
+\newcommand{\true}{\texttt{true}}
+\newcommand{\unary}[2]{\texttt{ }#1\texttt{ }#2}
+
+\newcommand{\rule}[3]{\frac{#2}{#3}\textrm{(#1)}}
+\]
+</div>
+
+<h1>Specification</h1>
+
+<p>
+This page is the authority on what Jsonnet programs should do.  It defines what
+input is / is not a syntactically valid Jsonnet program, and precisely how they are parsed.  It
+describes which programs should be rejected statically (i.e. before execution).  Finally, it
+specifies the manner in which the program is executed, i.e. the JSON that is output, or the dynamic
+error if there is one.</p>
+
+<p>The specification is intended be terse but precise.  The intention is to illuminate various
+subtleties and edge cases in order to allow fully-compatible reimplementations of the language,
+refactoring tools, etc.  The specification employs some standard theoretical computer science
+techniques, namely <a href="http://en.wikipedia.org/wiki/Type_systems">type systems</a> and <a
+href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational semantics</a>.  If
+that's not your cup of tea, then see the more discussive description of Jsonnet behavior in <a
+href="tutorial.html">tutorial</a>.</p>
+
+<h2>Abstract Syntax</h2>
+
+<p> The ★ in this notation refers to a comma-separated possibly zero-length list of the given
+production, with an optional comma after the last element.  The regular * and + have their usual
+meaning, i.e. repetition of productions without comma separation.  </p>
+
+<p><table>
+<tr><td><i>expr ∈ Expr</i></td><td>::=</td><td>
+'<code>null</code>' |
+'<code>true</code>' |
+'<code>false</code>' |
+'<code>self</code>' |
+'<code>super</code>' |
+'<code>$</code>' |
+<i>string</i> |
+<i>number</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>{</code>'
+('<code>local</code>' <i>bind</i> | <i>field</i>)★
+'<code>}</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>{</code>'
+('<code>local</code>' <i>bind</i> ',')*
+'<code>[</code>'
+<i>expr</i>
+'<code>]</code>'
+'<code>:</code>'
+<i>expr</i>
+'<code>for</code>'
+<i>id</i>
+'<code>in</code>'
+<i>expr</i>
+'<code>}</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>[</code>'
+<i>expr</i>★
+'<code>]</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>[</code>'
+<i>expr</i>
+'<code>for</code>'
+<i>id</i>
+'<code>in</code>'
+<i>expr</i>
+[
+'<code>if</code>'
+<i>expr</i>
+]
+'<code>]</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>expr</i>
+'<code>.</code>'
+<i>id</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>expr</i>
+'<code>[</code>'
+<i>expr</i>
+'<code>]</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>expr</i>
+'<code>(</code>'
+<i>expr</i>★
+'<code>)</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>id</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>local</code>'
+<i>bind</i>
+[
+'<code>,</code>'
+<i>bind</i>
+]*
+'<code>;</code>'
+<i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>if</code>'
+<i>expr</i>
+'<code>then</code>'
+<i>expr</i>
+'<code>else</code>'
+<i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>expr</i>
+<i>symbol</i>
+<i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>symbol</i>
+<i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>expr</i>
+'<code>{</code>'
+<i>field</i>★
+'<code>}</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>function</code>'
+'<code>(</code>'
+<i>id</i>★
+'<code>)</code>'
+<i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>import</code>'
+<i>string</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>error</code>'
+<i>expr</i>
+
+</td></tr>
+</table></p>
+
+<p><table>
+<tr><td><i>field</i></td><td>::=</td><td>
+<i>fieldname</i>
+'<code>:</code>'
+[ '<code>:</code>' ]
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>fieldname</i>
+'<code>(</code>'
+<i>id</i>★
+'<code>)</code>'
+'<code>:</code>'
+[ '<code>:</code>' ]
+<i>e</i>
+
+
+</td></tr>
+</table></p>
+
+<p><table>
+<tr><td><i>fieldname</i></td><td>::=</td><td>
+<i>id</i> |
+<i>string</i> |
+'<code>[</code>'
+<i>e</i>
+'<code>]</code>'
+</td></tr>
+</table></p>
+
+<p><table>
+<tr><td><i>bind</i></td><td>::=</td><td>
+<i>id</i>
+'<code>=</code>'
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>id</i>
+'<code>(</code>'
+<i>id</i>★
+'<code>)</code>'
+'<code>=</code>'
+<i>e</i>
+
+</td></tr>
+</table></p>
+
+<p><table>
+<tr><td><i>symbol</i></td><td>::= (</td><td>
+'<code>+</code>' |
+'<code>-</code>' |
+'<code>*</code>' |
+'<code>/</code>' |
+'<code>%</code>' |
+'<code>&amp;</code>' |
+'<code>|</code>' |
+'<code>^</code>' |
+'<code>=</code>' |
+'<code>&lt;</code>' |
+'<code>&gt;</code>'
+)+
+</td></tr>
+</table></p>
+
+<p>Additionally, <i>id</i> is defined by regular expression: <tt>[a-zA-Z_][a-zA-Z0-9_]*</tt>.  The
+definition of <i>string</i> is equivalent to the JSON string, including escape characters.  Finally,
+<i>number</i> is equivalent to the JSON number, but without the leading <code>-</code>.
+
+<h2>Associativity and Operator Precedence</h2>
+
+<p> The following rules resolve the ambiguity present in the abstract syntax.</p>
+
+<p> Everything is left associative.  In the case of <code>local</code>, <code>if</code>,
+<code>function</code>, and <code>error</code>, ambiguity is resolved by consuming as many tokens as
+possible.  For example the parentheses are redundant in <code>local x = 1; (x + x)</code>.  All
+remaining ambiguities are resolved according to the following order of precedence.</p>
+
+<ol>
+<li><code>f()</code> <code>arr[e]</code> <code>obj[e]</code> <code>obj.f</code>
+&nbsp;&nbsp;(application and indexing)</li>
+<li><code>+</code> <code>-</code> <code>!</code> <code>~</code>
+&nbsp;&nbsp;(the unary operators)</li>
+<li><code>*</code> <code>/</code> <code>%</code>
+&nbsp;&nbsp;(these, and the remainder below, are binary operators)</li>
+<li><code>+</code> <code>-</code></li>
+<li><code>&lt;&lt;</code> <code>&gt;&gt;</code></li>
+<li><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></li>
+<li><code>==</code> <code>!=</code></li>
+<li><code>&amp;</code></li>
+<li><code>^</code></li>
+<li><code>|</code></li>
+<li><code>&amp;&amp;</code></li>
+<li><code>||</code></li>
+</ol>
+
+<p>While the abstract syntax reserves arbitrary sequences of symbol characters for future use, only
+the operators in the above list are currently parsed.  </p>
+
+<h2>Core Language Subset</h2>
+
+<p>In order to build a simpler model of Jsonnet's behavior, many of the language features are
+represented as syntax sugar.  Below, the core syntax is defined, and the desugaring function.  Both
+the static checking rules and the operational semantics are defined at the level of the core
+language, so it is reasonable to implement the desugaring in the parser.</p>
+
+<h3>Core Syntax</h3>
+
+<p><table>
+<tr><td><i>e ∈ Core</i></td><td>::=</td><td>
+'<code>null</code>' |
+'<code>true</code>' |
+'<code>false</code>' |
+'<code>self</code>' |
+'<code>super</code>' |
+<i>string</i> |
+<i>number</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>{</code>'
+(
+'<code>[</code>'
+<i>e</i>
+'<code>]</code>'
+'<code>:</code>'
+[ '<code>:</code>' ]
+<i>e</i>
+)★
+'<code>}</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>{</code>'
+'<code>[</code>'
+<i>e</i>
+'<code>]</code>'
+'<code>:</code>'
+<i>e</i>
+'<code>for</code>'
+<i>id</i>
+'<code>in</code>'
+<i>e</i>
+'<code>}</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>[</code>'
+<i>e</i>★
+'<code>]</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>e</i>
+'<code>[</code>'
+<i>e</i>
+'<code>]</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>e</i>
+'<code>(</code>'
+<i>e</i>★
+'<code>)</code>'
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>id</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>local</code>'
+<i>id</i>
+'<code>=</code>'
+<i>e</i>
+[
+'<code>,</code>'
+<i>id</i>
+'<code>=</code>'
+<i>e</i>
+]*
+'<code>;</code>'
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>if</code>'
+<i>e</i>
+'<code>then</code>'
+<i>e</i>
+'<code>else</code>'
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>e</i>
+<i>symbol</i>
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+<i>symbol</i>
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>function</code>'
+'<code>(</code>'
+<i>id</i>★
+'<code>)</code>'
+<i>e</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>import</code>'
+<i>string</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>error</code>'
+<i>e</i>
+
+</td></tr>
+</table></p>
+
+<p>
+In the core language, the set of identifiers now includes <code>$</code>, which is no-longer a
+special keyword.</p>
+
+<p>Additionally, the <code>!=</code> operator is desugared to <code>!(a == b)</code> and the unary
+<code>+</code> is stripped (it is a no-op).</p>
+
+<h3>Desugaring</h3>
+
+<p>Desugaring is defined as the function <i>desugar</i>: (Expr × Boolean) → Core.  The second parameter of
+the function tracks whether we are within an object.
+</p>
+
+<p><table class=desugar> <tr><td>
+<i>desugar</i>(
+<code>{</code>
+<i>field₁</i>, ... <i>fieldₙ</i>, <i>binds</i>
+<code>}</code>, <i>b</i>)
+</td><td> = </td><td>
+where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
+let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
+<table>
+<tr><td rowspan=2>let <i>binds''</i></td> <td rowspan=2>=</td> <td rowspan=2 style="font-size:20pt">{</th>
+<td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
+<td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
+</table>
+in <code>{</code> <i>desugarfield</i>(<i>field₁</i>, <i>binds''</i>, <i>b</i>), ... <i>desugarfield</i>(<i>fieldₙ</i>, <i>binds''</i>, <i>b</i>)<code>}</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<code>{</code>
+<i>binds</i>,
+<code>[</code>
+<i>expr</i>
+<code>]</code>
+<code>:</code>
+<i>expr'</i>
+<code>for</code>
+<i>id</i>
+<code>in</code>
+<i>expr''</i>
+<code>}</code>, <i>b</i>)
+</td><td> = </td><td>
+where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
+let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
+<table>
+<tr><td rowspan=2>let <i>binds''</i></td> <td rowspan=2>=</td> <td rowspan=2 style="font-size:20pt">{</th>
+<td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
+<td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
+</table>
+let <i>expr'''</i> = <code>local</code> <i>binds''</i><code>;</code> <i>desugar</i>(<i>expr'</i>, <code>true</code>) <br/>
+<code>{</code>
+<code>[</code>
+<i>desugar</i>(<i>expr</i>, <i>b</i>)
+<code>]</code>
+<code>:</code>
+<i>expr'''</i>
+<code>for</code>
+<i>id</i>
+<code>in</code>
+<i>desugar</i>(<i>expr''</i>, <i>b</i>)
+<code>}</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<code>[</code>
+<i>expr</i>
+<code>for</code>
+<i>id</i>
+<code>in</code>
+<i>expr'</i>
+<code>]</code>, <i>b</i>)
+</td><td> = </td><td>
+<code>std.map(function(</code><i>id</i><code>)</code><i>desugar</i>(<i>expr'</i>, <i>b</i>)<code>, </code><i>desugar</i>(<i>expr</i>, <i>b</i>)<code>)</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<code>[</code>
+<i>expr</i>
+<code>for</code>
+<i>id</i>
+<code>in</code>
+<i>expr'</i>
+<code>if</code>
+<i>expr''</i>
+<code>]</code>, <i>b</i>)
+</td><td> = </td><td>
+where <i>ffunc</i> = <code>function(</code><i>id</i><code>)</code><i>desugar</i>(<i>expr''</i>, <i>b</i>) <br/>
+where <i>mfunc</i> = <code>function(</code><i>id</i><code>)</code><i>desugar</i>(<i>expr</i>, <i>b</i>) <br/>
+where <i>arr</i> = <i>desugar</i>(<i>expr'</i>, <i>b</i>) <br/>
+<code>std.filterMap(</code><i>ffunc</i><code>, </code><i>mfunc</i><code>, </code><i>arr</i><code>)</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<i>expr</i>
+<code>.</code>
+<i>id</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugar</i>(<i>expr</i>, <i>b</i>)<code>["<i>id</i>"]</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<i>expr</i> <code>{</code> <i>field</i>★ <code>}</code>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugar</i>(<i>expr</i><code> + {</code> <i>field</i>★ <code>}</code>, <i>b</i>)
+
+</td></tr><tr><td>
+Other cases invoke structural recursion.
+</td></tr>
+</td></tr></table></p>
+
+
+<p><table class=desugar> <tr><td>
+<i>desugarfield</i>(<i>fname</i> :: <i>expr</i>, <i>binds</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) :: <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+</td></tr><tr><td>
+<i>desugarfield</i>(<i>fname</i> : <i>expr</i>, <i>binds</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+
+</td></tr><tr><td>
+<i>desugarfield</i>(<i>fname</i> <code>(</code> <i>params</i> <code>)</code>:: <i>expr</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) :: <code>local</code> <i>binds</i> <code>;</code> <code>function</code> <code>(</code> <i>params</i> <code>)</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+</td></tr><tr><td>
+<i>desugarfield</i>(<i>fname</i> <code>(</code> <i>id</i>★ <code>)</code>: <i>expr</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>local</code> <i>binds</i> <code>;</code> <code>function</code> <code>(</code> <i>params</i> <code>)</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+</td></tr></table></p>
+
+<p><table class=desugar> <tr><td>
+<i>desugarfname</i>(<i>id</i>, <i>b</i>)
+</td><td> = </td><td>
+<code>["id"]</code>
+
+</td></tr><tr><td>
+<i>desugarfname</i>(<i>string</i>, <i>b</i>)
+</td><td> = </td><td>
+<code>[string]</code>
+
+</td></tr><tr><td>
+<i>desugarfname</i>(<code>[</code><i>expr</i><code>]</code>, <i>b</i>)
+</td><td> = </td><td>
+<code>[</code><i>desugar</i>(<i>expr</i>, <i>b</i>)<code>]</code>
+
+</td></tr></table></p>
+
+<p><table class=desugar> <tr><td>
+<i>desugarbinds</i>(<code>local</code> <i>id</id> = <i>expr</i>, <i>b</i>)
+</td><td> = </td><td>
+<code>local</code> <i>id</i> = <i>desugar</i>(<i>expr</i>, <i>b</i>)</code>
+
+</td></tr></table></p>
+
+<h3>Static checking</h3>
+
+<p> After the Jsonnet program is parsed and desugared, a syntax-directed algorithm is employed to
+reject programs that contain certain classes of errors.  Programs are rejected if they use undefined
+variables, or if <code>self</code>, <code>super</code> or <code>$</code> are used outside the bounds
+of an object.  In the core language, <code>$</code> has been desugared to a variable, so its
+checking is implicit in the checking of bound variables.  </p>
+
+<p> The static checking is described below as a judgement \(Γ ⊢ e\), where \(Γ\) is the set of
+variables in scope of \(e\).  The set \(Γ\) initially contains only <code>std</code>, the implicit
+standard library.  In the case of imported files, each jsonnet file is checked independently of the
+other files.</p>
+
+<div class=rules>
+
+<div class="sequent-rule"> \[\rule{chk-lit} {
+} {
+\_ ⊢ \null, \true, \false, string, number
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-self} {
+\self ∈ Γ
+} {
+Γ ⊢ \self
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-super} {
+\super ∈ Γ
+} {
+Γ ⊢ \super
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-object} {
+Γ ⊢ e_1 \ldots e_n
+\\
+Γ ∪ \{\self,\super\} ⊢ e'_1 \ldots e'_n
+\\
+∀ i,j: e_i ∈ string ∧ e_j = e_i ⇒ i = j
+} {
+Γ ⊢ \object{[e_1]:e'_1 \ldots [e_m]:e'_m, [e_{m+1}]::e'_{m+1} \ldots [e_n]::e'_n }
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-object-comp} {
+Γ ∪ \{x\} ⊢ e_1
+\\
+Γ ∪ \{x,\self,\super\} ⊢ e_2
+\\
+Γ ⊢ e_3
+} {
+Γ ⊢ \ocomp{e_1}{e_2}{x}{e_3}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-array} {
+Γ ⊢ e_1 \ldots e_n
+} {
+Γ ⊢ \array{e_1, \ldots e_n}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-array-index} {
+Γ ⊢ e
+\\
+Γ ⊢ e'
+} {
+Γ ⊢ e[e']
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-apply} {
+Γ ⊢ e
+\\
+∀ i∈\{1\ldots n\}: Γ ⊢ e_i
+} {
+Γ ⊢ e(e_1\ldots e_n)
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-var} {
+x ∈ Γ
+} {
+Γ ⊢ x
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-local} {
+Γ ∪ \{x_1 \ldots x_n\} ⊢ e_1 \ldots e_n, e
+\\
+∀ i,j: x_i = x_j ⇒ i = j
+} {
+Γ ⊢ \local{\assign{x_1}{e_1} \ldots \assign{x_n}{e_n}}e
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-if} {
+Γ ⊢ e_1, e_2, e_3
+} {
+Γ ⊢ \if{e_1}{e_2}{e_3}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-binary} {
+Γ ⊢ e_L, e_R
+} {
+Γ ⊢ \binary{e_L}{sym}{e_R}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-unary} {
+Γ ⊢ e
+} {
+Γ ⊢ \unary{sym}{e}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-function} {
+Γ ∪ \{x_1 \ldots x_n\} ⊢ e
+\\
+∀ i,j: x_i = x_j ⇒ i = j
+} {
+Γ ⊢ \function{x_1\ldots x_n}{e}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-import} {
+} {
+Γ ⊢ \import{s}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-error} {
+Γ ⊢ e
+} {
+Γ ⊢ \error{e}
+} \] </div>
+
+</div>
+
+
+<h3>Operational Semantics</h3>
+
+<p> We present two sets of operational semantics rules.  The first defines the judgement \(e ↓ v\)
+which represents the execution of Jsonnet expressions into Jsonnet values.  The other defines the
+judgement \(v ⇓ j\) which represents <dfn>manifestation</dfn>, the process by which Jsonnet values
+are converted into JSON values.</p>
+
+<p> We model both explicit runtime errors (raised by the error construct) and implicit runtime
+errors (e.g. array bounds errors) as stuck execution.  </p>
+
+<h4>Jsonnet Values</h4>
+
+<p>
+Jsonnet values are yielded by executing Jsonnet expressions.  These are not the same as JSON values,
+although there is some overlap.  In particular, they contain functions which are not representable
+in JSON, and both object fields and array elements have yet to be executed to yield values.
+
+<table>
+<tr><td><s>v</s></td><td>∈</td><td><em>Value</em></td><td>=</td><td>
+{ <code>null</code>, <code>true</code>, <code>false</code> } ∪
+<em>String</em> ∪
+<em>Double</em> ∪
+<em>Object</em> ∪
+<em>Function</em> ∪
+<em>Array</em>
+</td></tr>
+
+<tr><td><s>o</s></td><td>∈</td><td><em>Object</em></td><td>=</td><td>
+<em>String</em> ⇀ (<em>Hidden</em> × <em>Core</em>)
+</td></tr>
+
+<tr><td>                            </td><td> </td><td><em>Hidden</em></td><td>=</td><td>
+{ <code>true</code>, <code>false</code> }
+</td></tr>
+
+<tr><td>                            </td><td> </td><td><em>Function</em></td><td>::=</td><td>
+<code>function (</code> <i>id</i>* <code>)</code> <i>e</i>
+</td></tr>
+
+<tr><td><s>a</s></td><td>∈</td><td><em>Array</em></td><td>::=</td><td>
+<code>[</code> <i>e₀</i> ... <i>eₙ</i> <code>]</code>
+</td></tr>
+
+
+</table>
+
+<p> Objects are represented as finite partial functions, hence the use of the harpoon notation ⇀.
+If an object does not define a particular field, the function is undefined.  Otherwise, the field is
+bound to a tuple containing a boolean indicating whether or not the field is hidden, and an
+expression to be evaluated when the field is accessed.  </p>
+
+<p> To construct a partial function, we use a bounded lambda notation, e.g. the object
+<code>{a: 5, b: 5}</code> would be represented by
+λ<i>x</i>∈{<code>"a"</code>, <code>"b"</code>}.
+(<code>false</code>, <code>5</code>).  In order to allow substituting objects into
+expressions e, we use the following function to convert:</p>
+
+<div class=rules>
+
+<div class=sequent-rule>
+\[\begin{array}{l}
+exp(o) = \object{[e_1]:o(f_1) \ldots [e_m]:o(f_m), [e_{m+1}]::f_{m+1} \ldots [e_n]::e'_n } \\
+\textrm{where }\\
+\hspace{20pt}\{(f_1,e_1) \ldots (f_m,e_m)\} = \{ (f,e) | f ∈ dom(o), o(f) = (\false, e) \} \\
+\hspace{20pt}\{(f_{m+1}, f_{m+1}) \ldots (f_n, e_n)\} = \{ (f,e) | f ∈ dom(o), o(f) = (\true, e) \} \\
+\end{array}
+\]
+</div>
+
+</div>
+
+
+<h4>Capture-Avoiding Substitution</h4>
+
+<p> The rules for capture-avoiding variable substitution <i>e</i> [ <i>e'</i> / <i>id</i> ] are an
+extension of those in the <a href="http://en.wikipedia.org/wiki/Lambda_calculus">lambda
+calculus</a>.  In the following, assume that y ≠ x.</p>
+
+<table><tr><td>
+
+<code>self</code> [ <i>e'</i> / <i>x</i> ] = <code>self</code>
+</td></tr> <tr><td>
+
+<code>super</code> [ <i>e'</i> / <i>x</i> ] = <code>super</code>
+</td></tr> <tr><td>
+
+<i>x</i> [ <i>e'</i> / <i>x</i> ] = <i>e'</i>
+</td></tr> <tr><td>
+
+<i>y</i> [ <i>e'</i> / <i>x</i> ] = <i>y</i>
+</td></tr> <tr><td>
+
+<code>{</code>...<code>[</code><i>e</i><code>]:</code> <i>e''</i>...<code>}</code>
+[ <i>e'</i> / <i>x</i> ] =
+<code>{</code>...<code>[</code><i>e</i>[<i>e'</i> / <i>x</i>]<code>]</code>: <i>e''</i>[<i>e'</i> /
+<i>x</i>]...<code>}</code>
+</td></tr> <tr><td>
+
+<code>{[</code><i>e</i><code>]: </code><i>e''</i> <code>for</code> <i>x</i> <code>in</code>
+<i>e'''</i><code>}</code>
+[ <i>e'</i> / <i>x</i> ] =
+<code>{[</code><i>e</i><code>]: </code><i>e''</i> <code>for</code> <i>x</i> <code>in</code>
+<i>e'''</i> [ <i>e'</i> / <i>x</i> ]<code>}</code>
+</td></tr> <tr><td>
+
+<code>{[</code><i>e</i><code>]: </code><i>e''</i> <code>for</code> <i>y</i> <code>in</code>
+<i>e'''</i><code>}</code>
+[ <i>e'</i> / <i>x</i> ] =
+<code>{[</code><i>e</i>[ <i>e'</i> / <i>x</i> ]<code>]: </code><i>e''</i>[ <i>e'</i> / <i>x</i> ] <code>for</code> <i>y</i> <code>in</code>
+<i>e'''</i> [ <i>e'</i> / <i>x</i> ]<code>}</code>
+</td></tr> <tr><td>
+
+(<code>let ... </code><i>x</i><code>=</code><i>e</i><code>... ; </code><i>e''</i>)
+[ <i>e'</i> / <i>x</i> ] =
+<code>let ... </code><i>x</i><code>=</code><i>e</i><code>... ; </code><i>e''</i>
+</td><td>If any variable matches.
+</td></tr> <tr><td>
+
+(<code>let ... </code><i>y</i><code>=</code><i>e</i><code>... ; </code><i>e''</i>)
+[ <i>e'</i> / <i>x</i> ] =
+<code>let ... </code><i>y</i><code>=</code><i>e</i>[ <i>e'</i> / <i>x</i> ]<code>... ; </code><i>e''</i>[ <i>e'</i> / <i>x</i> ]
+</td><td>If no variable matches.
+</td></tr> <tr><td>
+
+(<code>function (...</code><i>x</i><code>...) </code><i>e</i>)
+[ <i>e'</i> / <i>x</i> ] =
+<code>function (...</code><i>x</i><code>...) </code><i>e</i>
+</td><td>If any variable matches.
+</td></tr> <tr><td>
+
+(<code>function (...</code><i>y</i><code>...) </code><i>e</i></code>)
+[ <i>e'</i> / <i>x</i> ] =
+<code>function (...</code><i>x</i><code>...) </code><i>e</i>[ <i>e'</i> / <i>x</i> ]
+</td><td>If no variable matches.
+</td></tr> <tr><td>
+
+Otherwise, <i>e</i> [ <i>e'</i> / <i>x</i> ] proceeds via syntax-directed recursion into subterms
+of <i>e</i>.
+</td></tr> </table>
+
+<p>  The rules for keyword substitution <i>e</i> ⟦ <i>e'</i> / <i>kw</i> ⟧ for <i>kw</i> ∈ {
+<code>self</code>, <code>super</code> } avoid substituting keywords that are captured by nested
+objects: </p>
+
+<table><tr><td>
+
+<code>self</code>
+⟦ <i>e'</i> / <code>self</code> ⟧ = <i>e'</i>
+</td></tr> <tr><td>
+
+<code>super</code>
+⟦ <i>e'</i> / <code>super</code> ⟧ = <i>e'</i>
+</td></tr> <tr><td>
+
+<code>self</code>
+⟦ <i>e'</i> / <code>super</code> ⟧ = <code>self</code>
+</td></tr> <tr><td>
+
+<code>super</code>
+⟦ <i>e'</i> / <code>self</code> ⟧ = <code>super</code>
+</td></tr> <tr><td>
+
+<code>{</code>...<code>[</code><i>e</i><code>]:</code> <i>e''</i>...<code>}</code>
+⟦ <i>e'</i> / <i>kw</i> ⟧ =
+<code>{</code>...<code>[</code><i>e</i>⟦ <i>e'</i> / <i>kw</i> ⟧<code>]</code>:
+<i>e''</i>...<code>}</code>
+</td></tr> <tr><td>
+
+<code>{</code>[<i>e</i>]: <i>e''</i> <code>for</code> <i>x</i> <code>in</code>
+<i>e'''</i><code>}</code>
+⟦ <i>e'</i> / <i>kw</i> ⟧ =
+<code>{</code>[<i>e</i>⟦ <i>e'</i> / <i>kw</i> ⟧]: <i>e''</i> <code>for</code> <i>x</i>
+<code>in</code> <i>e'''</i>⟦ <i>e'</i> / <i>kw</i> ⟧<code>}</code>
+</td></tr> <tr><td>
+
+Otherwise, <i>e</i> ⟦ <i>e'</i> / <i>kw</i> ⟧ proceeds via syntax-directed recursion into subterms
+of <i>e</i>.
+</td></tr> </table>
+
+
+<h4>Execution</h4>
+
+<p>The following big step operational semantics rules define the execution of Jsonnet programs, i.e.
+the reduction of a Jsonnet program <i>e</i> into its Jsonnet value <i>v</i> via the judgement \(e ↓
+v\).</p>
+
+
+<div class="rules">
+
+<div class="sequent-rule"> \[\rule{value} {
+v ∈ \{\null, \true, \false\} ∪ String ∪ Number ∪ Function ∪ Array
+} {
+v ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object} {
+∀i∈\{1\ldots n\}: e_i ↓ f_i ∈ String
+\\
+∀i,j∈\{1\ldots n\}: f_i = f_j ⇒ i = j
+\\
+o = λf∈\{ f_1 \ldots f_n \}.\textrm{let }i\textrm{ such that } f=f_i
+\\
+\hspace{20pt} \left\{\begin{array}{ll}
+(\false, e'_i)  &  \textrm{if }i≤m \\
+(\true,  e'_i)  &  \textrm{otherwise} \\
+\end{array}\right. \\
+} {
+\object{[e_1]:e'_1 \ldots [e_m]:e'_m, [e_{m+1}]::e'_{m+1} \ldots [e_n]::e'_n } ↓ o
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object-comp} {
+e_3 ↓ [ e'_1 \ldots e'_n ]
+\\
+∀i∈\{1\ldots n\}: e_1[e'_i/x] ↓ f_i ∈ String
+\\
+∀i,j∈\{1\ldots n\}: f_i = f_j ⇒ i = j
+\\
+o = λf∈\{ f_1 \ldots f_n \}. e_2[e'_i/x]\textrm{ if }f_i = f
+} {
+\ocomp{e_1}{e_2}{x}{e_3} ↓ o
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{array-index} {
+e ↓ \array{e_0 \ldots e_n}
+\\
+e' ↓ i ∈ \{ 0 \ldots n \}
+\\
+e_i ↓ v
+} {
+\index{e}{e'} ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object-index} {
+e ↓ o
+\\
+e' ↓ f ∈ dom(o)
+\\
+o(f) = (\_, e_{body})
+\\
+e_{body} ⟦ exp(o) / \self, \{\} / \super ⟧ ↓ v
+} {
+\index{e}{e'} ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{apply} {
+e_0 ↓ \function{x_1\ldots x_n}{e_b}
+\\
+e_b [ e_1/x_1 \ldots e_n/x_n ] ↓ v
+} {
+e_0(e_1 \ldots e_n) ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{local} {
+binds = \assign{x_1}{e_1} \ldots \assign{x_n}{e_n}
+\\
+\local{binds}{e[\local{binds}{e_1} / x_1 \ldots \local{binds}{e_n} / x_n ]} ↓ v
+} {
+\local{binds}e ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{if-true} {
+e_1 ↓ \true \hspace{15pt} e_2 ↓ v
+} {
+\if{e_1}{e_2}{e_3} ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{if-false} {
+e_1 ↓ \false \hspace{15pt} e_3 ↓ v
+} {
+\if{e_1}{e_2}{e_3} ↓ v
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object-inherit} {
+e_L ↓ o_L \hspace{15pt} e_R ↓ o_R \hspace{15pt}  y, z \textrm{ fresh}
+\\
+e_s = \super + exp(λf∈dom(o_L). o_L(f)⟦y / \self, z / \super ⟧)
+\\
+o = λf∈dom(o_L, o_R).
+\\
+\begin{array}{ll}
+\hspace{20pt} (h, \local{y = \self, z = \super}{e_{body} ⟦e_s / \super⟧})  &  \textrm{if }o_R(f) = (h, e_{body}) \\
+\hspace{20pt} o_L(f)                 &  \textrm{otherwise }f∈dom(o_L) \\
+\end{array} \\
+} {
+e_L \texttt{ + } e_R ↓ o
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{string-concat} {
+e_L ↓ v_L \hspace{15pt} e_R ↓ v_R
+\\
+v_L ∈ String \vee v_R ∈ String
+} {
+e_L \texttt{+} e_R ↓ stringconcat(tostring(v_L), tostring(v_R))
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{equality} {
+e_L ↓ v_L ⇓ j_L
+\\
+e_R ↓ v_R ⇓ j_R
+\\
+b = (j_L = j_R)
+} {
+e_L \texttt{ == } e_R ↓ b
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{boolean-and-shortcut} {
+e_L ↓ \false
+} {
+e_L \texttt{ &amp;&amp; } e_R ↓ \false
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{boolean-and-longcut} {
+e_L ↓ \true
+\\
+e_R ↓ \true
+} {
+e_L \texttt{ &amp;&amp; } e_R ↓ \true
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{boolean-or-shortcut} {
+e_L ↓ \true
+} {
+e_L \texttt{ || } e_R ↓ \true
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{boolean-or-longcut} {
+e_L ↓ \false
+\\
+e_R ↓ b
+} {
+e_L \texttt{ || } e_R ↓ b
+} \] </div>
+
+</div>
+
+<p> String concatenation will implicitly convert one of the values to a string if necessary.  This
+is similar to Java.  The referred function \(tostring\) returns its argument unchanged if it is a
+string.  Otherwise it will manifest its argument as a JSON value \(j\) and unparse it as a
+single line of text. </p>
+
+<p> The semantics of unary operators <code>-</code> <code>~</code> and <code>!</code> are not given
+above.  Negation has its usual double precision floating point meaning.  Unary <code>~</code> first
+converts the value to a 64 bit signed integer, then does the unary negation, then casts back to
+double precision floating point.  The unary operator <code>!</code> operates only on booleans and
+has its usual meaning.  </p>
+
+<p>Binary operators can be divided into those that implement boolean arithmetic (short cut
+semantics, see above rules), floating point arithmetic (standard semantics, rules not given above),
+and the various special cases (rules given above): string concatenation, array concatenation,
+manifest equality, and object inheritance.</p> The floating point arithmetic operations are
+standard, except in the case of bitwise operations, where the number is first cast to a 64 bit
+signed integer for the operation, then cast back to a double.</p>
+
+<p>Equality has a subtle definition in Jsonnet, due to the desire for e.g.
+
+<code>{x:1, y:self.x}</code> to compare equal to <code>{x:1, y: 1}</code>.  To permit this, equality
+is performed after manifesting the values being compared into JSON values, which binds self and
+fully evaluates all the fields.  One effect of this is that hidden fields are ignored when testing
+for equality.  There is another more fundamental reason why, even if two Jsonnet expressions
+<i>e₁</i> and <i>e₂</i> compare equal with <code>==</code>, they cannot be substituted in an
+arbitrary context.  For example in the above case, <i>e₁</i><code> + {x: 2}</code> will yield
+<code>{x: 2, y: 2}</code>, whereas <i>e₂</i><code> + {x: 2}</code> will yield
+
+<code>{x: 2, y: 1}</code>.  Note that such caveats are actually quite common in programming
+languages, particularly those that perform automatic conversions on operands of the <code>==</code>
+operator.</p>
+
+<p>The <code>error</code> operator cannot be expressed in our rules, as we model errors as stuck
+execution.  The semantics of <code>error</code> are that its subterm is evaluated to a Jsonnet
+value.  If this is a string, then that is the error that is raised.  Otherwise, an error is raised
+complaining that the error message was not a string.  This specification does not specify how the
+error is presented to the user, and whether or not there is a stack trace.  Error messages are meant
+for human inspection, and there is therefore no need to standardize them.</p>
+
+<p> Finally, we have yet to discuss the semantics of <code>import</code>.  As this involves parsing
+and file I/O it is not well-suited to an operational semantics rule.  Import is handled by opening
+the named file, attempting to parse it, and then checking it (or raising an error).  Then, the
+resulting expression is evaluated to a Jsonnet value.  The file is cached by filename, so that even
+if it is changed on disk mid-execution, referential transparency of Jsonnet is maintained. </p>
+
+<h4>JSON Values</h4>
+
+<p>
+JSON values are unparsed to become the ultimate output of Jsonnet programs.  Hidden fields in
+Jsonnet objects are lost on the conversion to JSON.  Arrays elements and Object fields are fully evaluated.  Functions cannot be represented.
+</p>
+
+<table>
+<tr><td><s>j</s></td><td>∈</td><td><em>JValue</em></td><td>=</td><td>
+{ <code>null</code>, <code>true</code>, <code>false</code> } ∪
+<em>String</em> ∪
+<em>Double</em> ∪
+<em>JObject</em> ∪
+<em>JArray</em>
+</td></tr>
+
+<tr><td><s> </s></td><td> </td><td><em>JObject</em></td><td>=</td><td>
+<em>String</em> ⇀ <em>JValue</em>
+</td></tr>
+
+<tr><td><s> </s></td><td> </td><td><em>JArray</em></td><td>::=</td><td>
+<code>[</code> <i>j₀</i> ... <i>jₙ</i> <code>]</code>
+</td></tr>
+
+
+</table>
+
+<p> JObjects are represented as partial functions, hence the use of the harpoon notation ⇀.  If a
+JSON object does not define a particular field, the function is undefined.  This partial function
+representation makes it clear that there can be no duplicate fields, and also the fields are
+unordered.  </p>
+
+<p>Partial functions are constructed with the bounded lambda notation described earlier.</p>
+
+<h4>Manifestation</h4>
+
+<p>
+Manifestation is the conversion of a Jsonnet value into a JSON value.  It is represented with the
+judgement \(v⇓j\).  The process requires executing arbitrary Jsonnet code fragments, so the two
+semantic judgements represented by \(↓\) and \(⇓\) are mutually recursive.  Hidden fields are
+ignored during manifestation.  Functions cannot be manifested, so an error is raised in that
+case.</p>
+
+<div class="rules">
+
+<div class="sequent-rule"> \[\rule{manifest-value} {
+j ∈ \{\null, \true, \false\} ∪ String ∪ Number
+} {
+j ⇓ j
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{manifest-object} {
+visible = \{\ f\ |\ f∈dom(o) ∧ o(f) = (\false, \_)\ \}
+\\
+j = λf∈visible. j'\textrm{ where }(\_, e_{body}) = o(f)\textrm{, and }e_{body}⟦exp(o)/self,\{\}/super⟧↓v⇓j'
+} {
+o ⇓ j
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{manifest-array} {
+∀i∈\{1\ldots n\}: e_i↓v_i⇓j_i
+} {
+\array{e_1 \ldots e_n} ⇓ \array{j_1 \ldots j_n}
+} \] </div>
+
+</div>
+
+
+<h3>Properties of Jsonnet Inheritance</h3>
+
+<p> Let D, E, F range over arbitrary expressions.  Let ≡ mean contextual equivalence, i.e if D ≡ E
+then C[D] and C[E] will manifest to the same JSON, for any context C.  If D yields an error, and E
+yields an error, then D ≡ E (regardless of what the exact text of the message is).</p>
+
+<table>
+<tr>
+<td>Associativity</td>
+<td>(D + E) + F   ≡   D + (E + F)</td>
+</tr>
+
+<tr>
+<td>Idempotence </td>
+<td>D + D   ≡   D </td>
+<td>(if D does not contain <code>super</code>)</td>
+</tr>
+
+<tr>
+<td>Commutativity </td>
+<td>D + E   ≡   E + D</td>
+<td>(if D, E do not contain <code>super</code> and have no common fields)</td>
+</tr>
+
+<tr>
+<td rowspan=2>Identity</td>
+<td>D + { }   ≡   D</td>
+</tr>
+
+<tr>
+<td>{ } + D   ≡   D</td>
+</tr>
+
+</table>
+
+
+<h3>Standard Library Reflection Functions</h3>
+
+<p>The functions in the standard library that provide reflection capabilities are formalized
+below.  Note the lexical sorting of the fields in the object-fields rule. </p>
+
+<div class="rules">
+
+<div class="sequent-rule"> \[\rule{type-null} {
+e ↓ \texttt{null}
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"null"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-boolean} {
+e ↓ v ∈ Boolean
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"boolean"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-number} {
+e ↓ v ∈ Number
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"number"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-string} {
+e ↓ v ∈ String
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"string"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-object} {
+e ↓ v ∈ Object
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"object"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-function} {
+e ↓ v ∈ Function
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"function"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{type-array} {
+e ↓ v ∈ Array
+} {
+\texttt{std.type(}\textit{e}\texttt{)} ↓ \texttt{"array"}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object-has} {
+e ↓ o
+\\
+b = ∃f∈dom(o). o(f) = (\false, \_)
+} {
+\texttt{std.objectHas(}\textit{e}\texttt{)} ↓ b
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{object-fields} {
+e ↓ o
+\\
+\{f_1 \ldots f_n\} = \{\ f\ |\ f∈dom(o) ∧ o(f) = (\false, \_)\ \}
+\\
+∀i,j∈\{1 \ldots n\}: i≤j ⇒ f_i≤f_j
+} {
+\texttt{std.objectFields(}\textit{e}\texttt{)} ↓ \array{ f_1 \ldots f_n }
+} \] </div>
+
+</div>
+
+
+{% endraw %}
+{% include 'footer.html.jinja' %}

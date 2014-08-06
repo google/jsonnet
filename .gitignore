@@ -1,0 +1,13 @@
+*~
+.*.swp
+.swp
+*.o
+jsonnet
+_jsonnet.so
+libjsonnet.so
+libjsonnet_test_file
+libjsonnet_test_snippet
+core
+core.*
+vgcore
+vgcore.*

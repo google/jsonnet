@@ -1,0 +1,22 @@
+RUNTIME ERROR: Max stack frames exceeded.
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	...
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	error.obj_recursive_manifest.jsonnet:17:5-8	object <anonymous>
+	During manifestation	

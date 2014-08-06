@@ -1,0 +1,227 @@
+{% include 'header.html.jinja' %}
+
+<h1>Standard Library</h1>
+
+<p> This page describes the functions available in Jsonnet's standard library, i.e. the object
+implicitly bound to the <code>std</code> variable. Some of the standard library functions can be
+implemented in Jsonnet, in which case their code is also given here.  The behavior of some of the
+other functions, i.e. the ones that expose extra functionality not otherwise available to
+programmers, is described informally here and formally in the <a href="spec.html">specification</a>.
+</p>
+
+<p>The standard library is implicitly added to all Jsonnet programs by enclosing them in a local
+construct.  For example, if the program given by the user is <code>{x: "foo"}</code>, then the
+actual code executed would be <code>local std = { ... }; {x: "foo"}</code>.  The functions in the
+standard library are all hidden fields of the <code>std</code> object.</p>
+
+<h3>Types and Reflection</h3>
+
+<h4>std.type(x)</h4>
+
+<p>Return a string that indicates the type of the value.  The possible return values are:
+"array", "boolean", "function", "null", "number", "object", and "string". </p>
+
+<h4>std.length(x)</h4>
+
+<p>Depending on the type of the value given, either returns the number of elements in the array,
+the number of codepoints in the string, the number of parameters in the function, or the number of
+fields in the object.  Raises an error if given a primitive value, i.e. <code>null</code>,
+<code>true</code> or <code>false</code>.</p>
+
+<h4>std.objectHas(o, f)</h4>
+
+<p>Returns <code>true</code> if the given object has the field (given as a string), otherwise
+<code>false</code>.  Raises an error if the arguments are not object and string respectively.  Note
+that hidden fields are not visible via reflection.</p>
+
+<h4>std.objectFields(o)</h4>
+
+<p>Returns an array of strings, each element being a field from the given object.  Note that hidden
+fields are not visible via reflection.</p>
+
+
+<h3>Mathematical Utilities</h3>
+
+<p>The following mathematical functions are available:
+<code>std.pow(x, n)</code>, 
+<code>std.floor(x)</code>, 
+<code>std.ceil(x)</code>, 
+<code>std.sqrt(x)</code>, 
+<code>std.sin(x)</code>, 
+<code>std.cos(x)</code>, 
+<code>std.tan(x)</code>, 
+<code>std.asin(x)</code>, 
+<code>std.acos(x)</code>, and
+<code>std.atan(x)</code>.</p>
+
+<h3>Assertions and Debugging</h3>
+
+<h4>std.assertEqual(a, b)</h4>
+
+<p>
+Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error message.
+</p>
+
+<pre><code>local std = {
+    ...
+    assertEqual(a, b)::
+        if a == b then true
+        else error "Assertion failed. " + a + " != " + b
+}; ...
+</code></pre>
+
+<h4>std.toString(a)</h4>
+
+<p>Convert the given argument to a string.</p>
+
+<pre><code>local std = {
+    ...
+    toString(a):: "" + a
+}; ...
+</code></pre>
+
+
+<h3>Arrays</h3>
+
+<h4>std.makeArray(sz, func)</h4>
+
+<p>Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize each
+element.  Func is expected to be a function that takes a single parameter, the index of the element
+it should initialize.</p>
+
+<p>Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.  </p>
+
+<h4>std.map(func, arr)</h4>
+
+<p>Apply the given function to every element of the array to form a new array.</p>
+
+<pre><code>local std = {
+    ...
+    map(func, arr)::
+        if self.type(func) != "function" then
+            error("self.map first param must be function, got " + self.type(func))
+        else if self.type(arr) != "array" then
+            error("self.map second param must be array, got " + self.type(arr))
+        else
+            self.makeArray(self.length(arr), function(i) func(arr[i]))
+}; ...
+</code></pre>
+
+<h4>std.filterMap(filter_func, map_func, arr)</h4>
+
+<p>This is primarily used to desugar array comprehension syntax.  It first filters, then maps the
+given array, using the two functions provided.</p>
+
+<pre><code>local std = {
+    ...
+    filterMap(filter_func, map_func, arr)::
+        if self.type(filter_func) != "function" then
+            error("self.filterMap first param must be function, got " + self.type(filter_func))
+        else if self.type(map_func) != "function" then
+            error("self.filterMap second param must be function, got " + self.type(map_func))
+        else if self.type(arr) != "array" then
+            error("self.filterMap third param must be array, got " + self.type(arr))
+        else
+            self.map(map_func, self.filter(filter_func, arr))
+}; ...
+</code></pre>
+
+ 
+<h4>std.filter(func, arr)</h4>
+
+<p>Return a new array containing all the elements of <code>arr</code> for which the
+<code>func</code> function returns true.</p>
+
+<pre><code>local std = {
+    ...
+    filter(func, arr)::
+        self.join([], [if func(arr[i]) then [arr[i]] else [] for i in self.range(0, self.length(arr)-1)])
+}; ...
+</code></pre>
+
+ 
+<h4>std.foldl(func, arr, init)</h4>
+
+<p>Classic foldl function.  Calls the function on each array element and the result of the previous
+function call, or <code>init</code> in the case of the initial element.  Traverses the array from
+left to right.</p>
+
+<pre><code>local std = {
+    ...
+    foldl(func, arr, init)::
+        local aux(func, arr, running, idx) =
+            if idx &gt;= self.length(arr) then
+                running
+            else
+                aux(func, arr, func(running, arr[idx]), idx+1)
+        aux(func, arr, init, 0)
+}; ...
+</code></pre>
+
+
+<h4>std.foldr(func, arr, init)</h4>
+
+<p>Classic foldl function.  Calls the function on each array element and the result of the previous
+function call, or <code>init</code> in the case of the initial element.  Traverses the array from
+right to left.</p>
+
+<pre><code>local std = {
+    ...
+    foldr(func, arr, init)::
+        local aux(func, arr, running, idx) =
+            if idx &lt; 0 then
+                running
+            else
+                aux(func, arr, func(arr[idx], running), idx-1)
+        aux(func, arr, init, self.length(arr)-1)
+}; ...
+</code></pre>
+
+
+<h4>std.range(from, to)</h4>
+
+<p>Return an array of ascending numbers between the two limits, inclusively.</p>
+
+<pre><code>local std = {
+    ...
+    range(from, to)::
+        self.makeArray(to-from+1, function(i) i + from)
+}; ...
+</code></pre>
+
+
+<h4>std.join(sep, arr)</h4>
+
+<p>If <code>sep</code> is a string, then <code>arr</code> must be an array of strings, in which case
+they are concatenated with <code>sep</code> used as a delimiter.  If <code>sep</code> is an array,
+then <code>arr</code> must be an array of arrays, in which case the arrays are concatenated in the
+same way, to produce a single array.</p>
+
+<p>Example1: <code>std.join(".", ["www", "google", "com"])</code> yields
+<code>"www.google.com"</code>.  </p>
+
+<p>Example2: <code>std.join([9, 9], [[1], [2, 3]])</code> yields <code>[1, 9, 9, 2, 3]</code>.  </p>
+
+<pre><code>local std = {
+    ...
+    join(sep, arr)::
+        local aux(arr, i, running) =
+            if i >= self.length(arr) then
+                running
+            else if i == 0 then
+                aux(arr, i+1, running + arr[i])
+            else
+                aux(arr, i+1, running + sep + arr[i])
+        if self.type(arr) != "array" then
+            error "join second parameter should be array, got " + self.type(arr)
+        else if self.type(sep) == "string" then
+            aux(arr, 0, "")
+        else if self.type(sep) == "array" then
+            aux(arr, 0, [])
+        else
+            error "join first parameter should be string or array, got " + self.type(arr)
+}; ...
+</code></pre>
+
+
+{% include 'footer.html.jinja' %}

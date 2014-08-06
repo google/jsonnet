@@ -1,0 +1,1 @@
+STATIC ERROR: error.string.invalid_escape_unicode_short2.jsonnet:17:1: Truncated unicode escape sequence in string literal.

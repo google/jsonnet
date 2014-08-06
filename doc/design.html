@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Jsonnet documentation</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="stylesheet" href="prism.css" />
+    <link rel="stylesheet" type="text/css" href="doc.css" />
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+</head>
+
+<body class="language-jsonnet">
+
+<script src="prism.js">
+</script>
+
+<script>
+Prism.languages.jsonnet = {
+  'cppcomment': /\/\/.*/g,
+  'comment': /\/\*[\w\W]*?\*\//g,
+  'string': /("|')(\\?.)*?\1/g,
+  'keyword': /\b(self|super)\b|\$/g,
+  'boolean': /\b(true|false)\b/g,
+  'constant': /\bnull\b/g,
+  'error': /\berror\b/g,
+  'special': /\b(local|function|if|then|else|import|for|in)\b/g,
+  'number': /\b[0-9][0-9.eE]*\b/g,
+  'operator': /(\+|\*|\/)+/g,
+};
+</script>
+
+<style>
+.token.comment,
+.token.cppcomment {
+  color: #040;
+}
+
+.token.identifier {
+  color: #000;
+}
+.token.operator {
+  color: #000;
+}
+
+.token.boolean,
+.token.number,
+.token.constant {
+  color: #05a;
+}
+
+.token.string {
+  color: #000048;
+}
+
+.token.keyword,
+.token.special {
+  color: blue;
+}
+
+.token.error {
+  color: red;
+}
+</style>
+
+<div class="header">
+
+<div class="tagline"><i>The data templating language</i></div>
+<div class="title">Jsonnet</div>
+
+<div class="linkbar">
+<a class="linkbarlink" href="index.html">Home</a> |
+<a class="linkbarlink" href="tutorial.html">Tutorial</a> |
+<a class="linkbarlink" href="stdlib.html">Library</a> |
+<a class="linkbarlink" href="implementation.html">Implementation</a> |
+<a class="linkbarlink" href="design.html">Design</a> |
+<a class="linkbarlink" href="spec.html">Spec</a>
+</div>
+
+</div>
+
+<h1>Design Philosophy</h1>
+
+<p> Jsonnet is a lazy, pure, functional, object-oriented, and domain-specific language.  Since it
+has no side-effects, the JSON can be regenerated at any time, and since it is deterministic, this
+will always result in the same output JSON.  Functional languages are ideal for refining and
+processing structured data.  The object oriented features are ideal for deriving variants from
+templates.  The combination of abstraction mechanisms from multiple paradigms makes the language
+very good at keeping large amounts of JSON data under control, and extending JSON in the form of an
+expression language provides good readability.</p>
+
+<p>The syntax and semantics have been designed to be as conventional as possible to avoid surprises
+and to ease the learning curve.  The language is also no larger than it needs to be, and conforms to
+a written spec in order to allow multiple implementations to be written.  </p>
+
+<p>The language is designed to be implementable via desugaring, i.e. there is a simple core language
+and the other constructs are translated down to this core language before interpretation.  This
+technique allows a language to have considerable expressive power, while remaining easy to
+implement.
+</p>
+
+<h2>Rationale for Lazy Semantics</h2>
+
+<p>The late binding from the object oriented semantics already embodies some of the features of a lazy
+language.  Errors do not occur unless a field is actually dereferenced, and cyclic structures can be
+created.  For example the following is valid even in an eager version of the language:</p>
+
+<pre><code>local x = {a:"apple", b:y.b},
+      y = {a:x.a, b:"banana"};
+x
+</code></pre>
+
+<p> It would therefore be confusing if the following was not also valid, which leads us to lazy
+semantics for arrays.  </p>
+
+<pre><code>local x = ["apple", y[1]],
+      y = [x[0], "banana"];
+x
+</code></pre>
+
+<p> Therefore, for consistency, the whole language is lazy.  It does not harm the language to be
+lazy:  Performance is not significantly affected, stack traces are still possible, and it doesn't
+interfere with I/O (because there is no I/O).  There is also a precedent for laziness, e.g. in
+Makefiles and the Nix expression language.</p>
+
+<p> Arguably, laziness brings real benefits in terms of abstraction and modularity.  It
+is possible to build infinite data-structures, and there is unrestricted beta expansion.  For
+example, the following 2 snippets of code are only equivalent in a lazy language.  </p>
+
+<pre><code>if x == 0 then 0 else if x &gt; 0 then 1 / x else -1/x
+</code></pre>
+
+<pre><code>local r = 1 / x;
+if x == 0 then 0 else if x &gt; 0 then r else -r
+</code></pre>
+
+
+<h2>Modularity and Encapsulation</h2>
+
+<p>In Jsonnet, a <dfn>module</dfn> is typically a Jsonnet file that defines an object whose fields
+contain useful values, such as functions or objects that can specialized for a particular purpose
+via extension.  Using an object at the top level of the module allows adding other fields later on,
+without having to alter user code.  When writing such a module, it is advisable to expose only the
+interface to the module, and not its implementation.  This is called encapsulation, and it allows
+changing the implementation later, despite the module being imported by many other Jsonnet files.
+</p>
+
+<p>Jsonnet's primary feature for encapsulation is the <code>local</code> keyword.  This makes it
+possible to define variables that are visible only to the module, and impossible to access from
+outside.  The following is a simple example.  Other code can import util.jsonnet but will not be
+able to see the <code>internal</code> object, and therefore not the function
+<code>square</code>.</p>
+
+<pre><code>// util.jsonnet
+local internal = {
+    square(x):: x*x,
+};
+{
+    euclidianDistance(x1, y1, x2, y2)::
+        std.sqrt(internal.square(x2-x1) + internal.square(y2-y1)),
+}
+</code></pre>
+
+<p>It is also possible to store <code>square</code> in a field, which exposes it to those importing
+the module:</p>
+
+<pre><code>// util2.jsonnet
+{
+    square(x):: x*x,
+    euclidianDistance(x1, y1, x2, y2)::
+        std.sqrt(self.square(x2-x1) + self.square(y2-y1)),
+}
+</code></pre>
+
+<p>This allows users to redefine the square function, as shown in the very strange code below.  In
+some cases, this is actually what you want and is very useful.  But it does make it harder to
+maintain backwards compatability.  For example, if you later change the implementation of
+euclidianDistance to inline the square call, then user code will behave differently.</p>
+
+<pre><code>// myfile.jsonnet
+local util2 = import "util2.jsonnet" { square(x):: x*x*x };
+{
+    crazy: util2.euclidianDistance(1,2,3,4)
+}
+</code></pre>
+
+<p> In conclusion, Jsonnet allows you to either expose these details or hide them.  So choose
+wisely, and know that everything you expose will potentially be used in ways that you didn't
+expect.  Keep your interface as small as possible.</p>
+
+<p>A common belief is that languages should make <code>local</code> the default state, with an
+explicit construct to allow outside access.  This ensures that things are not accidentally (or
+apathetically) exposed.  In the case of Jsonnet, backwards compatibility with JSON prohibits that
+design since in JSON everything is a visible field.</p>
+
+
+
+<div style="margin-bottom: 50px"></div>
+<hr />
+<p class="copyright">
+Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+</p>
+</body>
+
+</html>

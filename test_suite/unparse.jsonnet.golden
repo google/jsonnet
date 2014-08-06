@@ -1,0 +1,11 @@
+{
+   "false": false,
+   "neg_integer": -1029301293,
+   "null": null,
+   "number": 0.33333333333333331,
+   "pos_integer": 13212381932,
+   "small_number": 1e-14,
+   "string": "foo\n bar\n\n\"bar\u0005\"\t P\b\f\r\\",
+   "true": true,
+   "zero": 0
+}
