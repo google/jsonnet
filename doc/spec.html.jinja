@@ -475,9 +475,9 @@ where <i>arr</i> = <i>desugar</i>(<i>expr'</i>, <i>b</i>) <br/>
 <i>desugar</i>(<i>expr</i>, <i>b</i>)<code>["<i>id</i>"]</code>
 
 </td></tr><tr><td>
-<i>desugar</i>(<i>expr</i> <code>{</code> <i>field</i>★ <code>}</code>, <i>b</i>)
+<i>desugar</i>(<i>expr</i> <code>{</code> ... <code>}</code>, <i>b</i>)
 </td><td> = </td><td>
-<i>desugar</i>(<i>expr</i><code> + {</code> <i>field</i>★ <code>}</code>, <i>b</i>)
+<i>desugar</i>(<i>expr</i><code> + {</code> ... <code>}</code>, <i>b</i>)
 
 </td></tr><tr><td>
 Other cases invoke structural recursion.
@@ -503,7 +503,7 @@ Other cases invoke structural recursion.
 <i>desugarfname</i>(<i>fname</i>, <i>b</i>) :: <code>local</code> <i>binds</i> <code>;</code> <code>function</code> <code>(</code> <i>params</i> <code>)</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
 
 </td></tr><tr><td>
-<i>desugarfield</i>(<i>fname</i> <code>(</code> <i>id</i>★ <code>)</code>: <i>expr</i>, <i>b</i>)
+<i>desugarfield</i>(<i>fname</i> <code>(</code> <i>params</i> <code>)</code>: <i>expr</i>, <i>b</i>)
 </td><td> = </td><td>
 <i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>local</code> <i>binds</i> <code>;</code> <code>function</code> <code>(</code> <i>params</i> <code>)</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
 
