@@ -485,7 +485,7 @@ special keyword.</p>
 the function tracks whether we are within an object.
 </p>
 
-<table class=desugar> <tr><td>
+<table class="desugar"> <tr><td>
 <i>desugar</i>(
 <code>{</code>
 <i>field₁</i>, ... <i>fieldₙ</i>, <i>binds</i>
@@ -494,7 +494,7 @@ the function tracks whether we are within an object.
 where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
 let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
-<tr><td rowspan=2>let <i>binds''</i></td> <td rowspan=2>=</td> <td rowspan=2 style="font-size:20pt">{</th>
+<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</tr>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
 <td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
@@ -517,7 +517,7 @@ in <code>{</code> <i>desugarfield</i>(<i>field₁</i>, <i>binds''</i>, <i>b</i>)
 where <i>binds</i> = <code>local</code> <i>bind₁</i>, ... <code>local</code> <i>bindₙ</i> <br/>
 let <i>binds'</i> = <i>desugarbinds</i>(<i>binds</i>, <code>true</code>) <br/>
 <table>
-<tr><td rowspan=2>let <i>binds''</i></td> <td rowspan=2>=</td> <td rowspan=2 style="font-size:20pt">{</th>
+<tr><td rowspan="2">let <i>binds''</i></td> <td rowspan="2">=</td> <td rowspan="2" style="font-size:20pt">{</tr>
 <td><i>binds</i></td> <td>if <i>b</i> = <code>true</code>,<br/></td></tr>
 <td><i>binds</i>, <code>local $ = self</code></td> <td>otherwise</td></tr>
 </table>
@@ -579,7 +579,7 @@ Other cases invoke structural recursion.
 </td></tr></table>
 
 
-<table class=desugar> <tr><td>
+<table class="desugar"> <tr><td>
 <i>desugarfield</i>(<i>fname</i> :: <i>expr</i>, <i>binds</i>, <i>b</i>)
 </td><td> = </td><td>
 <i>desugarfname</i>(<i>fname</i>, <i>b</i>) :: <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
@@ -602,7 +602,7 @@ Other cases invoke structural recursion.
 
 </td></tr></table>
 
-<table class=desugar> <tr><td>
+<table class="desugar"> <tr><td>
 <i>desugarfname</i>(<i>id</i>, <i>b</i>)
 </td><td> = </td><td>
 <code>["id"]</code>
@@ -619,7 +619,7 @@ Other cases invoke structural recursion.
 
 </td></tr></table>
 
-<table class=desugar> <tr><td>
+<table class="desugar"> <tr><td>
 <i>desugarbinds</i>(<code>local</code> <i>id</i> = <i>expr</i>, <i>b</i>)
 </td><td> = </td><td>
 <code>local</code> <i>id</i> = <i>desugar</i>(<i>expr</i>, <i>b</i>)</code>
@@ -1227,7 +1227,7 @@ yields an error, then D ≡ E (regardless of what the exact text of the message 
 </tr>
 
 <tr>
-<td rowspan=2>Identity</td>
+<td rowspan="2">Identity</td>
 <td>D + { }   ≡   D</td>
 </tr>
 
