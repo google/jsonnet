@@ -31,6 +31,7 @@ LIB_SRC = $(SRC) libjsonnet.cpp
 ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
 ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h
 
+default: jsonnet
 
 all: $(ALL)
 
