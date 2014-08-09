@@ -24,6 +24,8 @@ CC = gcc -Wall -Wextra -pedantic -std=c99
 EMCXX = em++ --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c++0x
 EMCC = emcc --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c99
 
+CP = cp
+
 CFLAGS ?= -g -O3
 LDFLAGS ?=
 
@@ -57,7 +59,8 @@ libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
 
 # Javascript build of C binding
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
-	$(EMCXX) -s EXPORTED_FUNCTIONS='["jsonnet_evaluate_snippet", "jsonnet_delete"]' $(CFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
+	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_evaluate_snippet", "_jsonnet_delete"]' $(CFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
+	$(CP) $@ doc/
 
 # Tests for C binding.
 libjsonnet_test_snippet: libjsonnet_test_snippet.c libjsonnet.so libjsonnet.h
