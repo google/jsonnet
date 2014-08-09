@@ -44,7 +44,6 @@ namespace {
         FRAME_BUILTIN_FORCE_THUNKS,
         FRAME_CALL,
         FRAME_ERROR,
-        FRAME_EQUALITY,
         FRAME_EQUALITY_MANIFEST,
         FRAME_IF,
         FRAME_INDEX_TARGET,
@@ -667,10 +666,8 @@ namespace {
          * When not in strong mode, this will evaluate object fields, so can trigger a garbage
          * collection cycle.  Be sure to stash any objects that aren't reachable via the stack or
          * heap.
-         *
-         * \param strong True means ===, False means ==.
          */
-        bool equality(const LocationRange &loc, const Value &a, const Value &b, bool strong)
+        bool equality(const LocationRange &loc, const Value &a, const Value &b)
         {
             if (a.t != b.t) return false;
 
@@ -698,7 +695,7 @@ namespace {
                             th_b->filled = true;
                         }
 
-                        if (!equality(loc, th_a->content, th_b->content, strong))
+                        if (!equality(loc, th_a->content, th_b->content))
                                 return false;
                     }
                     return true;
@@ -717,7 +714,6 @@ namespace {
                 return true;
 
                 case Value::OBJECT: {
-                    if (strong) return false;
                     auto *obj_a = static_cast<HeapObject*>(a.v.h);
                     auto *obj_b = static_cast<HeapObject*>(b.v.h);
                     std::set<const Identifier *> fields_a = objectFields(obj_a, true);
@@ -726,7 +722,7 @@ namespace {
 
                     // Put the two intermediate values on the stack so they won't get garbage
                     // collected.
-                    stack.newFrame(FRAME_EQUALITY, loc);
+                    stack.newFrame(FRAME_EQUALITY_MANIFEST, loc);
                     bool different = false;
                     for (const auto &f : fields_a) {
 
@@ -741,7 +737,7 @@ namespace {
                         stack.pop();
                         stack.top().val2 = scratch;
 
-                        if (!equality(loc, stack.top().val, stack.top().val2, strong)) {
+                        if (!equality(loc, stack.top().val, stack.top().val2)) {
                             different = true;
                             break;
                         }
@@ -1143,13 +1139,7 @@ namespace {
                             stack.top().val2 = rhs;
                             goto replaceframe;
 
-                            case BOP_EQUAL:
-                            stack.top().kind = FRAME_EQUALITY;
-                            stack.top().val2 = rhs;
-                            goto replaceframe;
-
                             case BOP_MANIFEST_UNEQUAL:
-                            case BOP_UNEQUAL:
                             std::cerr << "INTERNAL ERROR: Inequalities not desugared" << std::endl;
                             abort();
 
@@ -1586,13 +1576,11 @@ namespace {
                         // Result of call is in scratch, just pop.
                     } break;
 
-                    case FRAME_EQUALITY:
                     case FRAME_EQUALITY_MANIFEST: {
-                        bool strong = f.kind == FRAME_EQUALITY;
                         const auto &ast = *static_cast<const Binary*>(f.ast);
                         const Value &lhs = stack.top().val;
                         const Value &rhs = stack.top().val2;
-                        bool b = equality(ast.location, lhs, rhs, strong);
+                        bool b = equality(ast.location, lhs, rhs);
                         scratch = makeBoolean(b);
                     } break;
 

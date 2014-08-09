@@ -34,20 +34,10 @@ std.assertEqual(false == true, false) &&
 std.assertEqual(true == false, false) &&
 std.assertEqual(true == true, true) &&
 
-std.assertEqual(false === false, true) &&
-std.assertEqual(false === true, false) &&
-std.assertEqual(true === false, false) &&
-std.assertEqual(true === true, true) &&
-
 std.assertEqual(false != false, false) &&
 std.assertEqual(false != true, true) &&
 std.assertEqual(true != false, true) &&
 std.assertEqual(true != true, false) &&
-
-std.assertEqual(false !== false, false) &&
-std.assertEqual(false !== true, true) &&
-std.assertEqual(true !== false, true) &&
-std.assertEqual(true !== true, false) &&
 
 std.assertEqual(if true then 3 else 5, 3) &&
 std.assertEqual(if false then 3 else 5, 5) &&

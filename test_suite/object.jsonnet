@@ -24,10 +24,6 @@ std.assertEqual({x: 1, y: 2} == {x: 1, y: 2}, true) &&
 std.assertEqual({x: 1, y: 2} == {x: 1, y: 2, z: 3}, false) &&
 std.assertEqual({x: 1, y: 2} != {x: 1, y: 2}, false) &&
 std.assertEqual({x: 1, y: 2} != {x: 1, y: 2, z: 3}, true) &&
-std.assertEqual({x: 1, y: 2} === {x: 1, y: 2}, false) &&
-std.assertEqual({x: 1, y: 2} === {x: 1, y: 2, z: 3}, false) &&
-std.assertEqual({x: 1, y: 2} !== {x: 1, y: 2}, true) &&
-std.assertEqual({x: 1, y: 2} !== {x: 1, y: 2, z: 3}, true) &&
 
 std.assertEqual({f(x,y,z): x, y: self.f(1,2,3)}.y, 1) &&
 std.assertEqual({f(x,y,z): x, y(x): self.f(x,2,3), z:self.y(4)}.z, 4) &&

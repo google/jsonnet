@@ -293,12 +293,7 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
             kind = Token::OPERATOR;
             if (*(c+1) == '=') {
                 c++;
-                if (*(c+1) == '=') {
-                    c++;
-                    data = "!==";
-                } else {
-                    data = "!=";
-                }
+                data = "!=";
             } else {
                 data = "!";
             }
