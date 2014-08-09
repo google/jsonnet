@@ -22,7 +22,11 @@ env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="."),
 
 def myinclude(filename):
     with codecs.open(filename, 'r', 'utf-8') as f:
-        return f.read()
+        lines = f.readlines()
+        # Strip copyright header, if it has one.
+        if lines[1][0:10] == "Copyright ":
+            lines = lines[16:]
+    return "".join(lines)
 
 env.globals['myinclude'] = myinclude
 
