@@ -12,9 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+###################################################################################################
 # User-servicable parts:
+###################################################################################################
+
+# C/C++ compiler -- clang also works
 CXX = g++ -Wall -Wextra -pedantic -std=c++0x
 CC = gcc -Wall -Wextra -pedantic -std=c99
+
+# Emscripten -- For Jsonnet in the browser
+EMCXX = em++ --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c++0x
+EMCC = emcc --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c99
+
 CFLAGS ?= -g -O3
 LDFLAGS ?=
 
@@ -23,12 +32,15 @@ PYTHON_LDFLAGS ?=
 
 SHARED_CFLAGS ?= -fPIC
 SHARED_LDFLAGS ?= -shared
+
+###################################################################################################
 # End of user-servicable parts
+###################################################################################################
 
 SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
 LIB_SRC = $(SRC) libjsonnet.cpp
 
-ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
+ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js
 ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h
 
 default: jsonnet
@@ -42,6 +54,10 @@ jsonnet: jsonnet.cpp $(SRC) $(ALL_HEADERS)
 # C binding.
 libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
 	$(CXX) $(CFLAGS) $(LDFLAGS) $(LIB_SRC) $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+
+# Javascript build of C binding
+libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
+	$(EMCXX) -s EXPORTED_FUNCTIONS='["jsonnet_evaluate_snippet", "jsonnet_delete"]' $(CFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
 
 # Tests for C binding.
 libjsonnet_test_snippet: libjsonnet_test_snippet.c libjsonnet.so libjsonnet.h
@@ -58,4 +74,4 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 	$(CXX) $(CFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
 
 clean:
-	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) _jsonnet.o
+	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) *.o 
