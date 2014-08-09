@@ -60,8 +60,6 @@ namespace {
         r[BOP_LESS] = 8;
         r[BOP_LESS_EQ] = 8;
 
-        r[BOP_EQUAL] = 9;
-        r[BOP_UNEQUAL] = 9;
         r[BOP_MANIFEST_EQUAL] = 9;
         r[BOP_MANIFEST_UNEQUAL] = 9;
 
@@ -107,8 +105,6 @@ namespace {
         r["<"] = BOP_LESS;
         r["<="] = BOP_LESS_EQ;
 
-        r["==="] = BOP_EQUAL;
-        r["!=="] = BOP_UNEQUAL;
         r["=="] = BOP_MANIFEST_EQUAL;
         r["!="] = BOP_MANIFEST_UNEQUAL;
 
@@ -710,10 +706,6 @@ namespace {
                         // Logical / arithmetic binary operator.
                         AST *rhs = parse(precedence - 1, obj_level);
                         bool invert = false;
-                        if (bop == BOP_UNEQUAL) {
-                            bop = BOP_EQUAL;
-                            invert = true;
-                        }
                         if (bop == BOP_MANIFEST_UNEQUAL) {
                             bop = BOP_MANIFEST_EQUAL;
                             invert = true;

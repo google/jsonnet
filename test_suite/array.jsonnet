@@ -16,22 +16,14 @@ limitations under the License.
 
 std.assertEqual([1,4,9,16][2], 9) &&
 std.assertEqual([1,4,9,16] == [1, 4, 9, 16], true) &&
-std.assertEqual([1,4,9,16] === [1, 4, 9, 16], true) &&
 std.assertEqual([1,4,9,16] != [1, 4, 9, 15], true) &&
-std.assertEqual([1,4,9,16] !== [1, 4, 9, 15], true) &&
 std.assertEqual([1,4,9,16] == [1, 4, 9, 15], false) &&
-std.assertEqual([1,4,9,16] === [1, 4, 9, 15], false) &&
 std.assertEqual([1,4,9,16] != [1, 4, 9, 16], false) &&
-std.assertEqual([1,4,9,16] !== [1, 4, 9, 16], false) &&
 
 std.assertEqual([1,4,9,16] == [1, 4, 9, 16, 17], false) &&
-std.assertEqual([1,4,9,16] === [1, 4, 9, 16, 17], false) &&
 std.assertEqual([1,4,9,16] != [1, 4, 9, 16, 17], true) &&
-std.assertEqual([1,4,9,16] !== [1, 4, 9, 16, 17], true) &&
 std.assertEqual([1,4,9,16,17] == [1, 4, 9, 16], false) &&
-std.assertEqual([1,4,9,16,17] === [1, 4, 9, 16], false) &&
 std.assertEqual([1,4,9,16,17] != [1, 4, 9, 16], true) &&
-std.assertEqual([1,4,9,16,17] !== [1, 4, 9, 16], true) &&
 
 std.assertEqual([1,4,9,error "foo"][2], 9) &&
 std.assertEqual([] + [1,2,3] + [4,5,6] + [], [1,2,3,4,5,6]) &&

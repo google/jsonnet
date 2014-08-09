@@ -16,10 +16,10 @@ limitations under the License.
 
 std.assertEqual(null, null) &&
 std.assertEqual(null == null, true) &&
-std.assertEqual(null === null, true) &&
+std.assertEqual(null != false, true) &&
+std.assertEqual(null != 0, true) &&
 std.assertEqual(null != 3, true) &&
-std.assertEqual(null !== 3, true) &&
 std.assertEqual(null != "null", true) &&
-std.assertEqual(null !== "null", true) &&
+std.assertEqual(null != "false", true) &&
 true
 

@@ -108,8 +108,6 @@ enum BinaryOp {
     BOP_LESS,
     BOP_LESS_EQ,
 
-    BOP_EQUAL,
-    BOP_UNEQUAL,
     BOP_MANIFEST_EQUAL,
     BOP_MANIFEST_UNEQUAL,
 
@@ -139,8 +137,6 @@ static inline std::string bop_string (BinaryOp bop)
         case BOP_LESS: return "<";
         case BOP_LESS_EQ: return "<=";
 
-        case BOP_EQUAL: return "===";
-        case BOP_UNEQUAL: return "!==";
         case BOP_MANIFEST_EQUAL: return "==";
         case BOP_MANIFEST_UNEQUAL: return "!=";
 
