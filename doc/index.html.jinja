@@ -11,11 +11,11 @@ experiment.</p>
 
 <h1>Elevator Pitch</h1>
 
-<p>Jsonnet is a domain specific language that makes it easier for humans to communicate with
-machines via <a href="http://www.json.org">JSON</a>.  Jsonnet lets you compute fragments of JSON
-within the structure, bringing the same benefit to structured data that templating languages bring
-to plain text.  Jsonnet is an extension of JSON, i.e. all valid JSON files are Jsonnet files that
-emit the JSON unchanged.</p>
+<p>Jsonnet is a domain specific language that allows you to more easily define <a
+href="http://www.json.org">JSON</a> data.  Jsonnet lets you compute fragments of JSON within the
+structure, bringing the same benefit to structured data that templating languages bring to plain
+text.  The example below illustrates a few features -- referring to another part of the structure,
+overriding obect fields, and string operations.</p>
 
 <table class="landing-page-example">
 <tr>
@@ -31,14 +31,15 @@ emit the JSON unchanged.</p>
 </tr>
 </table>
 
-<p> Linking the Jsonnet library allows any system that currently accepts JSON to transparently
-accept the full Jsonnet language.  Systems that currently accept <a
-href="http://www.yaml.org">YAML</a> can be easily modified to accept Jsonnet via a separate
-interface.</p>
+<p>Jsonnet is available as a command-line interpreter and a library, which  allows any system that
+currently accepts JSON to transparently accept the full Jsonnet language.  Systems that
+currently accept <a href="http://www.yaml.org">YAML</a> can easily be modified to accept
+Jsonnet as well.</p>
 
 <p> <b>Language features</b>: </p>
 
 <ul>
+<li>Extension of JSON, all valid JSON files are "do nothing" Jsonnet files</li>
 <li>Arithmetic, logic, string manipulation, conditional execution...</li>
 <li>Specialize and derive variants from existing data: powerful semantics based on <a
 href="http://www.bracha.org/oopsla90.pdf">mixins</a>.</li>
@@ -80,19 +81,19 @@ more than one domain.</li>
 
 <h2>Comparison with YAML</h2>
 
-<p>
-YAML is also an extension of JSON that generates JSON.  Like Jsonnet, it is intended to improve the
-user experience when data is transfered over the human / machine boundary.  Its syntax is very
+<p> YAML is also an extension of JSON that generates JSON.  Like Jsonnet, it is intended to improve
+the user experience when data is transfered over the human / machine boundary.  Its syntax is very
 tight; YAML files are much shorter than their JSON equivalents.  However its constructs for
 generating, translating, and refining data are very weak in comparison to Jsonnet.  Moreover, the
-tightness of its syntax makes it hard to extend YAML to add these features.  Therefore, Jsonnet
-builds from JSON and not YAML.</p>
+tightness of its syntax makes it hard to extend YAML to add these features.  In particular, YAML and
+Jsonnet disagree about what 1+1 should mean.  YAML thinks it should be the string "1+1", whereas
+Jsonnet thinks it should be 2.  Jsonnet therefore builds from JSON and not YAML.</p>
 
 <h2>Provenance, Copyright, License</h2>
 
 <p>Jsonnet was designed and implemented at Google as a 20% project.  The name Jsonnet is a
-contraction of JSON and <a href="http://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>.  It was
-then then open-sourced under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a>
+contraction of JSON and <a href="http://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>.  It has
+been open-sourced under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a>
 license.  Jsonnet is not an official Google product.</p>
 
 {% include 'footer.html.jinja' %}

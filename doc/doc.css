@@ -43,12 +43,14 @@ div.linkbar {
 
 a:link.linkbarlink {
     color: #faa;
+    font-size: 80%;
     margin-left: 1em;
     margin-right: 1em;
 }
 
 a:visited.linkbarlink {
     color: #aaa;
+    font-size: 80%;
     margin-left: 1em;
     margin-right: 1em;
 }
@@ -111,6 +113,19 @@ h4 {
 .bigarrow {
     font-size: 50pt;
     color: #421;
+    text-align: center;
+}
+
+textarea.demo-text {
+    font-size: 8pt;
+}
+
+span.example-code {
+    display: none;
+}
+
+.submit_box {
+    float: top;
 }
 
 pre > code.language-jsonnet {

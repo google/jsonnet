@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// bar_menu.4.jsonnet
+// example_operators.jsonnet
 {
     foo: [1, 2, 3],
     bar: [x * x for x in self.foo if x >= 2],
