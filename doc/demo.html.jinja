@@ -263,7 +263,7 @@ function compute() {
 }
 function replace(dom) {
     var jsonnet_code = document.getElementById('jsonnet-code');
-    jsonnet_code.value = dom.children[0].innerHTML
+    jsonnet_code.value = dom.children[0].textContent;
     compute();
 }
 replace(document.getElementById('initial-example'));
