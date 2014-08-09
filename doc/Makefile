@@ -17,7 +17,7 @@ PAGES = index.html tutorial.html implementation.html design.html spec.html stdli
 
 all: $(PAGES)
 
-%.html: %.html.jinja $(CONTEXT)
+%.html: %.html.jinja $(CONTEXT) render.py
 	python render.py $< $@
 
 clean:
