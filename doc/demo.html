@@ -511,11 +511,11 @@ function jsonnet_evaluate_snippet_wrapped(code) {
 function compute() {
     var jsonnet_code = document.getElementById('jsonnet-code');
     var json_output = document.getElementById('json-output');
-    json_output.innerHTML = jsonnet_evaluate_snippet_wrapped(jsonnet_code.value);
+    json_output.value = jsonnet_evaluate_snippet_wrapped(jsonnet_code.value);
 }
 function replace(dom) {
     var jsonnet_code = document.getElementById('jsonnet-code');
-    jsonnet_code.innerHTML = dom.children[0].innerHTML
+    jsonnet_code.value = dom.children[0].innerHTML
     compute();
 }
 replace(document.getElementById('initial-example'));
