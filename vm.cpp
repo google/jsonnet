@@ -1363,7 +1363,7 @@ namespace {
                                         throw makeError(loc, ss.str());
                                     }
                                     elements.resize(sz);
-                                    for (unsigned i=0 ; i<sz ; ++i) {
+                                    for (long i=0 ; i<sz ; ++i) {
                                         auto *th = makeHeap<HeapThunk>(idArrayElement, func->self,
                                                                        func->offset, func->body);
                                         // The next line stops the new thunks from being GCed.
@@ -1714,9 +1714,8 @@ namespace {
                         const auto *arr = static_cast<const HeapArray*>(arr_v.v.h);
                         if (arr->elements.size() == 0) {
                             // Degenerate case.  Just create the object now.
-                            BindingFrame empty;
-                            scratch = makeObject<HeapComprehensionObject>(empty, ast.value,
-                                                                          ast.id, empty);
+                            scratch = makeObject<HeapComprehensionObject>(BindingFrame{}, ast.value,
+                                                                          ast.id, BindingFrame{});
                         } else {
                             f.kind = FRAME_OBJECT_COMP_ELEMENT;
                             f.val = scratch;
@@ -1857,7 +1856,7 @@ namespace {
                                                : thunk->body->location;
                             if (thunk->filled) {
                                 scratch = thunk->content;
-                                stack.newCall(loc, thunk, nullptr, 0, {});
+                                stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
                             } else {
                                 stack.newCall(loc, thunk,
                                               thunk->self, thunk->offset, thunk->upValues);

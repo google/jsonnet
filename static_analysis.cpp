@@ -155,5 +155,5 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
 
 void jsonnet_static_analysis(AST *ast)
 {
-    static_analysis(ast, false, {});
+    static_analysis(ast, false, IdSet{});
 }
