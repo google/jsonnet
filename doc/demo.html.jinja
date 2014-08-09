@@ -1,0 +1,67 @@
+{% include 'header.html.jinja' %}
+
+<script src="libjsonnet.js">
+</script>
+
+<div id=demo_box>
+
+    <h1>Jsonnet Online Demo</h1>
+
+    <h2>Jsonnet code</h2>
+
+    <textarea id=jsonnet-code rows="15" cols="80">
+local A = {
+    x: 1,
+    y: 2,
+    z: self.x + 10
+};
+{
+    f1: A { x: 3 },
+    f2: A { y: 3 },
+}
+    </textarea>
+
+    <div id=submit_box>
+        <form onsubmit='compute(this); return false;'>
+            <input id='compute_button' type='submit' value='Evaluate' >
+        </form>
+    </div>
+
+    <h2>JSON Output</h2>
+
+    <textarea id=json-output rows="15" cols="80">
+    </textarea>
+
+</div>
+
+
+<script>
+<!--
+function jsonnet_evaluate_snippet_wrapped(code) {
+    var jsonnet_delete = Module.cwrap('jsonnet_delete', 'number', ['number'])
+    var jsonnet_evaluate_snippet = Module.cwrap('jsonnet_evaluate_snippet', 'number', ['string', 'string', 'number'])
+
+    var error_ptr = Module._malloc(4);
+    var output_ptr = jsonnet_evaluate_snippet("snippet", code, error_ptr);
+    var result;
+    if (output_ptr == 0) {
+        var error = Module.getValue(error_ptr, 'i32*');
+        result = Module.Pointer_stringify(error);
+        jsonnet_delete(error);
+    } else {
+        result = Module.Pointer_stringify(output_ptr);
+        jsonnet_delete(output_ptr);
+    }
+    Module._free(error_ptr);
+    return result;
+}
+function compute() {
+    var jsonnet_code = document.getElementById('jsonnet-code');
+    var json_output = document.getElementById('json-output');
+    json_output.innerHTML = jsonnet_evaluate_snippet_wrapped(jsonnet_code.value);
+}
+compute();
+//-->
+</script>
+
+{% include 'footer.html.jinja' %}
