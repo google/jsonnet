@@ -29,6 +29,10 @@ std.assertEqual(false || true, true) &&
 std.assertEqual(true || false, true) &&
 std.assertEqual(true || true, true) &&
 
+// Shortcut semantics
+std.assertEqual(false && error "foo", false) &&
+std.assertEqual(true || error "foo", true) &&
+
 std.assertEqual(false == false, true) &&
 std.assertEqual(false == true, false) &&
 std.assertEqual(true == false, false) &&
