@@ -536,6 +536,11 @@ namespace {
                     return alloc.make<Import>(span(tok, file), file.data);
                 }
 
+                case Token::IMPORTSTR: {
+                    Token file = popExpect(Token::STRING);
+                    return alloc.make<Importstr>(span(tok, file), file.data);
+                }
+
 
                 // Variables
                 case Token::DOLLAR:
@@ -998,6 +1003,9 @@ static std::string unparse(const AST *ast_)
 
     } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
         ss << "import " << jsonnet_unparse_escape(ast->file);
+
+    } else if (auto *ast = dynamic_cast<const Importstr*>(ast_)) {
+        ss << "importstr " << jsonnet_unparse_escape(ast->file);
 
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
         ss << unparse(ast->target) << "["

@@ -35,7 +35,7 @@
       'boolean': /\b(true|false)\b/g,
       'constant': /\bnull\b/g,
       'error': /\berror\b/g,
-      'special': /\b(local|function|if|then|else|import|for|in)\b/g,
+      'special': /\b(local|function|if|then|else|import|importstr|for|in)\b/g,
       'number': /\b[0-9][0-9.eE]*\b/g,
       'operator': /(\+|\*|\/)+/g,
     };
@@ -106,6 +106,7 @@
 \newcommand{\function}[2]{\texttt{function(}#1\texttt{)} #2}
 \newcommand{\if}[3]{\texttt{if }#1\texttt{ then }#2\texttt{ else }#3}
 \newcommand{\import}[1]{\texttt{import }#1}
+\newcommand{\importstr}[1]{\texttt{importstr }#1}
 \newcommand{\index}[2]{#1\texttt{[}#2\texttt{]}}
 \newcommand{\local}[2]{\texttt{local }#1\texttt{ ; }#2}
 \newcommand{\null}{\texttt{null}}
@@ -259,6 +260,10 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 
 </td></tr> <tr><td></td><td> | </td><td>
 '<code>import</code>'
+<i>string</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>importstr</code>'
 <i>string</i>
 
 </td></tr> <tr><td></td><td> | </td><td>
@@ -474,6 +479,10 @@ language, so it is reasonable to implement the desugaring in the parser.</p>
 
 </td></tr> <tr><td></td><td> | </td><td>
 '<code>import</code>'
+<i>string</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>importstr</code>'
 <i>string</i>
 
 </td></tr> <tr><td></td><td> | </td><td>
@@ -768,6 +777,11 @@ x ∈ Γ
 <div class="sequent-rule"> \[\rule{chk-import} {
 } {
 Γ ⊢ \import{s}
+} \] </div>
+
+<div class="sequent-rule"> \[\rule{chk-importstr} {
+} {
+Γ ⊢ \importstr{s}
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{chk-error} {
@@ -1153,11 +1167,14 @@ complaining that the error message was not a string.  This specification does no
 error is presented to the user, and whether or not there is a stack trace.  Error messages are meant
 for human inspection, and there is therefore no need to standardize them.</p>
 
-<p> Finally, we have yet to discuss the semantics of <code>import</code>.  As this involves parsing
-and file I/O it is not well-suited to an operational semantics rule.  Import is handled by opening
-the named file, attempting to parse it, and then checking it (or raising an error).  Then, the
-resulting expression is evaluated to a Jsonnet value.  The file is cached by filename, so that even
-if it is changed on disk mid-execution, referential transparency of Jsonnet is maintained. </p>
+<p> Finally, we have yet to discuss the semantics of <code>import</code> and <code>importstr</code>.
+As these involve file I/O they are not well-suited to an operational semantics rule.  The construct
+<code>import</code> is handled by opening the named file, attempting to parse it, and then
+static-checking it (or raising an error).  Then, the resulting expression is evaluated to a Jsonnet
+value.  The file is cached by filename, so that even if it is changed on disk mid-execution,
+referential transparency of Jsonnet is maintained.  The construct <code>importstr</code> is similar
+except the file is simply represented as a Jsonnet string, which is useful to avoid having to escape
+the file.  The file is assumed to be UTF-8.</p>
 
 <h4>JSON Values</h4>
 

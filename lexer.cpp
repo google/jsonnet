@@ -473,6 +473,8 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                     kind = Token::IF;
                 } else if (id == "import") {
                     kind = Token::IMPORT;
+                } else if (id == "importstr") {
+                    kind = Token::IMPORTSTR;
                 } else if (id == "in") {
                     kind = Token::IN;
                 } else if (id == "local") {

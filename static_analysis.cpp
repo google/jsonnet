@@ -76,6 +76,9 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     } else if (dynamic_cast<const Import*>(ast_)) {
         // Nothing to do.
 
+    } else if (dynamic_cast<const Importstr*>(ast_)) {
+        // Nothing to do.
+
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
         append(r, static_analysis(ast->target, in_object, vars));
         append(r, static_analysis(ast->index, in_object, vars));

@@ -35,6 +35,7 @@ enum ASTType {
     AST_ERROR,
     AST_FUNCTION,
     AST_IMPORT,
+    AST_IMPORTSTR,
     AST_INDEX,
     AST_LOCAL,
     AST_LITERAL_BOOLEAN,
@@ -204,11 +205,19 @@ struct Function : public AST {
     { }
 };
 
-/** Represents import e. */
+/** Represents import "file". */
 struct Import : public AST {
     std::string file;
     Import(const LocationRange &lr, const std::string &file)
       : AST(lr, AST_IMPORT), file(file)
+    { }
+};
+
+/** Represents importstr "file". */
+struct Importstr : public AST {
+    std::string file;
+    Importstr(const LocationRange &lr, const std::string &file)
+      : AST(lr, AST_IMPORTSTR), file(file)
     { }
 };
 

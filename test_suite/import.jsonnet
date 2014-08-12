@@ -20,5 +20,6 @@ std.assertEqual((import "lib/A_20_func.jsonnet")(), 20) &&
 // Each import has its own environment, can't be overidden.
 std.assertEqual(local A = 7; local lib = import "lib/A_20.jsonnet"; lib, 20) &&
 std.assertEqual(local A = 7, lib = import "lib/A_20.jsonnet"; lib, 20) &&
+std.assertEqual(importstr "lib/some_file.txt", "Hello World!\n") &&
 
 true
