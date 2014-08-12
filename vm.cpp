@@ -1617,7 +1617,7 @@ namespace {
                             if (i < 0 || i >= sz) {
                                 std::stringstream ss;
                                 ss << "Array bounds error: " << i
-                                   << " not within [0, " << sz << "]";
+                                   << " not within [0, " << sz << ")";
                                 throw makeError(ast.location, ss.str());
                             }
                             auto *thunk = array->elements[i];
@@ -1644,8 +1644,27 @@ namespace {
                             stack.pop();
                             ast_ = objectIndex(ast.location, obj, fid);
                             goto recurse;
+                        } else if (target.t == Value::STRING) {
+                            auto *obj = static_cast<HeapString*>(target.v.h);
+                            assert(obj != nullptr);
+                            if (scratch.t != Value::DOUBLE) {
+                                throw makeError(ast.location,
+                                                "String index must be a number, got "
+                                                + type_str(scratch) + ".");
+                            }
+                            // TODO(dcunnin):  UTF-8 support goes here.
+                            long sz = obj->value.length();
+                            long i = (long)scratch.v.d;
+                            if (i < 0 || i >= sz) {
+                                std::stringstream ss;
+                                ss << "String bounds error: " << i
+                                   << " not within [0, " << sz << ")";
+                                throw makeError(ast.location, ss.str());
+                            }
+                            char ch[] = {obj->value[i], '\0'};
+                            scratch = makeString(ch);
                         } else {
-                            std::cerr << "INTERNAL ERROR: Neither an object nor an array."
+                            std::cerr << "INTERNAL ERROR: Not object / array / string."
                                       << std::endl;
                             abort();
                         }
@@ -1653,9 +1672,11 @@ namespace {
 
                     case FRAME_INDEX_TARGET: {
                         const auto &ast = *static_cast<const Index*>(f.ast);
-                        if (scratch.t != Value::ARRAY && scratch.t != Value::OBJECT) {
+                        if (scratch.t != Value::ARRAY
+                            && scratch.t != Value::OBJECT
+                            && scratch.t != Value::STRING) {
                             throw makeError(ast.location,
-                                            "Can only index objects and arrays, got "
+                                            "Can only index objects, strings, and arrays, got "
                                             + type_str(scratch) + ".");
                         }
                         ast_ = ast.index;
