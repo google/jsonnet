@@ -31,5 +31,7 @@ std.assertEqual(f(0), "zero") &&
 std.assertEqual(f(3), "small") &&
 std.assertEqual(f(8), "large") &&
 std.assertEqual(f(100), "huge") &&
+std.assertEqual(if 1 > 0 then 1, 1) &&
+std.assertEqual(if 1 > 2 then 1, null) &&
 
 true

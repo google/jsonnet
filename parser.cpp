@@ -578,8 +578,13 @@ namespace {
                     AST *cond = parse(MAX_PRECEDENCE, obj_level);
                     popExpect(Token::THEN);
                     AST *branch_true = parse(MAX_PRECEDENCE, obj_level);
-                    popExpect(Token::ELSE);
-                    AST *branch_false = parse(MAX_PRECEDENCE, obj_level);
+                    AST *branch_false;
+                    if (peek().kind == Token::ELSE) {
+                        pop();
+                        branch_false = parse(MAX_PRECEDENCE, obj_level);
+                    } else {
+                        branch_false = alloc.make<LiteralNull>(span(begin, branch_true));
+                    }
                     return alloc.make<Conditional>(span(begin, branch_false),
                                                    cond, branch_true, branch_false);
                 }

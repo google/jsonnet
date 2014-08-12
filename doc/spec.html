@@ -226,6 +226,12 @@ meaning, i.e. repetition of productions without comma separation.  </p>
 <i>expr</i>
 '<code>then</code>'
 <i>expr</i>
+
+</td></tr> <tr><td></td><td> | </td><td>
+'<code>if</code>'
+<i>expr</i>
+'<code>then</code>'
+<i>expr</i>
 '<code>else</code>'
 <i>expr</i>
 
@@ -332,12 +338,16 @@ definition of <i>string</i> is equivalent to the JSON string, including escape c
 
 <h2>Associativity and Operator Precedence</h2>
 
-<p> The following rules resolve the ambiguity present in the abstract syntax.</p>
+<p> The parsing of the concrete syntax into abstract syntax can be controlled by adding parentheses
+in order to resolve ambiguities explicitly.  If parentheses are not given, the ambiguity is resolved
+according to the following rules:</p>
 
 <p> Everything is left associative.  In the case of <code>local</code>, <code>if</code>,
 <code>function</code>, and <code>error</code>, ambiguity is resolved by consuming as many tokens as
-possible.  For example the parentheses are redundant in <code>local x = 1; (x + x)</code>.  All
-remaining ambiguities are resolved according to the following order of precedence.</p>
+possible on the right hand side.  For example the parentheses are redundant in
+<code>local x = 1; (x + x)</code>.
+All remaining ambiguities are resolved according to the following order of
+precedence:</p>
 
 <ol>
 <li><code>f()</code> <code>arr[e]</code> <code>obj[e]</code> <code>obj.f</code>
@@ -568,6 +578,15 @@ where <i>arr</i> = <i>desugar</i>(<i>expr'</i>, <i>b</i>) <br/>
 <i>id</i>, <i>b</i>)
 </td><td> = </td><td>
 <i>desugar</i>(<i>expr</i>, <i>b</i>)<code>["<i>id</i>"]</code>
+
+</td></tr><tr><td>
+<i>desugar</i>(<code>if</code> <i>e₁</i>
+<code>then</code>
+<i>e₂</i>, <i>b</i>)
+</td><td> = </td><td>
+<code>if</code> <i>desugar</i>(<i>e₁</i>, <i>b</i>)
+<code>then</code>
+<i>desugar</i>(<i>e₂</i>, <i>b</i>) <code>else</code> <code>null</code>
 
 </td></tr><tr><td>
 <i>desugar</i>(<i>expr</i> <code>{</code> ... <code>}</code>, <i>b</i>)
@@ -1052,7 +1071,7 @@ e_L ↓ v_L \hspace{15pt} e_R ↓ v_R
 \\
 v_L ∈ String \vee v_R ∈ String
 } {
-e_L \texttt{+} e_R ↓ stringconcat(tostring(v_L), tostring(v_R))
+e_L \texttt{ + } e_R ↓ stringconcat(tostring(v_L), tostring(v_R))
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{equality} {
