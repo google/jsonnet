@@ -372,7 +372,7 @@ namespace {
         const Identifier *idArrayElement;
 
         /** Cache for imported Jsonnet files. */
-        std::map<std::string, AST *> cachedImports;
+        std::map<std::string, const std::string *> cachedImports;
 
         RuntimeError makeError(const LocationRange &loc, const std::string &msg)
         {
@@ -581,10 +581,26 @@ namespace {
          */
         AST *import(const LocationRange &loc, const std::string &file)
         {
-            auto *expr = cachedImports[file];
-            if (expr != nullptr) return expr;
+            const std::string *input = importString(loc, file);
+            auto *expr = jsonnet_parse(alloc, file, input->c_str());
+            jsonnet_static_analysis(expr);
+            return expr;
+        }
 
-            std::string input;
+        /** Import a file as a string.
+         *
+         * If the file has already been imported, then use that version.  This maintains
+         * referential transparency in the case of writes to disk during execution.
+         *
+         * \param loc Location of the import statement.
+         * \param file Path to the filename.
+         */
+        const std::string *importString(const LocationRange &loc, const std::string &file)
+        {
+            const std::string *str = cachedImports[file];
+            if (str != nullptr) return str;
+
+            std::string *input = new std::string();
             std::ifstream f;
             f.open(file.c_str());
             if (!f.good()) {
@@ -592,11 +608,9 @@ namespace {
                 msg += std::strerror(errno);
                 throw makeError(loc, msg);
             }
-            input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-            expr = jsonnet_parse(alloc, file, input.c_str());
-            jsonnet_static_analysis(expr);
-            cachedImports[file] = expr;
-            return expr;
+            input->assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+            cachedImports[file] = input;
+            return input;
         }
 
         /** Capture the required variables from the environment. */
@@ -645,6 +659,9 @@ namespace {
         /** Clean up the heap, stack, stash, and builtin function ASTs. */
         ~Interpreter()
         {
+            for (const auto &pair : cachedImports) {
+                delete pair.second;
+            }
         }
 
         const Value &getScratchRegister(void)
@@ -911,6 +928,12 @@ namespace {
                     ast_ = expr;
                     stack.newCall(ast.location, nullptr, nullptr, 0, BindingFrame());
                     goto recurse;
+                } break;
+
+                case AST_IMPORTSTR: {
+                    const auto &ast = *static_cast<const Importstr*>(ast_);
+                    const std::string *str = importString(ast.location, ast.file);
+                    scratch = makeString(*str);
                 } break;
 
                 case AST_INDEX: {

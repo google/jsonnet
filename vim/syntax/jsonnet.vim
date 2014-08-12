@@ -24,6 +24,7 @@ syn match Type "std.length"
 syn match Type "std.join"
 syn match Type "std.objectFields"
 syn match Type "std.filterMap"
+syn match Type "std.makeArray"
 
 syn match Type "\$"
 
@@ -34,7 +35,7 @@ syn match Comment "//.*$"
 
 syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\w*:"
 
-syntax keyword Special import
+syntax keyword Special import importstr
 syntax keyword Type local function self super if then else for in
 syntax keyword Constant true false null
 syntax keyword Error error
