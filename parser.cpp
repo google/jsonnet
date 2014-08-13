@@ -845,6 +845,19 @@ static constexpr const char *JOIN_CODE =
 "    else\n"
 "        error \"join first parameter should be string or array, got \" + self.type(arr)\n";
 
+static constexpr const char *SUBSTR_CODE =
+"function(str, from, len)\n"
+"    if self.type(str) != \"string\" then\n"
+"        error \"substr first parameter should be a string, got \" + self.type(str)\n"
+"    else if self.type(from) != \"number\" then\n"
+"        error \"substr second parameter should be a number, got \" + self.type(from)\n"
+"    else if self.type(len) != \"number\" then\n"
+"        error \"substr third parameter should be a number, got \" + self.type(len)\n"
+"    else if len < 0 then\n"
+"        error \"substr third parameter should be greater than zero, got \" + len\n"
+"    else\n"
+"        self.join(\"\", self.makeArray(len, function(i) str[i + from]))\n";
+
 
 
 AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
@@ -892,6 +905,9 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
 
     fields.emplace_back(alloc.make<LiteralString>(l, "join"), true,
                         do_parse(alloc, "builtin:join", JOIN_CODE));
+
+    fields.emplace_back(alloc.make<LiteralString>(l, "substr"), true,
+                        do_parse(alloc, "builtin:substr", SUBSTR_CODE));
 
     AST *init = alloc.make<Object>(l, fields);
 
