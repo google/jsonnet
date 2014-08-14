@@ -85,6 +85,9 @@ std.assertEqual(std.toString("str"), "str") &&
 std.assertEqual(std.toString(""), "") &&
 std.assertEqual(std.toString([1,2,"foo"]), "[1, 2, \"foo\"]") &&
 
+std.assertEqual(std.substr("cookie", 1, 3), "ook") &&
+std.assertEqual(std.substr("cookie", 1, 0), "") &&
+
 std.assertEqual(std.map(function(x)x*x, []), []) &&
 std.assertEqual(std.map(function(x)x*x, [1,2,3,4]), [1,4,9,16]) &&
 std.assertEqual(std.map(function(x) x*x, std.filter(function(x)x>5, std.range(1,10))), [36, 49, 64, 81, 100]) &&
