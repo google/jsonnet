@@ -70,6 +70,9 @@ Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error m
 }; ...
 </code></pre>
 
+
+<h3>String Manipulation</h3>
+
 <h4>std.toString(a)</h4>
 
 <p>Convert the given argument to a string.</p>
@@ -77,6 +80,27 @@ Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error m
 <pre><code>local std = {
     ...
     toString(a):: "" + a
+}; ...
+</code></pre>
+
+<h4>std.substr(s, from, len)</h4>
+
+<p>Returns a string that is the part of <code>s</code> that starts at offset <code>from</code> and is
+<code>len</code> codepoints long.</p>
+
+<pre><code>local std = {
+    ...
+    substr(str, from, len):: 
+        if self.type(str) != "string" then
+            error "substr first parameter should be a string, got " + self.type(str)
+        else if self.type(from) != "number" then
+            error "substr second parameter should be a number, got " + self.type(from)
+        else if self.type(len) != "number" then
+            error "substr third parameter should be a number, got " + self.type(len)
+        else if len &lt; 0 then
+            error "substr third parameter should be greater than zero, got " + len
+        else
+            self.join("", self.makeArray(len, function(i) str[i + from]))
 }; ...
 </code></pre>
 
