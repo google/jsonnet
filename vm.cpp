@@ -1574,6 +1574,34 @@ namespace {
                                     }
                                 } break;
 
+                                case 16: { // codepoint
+                                    validateBuiltinArgs(loc, builtin, args, {Value::STRING});
+                                    if (static_cast<HeapString*>(args[0].v.h)->value.length() != 1)
+                                        throw makeError(loc,
+                                                        "codepoint takes a string of length 1, "
+                                                        "got " + type_str(args[0]));
+                                    char c = static_cast<HeapString*>(args[0].v.h)->value[0];
+                                    scratch = makeDouble((unsigned char)(c));
+                                } break;
+
+                                case 17: { // char
+                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
+                                    long l = (unsigned long)(args[0].v.d);
+                                    if (l < 0) {
+                                        std::stringstream ss;
+                                        ss << "Codepoints must be >= 0, got " << l;
+                                        throw makeError(ast.location, ss.str());
+                                    }
+                                    if (l >= 128) {
+                                        std::stringstream ss;
+                                        ss << "Sorry, only ASCII supported right now.  ";
+                                        ss << "Codepoints must be < 128, got " << l;
+                                        throw makeError(ast.location, ss.str());
+                                    }
+                                    char c = l;
+                                    scratch = makeString(std::string(&c, 1));
+                                } break;
+
                                 default:
                                 std::cerr << "INTERNAL ERROR: Unrecognized builtin: " << builtin
                                           << std::endl;

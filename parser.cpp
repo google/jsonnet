@@ -732,7 +732,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 15;
+static unsigned long max_builtin = 17;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -752,6 +752,8 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 13: return {"objectHas", {"obj", "f"}};
         case 14: return {"length", {"x"}};
         case 15: return {"objectFields", {"obj"}};
+        case 16: return {"codepoint", {"str"}};
+        case 17: return {"char", {"n"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
