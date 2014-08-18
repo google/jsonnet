@@ -2113,14 +2113,20 @@ namespace {
                                                ? loc
                                                : thunk->body->location;
                             if (thunk->filled) {
-                                scratch = thunk->content;
                                 stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
+                                // Keep arr alive when scratch is overwritten
+                                stack.top().val = scratch;
+                                scratch = thunk->content;
                             } else {
                                 stack.newCall(loc, thunk,
                                               thunk->self, thunk->offset, thunk->upValues);
+                                // Keep arr alive when scratch is overwritten
+                                stack.top().val = scratch;
                                 evaluate(thunk->body);
                             }
                             auto element = manifestJson(tloc, multiline, indent2);
+                            // Restore scratch
+                            scratch = stack.top().val;
                             stack.pop();
                             ss << prefix << indent2 << element;
                             prefix = multiline ? ",\n" : ", ";
@@ -2159,9 +2165,14 @@ namespace {
                         std::string indent2 = multiline ? indent + "   " : indent;
                         const char *prefix = multiline ? "{\n" : "{";
                         for (const auto &f : fields) {
+                            // pushes FRAME_CALL
                             const AST *body = objectIndex(loc, obj, f.second);
+                            stack.top().val = scratch;
                             evaluate(body);
                             auto vstr = manifestJson(body->location, multiline, indent2);
+                            // Reset scratch so that the object we're manifesting doesn't
+                            // get GC'd.
+                            scratch = stack.top().val;
                             stack.pop();
                             ss << prefix << indent2 << "\"" << f.first << "\": " << vstr;
                             prefix = multiline ? ",\n" : ", ";

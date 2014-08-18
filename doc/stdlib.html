@@ -178,6 +178,15 @@ Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error m
 }; ...
 </code></pre>
 
+<h4>std.codepoint(str)</h4>
+
+<p>Returns the positive integer representing the unicode codepoint of the character in the given
+single-character string.  This function is the inverse of <code>std.char(n)</code>.</p>
+
+<h4>std.char(n)</h4>
+
+<p>Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.  This function is the inverse of <code>std.codepoint(str)</code>.</p>
+
 <h4>std.substr(s, from, len)</h4>
 
 <p>Returns a string that is the part of <code>s</code> that starts at offset <code>from</code> and is
