@@ -6,7 +6,7 @@ before_install:
   - echo $LANG
   - echo $LC_ALL
 before_script:
-script: make all
+script: make test
 branches:
   only:
     - master
