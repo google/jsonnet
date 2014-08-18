@@ -31,9 +31,13 @@ for TEST in *.jsonnet ; do
     if [ $EXIT_CODE -ne $EXPECTED_EXIT_CODE ] ; then
         FAILED=$((FAILED + 1))
         echo "FAIL (exit code): $TEST"
+        echo "Output:"
+        echo "$OUTPUT"
     elif [ "$OUTPUT" != "$GOLDEN" ] ; then
         FAILED=$((FAILED + 1))
         echo "FAIL (output): $TEST"
+        echo "Output:"
+        echo "$OUTPUT"
     else
         true
         #echo "SUCCESS: $TEST"

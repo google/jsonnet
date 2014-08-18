@@ -17,16 +17,19 @@
 ###################################################################################################
 
 # C/C++ compiler -- clang also works
-CXX = g++ -Wall -Wextra -pedantic -std=c++0x
-CC = gcc -Wall -Wextra -pedantic -std=c99
+CXX ?= g++
+CC ?= gcc
 
 # Emscripten -- For Jsonnet in the browser
-EMCXX = em++ --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c++0x
-EMCC = emcc --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -Wall -Wextra -pedantic -std=c99
+EMCXX ?= em++
+EMCC ?= emcc
 
 CP = cp
 
-CFLAGS ?= -g -O3
+CXXFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c++0x
+CFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c99
+EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
+EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
 
 PYTHON_CFLAGS ?= -I/usr/include/python2.7
@@ -49,17 +52,26 @@ default: jsonnet
 
 all: $(ALL)
 
+test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
+	./jsonnet -e "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	./libjsonnet_test_snippet "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	./libjsonnet_test_file "test_suite/object.jsonnet"
+	python jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	python jsonnet_test_file.py "test_suite/object.jsonnet"
+	cd examples ; ./check.sh
+	cd test_suite ; ./run_tests.sh
+
 # Commandline executable.
 jsonnet: jsonnet.cpp $(SRC) $(ALL_HEADERS)
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(SRC) $< -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SRC) $< -o $@
 
 # C binding.
 libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(LIB_SRC) $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
 
 # Javascript build of C binding
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
-	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_evaluate_snippet", "_jsonnet_delete"]' $(CFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
+	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_evaluate_snippet", "_jsonnet_delete"]' $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
 	$(CP) $@ doc/
 
 # Tests for C binding.
@@ -74,7 +86,7 @@ _jsonnet.o: _jsonnet.c
 	$(CC) $(CFLAGS) $(PYTHON_CFLAGS) $(SHARED_CFLAGS) $< -c -o $@
 
 _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
 
 clean:
 	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) *.o 

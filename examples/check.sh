@@ -19,24 +19,32 @@ SUCCESS=0
 
 for I in *.golden ; do
     TEST=$(basename "$I" .golden)
-    OUT1=$(jsonnet "$TEST" 2>&1)
-    OUT2=$(jsonnet "$I" 2>&1)
+    OUT1=$(../jsonnet "$TEST" 2>&1)
+    OUT2=$(../jsonnet "$I" 2>&1)
     if [ "$OUT1" == "$OUT2" ] ; then
         SUCCESS=$((SUCCESS + 1))
     else
         echo "Failed: $TEST"
+        echo "Got:"
+        echo "$OUT1"
+        echo "Expected:"
+        echo "$OUT2"
         FAILED=$((FAILED + 1))
     fi
 done
 
 for I in *.error ; do
     TEST=$(basename "$I" .error)
-    OUT1=$(jsonnet "$TEST" 2>&1)
+    OUT1=$(../jsonnet "$TEST" 2>&1)
     OUT2=$(cat "$I" 2>&1)
     if [ "$OUT1" == "$OUT2" ] ; then
         SUCCESS=$((SUCCESS + 1))
     else
         echo "Failed: $TEST"
+        echo "Got:"
+        echo "$OUT1"
+        echo "Expected:"
+        echo "$OUT2"
         FAILED=$((FAILED + 1))
     fi
 done
