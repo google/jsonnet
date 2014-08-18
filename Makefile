@@ -53,12 +53,13 @@ default: jsonnet
 all: $(ALL)
 
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
-	cd test_suite ; ./run_tests.sh
+	./jsonnet -e "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	./libjsonnet_test_snippet "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	./libjsonnet_test_file "test_suite/object.jsonnet"
+	python jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	python jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
-	test `python jsonnet_test_snippet.py "({ x: 1, y: self.x } { x: 2 }).y == 2"` == "true"
-	test `python jsonnet_test_file.py "test_suite/object.jsonnet"` == "true"
-	test `./libjsonnet_test_snippet "({ x: 1, y: self.x } { x: 2 }).y == 2"` == "true"
-	test `./libjsonnet_test_file "test_suite/object.jsonnet"` == "true"
+	cd test_suite ; ./run_tests.sh
 
 # Commandline executable.
 jsonnet: jsonnet.cpp $(SRC) $(ALL_HEADERS)
