@@ -25,6 +25,10 @@ for I in *.golden ; do
         SUCCESS=$((SUCCESS + 1))
     else
         echo "Failed: $TEST"
+        echo "Got:"
+        echo "$OUT1"
+        echo "Expected:"
+        echo "$OUT2"
         FAILED=$((FAILED + 1))
     fi
 done
@@ -37,6 +41,10 @@ for I in *.error ; do
         SUCCESS=$((SUCCESS + 1))
     else
         echo "Failed: $TEST"
+        echo "Got:"
+        echo "$OUT1"
+        echo "Expected:"
+        echo "$OUT2"
         FAILED=$((FAILED + 1))
     fi
 done
