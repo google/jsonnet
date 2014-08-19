@@ -45,7 +45,7 @@ SHARED_LDFLAGS ?= -shared
 SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
 LIB_SRC = $(SRC) libjsonnet.cpp
 
-ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js
+ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js
 ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h
 
 default: jsonnet
@@ -72,7 +72,10 @@ libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
 # Javascript build of C binding
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
 	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_evaluate_snippet", "_jsonnet_delete"]' $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
-	$(CP) $@ doc/
+
+# Copy javascript build to doc directory
+doc/libjsonnet.js: libjsonnet.js
+	$(CP) $^ $@
 
 # Tests for C binding.
 libjsonnet_test_snippet: libjsonnet_test_snippet.c libjsonnet.so libjsonnet.h
