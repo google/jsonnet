@@ -615,7 +615,7 @@ namespace {
                         return alloc.make<Function>(span(begin, body), params, body);
                     } else {
                         std::stringstream ss;
-                        ss << "Expected ( but got" << next;
+                        ss << "Expected ( but got " << next;
                         throw StaticError(next.location, ss.str());
                     }
                 }
@@ -628,7 +628,7 @@ namespace {
                         Token delim = pop();
                         if (delim.kind != Token::SEMICOLON && delim.kind != Token::COMMA) {
                             std::stringstream ss;
-                            ss << "Expected , or ; but got" << delim;
+                            ss << "Expected , or ; but got " << delim;
                             throw StaticError(delim.location, ss.str());
                         }
                         if (delim.kind == Token::SEMICOLON) break;
