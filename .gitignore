@@ -12,3 +12,5 @@ core
 core.*
 vgcore
 vgcore.*
+*.fragment.h
+

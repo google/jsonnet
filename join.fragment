@@ -1,0 +1,16 @@
+function(sep, arr)
+    local aux(arr, i, running) =
+        if i >= self.length(arr) then
+            running
+        else if i == 0 then
+            aux(arr, i+1, running + arr[i])
+        else
+            aux(arr, i+1, running + sep + arr[i]);
+    if self.type(arr) != "array" then
+        error "join second parameter should be array, got " + self.type(arr)
+    else if self.type(sep) == "string" then
+        aux(arr, 0, "")
+    else if self.type(sep) == "array" then
+        aux(arr, 0, [])
+    else
+        error "join first parameter should be string or array, got " + self.type(arr)

@@ -1,0 +1,8 @@
+function(func, arr)
+    if self.type(func) != "function" then
+        error("self.map first param must be function, got " + self.type(func))
+    else if self.type(arr) != "array" then
+        error("self.map second param must be array, got " + self.type(arr))
+    else
+        self.makeArray(self.length(arr), function(i) func(arr[i]))
+

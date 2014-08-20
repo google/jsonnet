@@ -787,86 +787,41 @@ static AST *do_parse(Allocator &alloc, const std::string &file, const char *inpu
     return expr;
 }
 
-static constexpr const char *ASSERT_EQUAL_CODE = 
-"function(a, b)\n"
-"    if a == b then true\n"
-"    else error \"Assertion failed. \" + a + \" != \" + b";
+static constexpr char ASSERT_EQUAL_CODE[] = {
+#include "assertEqual.fragment.h"
+};
 
-static constexpr const char *TO_STRING_CODE =
-"function(a) \"\" + a";
+static constexpr char TO_STRING_CODE[] = {
+#include "toString.fragment.h"
+};
 
-static constexpr const char *MAP_CODE = 
-"function(func, arr)\n"
-"    if self.type(func) != \"function\" then\n"
-"        error(\"self.map first param must be function, got \" + self.type(func))\n"
-"    else if self.type(arr) != \"array\" then\n"
-"        error(\"self.map second param must be array, got \" + self.type(arr))\n"
-"    else\n"
-"        self.makeArray(self.length(arr), function(i) func(arr[i]))";
+static constexpr char MAP_CODE[] = {
+#include "map.fragment.h"
+};
 
-static constexpr const char *FILTER_MAP_CODE = 
-"function(filter_func, map_func, arr)\n"
-"    if self.type(filter_func) != \"function\" then\n"
-"        error(\"self.filterMap first param must be function, got \" + self.type(filter_func))\n"
-"    else if self.type(map_func) != \"function\" then\n"
-"        error(\"self.filterMap second param must be function, got \" + self.type(map_func))\n"
-"    else if self.type(arr) != \"array\" then\n"
-"        error(\"self.filterMap third param must be array, got \" + self.type(arr))\n"
-"    else\n"
-"        self.map(map_func, self.filter(filter_func, arr))";
+static constexpr char FILTER_MAP_CODE[] = {
+#include "filterMap.fragment.h"
+};
 
-static constexpr const char *FOLDL_CODE =
-"function(func, arr, init)\n"
-"    local aux(func, arr, running, idx) =\n"
-"        if idx >= self.length(arr) then\n"
-"            running\n"
-"        else\n"
-"            aux(func, arr, func(running, arr[idx]), idx+1);\n"
-"    aux(func, arr, init, 0)\n";
+static constexpr char FOLDL_CODE[] = {
+#include "foldL.fragment.h"
+};
 
-static constexpr const char *FOLDR_CODE =
-"function(func, arr, init)\n"
-"    local aux(func, arr, running, idx) =\n"
-"        if idx < 0 then\n"
-"            running\n"
-"        else\n"
-"            aux(func, arr, func(arr[idx], running), idx-1);\n"
-"    aux(func, arr, init, self.length(arr)-1)\n";
+static constexpr char FOLDR_CODE[] = {
+#include "foldR.fragment.h"
+};
 
-static constexpr const char *RANGE_CODE =
-"function(from, to)\n"
-"    self.makeArray(to - from + 1, function(i) i + from)\n";
+static constexpr char RANGE_CODE[] = {
+#include "range.fragment.h"
+};
 
-static constexpr const char *JOIN_CODE =
-"function(sep, arr)\n"
-"    local aux(arr, i, running) =\n"
-"        if i >= self.length(arr) then\n"
-"            running\n"
-"        else if i == 0 then\n"
-"            aux(arr, i+1, running + arr[i])\n"
-"        else\n"
-"            aux(arr, i+1, running + sep + arr[i]);\n"
-"    if self.type(arr) != \"array\" then\n"
-"        error \"join second parameter should be array, got \" + self.type(arr)\n"
-"    else if self.type(sep) == \"string\" then\n"
-"        aux(arr, 0, \"\")\n"
-"    else if self.type(sep) == \"array\" then\n"
-"        aux(arr, 0, [])\n"
-"    else\n"
-"        error \"join first parameter should be string or array, got \" + self.type(arr)\n";
+static constexpr char JOIN_CODE[] = {
+#include "join.fragment.h"
+};
 
-static constexpr const char *SUBSTR_CODE =
-"function(str, from, len)\n"
-"    if self.type(str) != \"string\" then\n"
-"        error \"substr first parameter should be a string, got \" + self.type(str)\n"
-"    else if self.type(from) != \"number\" then\n"
-"        error \"substr second parameter should be a number, got \" + self.type(from)\n"
-"    else if self.type(len) != \"number\" then\n"
-"        error \"substr third parameter should be a number, got \" + self.type(len)\n"
-"    else if len < 0 then\n"
-"        error \"substr third parameter should be greater than zero, got \" + len\n"
-"    else\n"
-"        self.join(\"\", self.makeArray(len, function(i) str[i + from]))\n";
+static constexpr char SUBSTR_CODE[] = {
+#include "substr.fragment.h"
+};
 
 
 

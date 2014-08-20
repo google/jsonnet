@@ -1,0 +1,10 @@
+function(filter_func, map_func, arr)
+    if self.type(filter_func) != "function" then
+        error("self.filterMap first param must be function, got " + self.type(filter_func))
+    else if self.type(map_func) != "function" then
+        error("self.filterMap second param must be function, got " + self.type(map_func))
+    else if self.type(arr) != "array" then
+        error("self.filterMap third param must be array, got " + self.type(arr))
+    else
+        self.map(map_func, self.filter(filter_func, arr))
+

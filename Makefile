@@ -24,7 +24,9 @@ CC ?= gcc
 EMCXX ?= em++
 EMCC ?= emcc
 
-CP = cp
+CP ?= cp
+OD ?= od
+PYTHON ?= python
 
 CXXFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c++0x
 CFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c99
@@ -47,6 +49,7 @@ LIB_SRC = $(SRC) libjsonnet.cpp
 
 ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js
 ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h
+ALL_FRAGMENTS = assertEqual.fragment.h toString.fragment.h map.fragment.h filterMap.fragment.h foldL.fragment.h foldR.fragment.h range.fragment.h join.fragment.h substr.fragment.h
 
 default: jsonnet
 
@@ -56,8 +59,8 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	./jsonnet -e "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 	./libjsonnet_test_snippet "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 	./libjsonnet_test_file "test_suite/object.jsonnet"
-	python jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
-	python jsonnet_test_file.py "test_suite/object.jsonnet"
+	$(PYTHON) jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	$(PYTHON) jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
 	cd test_suite ; ./run_tests.sh
 
@@ -87,6 +90,13 @@ _jsonnet.o: _jsonnet.c
 
 _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+
+# Encode standard library for embedding in C
+%.fragment.h: %.fragment
+	($(OD) -v -Anone -t u1 -w1 $< && echo -n "  0") | tr "\n" "," > $@
+	echo >> $@
+
+parser.cpp: $(ALL_FRAGMENTS)
 
 clean:
 	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) *.o 

@@ -1,0 +1,7 @@
+function(func, arr, init)
+    local aux(func, arr, running, idx) =
+        if idx >= self.length(arr) then
+            running
+        else
+            aux(func, arr, func(running, arr[idx]), idx+1);
+    aux(func, arr, init, 0)
