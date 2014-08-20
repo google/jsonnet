@@ -1,0 +1,7 @@
+function(a, b)
+    if std.type(a) == "number" && std.type(b) == "number" then
+        std.modulo(a, b)
+    else if std.type(a) == "string" && (std.type(b) == "array" || std.type(b) == "object") then
+        std.format(a, b)
+    else
+        error "Operator % cannot be used on types " + std.type(a) + " and " + std.type(b) + "."

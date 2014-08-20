@@ -96,7 +96,6 @@ struct Array : public AST {
 enum BinaryOp {
     BOP_MULT,
     BOP_DIV,
-    BOP_MOD,
 
     BOP_PLUS,
     BOP_MINUS,
@@ -125,7 +124,6 @@ static inline std::string bop_string (BinaryOp bop)
     switch (bop) {
         case BOP_MULT: return "*";
         case BOP_DIV: return "/";
-        case BOP_MOD: return "%";
 
         case BOP_PLUS: return "+";
         case BOP_MINUS: return "-";

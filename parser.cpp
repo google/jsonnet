@@ -36,6 +36,7 @@ namespace {
     // Cache some immutable stuff in global variables.
     const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
     const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
+    const int PERCENT_PRECEDENCE = 5; // Modulo and string formatting
     const int MAX_PRECEDENCE = 15; // Local, If, Import, Function, Error
 
     /** These are the binary operator precedences, unary precedence is given by
@@ -47,7 +48,6 @@ namespace {
 
         r[BOP_MULT] = 5;
         r[BOP_DIV] = 5;
-        r[BOP_MOD] = 5;
 
         r[BOP_PLUS] = 6;
         r[BOP_MINUS] = 6;
@@ -92,7 +92,6 @@ namespace {
 
         r["*"] = BOP_MULT;
         r["/"] = BOP_DIV;
-        r["%"] = BOP_MOD;
 
         r["+"] = BOP_PLUS;
         r["-"] = BOP_MINUS;
@@ -672,12 +671,16 @@ namespace {
                     switch (peek().kind) {
                         // Logical / arithmetic binary operator.
                         case Token::OPERATOR:
-                        if (!op_is_binary(peek().data, bop)) {
-                            std::stringstream ss;
-                            ss << "Not a binary operator: " << peek().data;
-                            throw StaticError(peek().location, ss.str());
+                        if (peek().data == "%") {
+                            if (PERCENT_PRECEDENCE != precedence) return lhs;
+                        } else {
+                            if (!op_is_binary(peek().data, bop)) {
+                                std::stringstream ss;
+                                ss << "Not a binary operator: " << peek().data;
+                                throw StaticError(peek().location, ss.str());
+                            }
+                            if (precedence_map[bop] != precedence) return lhs;
                         }
-                        if (precedence_map[bop] != precedence) return lhs;
                         break;
 
                         // Index, Apply
@@ -712,6 +715,15 @@ namespace {
                         Token end = parseObjectRemainder(obj, op, obj_level);
                         lhs = alloc.make<Binary>(span(begin, end), lhs, BOP_PLUS, obj);
 
+                    } else if (op.data == "%") {
+                        AST *rhs = parse(precedence - 1, obj_level);
+                        LocationRange l;
+                        AST *std = alloc.make<Var>(l, alloc.makeIdentifier("std"));
+                        AST *mod_str = alloc.make<LiteralString>(l, "mod");
+                        AST *f_mod = alloc.make<Index>(l, std, mod_str);
+                        std::vector<AST*> args = {lhs, rhs};
+                        lhs = alloc.make<Apply>(span(begin, rhs), f_mod, args);
+
                     } else {
                         // Logical / arithmetic binary operator.
                         AST *rhs = parse(precedence - 1, obj_level);
@@ -732,7 +744,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 24;
+static unsigned long max_builtin = 26;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -762,6 +774,9 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 22: return {"float_dec", {"n", "zero", "left", "blank", "sign", "pt", "fw", "prec"}};
         case 23: return {"mantissa", {"n"}};
         case 24: return {"exponent", {"n"}};
+        case 25: return {"modulo", {"a", "b"}};
+        case 26: return {"log", {"n"}};
+        case 27: return {"exp", {"n"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
@@ -823,6 +838,14 @@ static constexpr char SUBSTR_CODE[] = {
 #include "substr.fragment.h"
 };
 
+static constexpr char FORMAT_CODE[] = {
+#include "format.fragment.h"
+};
+
+static constexpr char MOD_CODE[] = {
+#include "mod.fragment.h"
+};
+
 
 
 AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
@@ -873,6 +896,12 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
 
     fields.emplace_back(alloc.make<LiteralString>(l, "substr"), true,
                         do_parse(alloc, "builtin:substr", SUBSTR_CODE));
+
+    fields.emplace_back(alloc.make<LiteralString>(l, "format"), true,
+                        do_parse(alloc, "builtin:format", FORMAT_CODE));
+
+    fields.emplace_back(alloc.make<LiteralString>(l, "mod"), true,
+                        do_parse(alloc, "builtin:mod", MOD_CODE));
 
     AST *init = alloc.make<Object>(l, fields);
 

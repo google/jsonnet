@@ -1,0 +1,225 @@
+function(str, arr)
+
+    local try_parse_mapping_key(str, i) =
+        if i >= std.length(str) then
+            error "Truncated format code."
+        else
+            local c = str[i];
+            if c == "(" then
+                local consume(str, j, v) =
+                    if j >= std.length(str) then
+                        error "Truncated format code."
+                    else
+                        local c = str[j];
+                        if c != ")" then
+                            consume(str, j+1, v + c)
+                        else
+                            { i: j+1, v: v };
+                consume(str, i+1, "")
+            else
+                { i: i, v: null };
+
+    local try_parse_cflags(str, i) =
+        local consume(str, j, v) =
+            if j >= std.length(str) then
+                error "Truncated format code."
+            else
+                local c = str[j];
+                if c == "#" then
+                    consume(str, j+1, v + { alt: true })
+                else if c == "0" then
+                    consume(str, j+1, v + { zero: true })
+                else if c == "-" then
+                    consume(str, j+1, v + { left: true })
+                else if c == " " then
+                    consume(str, j+1, v + { blank: true })
+                else if c == "+" then
+                    consume(str, j+1, v + { sign: true })
+                else
+                    { i: j, v: v };
+        consume(str, i, { alt: false, zero: false, left: false, blank: false, sign: false});
+
+    local try_parse_field_width(str, i) =
+        local consume(str, j, v) =
+            if j >= std.length(str) then
+                error "Truncated format code."
+            else
+                local c = str[j];
+                if c == "0" then
+                    consume(str, j+1, v * 10 + 0)
+                else if c == "1" then
+                    consume(str, j+1, v * 10 + 1)
+                else if c == "2" then
+                    consume(str, j+1, v * 10 + 2)
+                else if c == "3" then
+                    consume(str, j+1, v * 10 + 3)
+                else if c == "4" then
+                    consume(str, j+1, v * 10 + 4)
+                else if c == "5" then
+                    consume(str, j+1, v * 10 + 5)
+                else if c == "6" then
+                    consume(str, j+1, v * 10 + 6)
+                else if c == "7" then
+                    consume(str, j+1, v * 10 + 7)
+                else if c == "8" then
+                    consume(str, j+1, v * 10 + 8)
+                else if c == "9" then
+                    consume(str, j+1, v * 10 + 9)
+                else
+                    { i: j, v: v };
+        consume(str, i, 0);
+
+    local try_parse_precision(str, i) =
+        if i >= std.length(str) then
+            error "Truncated format code."
+        else
+            local c = str[i];
+            if c == "." then
+                try_parse_field_width(str, i+1)
+            else
+                { i: i, v: null };
+
+    // Ignored, if it exists.
+    local try_parse_length_modifier(str, i) =
+        if i >= std.length(str) then
+            error "Truncated format code."
+        else
+            local c = str[i];
+            if c == "h" || c == "l" || c == "L" then
+                i+1
+            else
+                i;
+
+    local parse_conv_type(str, i) =
+        if i >= std.length(str) then
+            error "Truncated format code."
+        else
+            local c = str[i];
+            if c == "d" || c == "i" || c == "u" then
+                { i: i+1, v: "d" }
+            else if c == "o" then
+                { i: i+1, v: "o" }
+            else if c == "x" then
+                { i: i+1, v: "x", caps: false }
+            else if c == "X" then
+                { i: i+1, v: "x", caps: true }
+            else if c == "e" then
+                { i: i+1, v: "e", caps: false }
+            else if c == "E" then
+                { i: i+1, v: "e", caps: true }
+            else if c == "f" then
+                { i: i+1, v: "f", caps: false }
+            else if c == "F" then
+                { i: i+1, v: "f", caps: true }
+            else if c == "g" then
+                { i: i+1, v: "g", caps: false }
+            else if c == "G" then
+                { i: i+1, v: "g", caps: true }
+            else if c == "c" then
+                { i: i+1, v: "c" }
+            else if c == "s" then
+                { i: i+1, v: "s" }
+            else if c == "%" then
+                { i: i+1, v: "%" }
+            else
+                error "Unrecognised conversion type: " + c;
+                
+
+    // Parsed %, now the rest
+    local parse_code(str, i) =
+        if i >= std.length(str) then
+            error "Truncated format code."
+        else
+            local mkey = try_parse_mapping_key(str, i);
+            local cflags = try_parse_cflags(str, mkey.i);
+            local fw = try_parse_field_width(str, cflags.i);
+            local prec = try_parse_precision(str, fw.i);
+            local len_mod = try_parse_length_modifier(str, prec.i);
+            local ctype = parse_conv_type(str, len_mod);
+            {
+                i: ctype.i,
+                code: {
+                    mkey: mkey.v,
+                    cflags: cflags.v,
+                    fw: fw.v,
+                    prec: prec.v,
+                    ctype: ctype.v,
+                }
+            };
+
+    local parse_codes(str, i, out) = 
+        if i >= std.length(str) then
+            out
+        else
+            local c = str[i];
+            if c == "%" then
+                local r = parse_code(str, i+1);
+                parse_codes(str, r.i, out+[r.code])
+            else
+                local last = out[std.length(out)-1];
+                local append = std.length(out) > 0 && std.type(last) == "string";
+                parse_codes(str, i + 1, if append then
+                    std.makeArray(std.length(out),
+                        function(i) if i < std.length(out)-1 then out[i] else last + c)
+                else
+                    std.makeArray(std.length(out) + 1,
+                        function(i) if i < std.length(out) then out[i] else c));
+
+    local codes = parse_codes(str, 0, []);
+
+    local format_codes_arr(codes, arr, i, j, v) =
+        if i >= std.length(codes) then
+            if j < std.length(arr) then
+                error("Too many values to format: "
+                      + std.length(arr) + ", expected " + j)
+            else
+                v
+        else
+            local code = codes[i];
+            if std.type(code) == "string" then
+                format_codes_arr(codes, arr, i+1, j, v + code)
+            else if code.ctype == "%" then
+                format_codes_arr(codes, arr, i+1, j, v + "%")
+            else
+                if j >= std.length(arr) then
+                    error("Not enough values to format: "
+                          + std.length(arr) + ", expected " + std.length(codes))
+                else
+                    local obj = arr[j];
+                    local cflags = code.cflags;
+                    local s = 
+                        if code.ctype == "s" then
+                            std.toString(obj)
+                        else if code.ctype == "d" then
+                            if std.type(obj) != "number" then
+                                error("Format required number at "
+                                      + j + ", got " + std.type(obj))
+                            else
+                                std.decimal(obj, cflags.zero, cflags.left, cflags.blank,
+                                            cflags.sign, code.fw)
+                        else if code.ctype == "o" then
+                            if std.type(obj) != "number" then
+                                error("Format required number at "
+                                      + j + ", got " + std.type(obj))
+                            else
+                                std.octal(obj, cflags.zero, cflags.left, cflags.blank,
+                                          cflags.sign, cflags.alt, code.fw)
+                        else if code.ctype == "x" then
+                            if std.type(obj) != "number" then
+                                error("Format required number at "
+                                      + j + ", got " + std.type(obj))
+                            else
+                                std.hex(obj, cflags.zero, cflags.left, cflags.blank,
+                                        cflags.sign, cflags.alt, code.fw)
+                        else if code.ctype == "f" then
+                            if std.type(obj) != "number" then
+                                error("Format required number at "
+                                      + j + ", got " + std.type(obj))
+                            else
+                                local prec = if code.prec != null then code.prec else 6;
+                                std.float_dec(obj, cflags.zero, cflags.left, cflags.blank,
+                                              cflags.sign, cflags.alt, code.fw, prec)
+                        else
+                            error "Unknown code: " + code.ctype;
+                    format_codes_arr(codes, arr, i+1, j+1, v+s);
+    format_codes_arr(codes, arr, 0, 0, "")

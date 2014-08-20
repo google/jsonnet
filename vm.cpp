@@ -1231,12 +1231,6 @@ namespace {
                                 scratch = makeDouble(lhs.v.d / rhs.v.d);
                                 break;
 
-                                case BOP_MOD:
-                                if (rhs.v.d == 0)
-                                    throw makeError(ast.location, "Division by zero.");
-                                scratch = makeDouble(std::fmod(lhs.v.d, rhs.v.d));
-                                break;
-
                                 case BOP_SHIFT_L: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
@@ -1798,6 +1792,26 @@ namespace {
                                     int exp;
                                     std::frexp(args[0].v.d, &exp);
                                     scratch = makeDoubleNanCheck(loc, exp);
+                                } break;
+
+                                case 25: {  // modulo
+                                    validateBuiltinArgs(loc, builtin, args,
+                                                        {Value::DOUBLE, Value::DOUBLE});
+                                    double a = args[0].v.d;
+                                    double b = args[1].v.d;
+                                    if (b == 0)
+                                        throw makeError(ast.location, "Division by zero.");
+                                    scratch = makeDoubleNanCheck(loc, std::fmod(a, b));
+                                } break;
+
+                                case 26: {  // log
+                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
+                                    scratch = makeDoubleNanCheck(loc, std::log(args[0].v.d));
+                                } break;
+
+                                case 27: {  // exp
+                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
+                                    scratch = makeDoubleNanCheck(loc, std::exp(args[0].v.d));
                                 } break;
 
                                 default:
