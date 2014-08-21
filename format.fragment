@@ -1,76 +1,8 @@
-function(str, arr)
+function(str, vals)
 
-    // Useful utilities
-    local padding(w, s) =
-        local aux(w, v) =
-            if w <= 0 then
-                v
-            else
-                aux(w - 1, v + s);
-        aux(w, "");
-
-    local pad_left(str, w, s) =
-        padding(w - std.length(str), s) + str;
-
-    local pad_right(str, w, s) =
-        str + padding(w - std.length(str), s);
-
-    // Render an integer with given radix / initial zero.
-    local render_int(n__, zero_pad, blank, sign, radix, zero_prefix) =
-        local neg = n__ < 0;
-        local n_ = std.abs(n__);
-        local zp = zero_pad - (if neg || blank || sign then 1 else 0);
-        local aux(n) =
-            if n == 0 then
-                zero_prefix
-            else
-                aux(std.floor(n / radix)) + (n % radix);
-        local dec = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
-        local dec2 = pad_left(dec, zp, "0");
-        (if neg then "-" else if sign then "+" else if blank then " " else "") + dec2;
-
-    // Render in hex
-    local render_hex(n__, zero_pad, blank, sign, add_zerox, capitals) =
-        local numerals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-                         + if capitals then ["A", "B", "C", "D", "E", "F"]
-                                       else ["a", "b", "c", "d", "e", "f"];
-        local n_ = std.abs(n__);
-        local aux(n) =
-            if n == 0 then
-                ""
-            else
-                aux(std.floor(n / 16)) + numerals[n % 16];
-        local hex = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
-
-        local neg = n__ < 0;
-        local zp = zero_pad - (if neg || blank || sign then 1 else 0)
-                            - (if add_zerox then 2 else 0);
-        local hex2 = (if add_zerox then (if capitals then "0X" else "0x") else "")
-                     + pad_left(hex, zp, "0");
-        (if neg then "-" else if sign then "+" else if blank then " " else "") + hex2;
-
-    // Render floating point in decimal form
-    local render_float_dec(n__, zero_pad, blank, sign, ensure_pt, prec) =
-        local n_ = std.abs(n__);
-        local whole = std.floor(n_);
-        local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
-        local str = render_int(n__ / n_ * whole, zero_pad - prec - dot_size, blank, sign, 10, "");
-        if prec == 0 then
-            str + if ensure_pt then "." else ""
-        else
-            local frac = std.floor((n_ - whole) * std.pow(10, prec) + 0.5);
-            local frac_str = render_int(frac, prec, false, false, 10, "");
-            str + "." + frac_str;
-
-    // Render floating point in scientific form
-    local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, caps, prec) =
-        local n_ = std.abs(n__);
-        local exponent = std.floor(std.log(std.abs(n_)) / std.log(10));
-        local suff = (if caps then "E" else "e")
-                     + render_int(exponent, 3, false, true, 10, "");
-        local mantissa = n__ / n_ * n_ / std.pow(10, exponent);
-        render_float_dec(mantissa, zero_pad - std.length(suff), blank, sign, ensure_pt, prec)
-        + suff;
+    /////////////////////////////
+    // Parse the mini-language //
+    /////////////////////////////
 
     local try_parse_mapping_key(str, i) =
         if i >= std.length(str) then
@@ -200,7 +132,7 @@ function(str, arr)
                 error "Unrecognised conversion type: " + c;
                 
 
-    // Parsed %, now the rest
+    // Parsed initial %, now the rest.
     local parse_code(str, i) =
         if i >= std.length(str) then
             error "Truncated format code."
@@ -223,6 +155,7 @@ function(str, arr)
                 }
             };
 
+    // Parse a format string (containing none or more % format tags).
     local parse_codes(str, i, out) = 
         if i >= std.length(str) then
             out
@@ -243,11 +176,156 @@ function(str, arr)
 
     local codes = parse_codes(str, 0, []);
 
+
+    ///////////////////////
+    // Format the values //
+    ///////////////////////
+
+    // Useful utilities
+    local padding(w, s) =
+        local aux(w, v) =
+            if w <= 0 then
+                v
+            else
+                aux(w - 1, v + s);
+        aux(w, "");
+
+    // Add s to the left of str so that its length is at least w.
+    local pad_left(str, w, s) =
+        padding(w - std.length(str), s) + str;
+
+    // Add s to the right of str so that its length is at least w.
+    local pad_right(str, w, s) =
+        str + padding(w - std.length(str), s);
+
+    // Render an integer (e.g., decimal or octal).
+    local render_int(n__, zero_pad, blank, sign, radix, zero_prefix) =
+        local neg = n__ < 0;
+        local n_ = std.abs(n__);
+        local zp = zero_pad - (if neg || blank || sign then 1 else 0);
+        local aux(n) =
+            if n == 0 then
+                zero_prefix
+            else
+                aux(std.floor(n / radix)) + (n % radix);
+        local dec = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
+        local dec2 = pad_left(dec, zp, "0");
+        (if neg then "-" else if sign then "+" else if blank then " " else "") + dec2;
+
+    // Render an integer in hexadecimal.
+    local render_hex(n__, zero_pad, blank, sign, add_zerox, capitals) =
+        local numerals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                         + if capitals then ["A", "B", "C", "D", "E", "F"]
+                                       else ["a", "b", "c", "d", "e", "f"];
+        local n_ = std.abs(n__);
+        local aux(n) =
+            if n == 0 then
+                ""
+            else
+                aux(std.floor(n / 16)) + numerals[n % 16];
+        local hex = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
+
+        local neg = n__ < 0;
+        local zp = zero_pad - (if neg || blank || sign then 1 else 0)
+                            - (if add_zerox then 2 else 0);
+        local hex2 = (if add_zerox then (if capitals then "0X" else "0x") else "")
+                     + pad_left(hex, zp, "0");
+        (if neg then "-" else if sign then "+" else if blank then " " else "") + hex2;
+
+    // Render floating point in decimal form
+    local render_float_dec(n__, zero_pad, blank, sign, ensure_pt, prec) =
+        local n_ = std.abs(n__);
+        local whole = std.floor(n_);
+        local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
+        local str = render_int(n__ / n_ * whole, zero_pad - prec - dot_size, blank, sign, 10, "");
+        if prec == 0 then
+            str + if ensure_pt then "." else ""
+        else
+            local frac = std.floor((n_ - whole) * std.pow(10, prec) + 0.5);
+            local frac_str = render_int(frac, prec, false, false, 10, "");
+            str + "." + frac_str;
+
+    // Render floating point in scientific form
+    local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, caps, prec) =
+        local n_ = std.abs(n__);
+        local exponent = std.floor(std.log(std.abs(n_)) / std.log(10));
+        local suff = (if caps then "E" else "e")
+                     + render_int(exponent, 3, false, true, 10, "");
+        local mantissa = n__ / n_ * n_ / std.pow(10, exponent);
+        render_float_dec(mantissa, zero_pad - std.length(suff), blank, sign, ensure_pt, prec)
+        + suff;
+
+    // Render a value with an arbitrary format code.
+    local format_code(val, code, fw, prec_or_null, i) =
+        local cflags = code.cflags;
+        local prec = if prec_or_null != null then prec_or_null else 6;
+        local zp = if cflags.zero && !cflags.left then fw else 0;
+        if code.ctype == "s" then
+            std.toString(val)
+        else if code.ctype == "d" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                render_int(val, zp, cflags.blank, cflags.sign, 10, "")
+        else if code.ctype == "o" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                local zero_prefix = if cflags.alt then "0" else "";
+                render_int(val, zp, cflags.blank, cflags.sign, 8, zero_prefix)
+        else if code.ctype == "x" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                render_hex(val, zp, cflags.blank, cflags.sign, cflags.alt,
+                           code.caps)
+        else if code.ctype == "f" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                render_float_dec(val, zp, cflags.blank,
+                                 cflags.sign, cflags.alt, prec)
+        else if code.ctype == "e" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                render_float_sci(val, zp, cflags.blank,
+                                 cflags.sign, cflags.alt, code.caps, prec)
+        else if code.ctype == "g" then
+            if std.type(val) != "number" then
+                error "Format required number at "
+                      + i + ", got " + std.type(val)
+            else
+                local exponent = std.log(std.abs(val))/std.log(10);
+                if exponent < -4 || exponent >= prec then
+                    render_float_sci(val, zp, cflags.blank,
+                                     cflags.sign, cflags.alt, code.caps, prec)
+                else
+                    render_float_dec(val, zp, cflags.blank,
+                                     cflags.sign, cflags.alt, prec)
+        else if code.ctype == "c" then
+            if std.type(val) == "number" then
+                std.char(val)
+            else if std.type(val) == "string" then
+                if std.length(val) == 1 then
+                    val
+                else
+                    error "%c expected 1-sized string got: " + std.length(val)
+            else
+                error "%c expected number / string, got: " + std.type(val)
+        else
+            error "Unknown code: " + code.ctype;
+
+    // Render a parsed format string with an array of values.
     local format_codes_arr(codes, arr, i, j, v) =
         if i >= std.length(codes) then
             if j < std.length(arr) then
-                error("Too many values to format: "
-                      + std.length(arr) + ", expected " + j)
+                error("Too many values to format: " + std.length(arr) + ", expected " + j)
             else
                 v
         else
@@ -255,7 +333,6 @@ function(str, arr)
             if std.type(code) == "string" then
                 format_codes_arr(codes, arr, i + 1, j, v + code)
             else
-                local cflags = code.cflags;
                 local tmp = if code.fw == "*" then {
                     j: j + 1,
                     fw: if j >= std.length(arr) then
@@ -276,82 +353,66 @@ function(str, arr)
                     j: tmp.j,
                     prec: code.prec,
                 };
-                local fw = tmp.fw;
-                local prec = if tmp2.prec != null then tmp2.prec else 6;
                 local j2 = tmp2.j;
-                local zp = if cflags.zero && !cflags.left then fw else 0;
-                local s = 
+                local val =
+                    if j2 < std.length(arr) then
+                        arr[j2]
+                    else 
+                        error "Not enough values to format, got " + std.length(arr);
+                local s =
                     if code.ctype == "%" then
-                        format_codes_arr(codes, arr, i + 1, j2, v + "%")
+                        "%"
                     else
-                        if j2 >= std.length(arr) then
-                            error "Not enough values to format: " + std.length(arr)
-                        else
-                            local obj = arr[j2];
-                            if code.ctype == "s" then
-                                std.toString(obj)
-                            else if code.ctype == "d" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    render_int(obj, zp, cflags.blank, cflags.sign, 10, "")
-                            else if code.ctype == "o" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    local zero_prefix = if cflags.alt then "0" else "";
-                                    render_int(obj, zp, cflags.blank, cflags.sign, 8, zero_prefix)
-                            else if code.ctype == "x" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    render_hex(obj, zp, cflags.blank, cflags.sign, cflags.alt,
-                                               code.caps)
-                            else if code.ctype == "f" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    render_float_dec(obj, zp, cflags.blank,
-                                                     cflags.sign, cflags.alt, prec)
-                            else if code.ctype == "e" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    render_float_sci(obj, zp, cflags.blank,
-                                                     cflags.sign, cflags.alt, code.caps, prec)
-                            else if code.ctype == "g" then
-                                if std.type(obj) != "number" then
-                                    error("Format required number at "
-                                          + j2 + ", got " + std.type(obj))
-                                else
-                                    local exponent = std.log(std.abs(obj))/std.log(10);
-                                    if exponent < -4 || exponent >= prec then
-                                        render_float_sci(obj, zp, cflags.blank,
-                                                         cflags.sign, cflags.alt, code.caps, prec)
-                                    else
-                                        render_float_dec(obj, zp, cflags.blank,
-                                                         cflags.sign, cflags.alt, prec)
-                            else if code.ctype == "c" then
-                                if std.type(obj) == "number" then
-                                    std.char(obj)
-                                else if std.type(obj) == "string" then
-                                    if std.length(obj) == 1 then
-                                        obj
-                                    else
-                                        error "%c expected 1-sized string got: " + std.length(obj)
-                                else
-                                    error "%c expected number / string, got: " + std.type(obj)
-                            else
-                                error "Unknown code: " + code.ctype;
-                    local padded_s =
-                        if cflags.left then
-                            pad_right(s, fw, " ")
-                        else
-                            pad_left(s, fw, " ");
-                    format_codes_arr(codes, arr, i + 1, j2 + 1, v + padded_s);
-    format_codes_arr(codes, arr, 0, 0, "")
+                        format_code(val, code, tmp.fw, tmp2.prec, j2);
+                local s_padded =
+                    if code.cflags.left then
+                        pad_right(s, tmp.fw, " ")
+                    else
+                        pad_left(s, tmp.fw, " ");
+                format_codes_arr(codes, arr, i + 1, j2 + 1, v + s_padded);
+
+    // Render a parsed format string with an object of values.
+    local format_codes_obj(codes, obj, i, v) =
+        if i >= std.length(codes) then
+            v
+        else
+            local code = codes[i];
+            if std.type(code) == "string" then
+                format_codes_obj(codes, obj, i + 1, v + code)
+            else
+                local f =
+                    if code.mkey == null then
+                        error "Mapping keys required."
+                    else
+                        code.mkey;
+                local fw =
+                    if code.fw == "*" then
+                        error "Cannot use * field width with object."
+                    else
+                        code.fw;
+                local prec =
+                    if code.prec == "*" then
+                        error "Cannot use * precision with object."
+                    else
+                        code.prec;
+                local val = 
+                    if std.objectHas(obj, f) then
+                        obj[f]
+                    else
+                        error "No such field: " + std.length(f);
+                local s =
+                    if code.ctype == "%" then
+                        "%"
+                    else
+                        format_code(val, code, fw, prec, f);
+                local s_padded =
+                    if code.cflags.left then
+                        pad_right(s, fw, " ")
+                    else
+                        pad_left(s, fw, " ");
+                format_codes_obj(codes, obj, i + 1, v + s_padded);
+
+    if std.type(vals) == "array" then
+        format_codes_arr(codes, vals, 0, 0, "")
+    else
+        format_codes_obj(codes, vals, 0, "")
