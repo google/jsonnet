@@ -2,18 +2,16 @@
 
 <h1>Implementation</h1>
 
-<p> There is currently one official implementation.  It is written in C++11 and has no dependencies.
-It takes the form of a commandline tool to convert Jsonnet to JSON, and a C wrapper library to allow
-easy binding into other languages.  A binding already exists for Python.  The intention is that
-wrapper libraries will exist for various other languages.  This enables any system that currently
+<p> There is currently one official implementation, written in C++11 with no dependencies.  It
+provides a commandline tool to convert Jsonnet to JSON, and a C wrapper library to allow easy
+binding into other languages.  A binding already exists for Python; the intention is that wrapper
+libraries will soon exist for various other languages.  This enables any system that currently
 consumes JSON to be altered to accept the full syntax of Jsonnet, by simply calling out to the
 library to do the conversion.</p>
 
 <p>The C++ implementation implements a handwritten lexer, recursive descent parser, static checker,
-and virtual machine.  The virtual machine has a simple mark and sweep garbage collector which can be
-tuned if necessary (although performance isn't usually a problem when you're reading configuration
-files).  The release comes with a suite of over 400 tests for various corner cases of the
-language.</p>
+and virtual machine.  The virtual machine has a simple mark and sweep garbage collector.  The
+release comes with a suite of over 500 tests for various corner cases of the language.</p>
 
 <h2>Download</h2>
 
@@ -29,7 +27,6 @@ href="https://github.com/google/jsonnet">github</a>.</p>
 <li>Double precision floating point has rounding errors, we are considering switching to arbitrary
 precision rational arithmetic.</li>
 <li>The list and object comprehension syntax is not quite as expressive as Python's.</li>
-<li>There is no % string format operator.</li>
 <li>There is not yet any API to register handlers for import file I/O.</li>
 <li>We would like to allow the importing of URLs, with an audit trail to allow debugging.</li>
 <li>There is currently no tail-call optimization.</li>
