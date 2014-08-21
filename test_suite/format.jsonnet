@@ -189,4 +189,8 @@ std.assertEqual("%s[%05d]-%2x%2x%2x%c" % ["foo", 3991, 17, 18, 17, 100], "foo[03
 std.assertEqual("%*d" % [10, 8], "%10d" % [8]) &&
 std.assertEqual("%*.*f" % [10, 3, 1/3], "%10.3f" % [1/3]) &&
 
+// Test mappings
+std.assertEqual("%(name)s[%(id)05d]-%(a)2x%(b)2x%(c)2x%(x)c" % {name: "foo", id: 3991, a: 17, b: 18, c: 17, x: 100},
+                "foo[03991]-111211d") &&
+
 true
