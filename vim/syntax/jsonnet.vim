@@ -49,6 +49,6 @@ syntax keyword Type function self super
 syntax keyword Statement if then else for in
 syntax keyword Special local
 syntax keyword Constant true false null
-syntax keyword Underline error
+syntax keyword Underlined error
 
 
