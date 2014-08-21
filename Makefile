@@ -48,8 +48,8 @@ SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
 LIB_SRC = $(SRC) libjsonnet.cpp
 
 ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js
-ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h
-ALL_FRAGMENTS = assertEqual.fragment.h toString.fragment.h map.fragment.h filterMap.fragment.h foldL.fragment.h foldR.fragment.h range.fragment.h join.fragment.h substr.fragment.h format.fragment.h mod.fragment.h
+ALL_FRAGMENTS = assertEqual.fragment.h toString.fragment.h map.fragment.h filterMap.fragment.h foldL.fragment.h foldR.fragment.h range.fragment.h join.fragment.h substr.fragment.h format.fragment.h mod.fragment.h abs.fragment.h
+ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h $(ALL_FRAGMENTS)
 
 default: jsonnet
 
@@ -95,8 +95,6 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 %.fragment.h: %.fragment
 	($(OD) -v -Anone -t u1 -w1 $< && echo -n "  0") | tr "\n" "," > $@
 	echo >> $@
-
-parser.cpp: $(ALL_FRAGMENTS)
 
 clean:
 	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) *.o 

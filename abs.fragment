@@ -1,0 +1,6 @@
+function(n)
+    if std.type(n) != "number" then
+        error "std.abs expected number, got " + std.type(n)
+    else
+        if n > 0 then n else -n
+

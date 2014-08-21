@@ -1597,204 +1597,31 @@ namespace {
                                     scratch = makeString(std::string(&c, 1));
                                 } break;
 
-                                case 18: { // decimal
-                                    validateBuiltinArgs(loc, builtin, args,
-                                        {Value::DOUBLE, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::BOOLEAN, Value::DOUBLE});
-                                    long n = long(args[0].v.d);
-                                    bool zero = args[1].v.b; 
-                                    bool left = args[2].v.b;
-                                    bool blank = args[3].v.b;
-                                    bool sign = args[4].v.b;
-                                    long width = long(args[5].v.d);
-                                    std::stringstream fmt;
-                                    fmt << "%";
-                                    if (left) 
-                                        fmt << "-";
-                                    else if (zero)
-                                        fmt << "0";
-                                    if (sign)
-                                        fmt << "+";
-                                    else if (blank)
-                                        fmt << " ";
-                                    if (width <= 0) width = 1;
-                                    fmt << width << "ld";
-                                    size_t required = snprintf(nullptr, 0, fmt.str().c_str(), n);
-                                    std::unique_ptr<char> cbuf(new char[required + 1]);
-                                    snprintf(&*cbuf, required + 1, fmt.str().c_str(), n);
-                                    scratch = makeString(&*cbuf);
+                                case 18: {  // log
+                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
+                                    scratch = makeDoubleNanCheck(loc, std::log(args[0].v.d));
                                 } break;
 
-                                case 19: { // octal
-                                    validateBuiltinArgs(loc, builtin, args,
-                                        {Value::DOUBLE, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::DOUBLE});
-                                    long n = long(args[0].v.d);
-                                    if (n < 0) {
-                                        std::stringstream ss;
-                                        ss << "Octal number formatting only supported for "
-                                              "positive numbers, got " << n;
-                                        throw makeError(ast.location, ss.str());
-                                    }
-                                    bool zero = args[1].v.b; 
-                                    bool left = args[2].v.b;
-                                    bool blank = args[3].v.b;
-                                    bool sign = args[4].v.b;
-                                    bool ensure_zero = args[5].v.b;
-                                    long width = long(args[6].v.d);
-                                    std::stringstream fmt;
-                                    fmt << "%";
-                                    if (ensure_zero) 
-                                        fmt << "#";
-                                    if (left) 
-                                        fmt << "-";
-                                    else if (zero)
-                                        fmt << "0";
-                                    if (sign)
-                                        fmt << "+";
-                                    else if (blank)
-                                        fmt << " ";
-                                    if (width <= 0) width = 1;
-                                    fmt << width << "lo";
-                                    size_t required = snprintf(nullptr, 0, fmt.str().c_str(), n);
-                                    std::unique_ptr<char> cbuf(new char[required + 1]);
-                                    snprintf(&*cbuf, required + 1, fmt.str().c_str(), n);
-                                    scratch = makeString(&*cbuf);
+                                case 19: {  // exp
+                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
+                                    scratch = makeDoubleNanCheck(loc, std::exp(args[0].v.d));
                                 } break;
 
-                                case 20: { // hex
-                                    validateBuiltinArgs(loc, builtin, args,
-                                        {Value::DOUBLE, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::DOUBLE});
-                                    long n = long(args[0].v.d);
-                                    if (n < 0) {
-                                        std::stringstream ss;
-                                        ss << "Hex number formatting only supported for "
-                                              "positive numbers, got " << n;
-                                        throw makeError(ast.location, ss.str());
-                                    }
-                                    bool zero = args[1].v.b; 
-                                    bool left = args[2].v.b;
-                                    bool blank = args[3].v.b;
-                                    bool sign = args[4].v.b;
-                                    bool ensure_zero = args[5].v.b;
-                                    bool capital = args[6].v.b;
-                                    long width = long(args[7].v.d);
-                                    std::stringstream fmt;
-                                    fmt << "%";
-                                    if (ensure_zero) 
-                                        fmt << "#";
-                                    if (left) 
-                                        fmt << "-";
-                                    else if (zero)
-                                        fmt << "0";
-                                    if (sign)
-                                        fmt << "+";
-                                    else if (blank)
-                                        fmt << " ";
-                                    if (width <= 0) width = 1;
-                                    fmt << width;
-                                    if (capital)
-                                        fmt << "lX";
-                                    else
-                                        fmt << "lx";
-                                    size_t required = snprintf(nullptr, 0, fmt.str().c_str(), n);
-                                    std::unique_ptr<char> cbuf(new char[required + 1]);
-                                    snprintf(&*cbuf, required + 1, fmt.str().c_str(), n);
-                                    scratch = makeString(&*cbuf);
-                                } break;
-
-                                case 21: { // float_exp
-                                    validateBuiltinArgs(loc, builtin, args,
-                                        {Value::DOUBLE, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::DOUBLE, Value::DOUBLE});
-                                    double n = args[0].v.d;
-                                    bool zero = args[1].v.b; 
-                                    bool left = args[2].v.b;
-                                    bool blank = args[3].v.b;
-                                    bool sign = args[4].v.b;
-                                    bool pt = args[5].v.b;
-                                    bool capital = args[6].v.b;
-                                    long width = long(args[7].v.d);
-                                    long prec = long(args[8].v.d);
-                                    std::stringstream fmt;
-                                    fmt << "%";
-                                    if (pt) 
-                                        fmt << "#";
-                                    if (left) 
-                                        fmt << "-";
-                                    else if (zero)
-                                        fmt << "0";
-                                    if (sign)
-                                        fmt << "+";
-                                    else if (blank)
-                                        fmt << " ";
-                                    if (width <= 0) width = 1;
-                                    fmt << width;
-                                    fmt << "." << prec;
-                                    if (capital)
-                                        fmt << "E";
-                                    else
-                                        fmt << "e";
-                                    size_t required = snprintf(nullptr, 0, fmt.str().c_str(), n);
-                                    std::unique_ptr<char> cbuf(new char[required + 1]);
-                                    snprintf(&*cbuf, required + 1, fmt.str().c_str(), n);
-                                    scratch = makeString(&*cbuf);
-                                } break;
-
-                                case 22: { // float_dec
-                                    validateBuiltinArgs(loc, builtin, args,
-                                        {Value::DOUBLE, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::BOOLEAN, Value::BOOLEAN, Value::BOOLEAN,
-                                         Value::DOUBLE, Value::DOUBLE});
-                                    double n = args[0].v.d;
-                                    bool zero = args[1].v.b; 
-                                    bool left = args[2].v.b;
-                                    bool blank = args[3].v.b;
-                                    bool sign = args[4].v.b;
-                                    bool pt = args[5].v.b;
-                                    long width = long(args[6].v.d);
-                                    long prec = long(args[7].v.d);
-                                    std::stringstream fmt;
-                                    fmt << "%";
-                                    if (pt) 
-                                        fmt << "#";
-                                    if (left) 
-                                        fmt << "-";
-                                    else if (zero)
-                                        fmt << "0";
-                                    if (sign)
-                                        fmt << "+";
-                                    else if (blank)
-                                        fmt << " ";
-                                    if (width <= 0) width = 1;
-                                    fmt << width;
-                                    fmt << "." << prec;
-                                    fmt << "f";
-                                    size_t required = snprintf(nullptr, 0, fmt.str().c_str(), n);
-                                    std::unique_ptr<char> cbuf(new char[required + 1]);
-                                    snprintf(&*cbuf, required + 1, fmt.str().c_str(), n);
-                                    scratch = makeString(&*cbuf);
-                                } break;
-
-                                case 23: {  // mantissa
+                                case 20: {  // mantissa
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
                                     int exp;
                                     double m = std::frexp(args[0].v.d, &exp);
                                     scratch = makeDoubleNanCheck(loc, m);
                                 } break;
 
-                                case 24: {  // exponent
+                                case 21: {  // exponent
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
                                     int exp;
                                     std::frexp(args[0].v.d, &exp);
                                     scratch = makeDoubleNanCheck(loc, exp);
                                 } break;
 
-                                case 25: {  // modulo
+                                case 22: {  // modulo
                                     validateBuiltinArgs(loc, builtin, args,
                                                         {Value::DOUBLE, Value::DOUBLE});
                                     double a = args[0].v.d;
@@ -1802,16 +1629,6 @@ namespace {
                                     if (b == 0)
                                         throw makeError(ast.location, "Division by zero.");
                                     scratch = makeDoubleNanCheck(loc, std::fmod(a, b));
-                                } break;
-
-                                case 26: {  // log
-                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                    scratch = makeDoubleNanCheck(loc, std::log(args[0].v.d));
-                                } break;
-
-                                case 27: {  // exp
-                                    validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                    scratch = makeDoubleNanCheck(loc, std::exp(args[0].v.d));
                                 } break;
 
                                 default:

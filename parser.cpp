@@ -744,7 +744,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 26;
+static unsigned long max_builtin = 22;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -766,17 +766,11 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 15: return {"objectFields", {"obj"}};
         case 16: return {"codepoint", {"str"}};
         case 17: return {"char", {"n"}};
-        case 18: return {"decimal", {"n", "zero", "left", "blank", "sign", "fw"}};
-        case 19: return {"octal", {"n", "zero", "left", "blank", "sign", "ensure0", "fw"}};
-        case 20: return {"hex", {"n", "zero", "left", "blank", "sign", "ensure0", "cap", "fw"}};
-        case 21: return {"float_exp", {"n", "zero", "left", "blank", "sign", "pt", "cap", "fw",
-                                       "prec"}};
-        case 22: return {"float_dec", {"n", "zero", "left", "blank", "sign", "pt", "fw", "prec"}};
-        case 23: return {"mantissa", {"n"}};
-        case 24: return {"exponent", {"n"}};
-        case 25: return {"modulo", {"a", "b"}};
-        case 26: return {"log", {"n"}};
-        case 27: return {"exp", {"n"}};
+        case 18: return {"log", {"n"}};
+        case 19: return {"exp", {"n"}};
+        case 20: return {"mantissa", {"n"}};
+        case 21: return {"exponent", {"n"}};
+        case 22: return {"modulo", {"a", "b"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
@@ -846,6 +840,10 @@ static constexpr char MOD_CODE[] = {
 #include "mod.fragment.h"
 };
 
+static constexpr char ABS_CODE[] = {
+#include "abs.fragment.h"
+};
+
 
 
 AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
@@ -902,6 +900,9 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
 
     fields.emplace_back(alloc.make<LiteralString>(l, "mod"), true,
                         do_parse(alloc, "builtin:mod", MOD_CODE));
+
+    fields.emplace_back(alloc.make<LiteralString>(l, "abs"), true,
+                        do_parse(alloc, "builtin:abs", ABS_CODE));
 
     AST *init = alloc.make<Object>(l, fields);
 

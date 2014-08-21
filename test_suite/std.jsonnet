@@ -22,21 +22,58 @@ std.assertEqual(local std = { sqrt: function(x) x }; local lib = import "lib/cap
 
 // Now, test each std library function in turn.
 
-std.assertEqual(std.makeArray(10,function(i)i+1), [1,2,3,4,5,6,7,8,9,10]) &&
-std.assertEqual(std.makeArray(0,function(i)null), []) &&
+std.assertEqual(std.makeArray(10, function(i)i+1), [1,2,3,4,5,6,7,8,9,10]) &&
+std.assertEqual(std.makeArray(0, function(i)null), []) &&
+
+local assertClose(a, b) =
+    local err =
+        if b == 0 then
+            a - b
+        else
+            if a / b - 1 > 0 then a / b - 1 else 1 - a / b;
+    if err > 0.000005 then
+        error "Assertion failed (error " + err + "). " + a + " !~ " + b
+    else
+        true;
 
 std.assertEqual(std.pow(3,2), 9) &&
 std.assertEqual(std.floor(10), 10) &&
 std.assertEqual(std.floor(10.99999), 10) &&
 std.assertEqual(std.ceil(10), 10) &&
 std.assertEqual(std.ceil(10.99999), 11) &&
+std.assertEqual(std.sqrt(0), 0) &&
+std.assertEqual(std.sqrt(1), 1) &&
 std.assertEqual(std.sqrt(9), 3) &&
-std.assertEqual(std.sin(0), 0) &&
-std.assertEqual(std.cos(0), 1) &&
-std.assertEqual(std.tan(0), 0) &&
-std.assertEqual(std.asin(0), 0) &&
-std.assertEqual(std.acos(1), 0) &&
-std.assertEqual(std.atan(0), 0) &&
+std.assertEqual(std.sqrt(16), 4) &&
+std.assertEqual(std.abs(33), 33) &&
+std.assertEqual(std.abs(-33), 33) &&
+std.assertEqual(std.abs(0), 0) &&
+
+// Ordinary (non-test) code can define pi as 2*std.acos(0)
+local pi = 3.14159265359;
+
+assertClose(std.sin(0.0*pi), 0) &&
+assertClose(std.sin(0.5*pi), 1) &&
+assertClose(std.sin(1.0*pi), 0) &&
+assertClose(std.sin(1.5*pi), -1) &&
+assertClose(std.sin(2.0*pi), 0) &&
+assertClose(std.cos(0.0*pi), 1) &&
+assertClose(std.cos(0.5*pi), 0) &&
+assertClose(std.cos(1.0*pi), -1) &&
+assertClose(std.cos(1.5*pi), 0) &&
+assertClose(std.cos(2.0*pi), 1) &&
+assertClose(std.tan(0), 0) &&
+assertClose(std.tan(0.25*pi), 1) &&
+assertClose(std.asin(0), 0) &&
+assertClose(std.acos(1), 0) &&
+assertClose(std.asin(1), 0.5*pi) &&
+assertClose(std.acos(0), 0.5*pi) &&
+assertClose(std.atan(0), 0) &&
+assertClose(std.log(std.exp(5)), 5) &&
+assertClose(std.mantissa(1), 0.5) &&
+assertClose(std.exponent(1), 1) &&
+assertClose(std.mantissa(128), 0.5) &&
+assertClose(std.exponent(128), 8) &&
 
 std.assertEqual(std.type(null), "null") &&
 std.assertEqual(std.type(true), "boolean") &&
@@ -90,6 +127,8 @@ std.assertEqual(std.substr("cookie", 1, 0), "") &&
 
 std.assertEqual(std.codepoint("a"), 97) &&
 std.assertEqual(std.char(97), "a") &&
+std.assertEqual(std.codepoint("\u0000"), 0) &&
+std.assertEqual(std.char(0), "\u0000") &&
 
 std.assertEqual(std.map(function(x)x*x, []), []) &&
 std.assertEqual(std.map(function(x)x*x, [1,2,3,4]), [1,4,9,16]) &&
