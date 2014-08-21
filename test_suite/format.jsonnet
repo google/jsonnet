@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-// TODO(dcunnin): width and precision from *
-
 // #
 std.assertEqual(std.format("No format chars\n", []), "No format chars\n") &&
 std.assertEqual(std.format("", []), "") &&
