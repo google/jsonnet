@@ -100,4 +100,4 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ */.*.swp .*.swp $(ALL) *.o 
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.fragment.h
