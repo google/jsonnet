@@ -105,7 +105,7 @@ namespace {
 
         /** The captured environment.
          *
-         * Note, this is non-null because we have to add cyclic references to it.
+         * Note, this is non-const because we have to add cyclic references to it.
          */
         BindingFrame upValues;
 
@@ -121,6 +121,14 @@ namespace {
         HeapThunk(const Identifier *name, HeapObject *self, unsigned offset, const AST *body)
           : filled(false), name(name), self(self), offset(offset), body(body)
         { }
+
+        void fill(const Value &v)
+        {
+            content = v;
+            filled = true;
+            self = nullptr;
+            upValues.clear();
+        }
     };
 
     struct HeapArray : public HeapEntity {
@@ -335,7 +343,8 @@ namespace {
                 if (func->self) markFrom(func->self);
             } else if (auto *thunk = dynamic_cast<HeapThunk*>(from)) {
                 if (thunk->filled) {
-                    markFrom(thunk->content);
+                    if (thunk->content.isHeap())
+                        markFrom(thunk->content.v.h);
                 } else {
                     for (auto upv : thunk->upValues)
                         markFrom(upv.second);

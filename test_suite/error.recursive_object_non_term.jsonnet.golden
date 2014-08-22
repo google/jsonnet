@@ -1,14 +1,14 @@
 RUNTIME ERROR: Max stack frames exceeded.
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
-	error.recursive_object_non_term.jsonnet:20:44-50	object <anonymous>
+	error.recursive_object_non_term.jsonnet:20:44-48	object <anonymous>
+	error.recursive_object_non_term.jsonnet:20:11-16	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
+	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	...
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
@@ -18,5 +18,5 @@ RUNTIME ERROR: Max stack frames exceeded.
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	error.recursive_object_non_term.jsonnet:23:17-31	thunk <a>
-	std.jsonnet:543:12	function <anonymous>
+	std.jsonnet:557:12	function <anonymous>
 	error.recursive_object_non_term.jsonnet:23:1-37	

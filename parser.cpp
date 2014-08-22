@@ -744,7 +744,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 22;
+static unsigned long max_builtin = 23;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -771,6 +771,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 20: return {"mantissa", {"n"}};
         case 21: return {"exponent", {"n"}};
         case 22: return {"modulo", {"a", "b"}};
+        case 23: return {"force", {"x"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();

@@ -90,6 +90,9 @@ namespace {
          */
         LocationRange location;
 
+        /** Do not reuse this stack frame for the purpose of tail call optimization. */
+        bool noTailCall;
+
         /** Used for a variety of purposes. */
         Value val;
 
@@ -144,7 +147,7 @@ namespace {
         }
 
         Frame(const FrameKind &kind, const LocationRange &location)
-          : kind(kind), ast(nullptr), location(location), context(NULL), self(NULL), offset(0)
+          : kind(kind), ast(nullptr), location(location), noTailCall(false), context(NULL), self(NULL), offset(0)
         {
             val.t = Value::NULL_TYPE;
             val2.t = Value::NULL_TYPE;
@@ -310,19 +313,46 @@ namespace {
             stack.emplace_back(args...);
         }
 
+        void tailCallTrimStack (void)
+        {
+            for (int i=stack.size()-1 ; i>=0 ; --i) {
+                switch (stack[i].kind) {
+                    case FRAME_CALL: {
+                        if (stack[i].noTailCall) {
+                            return;
+                        }
+                        // Remove all stack frames including this one.
+                        while (stack.size() > unsigned(i)) stack.pop_back();
+                        calls--;
+                        return;
+                    } break;
+
+                    case FRAME_LOCAL: break;
+
+                    default: return;
+                }
+            }
+        }
+
         /** New call frame. */
         void newCall(const LocationRange &loc, HeapEntity *context, HeapObject *self,
                      unsigned offset, const BindingFrame &up_values)
         {
+            tailCallTrimStack();
             if (calls >= limit) {
                 throw makeError(loc, "Max stack frames exceeded.");
             }
             stack.emplace_back(FRAME_CALL, loc);
             calls++;
-            stack.back().context = context;
-            stack.back().self = self;
-            stack.back().offset = offset;
-            stack.back().bindings = up_values;
+            top().context = context;
+            top().self = self;
+            top().offset = offset;
+            top().bindings = up_values;
+            if (dynamic_cast<HeapThunk*>(context)) {
+                // Cannot optimize thunk context, need to "fill" thunk on unwind.
+                top().noTailCall = true;
+            }
+
             for (const auto &bind : up_values) {
                 assert(bind.second != nullptr);
             }
@@ -700,8 +730,7 @@ namespace {
                             stack.newCall(loc, th_a, th_a->self, th_a->offset, th_a->upValues);
                             evaluate(th_a->body);
                             stack.pop();
-                            th_a->content = scratch;
-                            th_a->filled = true;
+                            th_a->fill(scratch);
                         }
 
                         auto th_b = arr_b->elements[i];
@@ -709,8 +738,7 @@ namespace {
                             stack.newCall(loc, th_b, th_b->self, th_b->offset, th_b->upValues);
                             evaluate(th_b->body);
                             stack.pop();
-                            th_b->content = scratch;
-                            th_b->filled = true;
+                            th_b->fill(scratch);
                         }
 
                         if (!equality(loc, th_a->content, th_b->content))
@@ -1380,8 +1408,7 @@ namespace {
 
                                         auto *el = makeHeap<HeapThunk>(func->params[0], nullptr,
                                                                        0, nullptr);
-                                        el->content = makeDouble(i);
-                                        el->filled = true;
+                                        el->fill(makeDouble(i));
                                         th->upValues[func->params[0]] = el;
                                         elements[i] = th;
                                     }
@@ -1564,8 +1591,7 @@ namespace {
                                         auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr,
                                                                        0, nullptr);
                                         elements.push_back(th);
-                                        th->content = makeString(field);
-                                        th->filled = true;
+                                        th->fill(makeString(field));
                                     }
                                 } break;
 
@@ -1631,6 +1657,12 @@ namespace {
                                     scratch = makeDoubleNanCheck(loc, std::fmod(a, b));
                                 } break;
 
+                                case 23: {  // force
+                                    // Thunk already forced.
+                                    scratch = makeBoolean(true);
+                                }
+                                break;
+
                                 default:
                                 std::cerr << "INTERNAL ERROR: Unrecognized builtin: " << builtin
                                           << std::endl;
@@ -1650,8 +1682,7 @@ namespace {
                     case FRAME_CALL: {
                         if (auto *thunk = dynamic_cast<HeapThunk*>(f.context)) {
                             // If we called a thunk, cache result.
-                            thunk->content = scratch;
-                            thunk->filled = true;
+                            thunk->fill(scratch);
                         }
                         // Result of call is in scratch, just pop.
                     } break;
@@ -1947,12 +1978,14 @@ namespace {
                                 stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
                                 // Keep arr alive when scratch is overwritten
                                 stack.top().val = scratch;
+                                stack.top().noTailCall = true;
                                 scratch = thunk->content;
                             } else {
                                 stack.newCall(loc, thunk,
                                               thunk->self, thunk->offset, thunk->upValues);
                                 // Keep arr alive when scratch is overwritten
                                 stack.top().val = scratch;
+                                stack.top().noTailCall = true;
                                 evaluate(thunk->body);
                             }
                             auto element = manifestJson(tloc, multiline, indent2);
@@ -1999,6 +2032,7 @@ namespace {
                             // pushes FRAME_CALL
                             const AST *body = objectIndex(loc, obj, f.second);
                             stack.top().val = scratch;
+                            stack.top().noTailCall = true;
                             evaluate(body);
                             auto vstr = manifestJson(body->location, multiline, indent2);
                             // Reset scratch so that the object we're manifesting doesn't

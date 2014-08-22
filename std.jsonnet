@@ -49,12 +49,20 @@ limitations under the License.
         else
             local aux(str, delim, i, arr, v) =
                 local c = str[i];
+                local i2 = i + 1;
                 if i >= std.length(str) then
                     arr + [v]
-                else if c == delim then
-                    aux(str, delim, i + 1, arr + [v], "")
-                else
-                    aux(str, delim, i + 1, arr, v + c);
+                else if std.force(i2) then
+                    if c == delim then
+                        local arr2 = arr + [v];
+                        if std.force(arr2) then
+                            aux(str, delim, i2, arr2, "")
+                        else
+                            null
+                    else
+                        local v2 = v + c;
+                        if std.force(v2) then
+                            aux(str, delim, i2, arr, v2);
             aux(str, c, 0, [], ""),
 
     range(from, to)::
@@ -517,7 +525,10 @@ limitations under the License.
             if idx < 0 then
                 running
             else
-                aux(func, arr, func(arr[idx], running), idx - 1);
+                local running2 = func(arr[idx], running);
+                local idx2 = idx - 1;
+                if std.force(running2) && std.force(idx2) then
+                    aux(func, arr, running2, idx2);
         aux(func, arr, init, std.length(arr) - 1),
 
     foldl(func, arr, init)::
@@ -525,7 +536,10 @@ limitations under the License.
             if idx >= std.length(arr) then
                 running
             else
-                aux(func, arr, func(running, arr[idx]), idx+1);
+                local running2 = func(running, arr[idx]);
+                local idx2 = idx + 1;
+                if std.force(running2) && std.force(idx2) then
+                    aux(func, arr, running2, idx2);
         aux(func, arr, init, 0),
 
 
