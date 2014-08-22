@@ -20,7 +20,7 @@ local fibonacci(n) =
     else
         fibonacci(n - 1) + fibonacci(n - 2);
 
-//std.assertEqual(fibonacci(15), 987) &&
+std.assertEqual(fibonacci(15), 987) &&
 
 // Tail recursive call
 local sum(x, v) =
