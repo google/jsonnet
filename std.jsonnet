@@ -40,15 +40,22 @@ limitations under the License.
             std.join("", std.makeArray(len, function(i) str[i + from])),
 
     split(str, c)::
-        local aux(str, delim, i, arr, v) =
-            local c = str[i];
-            if i >= std.length(str) then
-                arr + [v]
-            else if c == delim then
-                aux(str, delim, i + 1, arr + [v], "")
-            else
-                aux(str, delim, i + 1, arr, v + c);
-        aux(str, c, 0, [], ""),
+        if std.type(str) != "string" then
+            error "std.split first parameter should be a string, got " + std.type(str)
+        else if std.type(c) != "string" then
+            error "std.split second parameter should be a string, got " + std.type(c)
+        else if std.length(c) != 1 then
+            error "std.split second parameter should have length 1, got " + std.length(c)
+        else
+            local aux(str, delim, i, arr, v) =
+                local c = str[i];
+                if i >= std.length(str) then
+                    arr + [v]
+                else if c == delim then
+                    aux(str, delim, i + 1, arr + [v], "")
+                else
+                    aux(str, delim, i + 1, arr, v + c);
+            aux(str, c, 0, [], ""),
 
     range(from, to)::
         std.makeArray(to - from + 1, function(i) i + from),
