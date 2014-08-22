@@ -66,8 +66,14 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
 
     } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
         auto new_vars = vars;
-        for (auto *p : ast->parameters)
+        IdSet params;
+        for (auto *p : ast->parameters) {
+            if (params.find(p) != params.end()) {
+                throw StaticError(ast_->location, "Duplicate function parameter: " + p->name);
+            }
+            params.insert(p);
             new_vars.insert(p);
+        }
         auto fv = static_analysis(ast->body, in_object, new_vars);
         for (auto *p : ast->parameters)
             fv.erase(p);
