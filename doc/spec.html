@@ -143,9 +143,9 @@ href="tutorial.html">tutorial</a>.</p>
 
 <h2>Abstract Syntax</h2>
 
-<p> The ★ in this notation refers to a comma-separated possibly zero-length list of the given
-production, with an optional comma after the last element.  The regular * and + have their usual
-meaning, i.e. repetition of productions without comma separation.  </p>
+<p> In this notation, <i>x</i>★ defines a comma-separated possibly zero-length list of <i>x</i>
+(either a terminal or non-terminal) with an optional comma after the last element.  The regular *
+and + have their usual meaning, i.e. repetition without commas.  </p>
 
 <table>
 <tr><td><i>expr ∈ Expr</i></td><td>::=</td><td>
@@ -481,14 +481,6 @@ language, so it is reasonable to implement the desugaring in the parser.</p>
 <i>e</i>
 
 </td></tr> <tr><td></td><td> | </td><td>
-'<code>import</code>'
-<i>string</i>
-
-</td></tr> <tr><td></td><td> | </td><td>
-'<code>importstr</code>'
-<i>string</i>
-
-</td></tr> <tr><td></td><td> | </td><td>
 '<code>error</code>'
 <i>e</i>
 
@@ -501,6 +493,19 @@ special keyword.</p>
 
 <p>Additionally, the <code>!=</code> operator is desugared to <code>!(a == b)</code> and the unary
 <code>+</code> is stripped (it is a no-op).</p>
+
+<p>Also removed in the core language are <code>import</code> and <code>importstr</code>.  The
+semantics of these constructs is that they are replaced with either the contents of the file, or an
+error construct if importing failed (e.g. due to I/O errors).  In the first case, the file is
+parsed, desugared, and subject to static checking before it can be substituted.  In the latter case,
+the file is substituted in the form of a string, so it merely needs to contain valid UTF-8.  </p>
+
+<p>A given Jsonnet file can be recursively imported via <code>import</code>. Thus, the
+implementation loads files lazily (i.e.  during execution) as opposed to via static desugaring.  The
+imported Jsonnet file is parsed and statically checked in isolation.  Therefore, the behavior of the
+import is not affected by the environment into which it is imported.  The files are cached by
+filename, so that even if the file changes on disk during Jsonnet execution, referential
+transparency is maintained.</p>
 
 <h3>Desugaring</h3>
 
@@ -666,7 +671,8 @@ Other cases invoke structural recursion.
 <h3>Static Checking</h3>
 
 <p> After the Jsonnet program is parsed and desugared, a syntax-directed algorithm is employed to
-reject programs that contain certain classes of errors.  Programs are rejected if they use undefined
+reject programs that contain certain classes of errors.  This is presented like a static type
+system, except that there are no static types.  Programs are only rejected if they use undefined
 variables, or if <code>self</code>, <code>super</code> or <code>$</code> are used outside the bounds
 of an object.  In the core language, <code>$</code> has been desugared to a variable, so its
 checking is implicit in the checking of bound variables.  </p>
@@ -675,6 +681,7 @@ checking is implicit in the checking of bound variables.  </p>
 variables in scope of \(e\).  The set \(Γ\) initially contains only <code>std</code>, the implicit
 standard library.  In the case of imported files, each jsonnet file is checked independently of the
 other files.</p>
+
 
 <div class="rules">
 
@@ -1077,7 +1084,7 @@ o = λf∈dom(o_L, o_R).
 \\
 \begin{array}{ll}
 \hspace{20pt} (h, \local{y = \self, z = \super}{e_{body} ⟦e_s / \super⟧})  &amp;  \textrm{if }o_R(f) = (h, e_{body}) \\
-\hspace{20pt} o_L(f)                 &amp;  \textrm{otherwise }f∈dom(o_L) \\
+\hspace{20pt} o_L(f)                 &amp;  \textrm{otherwise} \\
 \end{array} \\
 } {
 e_L \texttt{ + } e_R ↓ o
@@ -1095,10 +1102,8 @@ e_L \texttt{ + } e_R ↓ stringconcat(tostring(v_L), tostring(v_R))
 e_L ↓ v_L ⇓ j_L
 \\
 e_R ↓ v_R ⇓ j_R
-\\
-b = (j_L = j_R)
 } {
-e_L \texttt{ == } e_R ↓ b
+e_L \texttt{ == } e_R ↓ j_L = j_R
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{boolean-and-shortcut} {
@@ -1169,15 +1174,6 @@ value.  If this is a string, then that is the error that is raised.  Otherwise, 
 complaining that the error message was not a string.  This specification does not specify how the
 error is presented to the user, and whether or not there is a stack trace.  Error messages are meant
 for human inspection, and there is therefore no need to standardize them.</p>
-
-<p> Finally, we have yet to discuss the semantics of <code>import</code> and <code>importstr</code>.
-As these involve file I/O they are not well-suited to an operational semantics rule.  The construct
-<code>import</code> is handled by opening the named file, attempting to parse it, and then
-static-checking it (or raising an error).  Then, the resulting expression is evaluated to a Jsonnet
-value.  The file is cached by filename, so that even if it is changed on disk mid-execution,
-referential transparency of Jsonnet is maintained.  The construct <code>importstr</code> is similar
-except the file is simply represented as a Jsonnet string, which is useful to avoid having to escape
-the file.  The file is assumed to be UTF-8.</p>
 
 <h4>JSON Values</h4>
 
@@ -1286,7 +1282,9 @@ yields an error, then D ≡ E (regardless of what the exact text of the message 
 <h3>Standard Library Reflection Functions</h3>
 
 <p>The functions in the standard library that provide reflection capabilities are formalized
-below.  Note the lexical sorting of the fields in the object-fields rule. </p>
+below.  Note the lexical sorting of the fields in the object-fields rule.  This is because the
+fields have no order within the object value, but the resulting list does define an order.  To avoid
+ambiguity, we therefore require the list of fields to be sorted alphabetically. </p>
 
 <div class="rules">
 
