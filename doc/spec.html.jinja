@@ -713,7 +713,8 @@ judgement \(v ⇓ j\) which represents <dfn>manifestation</dfn>, the process by 
 are converted into JSON values.</p>
 
 <p> We model both explicit runtime errors (raised by the error construct) and implicit runtime
-errors (e.g. array bounds errors) as stuck execution.  </p>
+errors (e.g. array bounds errors) as stuck execution.  Errors can occur both in the \(e ↓ v\)
+judgement and in the \(v ⇓ j\) judgement (because it is defined in terms of \(e ↓ v\)).</p>
 
 <h4>Jsonnet Values</h4>
 
@@ -1103,6 +1104,8 @@ Jsonnet objects are lost on the conversion to JSON.  Arrays elements and Object 
 
 
 </table>
+
+<p>Note that <em>JValue</em> ⊂ <em>Value</em>.</p>
 
 <p> JObjects are represented as partial functions, hence the use of the harpoon notation ⇀.  If a
 JSON object does not define a particular field, the function is undefined.  This partial function
