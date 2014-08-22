@@ -796,55 +796,9 @@ static AST *do_parse(Allocator &alloc, const std::string &file, const char *inpu
     return expr;
 }
 
-static constexpr char ASSERT_EQUAL_CODE[] = {
-#include "assertEqual.fragment.h"
+static constexpr char STD_CODE[] = {
+    #include "std.jsonnet.h"
 };
-
-static constexpr char TO_STRING_CODE[] = {
-#include "toString.fragment.h"
-};
-
-static constexpr char MAP_CODE[] = {
-#include "map.fragment.h"
-};
-
-static constexpr char FILTER_MAP_CODE[] = {
-#include "filterMap.fragment.h"
-};
-
-static constexpr char FOLDL_CODE[] = {
-#include "foldL.fragment.h"
-};
-
-static constexpr char FOLDR_CODE[] = {
-#include "foldR.fragment.h"
-};
-
-static constexpr char RANGE_CODE[] = {
-#include "range.fragment.h"
-};
-
-static constexpr char JOIN_CODE[] = {
-#include "join.fragment.h"
-};
-
-static constexpr char SUBSTR_CODE[] = {
-#include "substr.fragment.h"
-};
-
-static constexpr char FORMAT_CODE[] = {
-#include "format.fragment.h"
-};
-
-static constexpr char MOD_CODE[] = {
-#include "mod.fragment.h"
-};
-
-static constexpr char ABS_CODE[] = {
-#include "abs.fragment.h"
-};
-
-
 
 AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
 {
@@ -852,12 +806,13 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
     AST *expr = do_parse(alloc, file, input);
 
     // Now, implement the std library by wrapping in a local construct.
+    auto *std_obj = static_cast<Object*>(do_parse(alloc, "std.jsonnet", STD_CODE));
 
     // For generated ASTs, use a bogus location.
     const LocationRange l;
 
     // Bind 'std' builtins that are implemented natively.
-    Object::Fields fields;
+    Object::Fields &fields = std_obj->fields;
     for (unsigned long c=0 ; c <= max_builtin ; ++c) {
         const auto &decl = jsonnet_builtin_decl(c);
         std::vector<const Identifier*> params;
@@ -867,47 +822,8 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
                             alloc.make<BuiltinFunction>(l, c, params));
     }
 
-    // Bind 'std' builtins that are implemented in jsonnet.
-    fields.emplace_back(alloc.make<LiteralString>(l, "assertEqual"), true,
-                        do_parse(alloc, "builtin:assertEqual", ASSERT_EQUAL_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "toString"), true,
-                        do_parse(alloc, "builtin:toString", TO_STRING_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "map"), true,
-                        do_parse(alloc, "builtin:map", MAP_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "filterMap"), true,
-                        do_parse(alloc, "builtin:filterMap", FILTER_MAP_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "foldl"), true,
-                        do_parse(alloc, "builtin:foldl", FOLDL_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "foldr"), true,
-                        do_parse(alloc, "builtin:foldr", FOLDR_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "range"), true,
-                        do_parse(alloc, "builtin:range", RANGE_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "join"), true,
-                        do_parse(alloc, "builtin:join", JOIN_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "substr"), true,
-                        do_parse(alloc, "builtin:substr", SUBSTR_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "format"), true,
-                        do_parse(alloc, "builtin:format", FORMAT_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "mod"), true,
-                        do_parse(alloc, "builtin:mod", MOD_CODE));
-
-    fields.emplace_back(alloc.make<LiteralString>(l, "abs"), true,
-                        do_parse(alloc, "builtin:abs", ABS_CODE));
-
-    AST *init = alloc.make<Object>(l, fields);
-
     Local::Binds std_binds;
-    std_binds[alloc.makeIdentifier("std")] = init;
+    std_binds[alloc.makeIdentifier("std")] = std_obj;
     AST *wrapped = alloc.make<Local>(expr->location, std_binds, expr);
     return wrapped;
 }

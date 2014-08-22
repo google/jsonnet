@@ -48,8 +48,7 @@ SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
 LIB_SRC = $(SRC) libjsonnet.cpp
 
 ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js
-ALL_FRAGMENTS = assertEqual.fragment.h toString.fragment.h map.fragment.h filterMap.fragment.h foldL.fragment.h foldR.fragment.h range.fragment.h join.fragment.h substr.fragment.h format.fragment.h mod.fragment.h abs.fragment.h
-ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h $(ALL_FRAGMENTS)
+ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h std.jsonnet.h
 
 default: jsonnet
 
@@ -95,7 +94,7 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
 
 # Encode standard library for embedding in C
-%.fragment.h: %.fragment
+%.jsonnet.h: %.jsonnet
 	($(OD) -v -Anone -t u1 -w1 $< && echo -n "  0") | tr "\n" "," > $@
 	echo >> $@
 

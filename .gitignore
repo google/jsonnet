@@ -12,5 +12,5 @@ core
 core.*
 vgcore
 vgcore.*
-*.fragment.h
+*.jsonnet.h
 

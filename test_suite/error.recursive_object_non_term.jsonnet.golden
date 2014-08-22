@@ -18,5 +18,5 @@ RUNTIME ERROR: Max stack frames exceeded.
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	error.recursive_object_non_term.jsonnet:20:35-54	object <Fib>
 	error.recursive_object_non_term.jsonnet:23:17-31	thunk <a>
-	builtin:assertEqual:18:8	function <anonymous>
+	std.jsonnet:516:12	function <anonymous>
 	error.recursive_object_non_term.jsonnet:23:1-37	
