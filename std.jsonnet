@@ -14,7 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* This is the Jsonnet standard library, at least the parts of it that are written in Jsonnet.
+ *
+ * There are some native methods as well, which are defined in the interpreter and added to this
+ * file.  It is never necessary to import std.jsonnet, it is embedded into the interpreter at
+ * compile-time and automatically imported into all other Jsonnet programs.
+ */
 {
+
+    local std = self,
+
     toString(a)::
         "" + a,
     
@@ -29,6 +38,17 @@ limitations under the License.
             error "substr third parameter should be greater than zero, got " + len
         else
             std.join("", std.makeArray(len, function(i) str[i + from])),
+
+    split(str, c)::
+        local aux(str, delim, i, arr, v) =
+            local c = str[i];
+            if i >= std.length(str) then
+                arr + [v]
+            else if c == delim then
+                aux(str, delim, i + 1, arr + [v], "")
+            else
+                aux(str, delim, i + 1, arr, v + c);
+        aux(str, c, 0, [], ""),
 
     range(from, to)::
         std.makeArray(to - from + 1, function(i) i + from),
