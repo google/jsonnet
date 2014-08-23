@@ -48,7 +48,7 @@ SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
 LIB_SRC = $(SRC) libjsonnet.cpp
 
 ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js
-ALL_HEADERS = vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h std.jsonnet.h
+ALL_HEADERS = libjsonnet.h vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h std.jsonnet.h
 
 default: jsonnet
 
@@ -64,7 +64,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	cd test_suite ; ./run_tests.sh
 
 # Commandline executable.
-jsonnet: jsonnet.cpp $(LIB_SRC) libjsonnet.h
+jsonnet: jsonnet.cpp $(LIB_SRC) $(ALL_HEADERS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC) -o $@
 
 # C binding.
@@ -99,4 +99,4 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.fragment.h
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.jsonnet.h
