@@ -17,11 +17,11 @@ limitations under the License.
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
-#include "lexer.h"
-#include "parser.h"
-#include "static_analysis.h"
-#include "vm.h"
+extern "C" {
+    #include "libjsonnet.h"
+}
 
 std::string next_arg(unsigned &i, const std::vector<std::string> &args)
 {
@@ -66,7 +66,9 @@ void usage(std::ostream &o)
     o << "and <option> can be:\n";
     o << "    -h / --help            This message\n";
     o << "    -e / --exec            Treat filename as code (requires explicit filename)\n";
+    o << "    -E --env               Add an environment variable\n\n";
     o << "    -s / --max-stack <n>   Number of allowed stack frames\n";
+    o << "    -t / --max-trace <n>   Max length of stack trace before cropping\n";
     o << "    --gc-min-objects       Do not run garbage collector until this many\n";
     o << "    --gc-growth-trigger    Run garbage collector after this amount of object growth\n";
     o << "    --debug-ast            Unparse the parsed AST without executing it\n\n";
@@ -91,12 +93,9 @@ long strtol_check(const std::string &str)
 
 int main(int argc, const char **argv)
 {
+    JsonnetVM *vm = jsonnet_make();
     std::string filename = "-";
-    double gc_growth_trigger = 2.0;
-    unsigned max_stack = 500;
-    unsigned gc_min_objects = 1000;
     bool filename_is_code = false;
-    bool debug_ast = false;
 
     auto args = simplify_args(argc, argv);
     std::vector<std::string> remaining_args;
@@ -109,37 +108,54 @@ int main(int argc, const char **argv)
         } else if (arg == "-s" || arg == "--max-stack") {
             long l = strtol_check(next_arg(i, args));
             if (l < 1) {
-                std::cerr << "ERROR: Invalid --max-stack value " << l << "\n" << std::endl;
+                std::cerr << "ERROR: Invalid --max-stack value: " << l << "\n" << std::endl;
                 usage(std::cerr);
                 exit(EXIT_FAILURE);
             }
-            max_stack = l;
+            jsonnet_max_stack(vm, l);
+        } else if (arg == "-E" || arg == "--env") {
+            const std::string &var = next_arg(i, args);
+            const char *val = ::getenv(var.c_str());
+            if (val == nullptr) {
+                std::cerr << "ERROR: Environment variable " << var << " was undefined." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            jsonnet_env(vm, var.c_str(), val);
         } else if (arg == "--gc-min-objects") {
-            long l = gc_min_objects = strtol_check(next_arg(i, args));
-            if (l < 1) {
-                std::cerr << "ERROR: Invalid --gc-min-objects value " << l << "\n" << std::endl;
+            long l = strtol_check(next_arg(i, args));
+            if (l < 0) {
+                std::cerr << "ERROR: Invalid --gc-min-objects value: " << l << std::endl;
                 usage(std::cerr);
                 exit(EXIT_FAILURE);
             }
-            gc_min_objects = l;
+            jsonnet_gc_min_objects(vm, l);
+        } else if (arg == "-t" || arg == "--max-trace") {
+            long l = strtol_check(next_arg(i, args));
+            if (l < 0) {
+                std::cerr << "ERROR: Invalid --max-trace value: " << l << std::endl;
+                usage(std::cerr);
+                exit(EXIT_FAILURE);
+            }
+            jsonnet_max_trace(vm, l);
         } else if (arg == "--gc-growth-trigger") {
             const char *arg = next_arg(i,args).c_str();
             char *ep;
-            gc_growth_trigger = std::strtod(arg, &ep);
+            double v = std::strtod(arg, &ep);
             if (*ep != '\0' || *arg == '\0') {
                 std::cerr << "ERROR: Invalid number \"" << arg << "\"" << std::endl;
                 usage(std::cerr);
                 exit(EXIT_FAILURE);
             }
-            if (gc_growth_trigger < 0) {
+            if (v < 0) {
                 std::cerr << "ERROR: Invalid --gc-growth-trigger \"" << arg << "\"\n" << std::endl;
                 usage(std::cerr);
                 exit(EXIT_FAILURE);
             }
+            jsonnet_gc_growth_trigger(vm, v);
         } else if (arg == "-e" || arg == "--exec") {
             filename_is_code = true;
         } else if (arg == "--debug-ast") {
-            debug_ast = true;
+            jsonnet_debug_ast(vm, true);
         } else if (arg == "--") {
             // All subsequent args are not options.
             while ((++i) < args.size())
@@ -166,62 +182,49 @@ int main(int argc, const char **argv)
         exit(EXIT_FAILURE);
     }
 
-    try {
-        std::string input;
-        if (filename_is_code) {
-            input = filename;
-            filename = "<cmdline>";
+    std::string input;
+    if (filename_is_code) {
+        input = filename;
+        filename = "<cmdline>";
+    } else {
+        if (filename == "-") {
+            filename = "<stdin>";
+            input.assign(std::istreambuf_iterator<char>(std::cin),
+                         std::istreambuf_iterator<char>());
         } else {
-            if (filename == "-") {
-                filename = "<stdin>";
-                input.assign(std::istreambuf_iterator<char>(std::cin),
-                             std::istreambuf_iterator<char>());
-            } else {
-                std::ifstream f;
-                f.open(filename.c_str());
-                if (!f.good()) {
-                    std::string msg = "Opening input file: " + filename;
-                    perror(msg.c_str());
-                    return EXIT_FAILURE;
-                }
-                input.assign(std::istreambuf_iterator<char>(f),
-                             std::istreambuf_iterator<char>());
+            std::ifstream f;
+            f.open(filename.c_str());
+            if (!f.good()) {
+                std::string msg = "Opening input file: " + filename;
+                perror(msg.c_str());
+                return EXIT_FAILURE;
+            }
+            input.assign(std::istreambuf_iterator<char>(f),
+                         std::istreambuf_iterator<char>());
+            if (!f.good()) {
+                std::string msg = "Reading input file: " + filename;
+                perror(msg.c_str());
+                return EXIT_FAILURE;
             }
         }
-
-        Allocator alloc;
-        AST *expr = jsonnet_parse(alloc, filename, input.c_str());
-
-        if (debug_ast) {
-            std::cout << jsonnet_unparse_jsonnet(expr) << std::endl;
-        } else {
-            jsonnet_static_analysis(expr);
-            std::cout << jsonnet_vm_execute(alloc, expr,
-                                            max_stack, gc_min_objects, gc_growth_trigger)
-                      << std::endl;
-        }
-
-    } catch (StaticError &e) {
-        std::cerr << "STATIC ERROR: " << e << std::endl;
-        return EXIT_FAILURE;
-
-    } catch (RuntimeError &e) {
-        std::cerr << "RUNTIME ERROR: " << e.msg << std::endl;
-        const long max_above = 10;
-        const long max_below = 10;
-        const long sz = e.stackTrace.size();
-        for (long i = 0 ; i < sz ; ++i) {
-            const auto &f = e.stackTrace[i];
-            if (i >= max_above && i < sz - max_below) {
-                if (i == max_above)
-                    std::cerr << "\t..." << std::endl;
-            } else {
-                std::cerr << "\t" << f.location << "\t" << f.name << std::endl;
-            }
-        }
-        return EXIT_FAILURE;
-
     }
+
+    int error;
+    const char *output =
+        jsonnet_evaluate_snippet(vm, filename.c_str(), input.c_str(), &error);
+
+    if (error) {
+        std::cerr << output;
+        std::cerr.flush();
+        jsonnet_cleanup_string(vm, output);
+        jsonnet_destroy(vm);
+        return EXIT_FAILURE;
+    }
+
+    std::cout << output;
+    std::cout.flush();
+    jsonnet_cleanup_string(vm, output);
+    jsonnet_destroy(vm);
     return EXIT_SUCCESS;
 }
 

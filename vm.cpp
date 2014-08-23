@@ -405,6 +405,9 @@ namespace {
         /** Cache for imported Jsonnet files. */
         std::map<std::string, const std::string *> cachedImports;
 
+        /** Environment variables for std.env. */
+        std::map<std::string, std::string> environment;
+
         RuntimeError makeError(const LocationRange &loc, const std::string &msg)
         {
             return stack.makeError(loc, msg);
@@ -679,10 +682,10 @@ namespace {
          *
          * \param loc The location range of the file to be executed.
          */
-        Interpreter(Allocator &alloc, unsigned max_stack,
-                    double gc_min_objects, double gc_growth_trigger)
+        Interpreter(Allocator &alloc, const std::map<std::string, std::string> env_vars,
+                    unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc.makeIdentifier("array_element"))
+            idArrayElement(alloc.makeIdentifier("array_element")), environment(env_vars)
         {
             scratch = makeNull();
         }
@@ -1663,6 +1666,15 @@ namespace {
                                 }
                                 break;
 
+                                case 24: {  // env
+                                    validateBuiltinArgs(loc, builtin, args, {Value::STRING});
+                                    const std::string &var = static_cast<HeapString*>(args[0].v.h)->value;
+                                    if (environment.find(var) == environment.end()) {
+                                        throw makeError(ast.location, "Undefined environment variable: " + var);
+                                    }
+                                    scratch = makeString(environment[var]);
+                                } break;
+
                                 default:
                                 std::cerr << "INTERNAL ERROR: Unrecognized builtin: " << builtin
                                           << std::endl;
@@ -2060,10 +2072,11 @@ namespace {
 }
 
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
+                               const std::map<std::string, std::string> &env_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger)
 {
-    Interpreter vm(alloc, max_stack, gc_min_objects, gc_growth_trigger);
+    Interpreter vm(alloc, env_vars, max_stack, gc_min_objects, gc_growth_trigger);
     vm.evaluate(ast);
     return vm.manifestJson(LocationRange("During manifestation"), true, "");
 }

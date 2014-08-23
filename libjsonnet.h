@@ -19,36 +19,62 @@ limitations under the License.
  * of using the library.
  */
 
+
+/** Jsonnet virtual machine context. */
+struct JsonnetVM;
+
+/** Create a new Jsonnet virtual machine. */
+struct JsonnetVM *jsonnet_make(void);
+
+/** Set the maximum stack depth. */
+void jsonnet_max_stack(struct JsonnetVM *vm, unsigned v);
+
+/** Set the number of objects required before a garbage collection cycle is allowed. */
+void jsonnet_gc_min_objects(struct JsonnetVM *vm, unsigned v);
+
+/** Run the garbage collector after this amount of growth in the number of objects. */
+void jsonnet_gc_growth_trigger(struct JsonnetVM *vm, double v);
+
+/** Assign a key/value pair to the Jsonnet environment. */
+void jsonnet_env(struct JsonnetVM *vm, const char *key, const char *val);
+
+/** If set to 1, will emit the Jsonnet input after parsing / desugaring. */
+void jsonnet_debug_ast(struct JsonnetVM *vm, int v);
+
+/** Set the number of lines of stack trace to display (0 for all of them). */
+void jsonnet_max_trace(struct JsonnetVM *vm, unsigned v);
+
 /** Evaluate a file, return a JSON string.
  *
- * If the evaluation is successful, the JSON string is returned, which should be cleaned up with
- * jsonnet_delete.  If an error occured, NULL is returned and the error string is populated with a
- * message.
+ * The returned string should be cleaned up with jsonnet_delete.
  *
- * \param filename Path to a file containing Jsonnet code
- * \param error Return by reference error string
- * \returns Either NULL, or a string containing JSON
+ * \param filename Path to a file containing Jsonnet code.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either JSON or the error message.
  */
-const char *jsonnet_evaluate_file(const char *filename,
-                                  const char **error);
+const char *jsonnet_evaluate_file(struct JsonnetVM *vm,
+                                  const char *filename,
+                                  int *error);
 
 /** Evaluate a Jsonnet string, return a JSON string.
  *
- * If the evaluation is successful, the JSON string is returned, which should be cleaned up with
- * jsonnet_delete.  If an error occured, NULL is returned and the error string is populated with a
- * message.
+ * The returned string should be cleaned up with jsonnet_cleanup_string.
  *
- * \param filename Used in stack traces, you can use any meaningful string, e.g. "snippet"
- * \param snippet The Jsonnet code
- * \param error Return by reference error string
- * \returns Either NULL or a string containing JSON
+ * \param filename Path to a file containing Jsonnet code.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either JSON or the error message.
  */
-const char *jsonnet_evaluate_snippet(const char *filename,
+const char *jsonnet_evaluate_snippet(struct JsonnetVM *vm,
+                                     const char *filename,
                                      const char *snippet,
-                                     const char **error);
+                                     int *error);
 
 /** Clean up returned strings.
  *
  * \param str Either the returned JSON, or the error message, or NULL.
  **/
-void jsonnet_delete(const char *str);
+void jsonnet_cleanup_string(struct JsonnetVM *vm, const char *str);
+
+/** Complement of \see jsonnet_vm_make. */
+void jsonnet_destroy(struct JsonnetVM *vm);
+

@@ -50,6 +50,7 @@ struct RuntimeError {
  * \throws RuntimeError reports runtime errors in the program.
  */
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
+                               const std::map<std::string, std::string> &env_vars,
                                unsigned max_stack=2000, double gc_min_objects=1000,
                                double gc_growth_trigger=2.0);
 

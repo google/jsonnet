@@ -21,51 +21,125 @@ limitations under the License.
 
 #include "libjsonnet.h"
 
-static PyObject* evaluate_file(PyObject* self, PyObject* args)
+static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
-    const char *filename, *out, *error;
+    const char *filename, *out;
+    unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
+    double gc_growth_trigger = 2;
+    int debug_ast = 0, error;
+    PyObject *env = NULL;
+    struct JsonnetVM *vm;
+    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
 
     (void) self;
 
-    if (!PyArg_ParseTuple(args, "s", &filename))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOiI", kwlist,
+                                     &filename,
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &env, &debug_ast, &max_trace)) {
         return NULL;
+    }
 
-    out = jsonnet_evaluate_file(filename, &error);
-    if (out == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, error);
-        jsonnet_delete(error);
+    vm = jsonnet_make();
+    jsonnet_max_stack(vm, max_stack);
+    jsonnet_gc_min_objects(vm, gc_min_objects);
+    jsonnet_max_trace(vm, max_trace);
+    jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
+    jsonnet_debug_ast(vm, debug_ast);
+    if (env != NULL) {
+        PyObject *key, *val;
+        Py_ssize_t pos = 0;
+        
+        while (PyDict_Next(env, &pos, &key, &val)) {
+            const char *key_ = PyString_AsString(key);
+            if (key_ == NULL) {
+                jsonnet_destroy(vm);
+                return NULL;
+            }
+            const char *val_ = PyString_AsString(val);
+            if (val_ == NULL) {
+                jsonnet_destroy(vm);
+                return NULL;
+            }
+            jsonnet_env(vm, key_, val_);
+        }
+    }
+
+    out = jsonnet_evaluate_file(vm, filename, &error);
+    if (error) {
+        PyErr_SetString(PyExc_RuntimeError, out);
+        jsonnet_cleanup_string(vm, out);
+        jsonnet_destroy(vm);
         return NULL;
     } else {
         PyObject *ret = PyString_FromString(out);
-        jsonnet_delete(out);
+        jsonnet_cleanup_string(vm, out);
+        jsonnet_destroy(vm);
         return ret;
     }
 }
 
-static PyObject* evaluate_snippet(PyObject* self, PyObject* args)
+static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
 {
-    const char *filename, *src, *out, *error;
+    const char *filename, *src, *out;
+    unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
+    double gc_growth_trigger = 2;
+    int debug_ast = 0, error;
+    PyObject *env = NULL;
+    struct JsonnetVM *vm;
+    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
 
     (void) self;
 
-    if (!PyArg_ParseTuple(args, "ss", &filename, &src))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOiI", kwlist,
+                                     &filename, &src,
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &env, &debug_ast, &max_trace)) {
         return NULL;
+    }
 
-    out = jsonnet_evaluate_snippet(filename, src, &error);
-    if (out == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, error);
-        jsonnet_delete(error);
+    vm = jsonnet_make();
+    jsonnet_max_stack(vm, max_stack);
+    jsonnet_gc_min_objects(vm, gc_min_objects);
+    jsonnet_max_trace(vm, max_trace);
+    jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
+    jsonnet_debug_ast(vm, debug_ast);
+    if (env != NULL) {
+        PyObject *key, *val;
+        Py_ssize_t pos = 0;
+        
+        while (PyDict_Next(env, &pos, &key, &val)) {
+            const char *key_ = PyString_AsString(key);
+            if (key_ == NULL) {
+                jsonnet_destroy(vm);
+                return NULL;
+            }
+            const char *val_ = PyString_AsString(val);
+            if (val_ == NULL) {
+                jsonnet_destroy(vm);
+                return NULL;
+            }
+            jsonnet_env(vm, key_, val_);
+        }
+    }
+
+    out = jsonnet_evaluate_snippet(vm, filename, src, &error);
+    if (error) {
+        PyErr_SetString(PyExc_RuntimeError, out);
+        jsonnet_cleanup_string(vm, out);
+        jsonnet_destroy(vm);
         return NULL;
     } else {
         PyObject *ret = PyString_FromString(out);
-        jsonnet_delete(out);
+        jsonnet_cleanup_string(vm, out);
+        jsonnet_destroy(vm);
         return ret;
     }
 }
 
 static PyMethodDef module_methods[] = {
-    {"evaluate_file", evaluate_file, METH_VARARGS, "Interpret the given Jsonnet file."},
-    {"evaluate_snippet", evaluate_snippet, METH_VARARGS, "Interpret the given Jsonnet code."},
+    {"evaluate_file", (PyCFunction)evaluate_file, METH_VARARGS | METH_KEYWORDS,
+     "Interpret the given Jsonnet file."},
+    {"evaluate_snippet", (PyCFunction)evaluate_snippet, METH_VARARGS | METH_KEYWORDS,
+     "Interpret the given Jsonnet code."},
     {NULL, NULL, 0, NULL}
 };
 

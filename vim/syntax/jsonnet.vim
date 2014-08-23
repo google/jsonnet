@@ -18,6 +18,7 @@ syn match Constant "std.filterMap"
 syn match Constant "std.floor"
 syn match Constant "std.foldl"
 syn match Constant "std.foldr"
+syn match Constant "std.force"
 syn match Constant "std.join"
 syn match Constant "std.length"
 syn match Constant "std.log"
@@ -29,6 +30,7 @@ syn match Constant "std.objectHas"
 syn match Constant "std.pow"
 syn match Constant "std.range"
 syn match Constant "std.sin"
+syn match Constant "std.split"
 syn match Constant "std.sqrt"
 syn match Constant "std.substr"
 syn match Constant "std.tan"
@@ -42,7 +44,7 @@ syn region String start='L\="' skip='\\\\\|\\"' end='"'
 syn region Comment start="/[*]" end="[*]/"
 syn match Comment "//.*$"
 
-syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\w*:"
+syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\w*\(([^)]*)\)\?\w*::\?"
 
 syntax keyword Include import importstr
 syntax keyword Type function self super

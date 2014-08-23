@@ -64,8 +64,8 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	cd test_suite ; ./run_tests.sh
 
 # Commandline executable.
-jsonnet: jsonnet.cpp $(SRC) $(ALL_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SRC) $< -o $@
+jsonnet: jsonnet.cpp $(LIB_SRC) libjsonnet.h
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC) -o $@
 
 # C binding.
 libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
@@ -73,7 +73,7 @@ libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
 
 # Javascript build of C binding
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
-	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_evaluate_snippet", "_jsonnet_delete"]' $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
+	$(EMCXX) -s 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_cleanup_string", "_jsonnet_destroy"]' $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
 
 # Copy javascript build to doc directory
 doc/libjsonnet.js: libjsonnet.js

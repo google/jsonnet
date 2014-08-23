@@ -21,19 +21,23 @@ limitations under the License.
 
 int main(int argc, const char **argv)
 {
-    const char *error = NULL;
-    const char *json;
+    int error;
+    const char *output;
+    struct JsonnetVM *vm;
     if (argc != 2) {
         fprintf(stderr, "libjsonnet_test_snippet <string>\n");
         return EXIT_FAILURE;
     }
-    json = jsonnet_evaluate_snippet("snippet", argv[1], &error);
-    if (json == NULL) {
-        fprintf(stderr, "%s", error);
-        jsonnet_delete(error);
+    vm = jsonnet_make();
+    output = jsonnet_evaluate_snippet(vm, "snippet", argv[1], &error);
+    if (error) {
+        fprintf(stderr, "%s", output);
+        jsonnet_cleanup_string(vm, output);
+        jsonnet_destroy(vm);
         return EXIT_FAILURE;
     } 
-    printf("%s", json);
-    jsonnet_delete(json);
+    printf("%s", output);
+    jsonnet_cleanup_string(vm, output);
+    jsonnet_destroy(vm);
     return EXIT_SUCCESS;
 }

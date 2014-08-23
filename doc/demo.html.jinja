@@ -239,21 +239,19 @@ Silly example: Fibonacci via recursive object (CAUTION: can be slow)
 <script>
 <!--
 function jsonnet_evaluate_snippet_wrapped(code) {
-    var jsonnet_delete = Module.cwrap('jsonnet_delete', 'number', ['number'])
-    var jsonnet_evaluate_snippet = Module.cwrap('jsonnet_evaluate_snippet', 'number', ['string', 'string', 'number'])
+    var jsonnet_make = Module.cwrap('jsonnet_make', 'number', [])
+    var jsonnet_cleanup_string = Module.cwrap('jsonnet_cleanup_string', 'number', ['number', 'number'])
+    var jsonnet_evaluate_snippet = Module.cwrap('jsonnet_evaluate_snippet', 'number', ['number', 'string', 'string', 'number'])
+    var jsonnet_destroy = Module.cwrap('jsonnet_destroy', 'number', ['number'])
 
+    var vm = jsonnet_make();
     var error_ptr = Module._malloc(4);
-    var output_ptr = jsonnet_evaluate_snippet("snippet", code, error_ptr);
-    var result;
-    if (output_ptr == 0) {
-        var error = Module.getValue(error_ptr, 'i32*');
-        result = Module.Pointer_stringify(error);
-        jsonnet_delete(error);
-    } else {
-        result = Module.Pointer_stringify(output_ptr);
-        jsonnet_delete(output_ptr);
-    }
+    var output_ptr = jsonnet_evaluate_snippet(vm, "snippet", code, error_ptr);
+    var error = Module.getValue(error_ptr, 'i32*');
     Module._free(error_ptr);
+    var result = Module.Pointer_stringify(output_ptr);
+    jsonnet_cleanup_string(vm, output_ptr);
+    jsonnet_destroy(vm);
     return result;
 }
 function compute() {

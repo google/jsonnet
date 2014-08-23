@@ -30,67 +30,123 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
-const char *jsonnet_evaluate_file(const char *filename, const char **error)
+struct JsonnetVM {
+    double gcGrowthTrigger;
+    unsigned maxStack;
+    unsigned gcMinObjects;
+    bool debugAst;
+    unsigned maxTrace;
+    std::map<std::string, std::string> env;
+    JsonnetVM(void)
+      : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20)
+    { }
+};
+
+JsonnetVM *jsonnet_make(void)
+{
+    return new JsonnetVM();
+}
+
+void jsonnet_destroy(JsonnetVM *vm)
+{
+    delete vm;
+}
+
+void jsonnet_max_stack(JsonnetVM *vm, unsigned v)
+{
+    vm->maxStack = v;
+}
+
+void jsonnet_gc_min_objects(JsonnetVM *vm, unsigned v)
+{
+    vm->gcMinObjects = v;
+}
+
+void jsonnet_gc_growth_trigger(JsonnetVM *vm, double v)
+{
+    vm->gcGrowthTrigger = v;
+}
+
+void jsonnet_env(JsonnetVM *vm, const char *key, const char *val)
+{
+    vm->env[key] = val;
+}
+
+void jsonnet_debug_ast(JsonnetVM *vm, int v)
+{
+    vm->debugAst = v;
+}
+
+void jsonnet_max_trace(JsonnetVM *vm, unsigned v)
+{
+    vm->maxTrace = v;
+}
+
+const char *jsonnet_evaluate_file(JsonnetVM *vm, const char *filename, int *error)
 {
     std::ifstream f;
     f.open(filename);
     if (!f.good()) {
         std::stringstream ss;
         ss << "Opening input file: " << filename << ": " << strerror(errno);
-        *error = ::strdup(ss.str().c_str());
-        return NULL;
+        *error = true;
+        return ::strdup(ss.str().c_str());
     }
     std::string input;
     input.assign(std::istreambuf_iterator<char>(f),
                  std::istreambuf_iterator<char>());
 
-    return jsonnet_evaluate_snippet(filename, input.c_str(), error);
+    return jsonnet_evaluate_snippet(vm, filename, input.c_str(), error);
 }
 
-const char *jsonnet_evaluate_snippet(const char *filename, const char *snippet, const char **error)
+const char *jsonnet_evaluate_snippet(JsonnetVM *vm, const char *filename,
+                                     const char *snippet, int *error)
 {
-    double gc_growth_trigger = 2.0;
-    unsigned max_stack = 500;
-    unsigned gc_min_objects = 1000;
-
     try {
         Allocator alloc;
         AST *expr = jsonnet_parse(alloc, filename, snippet);
-        jsonnet_static_analysis(expr);
-        std::string json_str = jsonnet_vm_execute(alloc, expr,
-                                                  max_stack, gc_min_objects, gc_growth_trigger);
+        std::string json_str;
+        if (vm->debugAst) {
+            json_str = jsonnet_unparse_jsonnet(expr);
+        } else {
+            jsonnet_static_analysis(expr);
+            json_str = jsonnet_vm_execute(alloc, expr, vm->env, vm->maxStack,
+                                          vm->gcMinObjects, vm->gcGrowthTrigger);
+        }
         json_str += "\n";
+        *error = false;
         return ::strdup(json_str.c_str());
 
     } catch (StaticError &e) {
         std::stringstream ss;
         ss << "STATIC ERROR: " << e << std::endl;
-        *error = ::strdup(ss.str().c_str());
-        return NULL;
+        *error = true;
+        return ::strdup(ss.str().c_str());
 
     } catch (RuntimeError &e) {
         std::stringstream ss;
         ss << "RUNTIME ERROR: " << e.msg << std::endl;
-        const long max_above = 10;
-        const long max_below = 10;
+        const long max_above = vm->maxTrace / 2;
+        const long max_below = vm->maxTrace - max_above;
         const long sz = e.stackTrace.size();
         for (long i = 0 ; i < sz ; ++i) {
             const auto &f = e.stackTrace[i];
-            if (i >= max_above && i < sz - max_below) {
+            if (vm->maxTrace > 0 && i >= max_above && i < sz - max_below) {
                 if (i == max_above)
                     ss << "\t..." << std::endl;
             } else {
                 ss << "\t" << f.location << "\t" << f.name << std::endl;
             }
         }
-        *error = ::strdup(ss.str().c_str());
-        return NULL;
+        *error = true;
+        return ::strdup(ss.str().c_str());
     }
 
 }
 
-void jsonnet_delete(const char *str)
+void jsonnet_cleanup_string(JsonnetVM *vm, const char *str)
 {
+    (void) vm;
     // Const cast is valid because memory originated from ::strdup.
     ::free(const_cast<char*>(str));
 }
