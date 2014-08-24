@@ -14,13 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Can capture variables from another file.
-std.assertEqual((import "lib/A_20_func.jsonnet")(), 20) &&
-
-// Each import has its own environment, can't be overidden.
-std.assertEqual(local A = 7; local lib = import "lib/A_20.jsonnet"; lib, 20) &&
-std.assertEqual(local A = 7, lib = import "lib/A_20.jsonnet"; lib, 20) &&
-std.assertEqual(importstr "lib/some_file.txt", "Hello World!\n") &&
-std.assertEqual(import "lib/rel_path.jsonnet", "rel_path") &&
-
-true
+import "rel_path2.jsonnet"
