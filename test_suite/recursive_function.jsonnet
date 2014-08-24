@@ -31,7 +31,7 @@ local sum(x, v) =
         if x2 == x2 && v2 == v2 then
             sum(x2, v2);
 
-local sz = 100000;
+local sz = 10000;
 std.assertEqual(sum(sz, 0), sz * (sz+1)/2) &&
 
 true

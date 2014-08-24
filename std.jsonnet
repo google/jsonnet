@@ -302,21 +302,22 @@ limitations under the License.
             str + padding(w - std.length(str), s);
 
         // Render an integer (e.g., decimal or octal).
-        local render_int(n__, zero_pad, blank, sign, radix, zero_prefix) =
-            local neg = n__ < 0;
+        local render_int(n__, min_chars, min_digits, blank, sign, radix, zero_prefix) =
             local n_ = std.abs(n__);
-            local zp = zero_pad - (if neg || blank || sign then 1 else 0);
             local aux(n) =
                 if n == 0 then
                     zero_prefix
                 else
                     aux(std.floor(n / radix)) + (n % radix);
             local dec = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
-            local dec2 = pad_left(dec, zp, "0");
+            local neg = n__ < 0;
+            local zp = min_chars - (if neg || blank || sign then 1 else 0);
+            local zp2 = std.max(zp, min_digits);
+            local dec2 = pad_left(dec, zp2, "0");
             (if neg then "-" else if sign then "+" else if blank then " " else "") + dec2;
 
         // Render an integer in hexadecimal.
-        local render_hex(n__, zero_pad, blank, sign, add_zerox, capitals) =
+        local render_hex(n__, min_chars, min_digits, blank, sign, add_zerox, capitals) =
             local numerals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                              + if capitals then ["A", "B", "C", "D", "E", "F"]
                                            else ["a", "b", "c", "d", "e", "f"];
@@ -327,41 +328,56 @@ limitations under the License.
                 else
                     aux(std.floor(n / 16)) + numerals[n % 16];
             local hex = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
-
             local neg = n__ < 0;
-            local zp = zero_pad - (if neg || blank || sign then 1 else 0)
-                                - (if add_zerox then 2 else 0);
+            local zp = min_chars - (if neg || blank || sign then 1 else 0)
+                                 - (if add_zerox then 2 else 0);
+            local zp2 = std.max(zp, min_digits);
             local hex2 = (if add_zerox then (if capitals then "0X" else "0x") else "")
-                         + pad_left(hex, zp, "0");
+                         + pad_left(hex, zp2, "0");
             (if neg then "-" else if sign then "+" else if blank then " " else "") + hex2;
 
+        local strip_trailing_zero(str) =
+            local aux(str, i) =
+                if i < 0 then
+                    ""
+                else
+                    if str[i] == "0" then
+                        aux(str, i - 1)
+                    else
+                        std.substr(str, 0, i + 1);
+            aux(str, std.length(str) - 1);
+
         // Render floating point in decimal form
-        local render_float_dec(n__, zero_pad, blank, sign, ensure_pt, prec) =
+        local render_float_dec(n__, zero_pad, blank, sign, ensure_pt, trailing, prec) =
             local n_ = std.abs(n__);
             local whole = std.floor(n_);
             local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
-            local str = render_int(n__ / n_ * whole, zero_pad - prec - dot_size, blank, sign, 10, "");
+            local zp = zero_pad - prec - dot_size;
+            local str = render_int(n__ / n_ * whole, zp, 0, blank, sign, 10, "");
             if prec == 0 then
                 str + if ensure_pt then "." else ""
             else
                 local frac = std.floor((n_ - whole) * std.pow(10, prec) + 0.5);
-                local frac_str = render_int(frac, prec, false, false, 10, "");
-                str + "." + frac_str;
+                if trailing || frac > 0 then
+                    local frac_str = render_int(frac, prec, 0, false, false, 10, "");
+                    str + "." + if !trailing then strip_trailing_zero(frac_str) else frac_str
+                else
+                    str;
 
         // Render floating point in scientific form
-        local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, caps, prec) =
-            local n_ = std.abs(n__);
-            local exponent = std.floor(std.log(std.abs(n_)) / std.log(10));
+        local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, trailing, caps, prec) =
+            local exponent = std.floor(std.log(std.abs(n__)) / std.log(10));
             local suff = (if caps then "E" else "e")
-                         + render_int(exponent, 3, false, true, 10, "");
-            local mantissa = n__ / n_ * n_ / std.pow(10, exponent);
-            render_float_dec(mantissa, zero_pad - std.length(suff), blank, sign, ensure_pt, prec)
-            + suff;
+                         + render_int(exponent, 3, 0, false, true, 10, "");
+            local mantissa = n__ / std.pow(10, exponent);
+            local zp2 = zero_pad - std.length(suff);
+            render_float_dec(mantissa, zp2, blank, sign, ensure_pt, trailing, prec) + suff;
 
         // Render a value with an arbitrary format code.
         local format_code(val, code, fw, prec_or_null, i) =
             local cflags = code.cflags;
-            local prec = if prec_or_null != null then prec_or_null else 6;
+            local fpprec = if prec_or_null != null then prec_or_null else 6;
+            local iprec = if prec_or_null != null then prec_or_null else 0;
             local zp = if cflags.zero && !cflags.left then fw else 0;
             if code.ctype == "s" then
                 std.toString(val)
@@ -370,20 +386,20 @@ limitations under the License.
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
-                    render_int(val, zp, cflags.blank, cflags.sign, 10, "")
+                    render_int(val, zp, iprec, cflags.blank, cflags.sign, 10, "")
             else if code.ctype == "o" then
                 if std.type(val) != "number" then
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
                     local zero_prefix = if cflags.alt then "0" else "";
-                    render_int(val, zp, cflags.blank, cflags.sign, 8, zero_prefix)
+                    render_int(val, zp, iprec, cflags.blank, cflags.sign, 8, zero_prefix)
             else if code.ctype == "x" then
                 if std.type(val) != "number" then
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
-                    render_hex(val, zp, cflags.blank, cflags.sign, cflags.alt,
+                    render_hex(val, zp, iprec, cflags.blank, cflags.sign, cflags.alt,
                                code.caps)
             else if code.ctype == "f" then
                 if std.type(val) != "number" then
@@ -391,26 +407,27 @@ limitations under the License.
                           + i + ", got " + std.type(val)
                 else
                     render_float_dec(val, zp, cflags.blank,
-                                     cflags.sign, cflags.alt, prec)
+                                     cflags.sign, cflags.alt, true, fpprec)
             else if code.ctype == "e" then
                 if std.type(val) != "number" then
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
                     render_float_sci(val, zp, cflags.blank,
-                                     cflags.sign, cflags.alt, code.caps, prec)
+                                     cflags.sign, cflags.alt, true, code.caps, fpprec)
             else if code.ctype == "g" then
                 if std.type(val) != "number" then
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
-                    local exponent = std.log(std.abs(val))/std.log(10);
-                    if exponent < -4 || exponent >= prec then
-                        render_float_sci(val, zp, cflags.blank,
-                                         cflags.sign, cflags.alt, code.caps, prec)
+                    local exponent = std.floor(std.log(std.abs(val))/std.log(10));
+                    if exponent < -4 || exponent >= fpprec then
+                        render_float_sci(val, zp, cflags.blank, cflags.sign, cflags.alt,
+                                         cflags.alt, code.caps, fpprec - 1)
                     else
-                        render_float_dec(val, zp, cflags.blank,
-                                         cflags.sign, cflags.alt, prec)
+                        local digits_before_pt = std.max(1, exponent+1);
+                        render_float_dec(val, zp, cflags.blank, cflags.sign, cflags.alt,
+                                         cflags.alt, fpprec - digits_before_pt)
             else if code.ctype == "c" then
                 if std.type(val) == "number" then
                     std.char(val)
@@ -564,5 +581,21 @@ limitations under the License.
             error "std.abs expected number, got " + std.type(n)
         else
             if n > 0 then n else -n,
+
+    max(a, b)::
+        if std.type(a) != "number" then
+            error "std.max first param expected number, got " + std.type(a)
+        else if std.type(b) != "number" then
+            error "std.max second param expected number, got " + std.type(b)
+        else
+            if a > b then a else b,
+
+    min(a, b)::
+        if std.type(a) != "number" then
+            error "std.max first param expected number, got " + std.type(a)
+        else if std.type(b) != "number" then
+            error "std.max second param expected number, got " + std.type(b)
+        else
+            if a < b then a else b,
 
 }
