@@ -142,7 +142,7 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
 
                 default: {
                     std::stringstream ss;
-                    ss << "Couldn't lex number, junk after decimal point: " << c;
+                    ss << "Couldn't lex number, junk after decimal point: " << *c;
                     throw StaticError(filename, begin, ss.str());
                 }
             }
@@ -177,7 +177,7 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
 
                 default: {
                     std::stringstream ss;
-                    ss << "Couldn't lex number, junk after 'E': " << c;
+                    ss << "Couldn't lex number, junk after 'E': " << *c;
                     throw StaticError(filename, begin, ss.str());
                 }
             }
@@ -192,7 +192,7 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
 
                 default: {
                     std::stringstream ss;
-                    ss << "Couldn't lex number, junk after exponent sign: " << c;
+                    ss << "Couldn't lex number, junk after exponent sign: " << *c;
                     throw StaticError(filename, begin, ss.str());
                 }
             }
