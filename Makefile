@@ -95,7 +95,7 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 
 # Encode standard library for embedding in C
 %.jsonnet.h: %.jsonnet
-	(($(OD) -v -Anone -t u1 $< | tr " " "\n" | tr -s "\n" | grep -v "^$$" ) && echo -n "  0") | tr "\n" "," > $@
+	(($(OD) -v -Anone -t u1 $< | tr " " "\n" | grep -v "^$$" | tr "\n" "," ) && echo "0") > $@
 	echo >> $@
 
 clean:
