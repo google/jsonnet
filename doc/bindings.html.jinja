@@ -1,0 +1,42 @@
+{% include 'header.html.jinja' %}
+
+<h1>Libraries For Other Languages</h1>
+
+<p> If you don't want to invoke the jsonnet commandline utility to evaluate Jsonnet, there are also
+libraries for Python and C.  In future we would like to support more languages by wrapping the C
+API in each case.</p>
+
+<h2>C API</h2>
+
+<p>The C API simply wraps the C++ implementation to hide C++ language features like templates,
+classes, overloading, etc.  This makes it easier to bind to other languages, as C is typically the
+lowest common denominator across all systems.</p>
+
+<p>The API is documented in <a
+href="http://github.com/google/jsonnet/blob/master/libjsonnet.h">libjsonnet.h</a>.  It is built with
+'make libjsonnet.so'.  It is used by the python bindings, the Jsonnet commandline tool, as well as a
+couple of simpler tests.  Search for #include "libjsonnet.h".  </p>
+
+<p>To use the API, create a JsonnetVM object, set various options, then tell it to evaluate a
+filename or snippet.  To avoid leaking memory, the result of execution (JSON or error message) and
+the JsonnetVM object itself must be cleaned up using the corresponding functions.</p>
+
+<h2>Python API</h2>
+
+<p>The Python API wraps the C API in a straightforward way.  It can be built with 'make
+_libjsonnet.so'.  The Python module provides two functions, <tt>evaluate_file(f)</tt> and
+<tt>evaluate_snippet(f, e)</tt>.  In the latter case, the parameter <tt>f</tt> is used in stack
+traces due to errors raised in the snippet.</p>
+
+<p>Keyword arguments to these functions are used to control the virtual machine.  They are
+<tt>gc_min_objects</tt>, <tt>gc_growth_trigger</tt>, <tt>env</tt>, <tt>debug_ast</tt>, and
+<tt>max_trace</tt>.  The <tt>debug_ast</tt> argument is a boolean, and <tt>env</tt> is a dict
+mapping strings to strings.  The other keyword arguments should be numbers.</p>
+
+<p>If an error is raised during the evaluation of the Jsonnet code, it is formed into a stack trace
+and thrown as a python RuntimeError.  Otherwise, the JSON string is returned.  To convert this
+into objects for easy interpretation in Python, use the <a
+href="https://docs.python.org/2/library/json.html">json</a> module.</p>
+
+
+{% include 'footer.html.jinja' %}

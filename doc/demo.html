@@ -77,6 +77,57 @@
     }
     </style>
 
+
+    <script type="text/javascript">
+
+        var menu_timeout = null;
+
+        function set_visible(menu, b)
+        {
+            var category = menu.children[0];
+            var dropdown = menu.children[1];
+            category.style['border-radius'] = b && dropdown != null ? '4px 4px 0px 0px' : '4px';
+            if (dropdown != null) {
+                dropdown.style.visibility = b ? 'visible' : 'hidden';
+            }
+        }
+
+        function menu_open(el)
+        {
+            menu_close_all();
+            var menu = el;
+            while (menu.id === "") {
+                menu = menu.parentNode;
+            }
+            set_visible(menu, true);
+        }
+
+        function menu_leave()
+        {
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+            }
+            menu_timeout = window.setTimeout(menu_close_all, 300);
+        }
+
+        function menu_close_all()
+        {
+            var mb = document.getElementById("menubar");
+            if (mb == null) return;
+            var menus = mb.children;
+            for (var i = 0 ; i < menus.length ; ++i) {
+                set_visible(menus[i], false);
+            }
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+                window_timeout = null;
+            }
+        }
+
+        document.onclick = menu_close_all(); 
+
+    </script>
+
 </head>
 
 <body class="language-jsonnet">
@@ -84,17 +135,54 @@
 <div class="header">
 
 <div class="tagline"><i>The data templating language</i></div>
-<div class="title">Jsonnet</div>
-
-<div class="linkbar">
-<a class="linkbarlink" href="index.html">Home</a> |
-<a class="linkbarlink" href="tutorial.html">Tutorial</a> |
-<a class="linkbarlink" href="demo.html">Demo</a> |
-<a class="linkbarlink" href="stdlib.html">Library</a> |
-<a class="linkbarlink" href="implementation.html">Implementation</a> |
-<a class="linkbarlink" href="design.html">Design</a> |
-<a class="linkbarlink" href="spec.html">Spec</a>
+<div id="githubmarkbox">
+<a href="https://groups.google.com/forum/#!forum/jsonnet"><div id="groupsmark"></div></a>
+<a href="http://github.com/google/jsonnet"><div id="githubmark"></div></a>
 </div>
+<div class="title"><a href="index.html" class="title">Jsonnet</a></div>
+
+<ol id="menubar">
+
+    <li id="menu_home">
+        <a href="index.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Home</a>
+    </li>
+
+    <li id="menu_language">
+        <a href="language.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Language</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="design.html">Design</a>
+            <a href="comparisons.html">Comparisons</a>
+            <a href="spec.html">Specification</a>
+        </div>
+    </li>
+
+    <li id="menu_learning">
+        <a href="learning.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Learning</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="tutorial.html">Tutorial</a>
+            <a href="demo.html">Demo</a>
+            <a href="stdlib.html">Standard Library</a>
+        </div>
+    </li>
+
+    <li id="menu_implementation">
+        <a href="implementation.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Implementation</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="commandline.html">Cmdline Tool</a>
+            <a href="bindings.html">Libraries</a>
+            <a href="cpp.html">C++ Internals</a>
+            <a href="javascript.html">Javascript</a>
+            <a href="tests.html">Tests</a>
+        </div>
+    </li>
+
+    <li id="menu_contributing">
+        <a href="contributing.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Contributing</a>
+    </li>
+
+</ol>
+
+<div style="clear: both"></div>
 
 </div>
 
@@ -103,12 +191,9 @@
 
 <h1>Jsonnet Online Demo</h1>
 
-<p> This demo is driven by <a href="http://emscripten.org">emscripten</a>.  It is a Javascript
-build of the C++ implementation, so it runs in your browser.  All language features are supported
-except <code>import</code>, because there is no filesystem.</p>
-
-<p>Enter Jsonnet code below (in most browsers, the textboxes can be made larger by dragging their
-bottom right corner):</p>
+<p> This Javascript <a href="javascript.html">build</a> of Jsonnet runs in your browser.  There is
+no filesystem, so <code>import</code> will not find any files.  In most browsers, the textboxes can
+be made larger by dragging their bottom right corner.</p>
 
 <textarea class="demo-text" id=jsonnet-code rows="15" cols="100">
 local A = {
@@ -146,18 +231,38 @@ local A = {
 <ul>
 
 <li><a id="initial-example" href="" onclick='replace(this) ; return false;'>
-Original Example
-<span class="example-code">local A = {
-    x: 1,
-    y: 2,
-    z: self.x + 10
+Build script example
+<span class="example-code">// Compiler template
+local CCompiler = {
+    cFlags: [],
+    out: &#34;a.out&#34;,
+    local flags_str = std.join(&#34; &#34;, self.cFlags),
+    local files_str = std.join(&#34; &#34;, self.files),
+    cmd: &#34;%s %s %s -o %s&#34; % [self.compiler, flags_str, files_str, self.out],
 };
+
+// GCC specialization
+local Gcc = CCompiler { compiler: &#34;gcc&#34; };
+
+// Another specialization
+local Clang = CCompiler { compiler: &#34;clang&#34; };
+
+// Mixins - append flags
+local Opt = { cFlags: super.cFlags + [&#34;-O3&#34;, &#34;-DNDEBUG&#34;] };
+local Dbg = { cFlags: super.cFlags + [&#34;-g&#34;] };
+
+// Output:
 {
-    f1: A { x: 3 },
-    f2: A { y: 3 },
+    targets: [
+        Gcc { files: [&#34;a.c&#34;, &#34;b.c&#34;] },
+        Clang { files: [&#34;test.c&#34;], out: &#34;test&#34; },
+        Clang + Opt { files: [&#34;test2.c&#34;], out: &#34;test2&#34; },
+        Gcc + Opt + Dbg { files: [&#34;foo.c&#34;, &#34;bar.c&#34;], out: &#34;baz&#34; },
+    ]
 }
 </span>
 </a></li>
+
 
 <li><a href="" onclick='replace(this) ; return false;'>
 Alice &amp; Bob

@@ -1,6 +1,45 @@
 {% include 'header.html.jinja' %}
 {% raw %}
 
+<style>
+/* Non-terminals */
+i {
+    font-family: Arial, sans-serif;
+    font-weight: medium;
+    font-style: italic;
+    color: #008 
+}
+
+/* Value sets */
+em {
+    font-family: Arial, sans-serif;
+    font-weight: medium; 
+    font-style: italic;
+    color: #800
+}
+
+/* Values */
+s {
+    text-decoration: none;
+    font-family: Arial, sans-serif;
+    font-weight: medium;
+    font-style: italic;
+    color: #F00
+}
+
+div.sequent-rule {
+    margin:10px;
+    float:left;
+    font-size:75%;
+    /*border:1px solid #000;*/
+}
+
+div.rules {
+    overflow: auto;
+    width:100%
+}
+</style>
+
 <div style="display:none">
 \[
 \newcommand{\array}[1]{[ #1 ]}

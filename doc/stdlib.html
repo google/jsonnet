@@ -77,6 +77,57 @@
     }
     </style>
 
+
+    <script type="text/javascript">
+
+        var menu_timeout = null;
+
+        function set_visible(menu, b)
+        {
+            var category = menu.children[0];
+            var dropdown = menu.children[1];
+            category.style['border-radius'] = b && dropdown != null ? '4px 4px 0px 0px' : '4px';
+            if (dropdown != null) {
+                dropdown.style.visibility = b ? 'visible' : 'hidden';
+            }
+        }
+
+        function menu_open(el)
+        {
+            menu_close_all();
+            var menu = el;
+            while (menu.id === "") {
+                menu = menu.parentNode;
+            }
+            set_visible(menu, true);
+        }
+
+        function menu_leave()
+        {
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+            }
+            menu_timeout = window.setTimeout(menu_close_all, 300);
+        }
+
+        function menu_close_all()
+        {
+            var mb = document.getElementById("menubar");
+            if (mb == null) return;
+            var menus = mb.children;
+            for (var i = 0 ; i < menus.length ; ++i) {
+                set_visible(menus[i], false);
+            }
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+                window_timeout = null;
+            }
+        }
+
+        document.onclick = menu_close_all(); 
+
+    </script>
+
 </head>
 
 <body class="language-jsonnet">
@@ -84,17 +135,54 @@
 <div class="header">
 
 <div class="tagline"><i>The data templating language</i></div>
-<div class="title">Jsonnet</div>
-
-<div class="linkbar">
-<a class="linkbarlink" href="index.html">Home</a> |
-<a class="linkbarlink" href="tutorial.html">Tutorial</a> |
-<a class="linkbarlink" href="demo.html">Demo</a> |
-<a class="linkbarlink" href="stdlib.html">Library</a> |
-<a class="linkbarlink" href="implementation.html">Implementation</a> |
-<a class="linkbarlink" href="design.html">Design</a> |
-<a class="linkbarlink" href="spec.html">Spec</a>
+<div id="githubmarkbox">
+<a href="https://groups.google.com/forum/#!forum/jsonnet"><div id="groupsmark"></div></a>
+<a href="http://github.com/google/jsonnet"><div id="githubmark"></div></a>
 </div>
+<div class="title"><a href="index.html" class="title">Jsonnet</a></div>
+
+<ol id="menubar">
+
+    <li id="menu_home">
+        <a href="index.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Home</a>
+    </li>
+
+    <li id="menu_language">
+        <a href="language.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Language</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="design.html">Design</a>
+            <a href="comparisons.html">Comparisons</a>
+            <a href="spec.html">Specification</a>
+        </div>
+    </li>
+
+    <li id="menu_learning">
+        <a href="learning.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Learning</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="tutorial.html">Tutorial</a>
+            <a href="demo.html">Demo</a>
+            <a href="stdlib.html">Standard Library</a>
+        </div>
+    </li>
+
+    <li id="menu_implementation">
+        <a href="implementation.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Implementation</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="commandline.html">Cmdline Tool</a>
+            <a href="bindings.html">Libraries</a>
+            <a href="cpp.html">C++ Internals</a>
+            <a href="javascript.html">Javascript</a>
+            <a href="tests.html">Tests</a>
+        </div>
+    </li>
+
+    <li id="menu_contributing">
+        <a href="contributing.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Contributing</a>
+    </li>
+
+</ol>
+
+<div style="clear: both"></div>
 
 </div>
 

@@ -5,12 +5,9 @@
 
 <h1>Jsonnet Online Demo</h1>
 
-<p> This demo is driven by <a href="http://emscripten.org">emscripten</a>.  It is a Javascript
-build of the C++ implementation, so it runs in your browser.  All language features are supported
-except <code>import</code>, because there is no filesystem.</p>
-
-<p>Enter Jsonnet code below (in most browsers, the textboxes can be made larger by dragging their
-bottom right corner):</p>
+<p> This Javascript <a href="javascript.html">build</a> of Jsonnet runs in your browser.  There is
+no filesystem, so <code>import</code> will not find any files.  In most browsers, the textboxes can
+be made larger by dragging their bottom right corner.</p>
 
 <textarea class="demo-text" id=jsonnet-code rows="15" cols="100">
 local A = {
@@ -48,18 +45,10 @@ local A = {
 <ul>
 
 <li><a id="initial-example" href="" onclick='replace(this) ; return false;'>
-Original Example
-<span class="example-code">local A = {
-    x: 1,
-    y: 2,
-    z: self.x + 10
-};
-{
-    f1: A { x: 3 },
-    f2: A { y: 3 },
-}
-</span>
+Build script example
+<span class="example-code">{{ myinclude('../examples/build_example.jsonnet') }}</span>
 </a></li>
+
 
 <li><a href="" onclick='replace(this) ; return false;'>
 Alice &amp; Bob

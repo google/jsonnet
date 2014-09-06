@@ -1,0 +1,404 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Jsonnet - The Data Templating Language</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="keywords" content="JSON, parser, language, configuration, configuration management, configuration language, build, config, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
+    <meta name="description" content="Elegantly and easily describe JSON data for a range of applications." />
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="stylesheet" href="prism.css" />
+    <link rel="stylesheet" type="text/css" href="doc.css" />
+
+    <script type="text/javascript"
+      src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-53570216-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+
+    <script src="prism.js" type="text/javascript">
+    </script>
+
+    <script type="text/javascript">
+    Prism.languages.jsonnet = {
+      'cppcomment': /\/\/.*/g,
+      'comment': /\/\*[\w\W]*?\*\//g,
+      'string': /("|')(\\?.)*?\1/g,
+      'keyword': /\b(self|super)\b|\$/g,
+      'boolean': /\b(true|false)\b/g,
+      'constant': /\bnull\b/g,
+      'error': /\berror\b/g,
+      'special': /\b(local|function|if|then|else|import|importstr|for|in)\b/g,
+      'number': /\b[0-9][0-9.eE]*\b/g,
+      'operator': /(\+|\*|\/)+/g,
+    };
+    </script>
+
+    <style type="text/css">
+    .token.comment,
+    .token.cppcomment {
+      color: #040;
+    }
+
+    .token.identifier {
+      color: #000;
+    }
+    .token.operator {
+      color: #000;
+    }
+
+    .token.boolean,
+    .token.number,
+    .token.constant {
+      color: #05a;
+    }
+
+    .token.string {
+      color: #000048;
+    }
+
+    .token.keyword,
+    .token.special {
+      color: blue;
+    }
+
+    .token.error {
+      color: red;
+    }
+    </style>
+
+
+    <script type="text/javascript">
+
+        var menu_timeout = null;
+
+        function set_visible(menu, b)
+        {
+            var category = menu.children[0];
+            var dropdown = menu.children[1];
+            category.style['border-radius'] = b && dropdown != null ? '4px 4px 0px 0px' : '4px';
+            if (dropdown != null) {
+                dropdown.style.visibility = b ? 'visible' : 'hidden';
+            }
+        }
+
+        function menu_open(el)
+        {
+            menu_close_all();
+            var menu = el;
+            while (menu.id === "") {
+                menu = menu.parentNode;
+            }
+            set_visible(menu, true);
+        }
+
+        function menu_leave()
+        {
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+            }
+            menu_timeout = window.setTimeout(menu_close_all, 300);
+        }
+
+        function menu_close_all()
+        {
+            var mb = document.getElementById("menubar");
+            if (mb == null) return;
+            var menus = mb.children;
+            for (var i = 0 ; i < menus.length ; ++i) {
+                set_visible(menus[i], false);
+            }
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+                window_timeout = null;
+            }
+        }
+
+        document.onclick = menu_close_all(); 
+
+    </script>
+
+</head>
+
+<body class="language-jsonnet">
+
+<div class="header">
+
+<div class="tagline"><i>The data templating language</i></div>
+<div id="githubmarkbox">
+<a href="https://groups.google.com/forum/#!forum/jsonnet"><div id="groupsmark"></div></a>
+<a href="http://github.com/google/jsonnet"><div id="githubmark"></div></a>
+</div>
+<div class="title"><a href="index.html" class="title">Jsonnet</a></div>
+
+<ol id="menubar">
+
+    <li id="menu_home">
+        <a href="index.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Home</a>
+    </li>
+
+    <li id="menu_design">
+        <a href="design.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Design</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="objectives.html">Objectives</a>
+            <a href="rationales.html">Rationales</a>
+            <a href="comparisons.html">Comparisons</a>
+            <a href="spec.html">Specification</a>
+        </div>
+    </li>
+
+    <li id="menu_learning">
+        <a href="learning.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Learning</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="tutorial.html">Tutorial</a>
+            <a href="demo.html">Demo</a>
+            <a href="stdlib.html">Standard Library</a>
+        </div>
+    </li>
+
+    <li id="menu_implementation">
+        <a href="implementation.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Implementation</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="commandline.html">Cmdline Tool</a>
+            <a href="bindings.html">Libraries</a>
+            <a href="cpp.html">C++ Internals</a>
+            <a href="javascript.html">Javascript</a>
+            <a href="tests.html">Tests</a>
+        </div>
+    </li>
+
+    <li id="menu_contributing">
+        <a href="contributing.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Contributing</a>
+    </li>
+
+</ol>
+
+<div style="clear: both"></div>
+
+</div>
+
+<h1>Objectives</h1>
+
+<p> <a href="http://www.json.org">JSON</a> has emerged as the defacto standard for communication of
+structured data, both between machines and at the human / machine boundary.  However, in large
+quantities JSON can be unwieldy for humans, with duplication that needs to be kept in sync between
+different parts of the data structure.  Many people address this by writing scripts that generate
+JSON, but typically these are written in general purpose programming languages like Python where
+maintaining them can be non-trivial.</p>
+
+<p> Jsonnet attempts to solve this problem in a specialized and principled way, according to the
+following criteria: </p>
+
+<ul>
+
+<li><b>Hermiticity</b>:  Code may be treated as data.  The same JSON should be generated regardless
+of the environment.  There should be no non-deterministic or system-dependent behaviors.  </li>
+
+<li><b>Templating Language</b>:  Code should be interleaved with verbatim data so that it is easy to
+maintain the two in synchrony.  The success of template languages are proof of this approach's
+effectiveness.</li>
+
+<li><b>Familiarity</b>:  Raw data should be specified as JSON.  Computation constructs should behave
+predictably.</li>
+
+<li><b>Powerful yet simple</b>: Trivial cases should be trivial.  More complex cases should be
+approachable with additional complexity being localized.  Everything must be <i>possible</i>, yet
+the language must still have a small footprint for learning and building new tools.</li>
+
+<li><b>Modularity</b>:  As configurations grow, it must be possible to manage the complexity using
+standard techniques for <a href="http://dl.acm.org/citation.cfm?id=808431">programming in the
+large</a>.</li>
+
+<li><b>Reuse</b>:  The same language should be usable on a wide variety of systems, ideally all
+things should be controlled via a well-maintained centralized configuration.</li>
+
+<li><b>Rigor</b>: Different implementations of the language must be possible, via an
+authoritative specification that is complete and simple enough to understand.  The language should
+not be defined by implementation.  </li>
+
+</ul>
+
+
+<h2>General Design</h2>
+
+
+<p>The language is designed to be implementable via desugaring, i.e. there is a simple core language
+and the other constructs are translated down to this core language before interpretation.  This
+technique allows a language to have considerable expressive power, while remaining easy to
+implement.</p>
+
+
+<h2>Modularity and Encapsulation</h2>
+
+<p>In Jsonnet, a <dfn>module</dfn> is typically a Jsonnet file that defines an object whose fields
+contain useful values, such as functions or objects that can specialized for a particular purpose
+via extension.  Using an object at the top level of the module allows adding other fields later on,
+without having to alter user code.  When writing such a module, it is advisable to expose only the
+interface to the module, and not its implementation.  This is called encapsulation, and it allows
+changing the implementation later, despite the module being imported by many other Jsonnet files.
+</p>
+
+<p>Jsonnet's primary feature for encapsulation is the <code>local</code> keyword.  This makes it
+possible to define variables that are visible only to the module, and impossible to access from
+outside.  The following is a simple example.  Other code can import <tt>util.jsonnet</tt> but will
+not be able to see the <code>internal</code> object, and therefore not the function
+<code>square</code>.</p>
+
+<pre><code>// util.jsonnet
+local internal = {
+    square(x):: x*x,
+};
+{
+    euclidianDistance(x1, y1, x2, y2)::
+        std.sqrt(internal.square(x2-x1) + internal.square(y2-y1)),
+}
+</code></pre>
+
+<p>It is also possible to store <code>square</code> in a field, which exposes it to those importing
+the module:</p>
+
+<pre><code>// util2.jsonnet
+{
+    square(x):: x*x,
+    euclidianDistance(x1, y1, x2, y2)::
+        std.sqrt(self.square(x2-x1) + self.square(y2-y1)),
+}
+</code></pre>
+
+<p>This allows users to redefine the square function, as shown in the very strange code below.  In
+some cases, this is actually what you want and is very useful.  But it does make it harder to
+maintain backwards compatibility.  For example, if you later change the implementation of
+<code>euclidianDistance</code> to inline the square call, then user code will behave
+differently.</p>
+
+<pre><code>// myfile.jsonnet
+local util2 = import "util2.jsonnet" { square(x):: x*x*x };
+{
+    crazy: util2.euclidianDistance(1,2,3,4)
+}
+</code></pre>
+
+<p> In conclusion, Jsonnet allows you to either expose these details or hide them.  So choose
+wisely, and know that everything you expose will potentially be used in ways that you didn't
+expect.  Keep your interface small if possible.</p>
+
+<p>A common belief is that languages should make <code>local</code> the default state, with an
+explicit construct to allow outside access.  This ensures that things are not accidentally (or
+apathetically) exposed.  In the case of Jsonnet, backwards compatibility with JSON prohibits that
+design since in JSON everything is a visible field.</p>
+
+<h2>Rationale for Turing-Completeness</h2>
+
+<p>Jsonnet is Turing-complete as it is possible to write non-terminating programs.  Configurations
+should always terminate, so ideally we would prevent this.  However doing so in general is <a
+href="http://en.wikipedia.org/wiki/Halting_problem">impossible</a> and even when constrained to
+practical use cases, it remains impractical.  Typical approaches for enforcing termination either
+restrict the language (e.g. to primitive recursion), which makes some programs impossible /
+difficult to write, or, alternatively, require the programmer to provide evidence that the program
+terminates, via some sort of annotation / <a
+href="http://www.turingarchive.org/browse.php/B/8">energy function</a>.  Both of these make the
+programmer's life more difficult.  </p>
+
+<p> Furthermore, non-Turing complete languages can take arbitrary CPU or RAM by running intensive
+algorithms on large input.  So enforcing termination is firstly not practical, and secondly does not
+actually solve the more practical problem of bounding resource consumption during execution.</p>
+
+<p>For Jsonnet we decided restricting termination would create more problems than it would
+solve.</p>
+
+<h2>Rationale for Dynamic Typing</h2>
+
+<p>Programmers do not like bureaucracy.  Typically <a
+href="http://en.wikipedia.org/wiki/Type_system">type systems</a> either require annotations, use
+type inference, or are dynamic.  The former two approaches have two advantages:  Some errors can be
+detected earlier (conservatively -- some correct programs are also rejected).  Also, they can be
+implemented more efficiently since the additional knowledge about the program means special memory
+representations can be used, and also some instructions can be elided.  However annotations are
+additional bureaucracy and type inference produces unification errors that the programmer has to
+understand and fix.</p>
+
+<p>Dynamic typing means checking types at run-time, and raising errors via the language's existing
+error reporting mechanism.  This is conceptually much simpler for the programmer.  In a
+configuration language, runtime performance is not as important as other languages, and additionally
+programs tend to execute quickly so testing is much easier.</p>
+
+<p>For Jsonnet we decided that simplicity was far more important than the minimal benefits of
+runtime efficiency and static error detection in this context.</p>
+
+<h2>Rationale for Object-Oriented Semantics</h2>
+
+ The object oriented features are ideal for
+deriving variants from templates.
+
+object-based
+
+mixins
+
+<h2>Rationale for Pure Functional Semantics</h2>
+
+Since it has no side-effects, the JSON can be regenerated at any time, and
+since it is deterministic, this will always result in the same output JSON.  
+
+ Functional languages
+are ideal for refining and processing structured data. 
+
+<h2>Rationale for Lazy Semantics</h2>
+
+<p>The late binding from the object oriented semantics already embodies some of the features of a lazy
+language.  Errors do not occur unless a field is actually dereferenced, and cyclic structures can be
+created.  For example the following is valid even in an eager version of the language:</p>
+
+<pre><code>local x = {a:"apple", b:y.b},
+      y = {a:x.a, b:"banana"};
+x
+</code></pre>
+
+<p> It would therefore be confusing if the following was not also valid, which leads us to lazy
+semantics for arrays.  </p>
+
+<pre><code>local x = ["apple", y[1]],
+      y = [x[0], "banana"];
+x
+</code></pre>
+
+<p> Therefore, for consistency, the whole language is lazy.  It does not harm the language to be
+lazy:  Performance is not significantly affected, stack traces are still possible, and it doesn't
+interfere with I/O (because there is no I/O).  There is also a precedent for laziness, e.g. in
+Makefiles and the Nix expression language.</p>
+
+<p> Arguably, laziness brings real benefits in terms of abstraction and modularity.  It
+is possible to build infinite data-structures, and there is unrestricted beta expansion.  For
+example, the following 2 snippets of code are only equivalent in a lazy language.  </p>
+
+<pre><code>if x == 0 then 0 else if x &gt; 0 then 1 / x else -1/x
+</code></pre>
+
+<pre><code>local r = 1 / x;
+if x == 0 then 0 else if x &gt; 0 then r else -r
+</code></pre>
+
+<h2>Rationale for string formatting via % operator</h2>
+
+<h2>Rationale for &amp;&amp; and || operators</h2>
+
+
+
+
+<div style="margin-bottom: 50px"></div>
+<hr />
+<p class="copyright">
+Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+</p>
+</body>
+
+</html>

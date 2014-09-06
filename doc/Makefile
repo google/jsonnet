@@ -13,7 +13,11 @@
 # limitations under the License.
 
 CONTEXT = header.html.jinja footer.html.jinja ../examples/*.jsonnet ../examples/*.jsonnet.golden
-PAGES = index.html tutorial.html implementation.html design.html spec.html stdlib.html demo.html
+PAGES = index.html \
+		learning.html tutorial.html demo.html stdlib.html \
+        language.html design.html comparisons.html spec.html \
+		implementation.html commandline.html bindings.html cpp.html javascript.html tests.html \
+		contributing.html
 
 all: $(PAGES)
 

@@ -1,0 +1,47 @@
+{% include 'header.html.jinja' %}
+
+<h1>Comparisons With Other Languages / Tools</h1>
+
+<h2>Comparison With JSON</h2>
+
+<p>JSON is used to describe data literally.  Jsonnet extends JSON.  Jsonnet has relaxed syntax and
+comments to make it easier for humans to write.  Jsonnet also adds constructs for generating,
+translating and refining data.  Because Jsonnet is an extension of JSON, valid JSON is also valid
+Jsonnet that just emits that JSON unchanged.</p>
+
+<h2>Comparison With YAML</h2>
+
+<p> YAML is also an extension of JSON that generates JSON.  Like Jsonnet, YAML is intended to
+improve the user experience when data is transfered over the human / machine boundary.  Its syntax
+is very tight; YAML files are much shorter than their JSON equivalents.  However its constructs for
+generating, translating, and refining data are very weak in comparison to Jsonnet.  Moreover, the
+tightness of its syntax makes it hard to extend YAML to add these features.  In particular, YAML and
+Jsonnet disagree about what 1+1 should mean.  YAML already defines it to mean the string "1+1",
+whereas in Jsonnet we want it to be 2.  Jsonnet therefore builds from JSON and not YAML.</p>
+
+<h2>Comparison With Other Templating Languages</h2>
+
+<p>Jsonnet is a form of templating language as it generates data from programs that interleave
+verbatim data with computation constructs.  However other templating languages operate on plain
+text.  That is to say that the data amongst which the computational constructs are intermingled are
+simply plain text, and the output of the evaluation is also plain text.  This means such systems can
+be used to produce files with arbitrary syntax, e.g. custom configuration file syntax, HTML, or even
+JSON.</p>
+
+<p>However, since these templating languages are unaware of the syntax of the file they're
+generating (they think it is simply plain text), they cannot help the programmer avoid creating
+errors in the underlying representation.</p>
+
+<p> By analogy, the C Pre-Processor has no understanding of C syntax.  C Pre-Processor macros can
+break that syntax if they are used wrongly.  The net result of this is that problems with the use of
+these macros must be debugged by examining the output of the evaluation (i.e. the generated C code).
+Errors cannot be presented at the level at which the programmer is actually working.  For this
+reason, the vast majority of modern languages do not feature a pre-processor.</p>
+
+<p>The situation is the same when templating languages are used to generate HTML, often the
+developer will check the generated HTML because successful evaluation of the template does not imply
+the HTML is correct.  The same is true when the target language is JSON.  Jsonnet avoids these
+problems, as although it is limited to JSON output, it is guaranteed that the output will be valid
+JSON.</p>
+
+{% include 'footer.html.jinja' %}

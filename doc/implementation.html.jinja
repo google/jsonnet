@@ -2,34 +2,12 @@
 
 <h1>Implementation</h1>
 
-<p> There is currently one official implementation, written in C++11 with no dependencies.  It
-provides a commandline tool to convert Jsonnet to JSON, and a C wrapper library to allow easy
-binding into other languages.  A binding already exists for Python; the intention is that wrapper
-libraries will soon exist for various other languages.  This enables any system that currently
-consumes JSON to be altered to accept the full syntax of Jsonnet, by simply calling out to the
-library to do the conversion.</p>
-
-<p>The C++ implementation implements a handwritten lexer, recursive descent parser, static checker,
-and virtual machine.  The virtual machine has a simple mark and sweep garbage collector.  The
-release comes with a suite of over 500 tests for various corner cases of the language.</p>
-
-<h2>Download</h2>
-
-<p> The C++ implementation of Jsonnet is currently available on <a
-href="https://github.com/google/jsonnet">github</a>.</p>
-
-<h2>Limitations</h2>
-
-<p>There are a few limitations in the current release that will be fixed in future.</p>
-
 <ul>
-<li>Only ASCII is currently supported in strings.</li>
-<li>Double precision floating point has rounding errors, we are considering switching to arbitrary
-precision rational arithmetic.</li>
-<li>The list and object comprehension syntax is not quite as expressive as Python's.</li>
-<li>There is not yet any API to register handlers for import file I/O.</li>
-<li>We would like to allow the importing of URLs, with an audit trail to allow debugging.</li>
-<li>There is currently no tail-call optimization.</li>
+<li> <a href="commandline.html">Cmdline Tool</a> </li>
+<li> <a href="bindings.html">Libraries</a> </li>
+<li> <a href="cpp.html">C++ Internals</a> </li>
+<li> <a href="javascript.html">Javascript</a> </li>
+<li> <a href="tests.html">Tests</a> </li>
 </ul>
 
 {% include 'footer.html.jinja' %}

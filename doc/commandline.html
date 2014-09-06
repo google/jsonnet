@@ -186,15 +186,69 @@
 
 </div>
 
-<h1>Implementation</h1>
+<h1>Commandline Tool</h1>
 
-<ul>
-<li> <a href="commandline.html">Cmdline Tool</a> </li>
-<li> <a href="bindings.html">Libraries</a> </li>
-<li> <a href="cpp.html">C++ Internals</a> </li>
-<li> <a href="javascript.html">Javascript</a> </li>
-<li> <a href="tests.html">Tests</a> </li>
-</ul>
+<p>The commandline tool "jsonnet" will evaluate Jsonnet and emit JSON on stdout.  It can evaluate
+snippets of code, or files (by filename).  It is actually a commandline wrapper around the C API, a
+convenient way to evaluate Jsonnet code from shell scripts, build tools, or languages that do not
+yet have a library binding.</p>
+
+<h2>Building</h2>
+
+<p>The commandline tool will be built by simply invoking 'make', as it is the sole default
+target.  It can be built explicitly with 'make jsonnet'.</p>
+
+<h2>Usage</h2>
+
+<p>The tool is self-documenting:</p>
+
+<pre>
+Usage:
+jsonnet {&lt;option&gt;} [&lt;filename&gt;]
+where &lt;filename&gt; defaults to - (stdin)
+and &lt;option&gt; can be:
+  -h / --help             This message
+  -e / --exec             Treat filename as code (requires explicit filename)
+  -E / --env              Add an environment variable
+
+  -s / --max-stack &lt;n&gt;    Number of allowed stack frames
+  -t / --max-trace &lt;n&gt;    Max length of stack trace before cropping
+  --gc-min-objects &lt;n&gt;    Do not run garbage collector until this many
+  --gc-growth-trigger &lt;n&gt; Run garbage collector after this amount of object growth
+  --debug-ast             Unparse the parsed AST without executing it
+
+Multichar options are expanded e.g. -abc becomes -a -b -c.
+The -- option suppresses option processing.  Note that since jsonnet programs can
+begin with -, it is advised to use -- with -e if the program is unknown.
+</pre>
+
+<h2>Example</h2>
+
+<p>Evaluating a file.</p>
+
+<pre>
+~/jsonnet/examples$ jsonnet landingpage.jsonnet
+{
+   "person1": {
+      "name": "Alice",
+      "welcome": "Hello Alice!"
+   },
+   "person2": {
+      "name": "Bob",
+      "welcome": "Hello Bob!"
+   }
+}
+</pre>
+
+<p>Evaluating a snippet.</p>
+
+<pre>
+~/jsonnet/examples$ jsonnet -e '{ x: 1 , y: self.x + 1 } { x: 10 }'
+{
+   "x": 10,
+   "y": 11
+}
+</pre>
 
 <div style="margin-bottom: 50px"></div>
 <hr />
