@@ -44,4 +44,33 @@ the HTML is correct.  The same is true when the target language is JSON.  Jsonne
 problems, as although it is limited to JSON output, it is guaranteed that the output will be valid
 JSON.</p>
 
+<h2>Comparison With Other Scripting Languages</h2>
+
+<p>Most scripting languages are dynamically typed languages, often with object-oriented
+features.</p>
+
+<p>However, Jsonnet is also a templating language, which makes it very good for generating data that
+is a mixture of verbatim and computed elements.  Jsonnet programs can be easily understood and
+modified by someone who only knows JSON.  Any parts of the program which are just JSON (i.e. do not
+make use of the extended Jsonnet constructs) can be modified with predictable results.  Jsonnet's
+pure functional semantics also make modifying the program more predictable.</p>
+
+<p>More importantly, Jsonnet has the property of hermiticity.  This means that regardless of when or
+where a Jsonnet program is evaluated, it will always generate the same JSON.  This means the program
+can be freely converted to data, and thus it can be thought of as equivalent to data.  This is not
+the case with general purpose languages, as they are allowed to read files, contact the network,
+look up the time, or any number of other sources of non-deterministic behavior.  While it is
+possible to sandbox some scripting languages in order to patch all of these holes, the result of
+this is a new language that is incompatible with the original language.  This makes Jsonnet a lot
+more suitable for configuration than general purpose scripting languages.</p>
+
+<p>One advantage that is often put forward for using general purpose scripting languages as
+configuration languages is that they are already well-understood by a large number of people.
+However this is also true of Jsonnet, because of its backwards compatibility with JSON, its use of
+mixins (a decades old construct that is well-understood) and the mimicking of Python syntax in cases
+where that makes sense (e.g. string formatting and comprehension constructs).</p>
+
+<p>Finally, Jsonnet is a much smaller language than most general purpose scripting languages, yet
+despite this it has considerable expressive power.</p>
+
 {% include 'footer.html.jinja' %}
