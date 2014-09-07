@@ -44,6 +44,21 @@ the HTML is correct.  The same is true when the target language is JSON.  Jsonne
 problems, as although it is limited to JSON output, it is guaranteed that the output will be valid
 JSON.</p>
 
+<h2>Comparison With Other Functional Languages</h2>
+
+<p>ML is a functional language like Jsonnet.  However ML is not pure, and also has strict
+evaluation.  Haskell is a pure lazy functional language, but unlike Jsonnet it has static type
+safety.  Providing static type safety means programmers have to understand type inference,
+unification errors, and also provide the occasional type annotation.  Even then, some correct
+programs are rejected.  </p>
+
+<p>The Nix expression language, which is a pure lazy functional language with dynamic typing, is
+therefore closer to Jsonnet.  Jsonnet differs from the Nix expression language mainly in that it
+also has object-oriented semantics in the form of mixins.  Also, Jsonnet is an extension of JSON,
+whereas the Nix expression language is not.  Finally, the Nix expression language is an embedded
+part of the Nix package manager (and other tools), whereas Jsonnet is a standalone evaluator that
+can sit in front of anything that accepts JSON.</p>  
+
 <h2>Comparison With Other Scripting Languages</h2>
 
 <p>Most scripting languages are dynamically typed languages, often with object-oriented
@@ -72,5 +87,15 @@ where that makes sense (e.g. string formatting and comprehension constructs).</p
 
 <p>Finally, Jsonnet is a much smaller language than most general purpose scripting languages, yet
 despite this it has considerable expressive power.</p>
+
+<!--
+<h2>Comparison With Other Configuration Languages</h2>
+
+<p> Coil </p>
+
+<p> Pystachio </p>
+
+-->
+
 
 {% include 'footer.html.jinja' %}
