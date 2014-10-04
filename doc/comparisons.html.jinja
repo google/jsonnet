@@ -88,14 +88,35 @@ where that makes sense (e.g. string formatting and comprehension constructs).</p
 <p>Finally, Jsonnet is a much smaller language than most general purpose scripting languages, yet
 despite this it has considerable expressive power.</p>
 
-<!--
 <h2>Comparison With Other Configuration Languages</h2>
 
-<p> Coil </p>
+<p> <a href="https://code.google.com/p/coil/">Coil</a> is a configuration language that is
+interpreted by a Python library.  Like Jsonnet, it has a JSON-like data model and some facilities
+for extending objects to avoid duplication, referring to other parts of the structure, and importing
+from other files.  However it is a long way from the expressiveness of the object-oriented semantics
+of Jsonnet, and it also does not have the ability to do arithmetic beyond substituting values into
+strings.  Finally, coil binds variables according to <a
+href="http://en.wikipedia.org/wiki/Scope_(computer_science)#Dynamic_scoping">dynamic scoping
+rules</a>, which have long been discredited because they quickly make code very difficult to
+understand.  Jsonnet uses static scoping, like almost all mainstream languages. </p> 
 
-<p> Pystachio </p>
 
--->
+<p> <a href="https://github.com/wickman/pystachio">Pystachio</a> is a Python framework that makes it
+easier to use Python itself as a configuration language.  It extends Python's existing data literals
+(which are JSON-like) to add some object-oriented functionality and enforce immutability.  However
+it lacks the computational abilities of Jsonnet.  Although it does allow some computation within
+string values, the only variables you can access are stored in separate "environments", and there is
+no direct access to the data being configured.  Even if we assume that all data is stored in
+environments and object fields merely forward to the environment, the language does not have any
+object-orientation features.  While scopes are inherited from outer objects, this just an implicit
+way of doing what you can do in Jsonnet with <code>$</code> or <code>local</code>.  In Pystachio
+there is no way to derive a struct from another struct with a few changes, let alone use late
+binding or the expressive power of mixins.</p>
 
+<p> Finally, there are a number of other configuration languages that have grown to be used by a
+range of applications.  For example <a href="http://en.wikipedia.org/wiki/INI_file">INI files</a> or
+<a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config files</a>.  Typically these
+offer few features beyond simple JSON and provide very little functionality when compared to
+Jsonnet.</p>
 
 {% include 'footer.html.jinja' %}
