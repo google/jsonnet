@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 #include <cstdlib>
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
 #include <vector>
 
 extern "C" {
@@ -67,6 +70,7 @@ void usage(std::ostream &o)
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code (requires explicit filename)\n";
     o << "  -E / --env              Add an environment variable\n\n";
+    o << "  -m / --multi            Write multiple files\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
@@ -96,6 +100,7 @@ int main(int argc, const char **argv)
     JsonnetVM *vm = jsonnet_make();
     std::string filename = "-";
     bool filename_is_code = false;
+    bool multi = false;
 
     auto args = simplify_args(argc, argv);
     std::vector<std::string> remaining_args;
@@ -154,6 +159,8 @@ int main(int argc, const char **argv)
             jsonnet_gc_growth_trigger(vm, v);
         } else if (arg == "-e" || arg == "--exec") {
             filename_is_code = true;
+        } else if (arg == "-m" || arg == "--multi") {
+            multi = true;
         } else if (arg == "--debug-ast") {
             jsonnet_debug_ast(vm, true);
         } else if (arg == "--") {
@@ -210,8 +217,12 @@ int main(int argc, const char **argv)
     }
 
     int error;
-    const char *output =
-        jsonnet_evaluate_snippet(vm, filename.c_str(), input.c_str(), &error);
+    const char *output;
+    if (multi) {
+        output = jsonnet_evaluate_snippet_multi(vm, filename.c_str(), input.c_str(), &error);
+    } else {
+        output = jsonnet_evaluate_snippet(vm, filename.c_str(), input.c_str(), &error);
+    }
 
     if (error) {
         std::cerr << output;
@@ -221,9 +232,43 @@ int main(int argc, const char **argv)
         return EXIT_FAILURE;
     }
 
-    std::cout << output;
-    std::cout.flush();
-    jsonnet_cleanup_string(vm, output);
+    if (multi) {
+        std::map<std::string, std::string> r;
+        for (const char *c=output ; *c!='\0' ; ) {
+            const char *filename = c;
+            const char *c2 = c;
+            while (*c2 != '\0') ++c2;
+            ++c2;
+            const char *json = c2;
+            while (*c2 != '\0') ++c2;
+            ++c2;
+            c = c2;
+            r[filename] = json;
+        }
+        jsonnet_cleanup_string(vm, output);
+        for (const auto &pair : r) {
+            std::ofstream f;
+            f.open(pair.first.c_str());
+            if (!f.good()) {
+                std::string msg = "Opening output file: " + pair.first;
+                perror(msg.c_str());
+                jsonnet_destroy(vm);
+                return EXIT_FAILURE;
+            }
+            f << pair.second;
+            f.close();
+            if (!f.good()) {
+                std::string msg = "Writing to output file: " + pair.first;
+                perror(msg.c_str());
+                jsonnet_destroy(vm);
+                return EXIT_FAILURE;
+            }
+        }
+    } else {
+        std::cout << output;
+        std::cout.flush();
+        jsonnet_cleanup_string(vm, output);
+    }
     jsonnet_destroy(vm);
     return EXIT_SUCCESS;
 }

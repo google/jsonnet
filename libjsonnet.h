@@ -44,9 +44,9 @@ void jsonnet_debug_ast(struct JsonnetVM *vm, int v);
 /** Set the number of lines of stack trace to display (0 for all of them). */
 void jsonnet_max_trace(struct JsonnetVM *vm, unsigned v);
 
-/** Evaluate a file, return a JSON string.
+/** Evaluate a file containing Jsonnet code, return a JSON string.
  *
- * The returned string should be cleaned up with jsonnet_delete.
+ * The returned string should be cleaned up with jsonnet_cleanup_string.
  *
  * \param filename Path to a file containing Jsonnet code.
  * \param error Return by reference whether or not there was an error.
@@ -56,7 +56,7 @@ const char *jsonnet_evaluate_file(struct JsonnetVM *vm,
                                   const char *filename,
                                   int *error);
 
-/** Evaluate a Jsonnet string, return a JSON string.
+/** Evaluate a string containing Jsonnet code, return a JSON string.
  *
  * The returned string should be cleaned up with jsonnet_cleanup_string.
  *
@@ -68,6 +68,33 @@ const char *jsonnet_evaluate_snippet(struct JsonnetVM *vm,
                                      const char *filename,
                                      const char *snippet,
                                      int *error);
+
+/** Evaluate a file containing Jsonnet code, return a number of JSON files.
+ *
+ * The returned character buffer contains an even number of strings, the filename and JSON for each
+ * JSON file interleaved.  It should be cleaned up with jsonnet_cleanup_string.
+ *
+ * \param filename Path to a file containing Jsonnet code.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
+ */
+const char *jsonnet_evaluate_file_multi(struct JsonnetVM *vm,
+                                        const char *filename,
+                                        int *error);
+
+/** Evaluate a string containing Jsonnet code, return a number of JSON files.
+ *
+ * The returned character buffer contains an even number of strings, the filename and JSON for each
+ * JSON file interleaved.  It should be cleaned up with jsonnet_cleanup_string.
+ *
+ * \param filename Path to a file containing Jsonnet code.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
+ */
+const char *jsonnet_evaluate_snippet_multi(struct JsonnetVM *vm,
+                                           const char *filename,
+                                           const char *snippet,
+                                           int *error);
 
 /** Clean up returned strings.
  *

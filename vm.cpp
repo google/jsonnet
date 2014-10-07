@@ -373,6 +373,9 @@ namespace {
         }
     };
 
+    /** Typedef to save some typing. */
+    typedef std::map<std::string, std::string> StrMap;
+
 
     /** Holds the intermediate state during execution and implements the necessary functions to
      * implement the semantics of the language.
@@ -406,7 +409,7 @@ namespace {
         std::map<std::string, const std::string *> cachedImports;
 
         /** Environment variables for std.env. */
-        std::map<std::string, std::string> environment;
+        StrMap environment;
 
         RuntimeError makeError(const LocationRange &loc, const std::string &msg)
         {
@@ -682,7 +685,7 @@ namespace {
          *
          * \param loc The location range of the file to be executed.
          */
-        Interpreter(Allocator &alloc, const std::map<std::string, std::string> env_vars,
+        Interpreter(Allocator &alloc, const StrMap &env_vars,
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
             idArrayElement(alloc.makeIdentifier("array_element")), environment(env_vars)
@@ -2067,17 +2070,59 @@ namespace {
             }
             return ss.str();
         }
+
+        // manifest the JSON assuming the result is an object.
+        StrMap manifestJsonMulti(void)
+        {
+            StrMap r;
+            LocationRange loc("During manifestation");
+            if (scratch.t != Value::OBJECT) {
+                std::stringstream ss;
+                ss << "Multi mode: Top-level object was a " << type_str(scratch.t) << ", "
+                   << "should be an object whose keys are filenames and values hold "
+                   << "the JSON for that file.";
+                throw makeError(loc, ss.str());
+            }
+            auto *obj = static_cast<HeapObject*>(scratch.v.h);
+            std::map<std::string, const Identifier*> fields;
+            for (const auto &f : objectFields(obj, true)) {
+                fields[f->name] = f;
+            }
+            for (const auto &f : fields) {
+                // pushes FRAME_CALL
+                const AST *body = objectIndex(loc, obj, f.second);
+                stack.top().val = scratch;
+                stack.top().noTailCall = true;
+                evaluate(body);
+                auto vstr = manifestJson(body->location, true, "");
+                // Reset scratch so that the object we're manifesting doesn't
+                // get GC'd.
+                scratch = stack.top().val;
+                stack.pop();
+                r[f.first] = vstr;
+            }
+            return r;
+        }
+        
     };
 
 }
 
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
-                               const std::map<std::string, std::string> &env_vars,
+                               const StrMap &env_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger)
 {
     Interpreter vm(alloc, env_vars, max_stack, gc_min_objects, gc_growth_trigger);
     vm.evaluate(ast);
     return vm.manifestJson(LocationRange("During manifestation"), true, "");
+}
+
+StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &env_vars,
+                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
+{
+    Interpreter vm(alloc, env_vars, max_stack, gc_min_objects, gc_growth_trigger);
+    vm.evaluate(ast);
+    return vm.manifestJsonMulti();
 }
 

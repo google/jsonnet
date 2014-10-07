@@ -48,10 +48,27 @@ struct RuntimeError {
  * \param gc_min_objects The garbage collector does not run when the heap is this small.
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
  * \throws RuntimeError reports runtime errors in the program.
+ * \returns The JSON result in string form.
  */
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
                                const std::map<std::string, std::string> &env_vars,
                                unsigned max_stack=2000, double gc_min_objects=1000,
                                double gc_growth_trigger=2.0);
+
+/** Execute the program and return the value as a number of JSON files.
+ *
+ * This assumes the given program yields an object whose keys are filenames.
+ *
+ * \param alloc The allocator used to create the ast.
+ * \param ast The program to execute.
+ * \param max_stack Recursion beyond this level gives an error.
+ * \param gc_min_objects The garbage collector does not run when the heap is this small.
+ * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
+ * \throws RuntimeError reports runtime errors in the program.
+ * \returns A mapping from filename to the JSON strings for that file.
+ */
+std::map<std::string, std::string> jsonnet_vm_execute_multi(
+    Allocator &alloc, const AST *ast, const std::map<std::string, std::string> &env_vars,
+    unsigned max_stack, double gc_min_objects, double gc_growth_trigger);
 
 #endif
