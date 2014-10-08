@@ -51,7 +51,7 @@ struct RuntimeError {
  * \returns The JSON result in string form.
  */
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
-                               const std::map<std::string, std::string> &env_vars,
+                               const std::map<std::string, std::string> &ext_vars,
                                unsigned max_stack=2000, double gc_min_objects=1000,
                                double gc_growth_trigger=2.0);
 
@@ -68,7 +68,7 @@ std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
-    Allocator &alloc, const AST *ast, const std::map<std::string, std::string> &env_vars,
+    Allocator &alloc, const AST *ast, const std::map<std::string, std::string> &ext_vars,
     unsigned max_stack, double gc_min_objects, double gc_growth_trigger);
 
 #endif

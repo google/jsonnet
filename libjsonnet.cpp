@@ -36,7 +36,7 @@ struct JsonnetVM {
     unsigned gcMinObjects;
     bool debugAst;
     unsigned maxTrace;
-    std::map<std::string, std::string> env;
+    std::map<std::string, std::string> extVars;
     JsonnetVM(void)
       : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20)
     { }
@@ -67,9 +67,9 @@ void jsonnet_gc_growth_trigger(JsonnetVM *vm, double v)
     vm->gcGrowthTrigger = v;
 }
 
-void jsonnet_env(JsonnetVM *vm, const char *key, const char *val)
+void jsonnet_ext_var(JsonnetVM *vm, const char *key, const char *val)
 {
-    vm->env[key] = val;
+    vm->extVars[key] = val;
 }
 
 void jsonnet_debug_ast(JsonnetVM *vm, int v)
@@ -95,10 +95,10 @@ static const char *jsonnet_evaluate_snippet_aux(JsonnetVM *vm, const char *filen
         } else {
             jsonnet_static_analysis(expr);
             if (multi) {
-                files = jsonnet_vm_execute_multi(alloc, expr, vm->env, vm->maxStack,
+                files = jsonnet_vm_execute_multi(alloc, expr, vm->extVars, vm->maxStack,
                                                  vm->gcMinObjects, vm->gcGrowthTrigger);
             } else {
-                json_str = jsonnet_vm_execute(alloc, expr, vm->env, vm->maxStack,
+                json_str = jsonnet_vm_execute(alloc, expr, vm->extVars, vm->maxStack,
                                               vm->gcMinObjects, vm->gcGrowthTrigger);
             }
         }

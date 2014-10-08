@@ -69,7 +69,7 @@ void usage(std::ostream &o)
     o << "and <option> can be:\n";
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code (requires explicit filename)\n";
-    o << "  -E / --env              Add an environment variable\n\n";
+    o << "  -E / --env              Bring in an environment var as an external var\n\n";
     o << "  -m / --multi            Write multiple files\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
@@ -125,7 +125,7 @@ int main(int argc, const char **argv)
                 std::cerr << "ERROR: Environment variable " << var << " was undefined." << std::endl;
                 exit(EXIT_FAILURE);
             }
-            jsonnet_env(vm, var.c_str(), val);
+            jsonnet_ext_var(vm, var.c_str(), val);
         } else if (arg == "--gc-min-objects") {
             long l = strtol_check(next_arg(i, args));
             if (l < 0) {

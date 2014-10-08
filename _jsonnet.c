@@ -60,7 +60,7 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
                 jsonnet_destroy(vm);
                 return NULL;
             }
-            jsonnet_env(vm, key_, val_);
+            jsonnet_ext_var(vm, key_, val_);
         }
     }
 
@@ -117,7 +117,7 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
                 jsonnet_destroy(vm);
                 return NULL;
             }
-            jsonnet_env(vm, key_, val_);
+            jsonnet_ext_var(vm, key_, val_);
         }
     }
 

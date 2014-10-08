@@ -23,8 +23,9 @@ where &lt;filename&gt; defaults to - (stdin)
 and &lt;option&gt; can be:
   -h / --help             This message
   -e / --exec             Treat filename as code (requires explicit filename)
-  -E / --env              Add an environment variable
+  -E / --env              Bring in an environment var as an external var
 
+  -m / --multi            Write multiple files
   -s / --max-stack &lt;n&gt;    Number of allowed stack frames
   -t / --max-trace &lt;n&gt;    Max length of stack trace before cropping
   --gc-min-objects &lt;n&gt;    Do not run garbage collector until this many

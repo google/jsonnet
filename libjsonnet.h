@@ -35,8 +35,8 @@ void jsonnet_gc_min_objects(struct JsonnetVM *vm, unsigned v);
 /** Run the garbage collector after this amount of growth in the number of objects. */
 void jsonnet_gc_growth_trigger(struct JsonnetVM *vm, double v);
 
-/** Assign a key/value pair to the Jsonnet environment. */
-void jsonnet_env(struct JsonnetVM *vm, const char *key, const char *val);
+/** Bind a Jsonnet external var to the given value. */
+void jsonnet_ext_var(struct JsonnetVM *vm, const char *key, const char *val);
 
 /** If set to 1, will emit the Jsonnet input after parsing / desugaring. */
 void jsonnet_debug_ast(struct JsonnetVM *vm, int v);

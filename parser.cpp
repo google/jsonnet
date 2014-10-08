@@ -791,7 +791,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 21: return {"exponent", {"n"}};
         case 22: return {"modulo", {"a", "b"}};
         case 23: return {"force", {"x"}};
-        case 24: return {"env", {"x"}};
+        case 24: return {"extVar", {"x"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();

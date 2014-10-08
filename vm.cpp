@@ -408,8 +408,8 @@ namespace {
         /** Cache for imported Jsonnet files. */
         std::map<std::string, const std::string *> cachedImports;
 
-        /** Environment variables for std.env. */
-        StrMap environment;
+        /** External variables for std.extVar. */
+        StrMap externalVars;
 
         RuntimeError makeError(const LocationRange &loc, const std::string &msg)
         {
@@ -685,10 +685,10 @@ namespace {
          *
          * \param loc The location range of the file to be executed.
          */
-        Interpreter(Allocator &alloc, const StrMap &env_vars,
+        Interpreter(Allocator &alloc, const StrMap &ext_vars,
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc.makeIdentifier("array_element")), environment(env_vars)
+            idArrayElement(alloc.makeIdentifier("array_element")), externalVars(ext_vars)
         {
             scratch = makeNull();
         }
@@ -1669,13 +1669,13 @@ namespace {
                                 }
                                 break;
 
-                                case 24: {  // env
+                                case 24: {  // extVar
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
                                     const std::string &var = static_cast<HeapString*>(args[0].v.h)->value;
-                                    if (environment.find(var) == environment.end()) {
-                                        throw makeError(ast.location, "Undefined environment variable: " + var);
+                                    if (externalVars.find(var) == externalVars.end()) {
+                                        throw makeError(ast.location, "Undefined external variable: " + var);
                                     }
-                                    scratch = makeString(environment[var]);
+                                    scratch = makeString(externalVars[var]);
                                 } break;
 
                                 default:
@@ -2109,19 +2109,19 @@ namespace {
 }
 
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
-                               const StrMap &env_vars,
+                               const StrMap &ext_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger)
 {
-    Interpreter vm(alloc, env_vars, max_stack, gc_min_objects, gc_growth_trigger);
+    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger);
     vm.evaluate(ast);
     return vm.manifestJson(LocationRange("During manifestation"), true, "");
 }
 
-StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &env_vars,
+StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &ext_vars,
                                 unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
 {
-    Interpreter vm(alloc, env_vars, max_stack, gc_min_objects, gc_growth_trigger);
+    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger);
     vm.evaluate(ast);
     return vm.manifestJsonMulti();
 }
