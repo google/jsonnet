@@ -149,4 +149,27 @@ std.assertEqual(std.range(2,1), []) &&
 std.assertEqual(std.join(["a","b"], [[1,2],[3,4,5],[6]]), [1,2,"a","b",3,4,5,"a","b",6]) &&
 std.assertEqual(std.join("ab", ["12","345","6"]), "12ab345ab6") &&
 
+std.assertEqual(std.flattenArrays([[1, 2, 3], [4, 5, 6], []]), [1, 2, 3, 4, 5, 6]) &&
+
+std.assertEqual(
+    std.manifestIni({
+        main: { a: "1", b: "2" },
+        sections: {
+            s1: {x: "11", y: "22", z: "33"},
+            s2: {p: "yes", q: ""},
+            empty: {},
+        }
+    }),
+    "a = 1\nb = 2\n[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+
+std.assertEqual(
+    std.manifestIni({
+        sections: {
+            s1: {x: "11", y: "22", z: "33"},
+            s2: {p: "yes", q: ""},
+            empty: {},
+        }
+    }),
+    "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+
 true
