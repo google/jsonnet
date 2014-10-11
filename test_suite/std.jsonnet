@@ -172,4 +172,50 @@ std.assertEqual(
     }),
     "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
 
+std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
+std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
+std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
+
+std.assertEqual(std.manifestPython({
+    x: "test",
+    y: [],
+    z: ["foo", "bar"],
+    n: 1,
+    a: true,
+    b: false,
+    c: null,
+    o: { f1: "foo", f2: "bar" },
+}), "{%s}" % std.join(", ", [
+    "\"a\": True",
+    "\"b\": False",
+    "\"c\": None",
+    "\"n\": 1",
+    "\"o\": {\"f1\": \"foo\", \"f2\": \"bar\"}",
+    "\"x\": \"test\"",
+    "\"y\": []",
+    "\"z\": [\"foo\", \"bar\"]", 
+])) &&
+
+std.assertEqual(std.manifestPythonVars({
+    x: "test",
+    y: [],
+    z: ["foo", "bar"],
+    n: 1,
+    a: true,
+    b: false,
+    c: null,
+    o: { f1: "foo", f2: "bar" },
+}), std.join("\n", [
+    "a = True",
+    "b = False",
+    "c = None",
+    "n = 1",
+    "o = {\"f1\": \"foo\", \"f2\": \"bar\"}",
+    "x = \"test\"",
+    "y = []",
+    "z = [\"foo\", \"bar\"]", 
+    ""
+])) &&
+
+
 true

@@ -39,6 +39,9 @@ limitations under the License.
         else
             std.join("", std.makeArray(len, function(i) str[i + from])),
 
+    stringChars(str)::
+        std.makeArray(std.length(str), function(i) str[i]),
+
     split(str, c)::
         if std.type(str) != "string" then
             error "std.split first parameter should be a string, got " + std.type(str)
@@ -71,7 +74,7 @@ limitations under the License.
     mod(a, b)::
         if std.type(a) == "number" && std.type(b) == "number" then
             std.modulo(a, b)
-        else if std.type(a) == "string" && (std.type(b) == "array" || std.type(b) == "object") then
+        else if std.type(a) == "string" then
             std.format(a, b)
         else
             error "Operator % cannot be used on types " + std.type(a) + " and " + std.type(b) + ".",
@@ -534,8 +537,10 @@ limitations under the License.
 
         if std.type(vals) == "array" then
             format_codes_arr(codes, vals, 0, 0, "")
+        else if std.type(vals) == "object" then
+            format_codes_obj(codes, vals, 0, "")
         else
-            format_codes_obj(codes, vals, 0, ""),
+            format_codes_arr(codes, [vals], 0, 0, ""),
 
     foldr(func, arr, init)::
         local aux(func, arr, running, idx) =
@@ -608,5 +613,73 @@ limitations under the License.
               all_sections = [section_lines(k, ini.sections[k])
                               for k in std.objectFields(ini.sections)];
         std.join("\n", main_body + std.flattenArrays(all_sections) + [""]),
+
+    escapeStringJson(str)::
+        if std.type(str) != "string" then
+            error "escapeStringJson takes string, got " + std.type(str)
+        else
+            local trans(ch) =
+                if ch == "\"" then
+                    "\\\""
+                else if ch == "\\" then
+                    "\\\\"
+                else if ch == "\b" then
+                    "\\b"
+                else if ch == "\f" then
+                    "\\f"
+                else if ch == "\n" then
+                    "\\n"
+                else if ch == "\r" then
+                    "\\r"
+                else if ch == "\t" then
+                    "\\t"
+                else if ch == "\u0000" then
+                    "\\u0000"
+                else
+                    local cp = std.codepoint(ch);
+                    if cp < 32 || cp > 126 then
+                        "\\u%04x" % [cp]
+                    else
+                        ch;
+            "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+    
+    escapeStringPython(str):: std.escapeStringJson(str),
+        
+    escapeStringBash(str)::
+        if std.type(str) != "string" then
+            error "escapeStringBash takes string, got " + std.type(str)
+        else
+            local trans(ch) =
+                if ch == "'" then
+                    "\\'"
+                else if ch == "\\" then
+                    "\\\\" 
+                else
+                    ch;
+            "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+
+    manifestPython(o)::
+        if std.type(o) == "object" then
+            local fields = ["%s: %s" % [std.escapeStringPython(k), std.manifestPython(o[k])]
+                            for k in std.objectFields(o)];
+            "{%s}" % [std.join(", ", fields)]
+        else if std.type(o) == "array" then
+            "[%s]" % [std.join(", ", [std.manifestPython(o2) for o2 in o])]
+        else if std.type(o) == "string" then
+            "%s" % [std.escapeStringPython(o)]
+        else if std.type(o) == "function" then
+            error "cannot manifest function"
+        else if std.type(o) == "number" then
+            std.toString(o)
+        else if o == true then
+            "True"
+        else if o == false then
+            "False"
+        else if o == null then
+            "None",
+
+    manifestPythonVars(conf)::
+        local vars = ["%s = %s" % [k, std.manifestPython(conf[k])] for k in std.objectFields(conf)];
+        std.join("\n", vars + [""]),
 
 }
