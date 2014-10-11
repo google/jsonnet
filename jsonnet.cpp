@@ -70,7 +70,7 @@ void usage(std::ostream &o)
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code (requires explicit filename)\n";
     o << "  -E / --env              Bring in an environment var as an external var\n\n";
-    o << "  -m / --multi            Write multiple files\n";
+    o << "  -m / --multi            Write multiple files, list files on stdout\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
@@ -247,23 +247,40 @@ int main(int argc, const char **argv)
         }
         jsonnet_cleanup_string(vm, output);
         for (const auto &pair : r) {
+            const std::string &new_content = pair.second;
+            const std::string &filename = pair.first;
+            std::cout << filename << std::endl;
+            {
+                std::ifstream exists(filename.c_str());
+                if (exists.good()) {
+                    std::string existing_content;
+                    existing_content.assign(std::istreambuf_iterator<char>(exists),
+                                            std::istreambuf_iterator<char>());
+                    if (existing_content == new_content) {
+                        // Do not bump the timestamp on the file if its content is the same.
+                        // This may trigger other tools (e.g. make) to do unnecessary work.
+                        continue;
+                    }
+                }
+            }
             std::ofstream f;
-            f.open(pair.first.c_str());
+            f.open(filename.c_str());
             if (!f.good()) {
-                std::string msg = "Opening output file: " + pair.first;
+                std::string msg = "Opening output file: " + filename;
                 perror(msg.c_str());
                 jsonnet_destroy(vm);
                 return EXIT_FAILURE;
             }
-            f << pair.second;
+            f << new_content;
             f.close();
             if (!f.good()) {
-                std::string msg = "Writing to output file: " + pair.first;
+                std::string msg = "Writing to output file: " + filename;
                 perror(msg.c_str());
                 jsonnet_destroy(vm);
                 return EXIT_FAILURE;
             }
         }
+        std::cout.flush();
     } else {
         std::cout << output;
         std::cout.flush();
