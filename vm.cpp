@@ -1603,10 +1603,14 @@ namespace {
 
                                 case 16: { // codepoint
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                    if (static_cast<HeapString*>(args[0].v.h)->value.length() != 1)
-                                        throw makeError(loc,
-                                                        "codepoint takes a string of length 1, "
-                                                        "got " + type_str(args[0]));
+                                    const std::string &str =
+                                        static_cast<HeapString*>(args[0].v.h)->value;
+                                    if (str.length() != 1) {
+                                        std::stringstream ss;
+                                        ss << "codepoint takes a string of length 1, got length "
+                                           << str.length();
+                                        throw makeError(loc, ss.str());
+                                    }
                                     char c = static_cast<HeapString*>(args[0].v.h)->value[0];
                                     scratch = makeDouble((unsigned char)(c));
                                 } break;
