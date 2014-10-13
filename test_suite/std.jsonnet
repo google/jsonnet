@@ -109,6 +109,15 @@ std.assertEqual(std.length({}), 0) &&
 std.assertEqual(std.objectFields({}), []) &&
 std.assertEqual(std.objectFields({x: 1, y: 2}), ["x", "y"]) &&
 std.assertEqual(std.objectFields({a:1, b:2, c:null, d:error "foo"}), ["a", "b", "c", "d"]) &&
+std.assertEqual(std.objectFields({x:1} {x:1}), ["x"]) &&
+std.assertEqual(std.objectFields({x:1} {x::1}), []) &&
+std.assertEqual(std.objectFields({x:1} {x:::1}), ["x"]) &&
+std.assertEqual(std.objectFields({x::1} {x:1}), []) &&
+std.assertEqual(std.objectFields({x::1} {x::1}), []) &&
+std.assertEqual(std.objectFields({x::1} {x:::1}), ["x"]) &&
+std.assertEqual(std.objectFields({x:::1} {x:1}), ["x"]) &&
+std.assertEqual(std.objectFields({x:::1} {x::1}), []) &&
+std.assertEqual(std.objectFields({x:::1} {x:::1}), ["x"]) &&
 
 
 std.assertEqual(std.toString({a: 1, b: 2}), "{\"a\": 1, \"b\": 2}") &&

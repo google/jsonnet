@@ -272,11 +272,16 @@ struct LiteralString : public AST {
 /** Represents object constructors { f: e ... }. */
 struct Object : public AST {
     struct Field {
+        enum Hide {
+            INHERIT,  // f: v
+            HIDDEN,  // f:: v
+            VISIBLE  // f::: v
+        };
         AST *name;
-        bool hidden;
+        enum Hide hide;
         AST *body;
-        Field(AST *name, bool hidden, AST *body)
-            : name(name), hidden(hidden), body(body)
+        Field(AST *name, enum Hide hide, AST *body)
+            : name(name), hide(hide), body(body)
         { }
     };
     typedef std::list<Field> Fields;

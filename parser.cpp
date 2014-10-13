@@ -308,8 +308,8 @@ namespace {
 
             // Hidden variable to allow outer/top binding.
             if (obj_level == 0) {
-                const Identifier *hidden = alloc.makeIdentifier("$");
-                let_binds[hidden] = alloc.make<Self>(LocationRange());
+                const Identifier *hidden_var = alloc.makeIdentifier("$");
+                let_binds[hidden_var] = alloc.make<Self>(LocationRange());
             }
 
             bool got_comma = true;
@@ -333,7 +333,7 @@ namespace {
                     } else {
                         for (const auto &f : fields) {
                             AST *body = alloc.make<Local>(f.body->location, let_binds, f.body);
-                            r.emplace_back(f.name, f.hidden, body);
+                            r.emplace_back(f.name, f.hide, body);
                         }
                     }
                     obj = alloc.make<Object>(span(tok, next), r);
@@ -348,12 +348,12 @@ namespace {
                         throw StaticError(next.location, msg);
                     }
                     AST *field = fields.front().name;
-                    bool hidden = fields.front().hidden;
+                    Object::Field::Hide field_hide = fields.front().hide;
                     AST *value = fields.front().body;
                     if (let_binds.size() > 0) {
                         value = alloc.make<Local>(value->location, let_binds, value);
                     }
-                    if (hidden) {
+                    if (field_hide != Object::Field::INHERIT) {
                         auto msg = "Object comprehensions cannot have hidden fields.";
                         throw StaticError(next.location, msg);
                     }
@@ -383,10 +383,14 @@ namespace {
                         }
 
                         popExpect(Token::COLON);
-                        bool hidden = false;
+                        Object::Field::Hide field_hide = Object::Field::INHERIT;
                         if (peek().kind == Token::COLON) {
                             pop();
-                            hidden = true;
+                            field_hide = Object::Field::HIDDEN;
+                            if (peek().kind == Token::COLON) {
+                                pop();
+                                field_hide = Object::Field::VISIBLE;
+                            }
                         }
                         if (!literal_fields.insert(next.data).second) {
                             throw StaticError(next.location, "Duplicate field: "+next.data);
@@ -397,7 +401,7 @@ namespace {
                         if (is_method) {
                             body = alloc.make<Function>(body->location, params, body);
                         }
-                        fields.emplace_back(field_expr, hidden, body);
+                        fields.emplace_back(field_expr, field_hide, body);
                     }
                     break;
 
@@ -412,12 +416,17 @@ namespace {
                         AST *field_expr = parse(MAX_PRECEDENCE, obj_level);
                         popExpect(Token::BRACKET_R);
                         popExpect(Token::COLON);
-                        bool hidden = false;
+                        Object::Field::Hide field_hide = Object::Field::INHERIT;
                         if (peek().kind == Token::COLON) {
                             pop();
-                            hidden = true;
+                            field_hide = Object::Field::HIDDEN;
+                            if (peek().kind == Token::COLON) {
+                                pop();
+                                field_hide = Object::Field::VISIBLE;
+                            }
                         }
-                        fields.emplace_back(field_expr, hidden, parse(MAX_PRECEDENCE, obj_level+1));
+                        fields.emplace_back(field_expr, field_hide,
+                                            parse(MAX_PRECEDENCE, obj_level+1));
                     }
                     break;
 
@@ -839,7 +848,7 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
         std::vector<const Identifier*> params;
         for (const auto &p : decl.params)
             params.push_back(alloc.makeIdentifier(p));
-        fields.emplace_back(alloc.make<LiteralString>(l, decl.name), true,
+        fields.emplace_back(alloc.make<LiteralString>(l, decl.name), Object::Field::HIDDEN,
                             alloc.make<BuiltinFunction>(l, c, params));
     }
 
@@ -986,8 +995,15 @@ static std::string unparse(const AST *ast_)
             const char *prefix = "{";
             for (const auto &f : ast->fields) {
                 ss << prefix;
-                ss << "[" << unparse(f.name) << "]:" << (f.hidden ? ":" : "") << " "
-                   << unparse(f.body);
+                const char *colons = nullptr;
+                switch (f.hide) {
+                    case Object::Field::INHERIT: colons = ":"; break;
+                    case Object::Field::HIDDEN: colons = "::"; break;
+                    case Object::Field::VISIBLE: colons = ":::"; break;
+                    default:
+                    std::cerr << "INTERNAL ERROR: Unknown FieldHide: " << f.hide << std::endl;
+                }
+                ss << "[" << unparse(f.name) << "]" << colons << " " << unparse(f.body);
                 prefix = ", ";
             }
             ss << "}";

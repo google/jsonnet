@@ -565,27 +565,34 @@ namespace {
             return nullptr;
         }
 
+        typedef std::map<const Identifier*, Object::Field::Hide> IdHideMap;
+
         /** Auxiliary function.
          */
-        std::set<const Identifier*> objectFields(const HeapObject *obj_,
-                                                 unsigned &counter, unsigned skip,
-                                                 bool manifesting)
+         IdHideMap objectFields(const HeapObject *obj_,
+                                unsigned &counter, unsigned skip,
+                                bool manifesting)
         {
-            std::set<const Identifier *> r;
+            IdHideMap r;
             if (auto *obj = dynamic_cast<const HeapSimpleObject*>(obj_)) {
                 counter++;
                 if (counter <= skip) return r;
                 for (const auto &f : obj->fields) {
-                    if (!manifesting || !f.second.hidden) {
-                        r.insert(f.first);
-                    }
+                    r[f.first] = !manifesting ? Object::Field::VISIBLE : f.second.hide;
                 }
 
             } else if (auto *obj = dynamic_cast<const HeapExtendedObject*>(obj_)) {
-                for (const auto &f : objectFields(obj->right, counter, skip, manifesting))
-                    r.insert(f);
-                for (const auto &f : objectFields(obj->left, counter, skip, manifesting))
-                    r.insert(f);
+                r = objectFields(obj->right, counter, skip, manifesting);
+                for (const auto &pair : objectFields(obj->left, counter, skip, manifesting)) {
+                    auto it = r.find(pair.first);
+                    if (it == r.end()) {
+                        // First time it is seen
+                        r[pair.first] = pair.second;
+                    } else if (it->second == Object::Field::INHERIT) {
+                        // Seen before, but with inherited visibility so use new visibility
+                        r[pair.first] = pair.second;
+                    }
+                }
 
             } else if (auto *obj = dynamic_cast<const HeapSuperObject*>(obj_)) {
                 unsigned counter2 = 0;
@@ -595,7 +602,7 @@ namespace {
                 counter++;
                 if (counter <= skip) return r;
                 for (const auto &f : obj->compValues)
-                    r.insert(f.first);
+                    r[f.first] = Object::Field::VISIBLE;
             }
             return r;
         }
@@ -605,7 +612,11 @@ namespace {
         std::set<const Identifier*> objectFields(const HeapObject *obj_, bool manifesting)
         {
             unsigned counter = 0;
-            return objectFields(obj_, counter, 0, manifesting);
+            std::set<const Identifier*> r;
+            for (const auto &pair : objectFields(obj_, counter, 0, manifesting)) {
+                if (pair.second != Object::Field::HIDDEN) r.insert(pair.first);
+            }
+            return r;
         }
 
         /** Import another Jsonnet file.
@@ -1830,7 +1841,7 @@ namespace {
                             throw makeError(ast.location,
                                             "Duplicate field name: \"" + fname + "\"");
                         }
-                        f.objectFields[fid].hidden = f.fit->hidden;
+                        f.objectFields[fid].hide = f.fit->hide;
                         f.objectFields[fid].body = f.fit->body;
                         f.fit++;
                         if (f.fit != ast.fields.end()) {

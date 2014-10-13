@@ -152,7 +152,7 @@ namespace {
 
         struct Field {
             /** Will the field appear in output? */
-            bool hidden;
+            Object::Field::Hide hide;
             /** Expression that is evaluated when indexing this field. */
             AST *body;
         };
