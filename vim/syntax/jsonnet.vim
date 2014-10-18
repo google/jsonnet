@@ -59,7 +59,7 @@ syn region String start='L\="' skip='\\\\\|\\"' end='"'
 syn region Comment start="/[*]" end="[*]/"
 syn match Comment "//.*$"
 
-syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\w*\(([^)]*)\)\?\w*::\?:\?"
+syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\s*\(([^)]*)\)\?\s*+\?::\?:\?"
 
 syntax keyword Include import importstr
 syntax keyword Type function self super

@@ -382,6 +382,14 @@ namespace {
                             is_method = true;
                         }
 
+                        bool plus_sugar = false;
+                        LocationRange plus_loc;
+                        if (peek().kind == Token::OPERATOR && peek().data == "+") {
+                            plus_loc = peek().location;
+                            plus_sugar = true;
+                            pop();
+                        }
+
                         popExpect(Token::COLON);
                         Object::Field::Hide field_hide = Object::Field::INHERIT;
                         if (peek().kind == Token::COLON) {
@@ -400,6 +408,11 @@ namespace {
                         AST *body = parse(MAX_PRECEDENCE, obj_level+1);
                         if (is_method) {
                             body = alloc.make<Function>(body->location, params, body);
+                        }
+                        if (plus_sugar) {
+                            AST *f = alloc.make<LiteralString>(plus_loc, next.data);
+                            AST *super_f = alloc.make<Index>(plus_loc, alloc.make<Super>(LocationRange()), f);
+                            body = alloc.make<Binary>(body->location, super_f, BOP_PLUS, body);
                         }
                         fields.emplace_back(field_expr, field_hide, body);
                     }
