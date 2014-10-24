@@ -184,6 +184,7 @@ std.assertEqual(
 std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
+std.assertEqual(std.escapeStringBash("he\"l'lo"), "'he\"l'\"'\"'lo'") &&
 
 std.assertEqual(std.manifestPython({
     x: "test",

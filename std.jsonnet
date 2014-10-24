@@ -651,9 +651,7 @@ limitations under the License.
         else
             local trans(ch) =
                 if ch == "'" then
-                    "\\'"
-                else if ch == "\\" then
-                    "\\\\" 
+                    "'\"'\"'"
                 else
                     ch;
             "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
