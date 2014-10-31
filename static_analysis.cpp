@@ -62,7 +62,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         append(r, static_analysis(ast->branchFalse, in_object, vars));
 
     } else if (auto *ast = dynamic_cast<const Error*>(ast_)) {
-        return static_analysis(ast->expr, in_object, vars);
+        append(r, static_analysis(ast->expr, in_object, vars));
 
     } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
         auto new_vars = vars;
