@@ -59,6 +59,12 @@ struct Identifier {
     { }
 };
 
+static inline std::ostream &operator<<(std::ostream &o, const Identifier *id)
+{
+    o << id->name;
+    return o;
+}
+
 
 /** All AST nodes are subtypes of this class.
  */
