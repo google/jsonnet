@@ -104,6 +104,9 @@ limitations under the License.
         else
             error "join first parameter should be string or array, got " + std.type(arr),
 
+    lines(arr)::
+        std.join("\n", arr + [""]),
+
     format(str, vals)::
 
         /////////////////////////////

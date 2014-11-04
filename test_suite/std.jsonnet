@@ -157,6 +157,7 @@ std.assertEqual(std.range(2,1), []) &&
 
 std.assertEqual(std.join(["a","b"], [[1,2],[3,4,5],[6]]), [1,2,"a","b",3,4,5,"a","b",6]) &&
 std.assertEqual(std.join("ab", ["12","345","6"]), "12ab345ab6") &&
+std.assertEqual(std.lines(["a", "b"]), "a\nb\n") &&
 
 std.assertEqual(std.flattenArrays([[1, 2, 3], [4, 5, 6], []]), [1, 2, 3, 4, 5, 6]) &&
 
