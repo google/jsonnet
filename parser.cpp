@@ -470,6 +470,7 @@ namespace {
                 case Token::OPERATOR:
                 case Token::PAREN_R:
                 case Token::SEMICOLON:
+                case Token::TAILCALL:
                 case Token::THEN:
                 throw unexpected(tok, "parsing terminal");
 
