@@ -69,7 +69,8 @@ void usage(std::ostream &o)
     o << "and <option> can be:\n";
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code (requires explicit filename)\n";
-    o << "  -E / --env              Bring in an environment var as an external var\n\n";
+    o << "  -V / --var <var>=<val>  Specify an 'external' var to the given value\n";
+    o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
     o << "  -m / --multi            Write multiple files, list files on stdout\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
@@ -119,13 +120,25 @@ int main(int argc, const char **argv)
             }
             jsonnet_max_stack(vm, l);
         } else if (arg == "-E" || arg == "--env") {
-            const std::string &var = next_arg(i, args);
+            const std::string var = next_arg(i, args);
             const char *val = ::getenv(var.c_str());
             if (val == nullptr) {
-                std::cerr << "ERROR: Environment variable " << var << " was undefined." << std::endl;
+                std::cerr << "ERROR: Environment variable " << var
+                          << " was undefined." << std::endl;
                 exit(EXIT_FAILURE);
             }
             jsonnet_ext_var(vm, var.c_str(), val);
+        } else if (arg == "-V" || arg == "--var") {
+            const std::string var_val = next_arg(i, args);
+            size_t eq_pos = var_val.find_first_of('=', 0);
+            if (eq_pos == std::string::npos) {
+                std::cerr << "ERROR: argument not in form <var>=<val> \""
+                          << var_val << "\"." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            const std::string var = var_val.substr(0, eq_pos);
+            const std::string val = var_val.substr(eq_pos + 1, std::string::npos);
+            jsonnet_ext_var(vm, var.c_str(), val.c_str());
         } else if (arg == "--gc-min-objects") {
             long l = strtol_check(next_arg(i, args));
             if (l < 0) {
