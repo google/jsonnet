@@ -194,6 +194,10 @@ namespace {
         {
         }
 
+        ~Stack (void)
+        {
+        }
+
         unsigned size(void)
         {
             return stack.size();
@@ -1036,7 +1040,7 @@ namespace {
                     if (ast.fields.empty()) {
                         BindingFrame env;
                         std::map<const Identifier *, HeapSimpleObject::Field> fields;
-                        scratch = makeObject<HeapSimpleObject>(env, fields); 
+                        scratch = makeObject<HeapSimpleObject>(env, fields);
                     } else {
                         auto env = capture(ast.freeVariables);
                         stack.newFrame(FRAME_OBJECT, ast_);
@@ -1066,7 +1070,7 @@ namespace {
                     HeapObject *self;
                     unsigned offset;
                     stack.getSelfBinding(self, offset);
-                    offset++; 
+                    offset++;
                     if (offset >= countLeaves(self)) {
                         throw makeError(ast_->location,
                                         "Attempt to use super when there is no super class.");
@@ -2118,7 +2122,7 @@ namespace {
             }
             return r;
         }
-        
+
     };
 
 }
