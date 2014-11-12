@@ -618,6 +618,7 @@ namespace {
                     AST *expr = parse(MAX_PRECEDENCE, obj_level);
                     return alloc.make<Error>(span(begin, expr), expr);
                 }
+                [[clang::fallthrough]]
 
                 case Token::IF: {
                     pop();
@@ -634,6 +635,7 @@ namespace {
                     return alloc.make<Conditional>(span(begin, branch_false),
                                                    cond, branch_true, branch_false);
                 }
+                [[clang::fallthrough]]
 
                 case Token::FUNCTION: {
                     pop();
@@ -660,6 +662,7 @@ namespace {
                         throw StaticError(next.location, ss.str());
                     }
                 }
+                [[clang::fallthrough]]
 
                 case Token::LOCAL: {
                     pop();
@@ -677,6 +680,7 @@ namespace {
                     AST *body = parse(MAX_PRECEDENCE, obj_level);
                     return alloc.make<Local>(span(begin, body), binds, body);
                 }
+                [[clang::fallthrough]]
 
                 // Unary operator.
                 case Token::OPERATOR: {
@@ -692,6 +696,7 @@ namespace {
                         return alloc.make<Unary>(span(op, expr), uop, expr);
                     }
                 }
+                [[clang::fallthrough]]
 
                 default:
 
@@ -898,7 +903,7 @@ std::string jsonnet_unparse_escape(const std::string &str)
                 }
             }
         }
-    }   
+    }
     ss << '\"';
     return ss.str();
 }
