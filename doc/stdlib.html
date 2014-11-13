@@ -190,10 +190,9 @@
 
 <p> This page describes the functions available in Jsonnet's standard library, i.e. the object
 implicitly bound to the <code>std</code> variable. Some of the standard library functions can be
-implemented in Jsonnet, in which case their code is also given here.  The behavior of some of the
-other functions, i.e. the ones that expose extra functionality not otherwise available to
-programmers, is described informally here and formally in the <a href="spec.html">specification</a>.
-</p>
+implemented in Jsonnet.  Their code can be found in the <tt>std.jsonnet</tt> file.  The behavior of
+some of the other functions, i.e. the ones that expose extra functionality not otherwise available
+to programmers, is described formally in the <a href="spec.html">specification</a>.  </p>
 
 <p>The standard library is implicitly added to all Jsonnet programs by enclosing them in a local
 construct.  For example, if the program given by the user is <code>{x: "foo"}</code>, then the
@@ -229,7 +228,13 @@ fields are not visible via reflection.</p>
 <h3>Mathematical Utilities</h3>
 
 <p>The following mathematical functions are available:
+<code>std.abs(n)</code>, 
+<code>std.max(a, b)</code>, 
+<code>std.min(a, b)</code>, 
 <code>std.pow(x, n)</code>, 
+<code>std.exp(x)</code>, 
+<code>std.exponent(x)</code>, 
+<code>std.mantissa(x)</code>, 
 <code>std.floor(x)</code>, 
 <code>std.ceil(x)</code>, 
 <code>std.sqrt(x)</code>, 
@@ -240,6 +245,10 @@ fields are not visible via reflection.</p>
 <code>std.acos(x)</code>, and
 <code>std.atan(x)</code>.</p>
 
+<p>The function <code>std.mod(a, b)</code> is what the % operator is desugared to.  It performs
+modulo arithmetic if the left hand side is a number, or if the left hand side is a string, it does
+Python-style string formatting with <code>std.format()</code>.
+
 <h3>Assertions and Debugging</h3>
 
 <h4>std.assertEqual(a, b)</h4>
@@ -248,14 +257,6 @@ fields are not visible via reflection.</p>
 Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error message.
 </p>
 
-<pre><code>local std = {
-    ...
-    assertEqual(a, b)::
-        if a == b then true
-        else error "Assertion failed. " + a + " != " + b
-}; ...
-</code></pre>
-
 
 <h3>String Manipulation</h3>
 
@@ -263,41 +264,28 @@ Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error m
 
 <p>Convert the given argument to a string.</p>
 
-<pre><code>local std = {
-    ...
-    toString(a):: "" + a
-}; ...
-</code></pre>
 
 <h4>std.codepoint(str)</h4>
 
 <p>Returns the positive integer representing the unicode codepoint of the character in the given
 single-character string.  This function is the inverse of <code>std.char(n)</code>.</p>
 
+
 <h4>std.char(n)</h4>
 
 <p>Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.  This function is the inverse of <code>std.codepoint(str)</code>.</p>
 
+
 <h4>std.substr(s, from, len)</h4>
 
-<p>Returns a string that is the part of <code>s</code> that starts at offset <code>from</code> and is
-<code>len</code> codepoints long.</p>
+<p>Returns a string that is the part of <code>s</code> that starts at offset <code>from</code> and
+is <code>len</code> codepoints long.</p>
 
-<pre><code>local std = {
-    ...
-    substr(str, from, len):: 
-        if self.type(str) != "string" then
-            error "substr first parameter should be a string, got " + self.type(str)
-        else if self.type(from) != "number" then
-            error "substr second parameter should be a number, got " + self.type(from)
-        else if self.type(len) != "number" then
-            error "substr third parameter should be a number, got " + self.type(len)
-        else if len &lt; 0 then
-            error "substr third parameter should be greater than zero, got " + len
-        else
-            self.join("", self.makeArray(len, function(i) str[i + from]))
-}; ...
-</code></pre>
+
+<h4>std.split(str, c)</h4>
+
+<p>Split the string <code>str</code> into an array of strings, divided by the character
+<code>c</code>.</p>
 
 
 <h3>Arrays</h3>
@@ -310,53 +298,22 @@ it should initialize.</p>
 
 <p>Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.  </p>
 
+
 <h4>std.map(func, arr)</h4>
 
 <p>Apply the given function to every element of the array to form a new array.</p>
 
-<pre><code>local std = {
-    ...
-    map(func, arr)::
-        if self.type(func) != "function" then
-            error("self.map first param must be function, got " + self.type(func))
-        else if self.type(arr) != "array" then
-            error("self.map second param must be array, got " + self.type(arr))
-        else
-            self.makeArray(self.length(arr), function(i) func(arr[i]))
-}; ...
-</code></pre>
 
 <h4>std.filterMap(filter_func, map_func, arr)</h4>
 
 <p>This is primarily used to desugar array comprehension syntax.  It first filters, then maps the
 given array, using the two functions provided.</p>
 
-<pre><code>local std = {
-    ...
-    filterMap(filter_func, map_func, arr)::
-        if self.type(filter_func) != "function" then
-            error("self.filterMap first param must be function, got " + self.type(filter_func))
-        else if self.type(map_func) != "function" then
-            error("self.filterMap second param must be function, got " + self.type(map_func))
-        else if self.type(arr) != "array" then
-            error("self.filterMap third param must be array, got " + self.type(arr))
-        else
-            self.map(map_func, self.filter(filter_func, arr))
-}; ...
-</code></pre>
-
  
 <h4>std.filter(func, arr)</h4>
 
 <p>Return a new array containing all the elements of <code>arr</code> for which the
 <code>func</code> function returns true.</p>
-
-<pre><code>local std = {
-    ...
-    filter(func, arr)::
-        self.join([], [if func(arr[i]) then [arr[i]] else [] for i in self.range(0, self.length(arr)-1)])
-}; ...
-</code></pre>
 
  
 <h4>std.foldl(func, arr, init)</h4>
@@ -365,18 +322,6 @@ given array, using the two functions provided.</p>
 function call, or <code>init</code> in the case of the initial element.  Traverses the array from
 left to right.</p>
 
-<pre><code>local std = {
-    ...
-    foldl(func, arr, init)::
-        local aux(func, arr, running, idx) =
-            if idx &gt;= self.length(arr) then
-                running
-            else
-                aux(func, arr, func(running, arr[idx]), idx+1)
-        aux(func, arr, init, 0)
-}; ...
-</code></pre>
-
 
 <h4>std.foldr(func, arr, init)</h4>
 
@@ -384,29 +329,10 @@ left to right.</p>
 function call, or <code>init</code> in the case of the initial element.  Traverses the array from
 right to left.</p>
 
-<pre><code>local std = {
-    ...
-    foldr(func, arr, init)::
-        local aux(func, arr, running, idx) =
-            if idx &lt; 0 then
-                running
-            else
-                aux(func, arr, func(arr[idx], running), idx-1)
-        aux(func, arr, init, self.length(arr)-1)
-}; ...
-</code></pre>
-
 
 <h4>std.range(from, to)</h4>
 
 <p>Return an array of ascending numbers between the two limits, inclusively.</p>
-
-<pre><code>local std = {
-    ...
-    range(from, to)::
-        self.makeArray(to-from+1, function(i) i + from)
-}; ...
-</code></pre>
 
 
 <h4>std.join(sep, arr)</h4>
@@ -421,26 +347,19 @@ same way, to produce a single array.</p>
 
 <p>Example2: <code>std.join([9, 9], [[1], [2, 3]])</code> yields <code>[1, 9, 9, 2, 3]</code>.  </p>
 
-<pre><code>local std = {
-    ...
-    join(sep, arr)::
-        local aux(arr, i, running) =
-            if i >= self.length(arr) then
-                running
-            else if i == 0 then
-                aux(arr, i+1, running + arr[i])
-            else
-                aux(arr, i+1, running + sep + arr[i])
-        if self.type(arr) != "array" then
-            error "join second parameter should be array, got " + self.type(arr)
-        else if self.type(sep) == "string" then
-            aux(arr, 0, "")
-        else if self.type(sep) == "array" then
-            aux(arr, 0, [])
-        else
-            error "join first parameter should be string or array, got " + self.type(arr)
-}; ...
-</code></pre>
+
+<h4>std.lines(arr)</h4>
+
+<p>Concatenate an array of strings into a text file with newline characters after each string.  This
+is suitable for constructing bash scripts and the like.</p>
+
+
+<h3>Miscellaneous</h3>
+
+<h4>std.force(x)</h4>
+
+<p>Always returns true, but always evaluates its argument.  This allows controlling memory usage in
+recursive algorithms, and causes runtime errors in x to be discovered immediately.</p>
 
 
 <div style="margin-bottom: 50px"></div>
