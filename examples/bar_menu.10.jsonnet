@@ -15,9 +15,8 @@ limitations under the License.
 */
 
 // bar_menu.10.jsonnet
-
 import "bar_menu.9.jsonnet" {
-    cocktails: super.cocktails {
+    cocktails +: {
         "Whiskey Sour": {
             ingredients: [
                 { kind: "Scotch", qty: 1.5 },
@@ -28,6 +27,7 @@ import "bar_menu.9.jsonnet" {
         }
     }
 }
+
 
 
 

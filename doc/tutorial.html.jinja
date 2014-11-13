@@ -197,7 +197,7 @@ definitions are really just syntax sugar for closures that are assigned to a fie
 <p>Finally, you may have noticed that two colons are used instead of one.  This marks the field as
 being <dfn>hidden</dfn>, i.e. it will not appear in the JSON output.  The field can still be
 accessed by Jsonnet code, so it is not like the private/protected modifier that some languages have.
-Hidden fields are convenient for functions, which have no manifestation in JSON anyway.  It has
+Hidden fields are convenient for functions, which cannot be manifestated in the JSON output.  It has
 other uses too, as we will see in the later section on object orientation.</p>
 
 <h3>Local Variables</h3>
@@ -283,6 +283,9 @@ empty list of ingredients to the <code>equal_parts</code> function.  </p>
 
 <h2>Object-Orientation</h2>
 
+<p>Finally, we see how Jsonnet provides the abstraction mechanisms of object oriented programming,
+to allow the writing of base templates that can be extended for a variety of purposes.</p>
+
 <p>The object concatenation operator <code>+</code> can be used to override fields from one object
 with another.  This is similar to the concept of inheritance in object-oriented languages such as
 C++ and Java.  It can be used to derive variants from a single template.  In the following example,
@@ -319,9 +322,15 @@ This results in the egg variant now being derived from the new whiskey, because 
 <code>self["Whiskey Sour"]</code> resolves to.  This is classic object-orientation in action, and it
 is very powerful.</p>
 
-<p>Note also that the <code>+</code> was omitted in this case.  This is allowed if it is followed by
-an opening brace, so in fact this same simplification could have been made in all the previous
-examples.</p>
+<p>Note also that this example makes use of two syntax sugars (shorthands).  The first is that the
+object concatenation <code>+</code> was omitted.  This is allowed when it is followed by an opening
+brace, so in fact this same simplification could have also been made in all of the previous examples
+utilizing the object concatenation operator <code>+</code>.  The second syntax sugar is the
+
+<code>f +: e</code> operator, which is a little like the += operator from other languages.  Its
+behavior is the same as saying <code>f: super.f + e</code>.  This works not just for <code>+</code>
+when used for inheritance, but also for string concatenation, list concatenation, and arithmetic
+addition, so it could also have been used in the previous example to add the egg white.</p>
 
 <table>
 <tr>
@@ -334,6 +343,32 @@ examples.</p>
 </td>
 <td>
 <pre><code>{{ myinclude('../examples/bar_menu.10.jsonnet.golden') }}</code></pre>
+</td>
+</tr>
+</table>
+
+<p> The hidden status (i.e. <code>::</code>) of a field is preserved over inheritance.  If you
+override a field using the <code>:</code> syntax, but the original field was defined with
+<code>::</code>, then the new object's field will also be hidden.  To make the field visible use
+three colons (<code>:::</code>).  This is illustrated below.  The values are all inherited without
+change, but the use of colons changes the visibility of fields in the case of <code>x</code> and
+<code>w</code>.  The <code>x</code> field is hidden by <code>foo</code> because of the double
+colons.  The <code>y</code> field remains hidden in <code>foo</code> because the single colon
+inherits the hidden status from <code>Base</code>.  The triple colon in <code>z</code> however
+overrides the hidden status from <code>Base</code> to make the field visible in <code>foo</code>.
+</p>
+
+<table>
+<tr>
+<td><span class="TableHeader">Input</span></td>
+<td><span class="TableHeader">Output</span></td>
+</tr>
+<tr>
+<td>
+<pre><code>{{ myinclude('../examples/hidden_fields.jsonnet') }}</code></pre>
+</td>
+<td>
+<pre><code>{{ myinclude('../examples/hidden_fields.jsonnet.golden') }}</code></pre>
 </td>
 </tr>
 </table>

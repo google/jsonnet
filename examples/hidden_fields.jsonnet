@@ -14,26 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// bar_menu.9.jsonnet
+// hidden_fields.jsonnet
 {
-    cocktails: {
-        "Whiskey Sour": {
-            ingredients: [
-                { kind: "Bourbon", qty: 1.5 },
-                { kind: "Lemon Juice", qty: 1 },
-                { kind: "Gomme Syrup", qty: 0.5 },
-            ],
-            garnish: "Lemon Peel",
-            served: "Straight Up",
-        },
-        "Whiskey Sour With Egg": self["Whiskey Sour"] + {
-            ingredients: super.ingredients
-                         + [ { kind: "Egg White", qty: 0.5 } ],
-        },
-    }
+    local Base = { w: 1, x: 2, y:: 3, z:: 4 },
+    foo: Base { w: super.w, x:: super.x, y: super.y, z::: super.z},
 }
-
-
-
-
-
