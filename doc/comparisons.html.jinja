@@ -103,15 +103,15 @@ understand.  Jsonnet uses static scoping, like almost all mainstream languages. 
 
 <p> <a href="https://github.com/wickman/pystachio">Pystachio</a> is a Python framework that makes it
 easier to use Python itself as a configuration language.  It extends Python's existing data literals
-(which are JSON-like) to add some object-oriented functionality and enforce immutability.  However
-it lacks the computational abilities of Jsonnet.  Although it does allow some computation within
-string values, the only variables you can access are stored in separate "environments", and there is
-no direct access to the data being configured.  Even if we assume that all data is stored in
-environments and object fields merely forward to the environment, the language does not have any
-object-orientation features.  While scopes are inherited from outer objects, this just an implicit
-way of doing what you can do in Jsonnet with <code>$</code> or <code>local</code>.  In Pystachio
-there is no way to derive a struct from another struct with a few changes, let alone use late
-binding or the expressive power of mixins.</p>
+(which are JSON-like) to enforce immutability and add some templating functionality.  However it
+lacks the full computational abilities of Jsonnet.  Although it does allow some computation within
+string values via template expansion, the only variables you can access are stored in separate
+"environments", and there is no direct access to the data being configured.  Even if we assume that
+all data is stored in environments and object fields merely forward to the environment, the language
+does not have any true object-orientation features.  While scopes are inherited from outer objects,
+this just an implicit way of doing what you can do in Jsonnet with <code>$</code> or
+<code>local</code>.  In Pystachio there is no way to derive a struct from another struct with a few
+changes, let alone use late binding or the expressive power of mixins.</p>
 
 <p> Finally, there are a number of other configuration languages that have grown to be used by a
 range of applications.  For example <a href="http://en.wikipedia.org/wiki/INI_file">INI files</a> or
