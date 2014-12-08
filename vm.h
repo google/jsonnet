@@ -18,6 +18,7 @@ limitations under the License.
 #define VM_H
 
 #include "ast.h"
+#include "libjsonnet.h"
 
 /** A single line of a stack trace from a runtime error.
  */
@@ -52,8 +53,9 @@ struct RuntimeError {
  */
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
                                const std::map<std::string, std::string> &ext_vars,
-                               unsigned max_stack=2000, double gc_min_objects=1000,
-                               double gc_growth_trigger=2.0);
+                               unsigned max_stack, double gc_min_objects,
+                               double gc_growth_trigger,
+                               JsonnetImportCallback *import_callback, void *import_callback_ctx);
 
 /** Execute the program and return the value as a number of JSON files.
  *
@@ -69,6 +71,7 @@ std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
     Allocator &alloc, const AST *ast, const std::map<std::string, std::string> &ext_vars,
-    unsigned max_stack, double gc_min_objects, double gc_growth_trigger);
+    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+    JsonnetImportCallback *import_callback, void *import_callback_ctx);
 
 #endif

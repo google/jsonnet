@@ -37,6 +37,17 @@ limitations under the License.
 
 namespace {
 
+    /** Turn a path e.g. "/a/b/c" into a dir, e.g. "/a/b/".  If there is no path returns "".
+     */
+    std::string dir_name(const std::string &path)
+    {
+        size_t last_slash = path.rfind('/');
+        if (last_slash != std::string::npos) {
+            return path.substr(0, last_slash+1);
+        }
+        return "";
+    }
+
     enum FrameKind {
         FRAME_APPLY_TARGET,
         FRAME_BINARY_LEFT,
@@ -406,10 +417,16 @@ namespace {
         const Identifier *idArrayElement;
 
         /** Cache for imported Jsonnet files. */
-        std::map<std::string, const std::string *> cachedImports;
+        std::map<std::pair<std::string, std::string>, const std::string *> cachedImports;
 
         /** External variables for std.extVar. */
         StrMap externalVars;
+
+        /** The callback used for loading imported files. */
+        JsonnetImportCallback *importCallback;
+
+        /** User context pointer for the import callback. */
+        void *importCallbackContext;
 
         RuntimeError makeError(const LocationRange &loc, const std::string &msg)
         {
@@ -630,6 +647,7 @@ namespace {
         AST *import(const LocationRange &loc, const std::string &file)
         {
             const std::string *input = importString(loc, file);
+
             auto *expr = jsonnet_parse(alloc, file, input->c_str());
             jsonnet_static_analysis(expr);
             return expr;
@@ -645,20 +663,31 @@ namespace {
          */
         const std::string *importString(const LocationRange &loc, const std::string &file)
         {
-            const std::string *str = cachedImports[file];
+            std::string dir = dir_name(loc.file);
+
+            std::pair<std::string, std::string> key(dir, file);
+            const std::string *str = cachedImports[key];
             if (str != nullptr) return str;
 
-            std::string *input = new std::string();
-            std::ifstream f;
-            f.open(file.c_str());
-            if (!f.good()) {
-                std::string msg = "Couldn't open import \"" + file + "\": ";
-                msg += std::strerror(errno);
-                throw makeError(loc, msg);
+
+            int success = 0;
+            char *content =
+                importCallback(importCallbackContext, dir.c_str(), file.c_str(), &success);
+
+            std::string input(content);
+
+            input.assign(content);
+            ::free(content);
+
+            if (!success) {
+                    std::string msg = "Couldn't open import \"" + file + "\": ";
+                    msg += input;
+                    throw makeError(loc, msg);
             }
-            input->assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-            cachedImports[file] = input;
-            return input;
+
+            std::string *input_ptr = new std::string(input);
+            cachedImports[key] = input_ptr;
+            return input_ptr;
         }
 
         /** Capture the required variables from the environment. */
@@ -697,9 +726,11 @@ namespace {
          * \param loc The location range of the file to be executed.
          */
         Interpreter(Allocator &alloc, const StrMap &ext_vars,
-                    unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
+                    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+                    JsonnetImportCallback *import_callback, void *import_callback_context)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc.makeIdentifier("array_element")), externalVars(ext_vars)
+            idArrayElement(alloc.makeIdentifier("array_element")), externalVars(ext_vars),
+            importCallback(import_callback), importCallbackContext(import_callback_context)
         {
             scratch = makeNull();
         }
@@ -2126,17 +2157,21 @@ namespace {
 std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
                                const StrMap &ext_vars,
                                unsigned max_stack, double gc_min_objects,
-                               double gc_growth_trigger)
+                               double gc_growth_trigger,
+                               JsonnetImportCallback *import_callback, void *ctx)
 {
-    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger);
+    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
+                   import_callback, ctx);
     vm.evaluate(ast);
     return vm.manifestJson(LocationRange("During manifestation"), true, "");
 }
 
 StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &ext_vars,
-                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger)
+                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+                                JsonnetImportCallback *import_callback, void *ctx)
 {
-    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger);
+    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
+                   import_callback, ctx);
     vm.evaluate(ast);
     return vm.manifestJsonMulti();
 }

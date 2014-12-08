@@ -30,60 +30,102 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
-struct JsonnetVM {
+/** Resolve the absolute path and use C++ file io to load the file.
+ */
+static char *default_import_callback (void *ctx, const char *base, const char *file, int *success)
+{
+    auto *vm = static_cast<JsonnetVm*>(ctx);
+
+    std::string abs_path;
+    // It is possible that file is an absolute path
+    if (std::strlen(file) > 0 && file[0] == '/')
+        abs_path = file;
+    else
+        abs_path = std::string(base) + file;
+
+    std::ifstream f;
+    f.open(abs_path.c_str());
+    if (!f.good()) {
+        *success = 0;
+        const char *err = std::strerror(errno);
+        char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
+        std::strcpy(r, err);
+        return r;
+    }   
+    std::string input;
+    input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    *success = 1;
+    char *r = jsonnet_realloc(vm, nullptr, input.length() + 1);
+    std::strcpy(r, input.c_str());
+    return r;
+}
+
+
+struct JsonnetVm {
     double gcGrowthTrigger;
     unsigned maxStack;
     unsigned gcMinObjects;
     bool debugAst;
     unsigned maxTrace;
     std::map<std::string, std::string> extVars;
-    JsonnetVM(void)
-      : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20)
+    JsonnetImportCallback *importCallback;
+    void *importCallbackContext;
+    JsonnetVm(void)
+      : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20),
+        importCallback(default_import_callback), importCallbackContext(this)
     { }
 };
 
-JsonnetVM *jsonnet_make(void)
+JsonnetVm *jsonnet_make(void)
 {
-    return new JsonnetVM();
+    return new JsonnetVm();
 }
 
-void jsonnet_destroy(JsonnetVM *vm)
+void jsonnet_destroy(JsonnetVm *vm)
 {
     delete vm;
 }
 
-void jsonnet_max_stack(JsonnetVM *vm, unsigned v)
+void jsonnet_max_stack(JsonnetVm *vm, unsigned v)
 {
     vm->maxStack = v;
 }
 
-void jsonnet_gc_min_objects(JsonnetVM *vm, unsigned v)
+void jsonnet_gc_min_objects(JsonnetVm *vm, unsigned v)
 {
     vm->gcMinObjects = v;
 }
 
-void jsonnet_gc_growth_trigger(JsonnetVM *vm, double v)
+void jsonnet_gc_growth_trigger(JsonnetVm *vm, double v)
 {
     vm->gcGrowthTrigger = v;
 }
 
-void jsonnet_ext_var(JsonnetVM *vm, const char *key, const char *val)
+void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, void *ctx)
+{
+    vm->importCallback = cb;
+    vm->importCallbackContext = ctx;
+}
+
+void jsonnet_ext_var(JsonnetVm *vm, const char *key, const char *val)
 {
     vm->extVars[key] = val;
 }
 
-void jsonnet_debug_ast(JsonnetVM *vm, int v)
+void jsonnet_debug_ast(JsonnetVm *vm, int v)
 {
     vm->debugAst = v;
 }
 
-void jsonnet_max_trace(JsonnetVM *vm, unsigned v)
+void jsonnet_max_trace(JsonnetVm *vm, unsigned v)
 {
     vm->maxTrace = v;
 }
 
-static const char *jsonnet_evaluate_snippet_aux(JsonnetVM *vm, const char *filename,
-                                                const char *snippet, int *error, bool multi)
+char *jsonnet_realloc(char *buf, size_t sz);
+
+static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
+                                          const char *snippet, int *error, bool multi)
 {
     try {
         Allocator alloc;
@@ -96,10 +138,12 @@ static const char *jsonnet_evaluate_snippet_aux(JsonnetVM *vm, const char *filen
             jsonnet_static_analysis(expr);
             if (multi) {
                 files = jsonnet_vm_execute_multi(alloc, expr, vm->extVars, vm->maxStack,
-                                                 vm->gcMinObjects, vm->gcGrowthTrigger);
+                                                 vm->gcMinObjects, vm->gcGrowthTrigger,
+                                                 vm->importCallback, vm->importCallbackContext);
             } else {
                 json_str = jsonnet_vm_execute(alloc, expr, vm->extVars, vm->maxStack,
-                                              vm->gcMinObjects, vm->gcGrowthTrigger);
+                                              vm->gcMinObjects, vm->gcGrowthTrigger,
+                                              vm->importCallback, vm->importCallbackContext);
             }
         }
         if (multi) {
@@ -156,8 +200,7 @@ static const char *jsonnet_evaluate_snippet_aux(JsonnetVM *vm, const char *filen
 
 }
 
-static const char *jsonnet_evaluate_file_aux(JsonnetVM *vm, const char *filename,
-                                             int *error, bool multi)
+static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int *error, bool multi)
 {
     std::ifstream f;
     f.open(filename);
@@ -174,32 +217,40 @@ static const char *jsonnet_evaluate_file_aux(JsonnetVM *vm, const char *filename
     return jsonnet_evaluate_snippet_aux(vm, filename, input.c_str(), error, multi);
 }
 
-const char *jsonnet_evaluate_file(JsonnetVM *vm, const char *filename, int *error)
+char *jsonnet_evaluate_file(JsonnetVm *vm, const char *filename, int *error)
 {
     return jsonnet_evaluate_file_aux(vm, filename, error, false);
 }
 
-const char *jsonnet_evaluate_file_multi(JsonnetVM *vm, const char *filename, int *error)
+char *jsonnet_evaluate_file_multi(JsonnetVm *vm, const char *filename, int *error)
 {
     return jsonnet_evaluate_file_aux(vm, filename, error, true);
 }
 
-const char *jsonnet_evaluate_snippet(JsonnetVM *vm, const char *filename,
-                                     const char *snippet, int *error)
+char *jsonnet_evaluate_snippet(JsonnetVm *vm, const char *filename, const char *snippet, int *error)
 {
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, false);
 }
 
-const char *jsonnet_evaluate_snippet_multi(JsonnetVM *vm, const char *filename,
-                                           const char *snippet, int *error)
+char *jsonnet_evaluate_snippet_multi(JsonnetVm *vm, const char *filename,
+                                     const char *snippet, int *error)
 {
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, true);
 }
 
-void jsonnet_cleanup_string(JsonnetVM *vm, const char *str)
+char *jsonnet_realloc(JsonnetVm *vm, char *str, size_t sz)
 {
     (void) vm;
-    // Const cast is valid because memory originated from ::strdup.
-    ::free(const_cast<char*>(str));
+    if (str == nullptr) {
+        if (sz == 0) return nullptr;
+        return static_cast<char*>(::malloc(sz));
+    } else {
+        if (sz == 0) {
+            ::free(str);
+            return nullptr;
+        } else {
+            return static_cast<char*>(::realloc(str, sz));
+        }
+    }
 }
 

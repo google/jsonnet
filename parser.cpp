@@ -151,23 +151,6 @@ namespace {
         return LocationRange(begin.location.file, begin.location.begin, end->location.end);
     }
 
-    /** Rebase a relative filename.
-     *
-     * E.g., Given "a/b/X" and "x/y/Y", returns "a/b/x/y/Y".
-     */
-    std::string rel_to_base(const std::string &file_base, const std::string &rel)
-    {
-        // It is possible that rel is actually absolute.
-        if (rel.length() > 0 && rel[0] == '/') return rel;
-
-        std::string dir_base;
-        size_t last_slash = file_base.rfind('/');
-        if (last_slash != std::string::npos) {
-            dir_base = file_base.substr(0, last_slash+1);
-        }
-        return dir_base + rel;
-    }
-
     /** Holds state while parsing a given token list.
      */
     class Parser {
@@ -572,14 +555,12 @@ namespace {
                 // Import
                 case Token::IMPORT: {
                     Token file = popExpect(Token::STRING);
-                    std::string abs_path = rel_to_base(file.location.file, file.data);
-                    return alloc.make<Import>(span(tok, file), abs_path);
+                    return alloc.make<Import>(span(tok, file), file.data);
                 }
 
                 case Token::IMPORTSTR: {
                     Token file = popExpect(Token::STRING);
-                    std::string abs_path = rel_to_base(file.location.file, file.data);
-                    return alloc.make<Importstr>(span(tok, file), abs_path);
+                    return alloc.make<Importstr>(span(tok, file), file.data);
                 }
 
 

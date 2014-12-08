@@ -23,12 +23,13 @@ limitations under the License.
 
 static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
-    const char *filename, *out;
+    const char *filename;
+    char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int debug_ast = 0, error;
     PyObject *env = NULL;
-    struct JsonnetVM *vm;
+    struct JsonnetVm *vm;
     static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
 
     (void) self;
@@ -67,12 +68,12 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     out = jsonnet_evaluate_file(vm, filename, &error);
     if (error) {
         PyErr_SetString(PyExc_RuntimeError, out);
-        jsonnet_cleanup_string(vm, out);
+        jsonnet_realloc(vm, out, 0);
         jsonnet_destroy(vm);
         return NULL;
     } else {
         PyObject *ret = PyString_FromString(out);
-        jsonnet_cleanup_string(vm, out);
+        jsonnet_realloc(vm, out, 0);
         jsonnet_destroy(vm);
         return ret;
     }
@@ -80,12 +81,13 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 
 static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
 {
-    const char *filename, *src, *out;
+    const char *filename, *src;
+    char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int debug_ast = 0, error;
     PyObject *env = NULL;
-    struct JsonnetVM *vm;
+    struct JsonnetVm *vm;
     static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
 
     (void) self;
@@ -124,12 +126,12 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     out = jsonnet_evaluate_snippet(vm, filename, src, &error);
     if (error) {
         PyErr_SetString(PyExc_RuntimeError, out);
-        jsonnet_cleanup_string(vm, out);
+        jsonnet_realloc(vm, out, 0);
         jsonnet_destroy(vm);
         return NULL;
     } else {
         PyObject *ret = PyString_FromString(out);
-        jsonnet_cleanup_string(vm, out);
+        jsonnet_realloc(vm, out, 0);
         jsonnet_destroy(vm);
         return ret;
     }
