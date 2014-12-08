@@ -52,8 +52,6 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         abs_path = dir + rel;
     }
 
-    std::cout << "Trying: " << abs_path << std::endl;
-
     std::ifstream f;
     f.open(abs_path.c_str());
     if (!f.good()) return IMPORT_STATUS_FILE_NOT_FOUND;
