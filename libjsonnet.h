@@ -124,12 +124,6 @@ char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
                                      const char *snippet,
                                      int *error);
 
-/** Clean up returned strings.
- *
- * \param str Either the returned JSON, or the error message, or NULL.
- **/
-void jsonnet_cleanup_string(struct JsonnetVm *vm, const char *str);
-
 /** Complement of \see jsonnet_vm_make. */
 void jsonnet_destroy(struct JsonnetVm *vm);
 
