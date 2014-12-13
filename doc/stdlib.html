@@ -199,6 +199,13 @@ construct.  For example, if the program given by the user is <code>{x: "foo"}</c
 actual code executed would be <code>local std = { ... }; {x: "foo"}</code>.  The functions in the
 standard library are all hidden fields of the <code>std</code> object.</p>
 
+<h3>External Variables</h3>
+
+<h4>std.extVar(x)</h4>
+
+<p>If an external variable with the given name was defined, return its string value.  Otherwise,
+return null. </p>
+
 <h3>Types and Reflection</h3>
 
 <h4>std.type(x)</h4>
@@ -490,11 +497,11 @@ is suitable for constructing bash scripts and the like.</p>
 <p>Concatenate an array of arrays into a single array.</p>
 
 
-<h3>Miscellaneous</h3>
+<h3>miscellaneous</h3>
 
 <h4>std.force(x)</h4>
 
-<p>Always returns true, but always evaluates its argument.  This allows controlling memory usage in
+<p>always returns true, but always evaluates its argument.  this allows controlling memory usage in
 recursive algorithms, and causes runtime errors in x to be discovered immediately.</p>
 
 
