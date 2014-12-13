@@ -1863,17 +1863,19 @@ namespace {
 
                     case FRAME_OBJECT: {
                         const auto &ast = *static_cast<const Object*>(f.ast);
-                        if (scratch.t != Value::STRING) {
-                            throw makeError(ast.location, "Field name was not a string.");
+                        if (scratch.t != Value::NULL_TYPE) {
+                            if (scratch.t != Value::STRING) {
+                                throw makeError(ast.location, "Field name was not a string.");
+                            }
+                            const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
+                            const Identifier *fid = alloc.makeIdentifier(fname);
+                            if (f.objectFields.find(fid) != f.objectFields.end()) {
+                                throw makeError(ast.location,
+                                                "Duplicate field name: \"" + fname + "\"");
+                            }
+                            f.objectFields[fid].hide = f.fit->hide;
+                            f.objectFields[fid].body = f.fit->body;
                         }
-                        const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
-                        const Identifier *fid = alloc.makeIdentifier(fname);
-                        if (f.objectFields.find(fid) != f.objectFields.end()) {
-                            throw makeError(ast.location,
-                                            "Duplicate field name: \"" + fname + "\"");
-                        }
-                        f.objectFields[fid].hide = f.fit->hide;
-                        f.objectFields[fid].body = f.fit->body;
                         f.fit++;
                         if (f.fit != ast.fields.end()) {
                             ast_ = f.fit->name;

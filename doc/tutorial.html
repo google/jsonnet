@@ -1004,6 +1004,89 @@ overrides the hidden status from <code>Base</code> to make the field visible in 
 </tr>
 </table>
 
+<h2>Computed and Optional Fields</h2>
+
+<p>In order to support objects whose keys are unknown until run-time, Jsonnet has a syntax allowing
+the field name to be computed, or omitted entirely.  The syntax is similar to object comprehension,
+which is also a kind of computed field.</p>
+
+<table>
+<tr>
+<td><span class="TableHeader">Input</span></td>
+<td><span class="TableHeader">Output</span></td>
+</tr>
+<tr>
+<td>
+<pre><code>// bar_menu.11.jsonnet
+{
+    local name = &#34;Gin Fizz&#34;,
+    local brunch = true,
+    cocktails: {
+        [name]: {
+            ingredients: [
+                { kind: &#34;Farmers Gin&#34;, qty: 1.5 },
+                { kind: &#34;Lemon&#34;, qty: 1 },
+                { kind: &#34;Simple Syrup&#34;, qty: 0.5 },
+                { kind: &#34;Soda&#34;, qty: 2 },
+                { kind: &#34;Angostura&#34;, qty: &#34;dash&#34; },
+            ],
+            garnish: &#34;Maraschino Cherry&#34;,
+            served: &#34;Tall&#34;,
+        },
+
+        [if brunch then &#34;Bloody Mary&#34;]: {
+            ingredients: [
+                { kind: &#34;Vokda&#34;, qty: 1.5 },
+                { kind: &#34;Tomato Juice&#34;, qty: 3 },
+                { kind: &#34;Lemon Juice&#34;, qty: 1.5 },
+                { kind: &#34;Worcestershire Sauce&#34;, qty: 0.25 },
+                { kind: &#34;Tobasco Sauce&#34;, qty: 0.15 },
+            ],
+            garnish: &#34;Celery salt &amp; pepper&#34;,
+            served: &#34;Tall&#34;,
+        },
+    }
+}
+
+
+
+
+
+</code></pre>
+</td>
+<td>
+<pre><code>{
+   &#34;cocktails&#34;: {
+      &#34;Gin Fizz&#34;: {
+         &#34;garnish&#34;: &#34;Maraschino Cherry&#34;,
+         &#34;ingredients&#34;: [
+            { &#34;kind&#34;: &#34;Farmers Gin&#34;, &#34;qty&#34;: 1.5 },
+            { &#34;kind&#34;: &#34;Lemon&#34;, &#34;qty&#34;: 1 },
+            { &#34;kind&#34;: &#34;Simple Syrup&#34;, &#34;qty&#34;: 0.5 },
+            { &#34;kind&#34;: &#34;Soda&#34;, &#34;qty&#34;: 2 },
+            { &#34;kind&#34;: &#34;Angostura&#34;, &#34;qty&#34;: &#34;dash&#34; }
+         ],
+         &#34;served&#34;: &#34;Tall&#34;
+      },
+      &#34;Bloody Mary&#34;: {
+         &#34;garnish&#34;: &#34;Celery salt &amp; pepper&#34;,
+         &#34;ingredients&#34;: [
+            { &#34;kind&#34;: &#34;Vokda&#34;, &#34;qty&#34;: 1.5 },
+            { &#34;kind&#34;: &#34;Tomato Juice&#34;, &#34;qty&#34;: 3 },
+            { &#34;kind&#34;: &#34;Lemon Juice&#34;, &#34;qty&#34;: 1.5 },
+            { &#34;kind&#34;: &#34;Worcestershire Sauce&#34;, &#34;qty&#34;: 0.25 },
+            { &#34;kind&#34;: &#34;Tobasco Sauce&#34;, &#34;qty&#34;: 0.14999999999999999 }
+         ],
+         &#34;served&#34;: &#34;Tall&#34;
+      }
+   }
+}
+</code></pre>
+</td>
+</tr>
+</table>
+
+
 <div style="margin-bottom: 50px"></div>
 <hr />
 <p class="copyright">

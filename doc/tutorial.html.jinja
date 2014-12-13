@@ -373,4 +373,26 @@ overrides the hidden status from <code>Base</code> to make the field visible in 
 </tr>
 </table>
 
+<h2>Computed and Optional Fields</h2>
+
+<p>In order to support objects whose keys are unknown until run-time, Jsonnet has a syntax allowing
+the field name to be computed, or omitted entirely.  The syntax is similar to object comprehension,
+which is also a kind of computed field.</p>
+
+<table>
+<tr>
+<td><span class="TableHeader">Input</span></td>
+<td><span class="TableHeader">Output</span></td>
+</tr>
+<tr>
+<td>
+<pre><code>{{ myinclude('../examples/bar_menu.11.jsonnet') }}</code></pre>
+</td>
+<td>
+<pre><code>{{ myinclude('../examples/bar_menu.11.jsonnet.golden') }}</code></pre>
+</td>
+</tr>
+</table>
+
+
 {% include 'footer.html.jinja' %}
