@@ -605,7 +605,7 @@ Silly example: Fibonacci via recursive object (CAUTION: can be slow)
 <!--
 function jsonnet_evaluate_snippet_wrapped(code) {
     var jsonnet_make = Module.cwrap('jsonnet_make', 'number', [])
-    var jsonnet_cleanup_string = Module.cwrap('jsonnet_cleanup_string', 'number', ['number', 'number'])
+    var jsonnet_realloc = Module.cwrap('jsonnet_realloc', 'number', ['number', 'number', 'number'])
     var jsonnet_evaluate_snippet = Module.cwrap('jsonnet_evaluate_snippet', 'number', ['number', 'string', 'string', 'number'])
     var jsonnet_destroy = Module.cwrap('jsonnet_destroy', 'number', ['number'])
 
@@ -615,7 +615,7 @@ function jsonnet_evaluate_snippet_wrapped(code) {
     var error = Module.getValue(error_ptr, 'i32*');
     Module._free(error_ptr);
     var result = Module.Pointer_stringify(output_ptr);
-    jsonnet_cleanup_string(vm, output_ptr);
+    jsonnet_realloc(vm, output_ptr, 0);
     jsonnet_destroy(vm);
     return result;
 }
