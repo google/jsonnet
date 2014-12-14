@@ -88,19 +88,21 @@ limitations under the License.
             std.makeArray(std.length(arr), function(i) func(arr[i])),
 
     join(sep, arr)::
-        local aux(arr, i, running) =
+        local aux(arr, i, first, running) =
             if i >= std.length(arr) then
                 running
-            else if i == 0 then
-                aux(arr, i+1, running + arr[i])
+            else if arr[i] == null then
+                aux(arr, i+1, first, running)
+            else if first then
+                aux(arr, i+1, false, running + arr[i])
             else
-                aux(arr, i+1, running + sep + arr[i]);
+                aux(arr, i+1, false, running + sep + arr[i]);
         if std.type(arr) != "array" then
             error "join second parameter should be array, got " + std.type(arr)
         else if std.type(sep) == "string" then
-            aux(arr, 0, "")
+            aux(arr, 0, true, "")
         else if std.type(sep) == "array" then
-            aux(arr, 0, [])
+            aux(arr, 0, true, [])
         else
             error "join first parameter should be string or array, got " + std.type(arr),
 
