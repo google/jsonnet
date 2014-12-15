@@ -90,7 +90,9 @@ hand side of the +. </p>
 expression language, the conditional behaves more like the ternary "?:" operator in C, or the "a if
 b else c" syntax of Python, in that it can be embedded in the middle of an expression.</p>
 
-<p>The example below illustrates some of these features.</p>
+<p>The example below illustrates some of these features.  Note that equality returns false if the
+two values have different types, as is the case in most dynamically typed scripting languages (but
+not Javascript).</p>
 
 <table>
 <tr>

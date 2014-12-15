@@ -390,7 +390,9 @@ hand side of the +. </p>
 expression language, the conditional behaves more like the ternary "?:" operator in C, or the "a if
 b else c" syntax of Python, in that it can be embedded in the middle of an expression.</p>
 
-<p>The example below illustrates some of these features.</p>
+<p>The example below illustrates some of these features.  Note that equality returns false if the
+two values have different types, as is the case in most dynamically typed scripting languages (but
+not Javascript).</p>
 
 <table>
 <tr>
@@ -407,6 +409,7 @@ b else c" syntax of Python, in that it can be embedded in the middle of an expre
          + (if self.bar &gt; 5 then &#34;large&#34; else &#34;small&#34;) + &#34;.&#34;,
     array: [1, 2, 3] + [4],
     obj: {a: 1, b: 2} + {b: 3, c: 4},
+    equality: 1 == &#34;1&#34;,
 }
 </code></pre>
 </td>
@@ -416,7 +419,8 @@ b else c" syntax of Python, in that it can be embedded in the middle of an expre
    &#34;bar&#34;: 6,
    &#34;baz&#34;: &#34;The value 6 is large.&#34;,
    &#34;array&#34;: [1, 2, 3, 4],
-   &#34;obj&#34;: {a: 1, b: 3, c: 4}
+   &#34;obj&#34;: {a: 1, b: 3, c: 4},
+   &#34;equality&#34;: false
 }
 </code></pre>
 </td>

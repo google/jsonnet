@@ -43,6 +43,9 @@ std.assertEqual(false != true, true) &&
 std.assertEqual(true != false, true) &&
 std.assertEqual(true != true, false) &&
 
+std.assertEqual("1" == 1, false) &&
+std.assertEqual("true" == true, false) &&
+
 std.assertEqual(if true then 3 else 5, 3) &&
 std.assertEqual(if false then 3 else 5, 5) &&
 
