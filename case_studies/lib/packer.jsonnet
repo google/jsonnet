@@ -97,9 +97,9 @@ limitations under the License.
     Apt:: packer.RootShell {
         packages:: error "Apt provisioner must have field: packages",
         keyUrls:: [],
-        // { dest: "foo.list", url: "..." }
-        // or { dest: "foo.list", content: "..." }
+        // { foo: "..." } will add a foo.list containing the given content.
         repoLines:: {},
+        // { foo: "..." } will add a foo.list fetched from the given URL.
         repoUrls:: {},
 
         keyCommands:: [ "curl --silent %s | apt-key add -" % [url] for url in self.keyUrls],
