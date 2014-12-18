@@ -879,7 +879,7 @@ std::string jsonnet_unparse_escape(const std::string &str)
                 }
             }
         }
-    }   
+    }
     ss << '\"';
     return ss.str();
 }

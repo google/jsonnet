@@ -51,7 +51,7 @@ static char *default_import_callback (void *ctx, const char *base, const char *f
         char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
         std::strcpy(r, err);
         return r;
-    }   
+    }
     std::string input;
     input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
     *success = 1;

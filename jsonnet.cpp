@@ -96,7 +96,7 @@ static char *import_callback (void *ctx_, const char *dir, const char *file, int
         std::strcpy(r, input.c_str());
         return r;
     }
-}   
+}
 
 std::string next_arg(unsigned &i, const std::vector<std::string> &args)
 {
@@ -284,7 +284,7 @@ int main(int argc, const char **argv)
     }
 
 
-    if (remaining_args.size() > 0) 
+    if (remaining_args.size() > 0)
         filename = remaining_args[0];
 
     if (remaining_args.size() > 1) {
@@ -293,7 +293,7 @@ int main(int argc, const char **argv)
         usage(std::cerr);
         return EXIT_FAILURE;
     }
-    
+
     if (filename_is_code && remaining_args.size() == 0) {
         std::cerr << "ERROR: Must give filename when using -e, --exec\n" << std::endl;
         usage(std::cerr);
@@ -329,7 +329,7 @@ int main(int argc, const char **argv)
 
     ImportCallbackContext import_callback_ctx { vm, &jpaths };
     jsonnet_import_callback(vm, import_callback, &import_callback_ctx);
-    
+
     int error;
     char *output;
     if (multi) {
