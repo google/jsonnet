@@ -200,10 +200,12 @@ namespace {
 
         public:
 
-        Stack (unsigned limit)
+        Stack(unsigned limit)
           : calls(0), limit(limit)
         {
         }
+
+        ~Stack(void) { }
 
         unsigned size(void)
         {
