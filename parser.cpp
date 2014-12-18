@@ -659,8 +659,10 @@ namespace {
                     return alloc.make<Local>(span(begin, body), binds, body);
                 }
 
+                default:
+
                 // Unary operator.
-                case Token::OPERATOR: {
+                if (begin.kind == Token::OPERATOR) {
                     UnaryOp uop;
                     if (!op_is_unary(begin.data, uop)) {
                         std::stringstream ss;
@@ -673,8 +675,6 @@ namespace {
                         return alloc.make<Unary>(span(op, expr), uop, expr);
                     }
                 }
-
-                default:
 
                 // Base case
                 if (precedence == 0) return parseTerminal(obj_level);
