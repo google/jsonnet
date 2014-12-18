@@ -497,11 +497,30 @@ is suitable for constructing bash scripts and the like.</p>
 <p>Concatenate an array of arrays into a single array.</p>
 
 
-<h3>miscellaneous</h3>
+<h3>Base 64</h3>
+
+<h4>std.base64(v)</h4>
+
+<p>Encodes the given value into a base64 string.  The encoding sequence is A-Za-z0-9+/ with = to pad
+the output to a multiple of 4 characters.  The value can be a string or an array of numbers, but the
+codepoints / numbers must be in the 0 to 255 range.  The resulting string has no line breaks.</p>
+
+<h4>std.base64DecodeBytes(s)</h4>
+
+<p>Decodes the given base64 string into an array of bytes (number values).  Currently assumes the
+input string has no linebreaks and is padded to a multiple of 4 (with the = character).  In other
+words, it consumes the output of std.base64().</p>
+
+<h4>std.base64Decode(s)</h4>
+
+<p>Behaves like std.base64DecodeBytes() except returns a string instead of an array of bytes.</p>
+
+
+<h3>Miscellaneous</h3>
 
 <h4>std.force(x)</h4>
 
-<p>always returns true, but always evaluates its argument.  this allows controlling memory usage in
+<p>Always returns true, but always evaluates its argument.  this allows controlling memory usage in
 recursive algorithms, and causes runtime errors in x to be discovered immediately.</p>
 
 

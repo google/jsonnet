@@ -82,8 +82,8 @@ limitations under the License.
     map(func, arr)::
         if std.type(func) != "function" then
             error("std.map first param must be function, got " + std.type(func))
-        else if std.type(arr) != "array" then
-            error("std.map second param must be array, got " + std.type(arr))
+        else if std.type(arr) != "array" && std.type(arr) != "string" then
+            error("std.map second param must be array / string, got " + std.type(arr))
         else
             std.makeArray(std.length(arr), function(i) func(arr[i])),
 
@@ -684,5 +684,82 @@ limitations under the License.
     manifestPythonVars(conf)::
         local vars = ["%s = %s" % [k, std.manifestPython(conf[k])] for k in std.objectFields(conf)];
         std.join("\n", vars + [""]),
+
+
+    local base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+    local base64_inv = {[base64_table[i]]: i for i in std.range(0, 63)},
+
+    base64(input)::
+        local bytes =
+            if std.type(input) == "string" then
+                std.map(function(c) std.codepoint(c), input)
+            else
+                input;
+
+        local aux(arr, i, r) =
+            if i >= std.length(arr) then
+                r
+            else if i + 1 >= std.length(arr) then
+                local str =
+                    // 6 MSB of i
+                    base64_table[(arr[i] & 252) >> 2] +
+                    // 2 LSB of i
+                    base64_table[(arr[i] & 3) << 4] +
+                    "==";
+                aux(arr, i + 3, r + str)
+            else if i + 2 >= std.length(arr) then
+                local str = 
+                    // 6 MSB of i 
+                    base64_table[(arr[i] & 252) >> 2] +
+                    // 2 LSB of i, 4 MSB of i+1
+                    base64_table[(arr[i] & 3) << 4 | (arr[i+1] & 240) >> 4] +
+                    // 4 LSB of i+1 
+                    base64_table[(arr[i+1] & 15) << 2] +
+                    "="; 
+                aux(arr, i + 3, r + str)
+            else
+                local str = 
+                    // 6 MSB of i 
+                    base64_table[(arr[i] & 252) >> 2] +
+                    // 2 LSB of i, 4 MSB of i+1
+                    base64_table[(arr[i] & 3) << 4 | (arr[i+1] & 240) >> 4] +
+                    // 4 LSB of i+1, 2 MSB of i+2
+                    base64_table[(arr[i+1] & 15) << 2 | (arr[i+2] & 192) >> 6] +
+                    // 6 LSB of i+2 
+                    base64_table[(arr[i+2] & 63)];
+                aux(arr, i + 3, r + str);
+
+        local sanity = std.foldl(function(r, a) r && (a < 256), bytes, true);
+        if !sanity then
+            error "Can only base64 encode strings / arrays of single bytes."
+        else
+            aux(bytes, 0, ""),
+
+    
+    base64DecodeBytes(str):: 
+        if std.length(str) % 4 != 0 then
+            error "Not a base64 encoded string \"%s\"" % str
+        else
+            local aux(str, i, r) =
+                if i >= std.length(str) then
+                    r
+                else 
+                    // all 6 bits of i, 2 MSB of i+1 
+                    local n1 = [base64_inv[str[i]] << 2 | (base64_inv[str[i+1]] >> 4)];
+                    // 4 LSB of i+1, 4MSB of i+2
+                    local n2 =
+                        if str[i+2] == "=" then [] 
+                        else [(base64_inv[str[i+1]] & 15) << 4 | (base64_inv[str[i+2]] >> 2)];
+                    // 2 LSB of i+2, all 6 bits of i+3
+                    local n3 =
+                        if str[i+3] == "=" then []
+                        else [(base64_inv[str[i+2]] & 3) << 6 | base64_inv[str[i+3]]];
+                    aux(str, i+4, r + n1 + n2 + n3);
+            aux(str, 0, []),
+
+    base64Decode(str)::
+        local bytes = std.base64DecodeBytes(str);
+        std.join("", std.map(function(b) std.char(b), bytes))
+
 
 }

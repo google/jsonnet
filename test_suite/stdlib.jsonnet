@@ -234,5 +234,14 @@ std.assertEqual(std.manifestPythonVars({
     ""
 ])) &&
 
+std.assertEqual(std.base64("Hello World!"), "SGVsbG8gV29ybGQh") &&
+std.assertEqual(std.base64("Hello World"), "SGVsbG8gV29ybGQ=") &&
+std.assertEqual(std.base64("Hello Worl"), "SGVsbG8gV29ybA==") &&
+std.assertEqual(std.base64(""), "") &&
+
+std.assertEqual(std.base64Decode("SGVsbG8gV29ybGQh"), "Hello World!") &&
+std.assertEqual(std.base64Decode("SGVsbG8gV29ybGQ="), "Hello World") &&
+std.assertEqual(std.base64Decode("SGVsbG8gV29ybA=="), "Hello Worl") &&
+std.assertEqual(std.base64Decode(""), "") &&
 
 true
