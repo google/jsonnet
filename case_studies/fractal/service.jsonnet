@@ -49,6 +49,10 @@ local credentials = import "credentials.jsonnet";
     },
 
     // Create an initial (empty) database for storing 'discovered' fractal co-ordinates.
+    local cql_insert(uuid, x, y, l, n) =
+        "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
+        + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),
+
     cassandraInitCql:: [
         "CREATE USER %s WITH PASSWORD '%s';" % [$.cassandraUser, credentials.cassandraUserPass],
         local rep1 =  "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }";
@@ -57,6 +61,13 @@ local credentials = import "credentials.jsonnet";
         "CREATE TABLE discoveries("
         + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
         + "PRIMARY KEY(Date, TimeId));",
+        cql_insert("18063880-5a4d-11e4-ada4-247703d0f194", "0", "0", "0", "Zoomed Out"),
+        cql_insert("66b6d100-5a53-11e4-aa05-247703d0f194", "-1.21142578125", "0.3212890625", "4", "Lightning"),
+        cql_insert("77ffdd80-5a53-11e4-8ccf-247703d0f194", "-1.7568359375", "-0.0009765625", "5", "Self-similarity"),
+        cql_insert("7fbf8200-5a53-11e4-804a-247703d0f194", "0.342529296875", "0.419189453125", "5", "Windmills"),
+        cql_insert("9ae7bd00-5a66-11e4-9c66-247703d0f194", "-1.48309979046093", "0.00310595797955671", "39", "Star"),
+        cql_insert("75fe4480-5a7c-11e4-a747-247703d0f194", "-0.244976043701172", "0.716987609863281", "10", "Baroque"),
+        cql_insert("abf70380-5b24-11e4-8a46-247703d0f194", "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
         "ALTER KEYSPACE %s WITH REPLICATION = %s;" % [$.cassandraKeyspace, $.cassandraReplication],
         "ALTER KEYSPACE system_auth WITH REPLICATION = %s;" % [$.cassandraReplication],
     ],
