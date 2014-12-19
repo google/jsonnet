@@ -73,18 +73,24 @@ def render_error(code, msg):
 
 
 def db_execute(s, t=()):
-    try:
-        global session
-        if session == None:
+    global session
+    if session == None:
+        try:
             ap = PlainTextAuthProvider(username=CONF['database_user'],
-password=CONF['database_pass'])
+                                       password=CONF['database_pass'])
             cluster = Cluster(CONF['db_endpoints'], auth_provider=ap)
             session = cluster.connect()
             session.set_keyspace(CONF['database_name'])
-        return session.execute(s, t)
-    except NoHostAvailable:
-        session = None
-        raise DbError("Unable to contact database backend.")
+            return session.execute(s, t)
+        except NoHostAvailable:
+            session = None
+            raise DbError("Unable to contact database backend.")
+    else:
+        try:
+            return session.execute(s, t)
+        except NoHostAvailable:
+            session = None
+            return db_execute(s, t)
 
 def my_render_template(filename, **context):
     context.update(CONF)

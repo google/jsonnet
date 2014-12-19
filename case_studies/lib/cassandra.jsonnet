@@ -185,24 +185,31 @@ local packer = import "packer.jsonnet";
     // GcpDebianImage.  It adds commands to the startup script that bootstrap Cassandra using a
     // given CQL script and configuration.
     GcpStarterMixin: {
-        local instance = self,
+
         startup_script +: [
             // Wait for the misconfigured cassandra to start up.
-            cassandra.waitForCqlsh("cassandra", instance.rootPass, "localhost"),
+            cassandra.waitForCqlsh("cassandra", self.rootPass, "localhost"),
 
-            // Set up users, empty tables, etc.
+            // Set up system_auth replication level
             "echo %s | cqlsh -u cassandra -p %s localhost"
-                % [std.escapeStringBash(std.lines(instance.initCql)), instance.rootPass],
-
-            // Kill it.
-            "/etc/init.d/cassandra stop",
+                % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
+                                        % self.authReplication),
+                   self.rootPass],
 
             // Drop in the correct configuration.
             "echo %s > %s"
-                % [std.escapeStringBash("" + instance.conf), "/etc/cassandra/cassandra.yaml"],
+                % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
 
-            // Start it up again.
-            "/etc/init.d/cassandra start",
+            // Restart with new configuration.
+            "/etc/init.d/cassandra restart",
+
+            // Wait for the properly configured cassandra to start up and reach quorum.
+            cassandra.waitForCqlsh("cassandra", self.rootPass, "$HOSTNAME"),
+
+            // Set up users, empty tables, etc.
+            "echo %s | cqlsh -u cassandra -p %s $HOSTNAME"
+                % [std.escapeStringBash(std.lines(self.initCql)), self.rootPass],
+
         ],
     },
 
@@ -210,10 +217,9 @@ local packer = import "packer.jsonnet";
     // GcpDebianImage.  It adds commands to the startup script that bootstrap Cassandra by wiping
     // its slate clean and allowing it to join an existing cluster.
     GcpTopUpMixin: {
-        local instance = self,
         startup_script +: [
             // Wait for the misconfigured cassandra to start up.
-            cassandra.waitForCqlsh("cassandra", instance.rootPass, "localhost"),
+            cassandra.waitForCqlsh("cassandra", self.rootPass, "localhost"),
 
             // Kill it.
             "/etc/init.d/cassandra stop",
@@ -223,11 +229,7 @@ local packer = import "packer.jsonnet";
 
             // Drop in the correct configuration.
             "echo %s > %s"
-                % [std.escapeStringBash("" + instance.conf), "/etc/cassandra/cassandra.yaml"],
-
-            // Wait for other node to start.
-            if std.objectHas(self, "waitFor") then
-                cassandra.waitForCqlsh(instance.user, instance.userPass, instance.waitFor),
+                % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
 
             // Start it up again.
             "/etc/init.d/cassandra start",

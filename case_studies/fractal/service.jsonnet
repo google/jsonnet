@@ -55,21 +55,24 @@ local credentials = import "credentials.jsonnet";
 
     cassandraInitCql:: [
         "CREATE USER %s WITH PASSWORD '%s';" % [$.cassandraUser, credentials.cassandraUserPass],
-        local rep1 =  "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }";
-            "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [$.cassandraKeyspace, rep1],
+        "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [$.cassandraKeyspace, $.cassandraReplication],
         "USE %s;" % $.cassandraKeyspace,
         "CREATE TABLE discoveries("
         + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
         + "PRIMARY KEY(Date, TimeId));",
         cql_insert("18063880-5a4d-11e4-ada4-247703d0f194", "0", "0", "0", "Zoomed Out"),
-        cql_insert("66b6d100-5a53-11e4-aa05-247703d0f194", "-1.21142578125", "0.3212890625", "4", "Lightning"),
-        cql_insert("77ffdd80-5a53-11e4-8ccf-247703d0f194", "-1.7568359375", "-0.0009765625", "5", "Self-similarity"),
-        cql_insert("7fbf8200-5a53-11e4-804a-247703d0f194", "0.342529296875", "0.419189453125", "5", "Windmills"),
-        cql_insert("9ae7bd00-5a66-11e4-9c66-247703d0f194", "-1.48309979046093", "0.00310595797955671", "39", "Star"),
-        cql_insert("75fe4480-5a7c-11e4-a747-247703d0f194", "-0.244976043701172", "0.716987609863281", "10", "Baroque"),
-        cql_insert("abf70380-5b24-11e4-8a46-247703d0f194", "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
-        "ALTER KEYSPACE %s WITH REPLICATION = %s;" % [$.cassandraKeyspace, $.cassandraReplication],
-        "ALTER KEYSPACE system_auth WITH REPLICATION = %s;" % [$.cassandraReplication],
+        cql_insert("66b6d100-5a53-11e4-aa05-247703d0f194",
+                   "-1.21142578125", "0.3212890625", "4", "Lightning"),
+        cql_insert("77ffdd80-5a53-11e4-8ccf-247703d0f194",
+                   "-1.7568359375", "-0.0009765625", "5", "Self-similarity"),
+        cql_insert("7fbf8200-5a53-11e4-804a-247703d0f194",
+                   "0.342529296875", "0.419189453125", "5", "Windmills"),
+        cql_insert("9ae7bd00-5a66-11e4-9c66-247703d0f194",
+                   "-1.48309979046093", "0.00310595797955671", "39", "Star"),
+        cql_insert("75fe4480-5a7c-11e4-a747-247703d0f194",
+                   "-0.244976043701172", "0.716987609863281", "10", "Baroque"),
+        cql_insert("abf70380-5b24-11e4-8a46-247703d0f194",
+                   "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
     ],
 
     // Configuration shared by the application server and image processing nodes.
@@ -101,7 +104,7 @@ local credentials = import "credentials.jsonnet";
 
     // Frontend image.
     "frontend.packer.json": $.MyFlaskImage {
-        name: "frontend-v20141213-1300",
+        name: "frontend-v20141219-0100",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
@@ -260,7 +263,7 @@ local credentials = import "credentials.jsonnet";
                 // loadbalancer.  This is all stored in a conf.json, read by the python code.
                 ["frontend" + k]: resource.FractalInstance(k) {
                     name: "frontend" + k,
-                    image: "frontend-v20141213-1300",
+                    image: "frontend-v20141219-0100",
                     conf:: $.ApplicationConf {
                         database_name: $.cassandraKeyspace,
                         database_user: $.cassandraUser,
@@ -277,30 +280,32 @@ local credentials = import "credentials.jsonnet";
 
                 // Bootstrapping the Cassandra database is a little subtle.  We bring up 3 nodes
                 // in parallel, one of which is special and creates the initial database.  The other
-                // two wait for it to be ready and join the cluster one at a time.
+                // two join it.  Note the two different mixins used to control that behavior.
 
-                // The CQL code is used to bootstrap the database.
                 db1: resource.CassandraInstance(1) + cassandra.GcpStarterMixin {
                     name: "db1",
+                    // Replication of the system_auth table (user credentials).
+                    authReplication:: $.cassandraReplication,
+                    // The CQL code is used to bootstrap the database.
                     initCql:: $.cassandraInitCql,
                 },
 
                 // TopUpMixin creates an empty Cassandra node which can join an existing cluster.
                 db2: resource.CassandraInstance(2) + cassandra.GcpTopUpMixin {
                     name: "db2",
-                    waitFor:: "db1",
                 },
 
                 db3: resource.CassandraInstance(3) + cassandra.GcpTopUpMixin {
                     name: "db3",
-                    waitFor:: "db2",
                 },
 
                 // To increase the size of the cluster, these can be used.  Bring them up one by one
                 // verifying the state of the database each time by logging onto an existing db node
                 // and running "nodetool status fractal".  To reduce the size of the cluster, use
                 // nodetool -h $HOST decommission and then remove the node from this configuration.
-                // If a node is removed without decommissioning, use nodetool removenode <UUID>.
+                // If a node is removed without decommissioning, fix the cluster with nodetool
+                // removenode <UUID>.  It is possible to completely recycle the nodes (including the
+                // first node) without data loss as long as nodetool is used judiciously.
                 /*
                 db4: resource.CassandraInstance(4) + cassandra.GcpTopUpMixin {
                     name: "db4",
