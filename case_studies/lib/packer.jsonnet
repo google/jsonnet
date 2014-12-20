@@ -218,6 +218,7 @@ limitations under the License.
         module:: error "NginxUwsgiFlaskImage must have field: module",
         application:: "app",
         port:: 80,
+        uwsgiSocket:: "/var/www/uwsgi.sock",
 
         aptPackages +: ["nginx", "python-dev"],
         pipPackages +: ["flask", "uwsgi"],
@@ -227,7 +228,7 @@ limitations under the License.
             base: "/var/www",
             module: image.module,
             pythonpath: "/var/www",
-            socket: "/var/www/uwsgi.sock",
+            socket: image.uwsgiSocket,
             "chmod-socket": "644",
             callable: image.application,
             logto: "/var/log/uwsgi/uwsgi.log",
@@ -235,14 +236,14 @@ limitations under the License.
 
         nginxConf:: [
             "server {",
-            "    listen " + image.port + ";",
+            "    listen %d;" % image.port,
             "    server_name localhost;",
             "    charset     utf-8;",
             "    client_max_body_size 75M;",
             "    location / { try_files $uri @yourapplication; }",
             "    location @yourapplication {",
             "        include uwsgi_params;",
-            "        uwsgi_pass unix:/var/www/uwsgi.sock;",
+            "        uwsgi_pass unix:%s;" % image.uwsgiSocket,
             "    }",
             "}",
         ],
