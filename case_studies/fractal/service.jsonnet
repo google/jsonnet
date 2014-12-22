@@ -75,7 +75,7 @@ local credentials = import "credentials.jsonnet";
                    "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
     ],
 
-    // Configuration shared by the application server and image processing nodes.
+    // Configuration shared by the application server and tile generation nodes.
     ApplicationConf:: {
         width: 256,
         height: 256,
@@ -99,12 +99,12 @@ local credentials = import "credentials.jsonnet";
         aptPackages +: ["vim", "git", "psmisc", "screen", "strace" ] + network_debug,
     },
 
-    // An Nginx/uwsgi/flask installation is used to serve HTTP on the frontend and image processors.
+    // An Nginx/uwsgi/flask installation is used to serve HTTP on the frontend and tile generators.
     MyFlaskImage:: packer.GcpDebianNginxUwsgiFlaskImage + $.ImageMixin,
 
     // Frontend image.
     "frontend.packer.json": $.MyFlaskImage {
-        name: "frontend-v20141219-0100",
+        name: "frontend-v20141222-0300",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
@@ -128,9 +128,9 @@ local credentials = import "credentials.jsonnet";
         clusterName: $.cassandraConf.cluster_name,
     },
 
-    // The image processing node runs a C++ program to generate fractal tiles.
-    "imgproc.packer.json": $.MyFlaskImage {
-        name: "imgproc-v20141211-1100",
+    // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
+    "tilegen.packer.json": $.MyFlaskImage {
+        name: "tilegen-v20141222-0300",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
@@ -138,11 +138,11 @@ local credentials = import "credentials.jsonnet";
         // Copy the flask handlers and also build the C++ executable.
         provisioners +: [
             packer.File {
-                source: "imgproc",
+                source: "tilegen",
                 destination: "/tmp/",
             },
             packer.RootShell { inline: [
-                "mv /tmp/imgproc/* /var/www/",
+                "mv /tmp/tilegen/* /var/www/",
                 "chown -R www-data.www-data /var/www/*",
             ] },
             packer.RootShell { inline: [
@@ -174,7 +174,7 @@ local credentials = import "credentials.jsonnet";
             local resource = self,
 
             // Instances are assigned zones on a round robin scheme.
-            local zone(hash) = 
+            local zone(hash) =
                 local arr = [
                     "us-central1-a",
                     "us-central1-b",
@@ -193,10 +193,10 @@ local credentials = import "credentials.jsonnet";
             // Publicly visible static ip addresses.
             google_compute_address: {
                 frontend: { name: "frontend" },
-                imgproc: { name: "imgproc" },
+                tilegen: { name: "tilegen" },
             },
 
-            // The next 3 resource types configure load balancing for the frontend and imgproc.
+            // The next 3 resource types configure load balancing for the frontend and tilegen.
             google_compute_http_health_check: {
                 fractal: {
                     name: "fractal",
@@ -210,10 +210,10 @@ local credentials = import "credentials.jsonnet";
                     health_checks: ["${google_compute_http_health_check.fractal.name}"],
                     instances: [ "%s/frontend%d" % [zone(k), k] for k in [1, 2, 3] ],
                 },
-                imgproc: {
-                    name: "imgproc",
+                tilegen: {
+                    name: "tilegen",
                     health_checks: ["${google_compute_http_health_check.fractal.name}"],
-                    instances: [ "%s/imgproc%d" % [zone(k), k] for k in [1, 2, 3, 4] ],
+                    instances: [ "%s/tilegen%d" % [zone(k), k] for k in [1, 2, 3, 4] ],
                 },
             },
 
@@ -224,10 +224,10 @@ local credentials = import "credentials.jsonnet";
                     target: "${google_compute_target_pool.frontend.self_link}",
                     port_range: "80",
                 },
-                imgproc: {
-                    ip_address: "${google_compute_address.imgproc.address}",
-                    name: "imgproc",
-                    target: "${google_compute_target_pool.imgproc.self_link}",
+                tilegen: {
+                    ip_address: "${google_compute_address.tilegen.address}",
+                    name: "tilegen",
+                    target: "${google_compute_target_pool.tilegen.self_link}",
                     port_range: "80",
                 }
             },
@@ -259,16 +259,16 @@ local credentials = import "credentials.jsonnet";
 
             google_compute_instance: {
 
-                // The frontend instances have database credentials and the address of the imgproc
+                // The frontend instances have database credentials and the address of the tilegen
                 // loadbalancer.  This is all stored in a conf.json, read by the python code.
                 ["frontend" + k]: resource.FractalInstance(k) {
                     name: "frontend" + k,
-                    image: "frontend-v20141219-0100",
+                    image: "frontend-v20141222-0300",
                     conf:: $.ApplicationConf {
                         database_name: $.cassandraKeyspace,
                         database_user: $.cassandraUser,
                         database_pass: credentials.cassandraUserPass,
-                        imgproc: "${google_compute_address.imgproc.address}",
+                        tilegen: "${google_compute_address.tilegen.address}",
                         db_endpoints: $.cassandraNodes,
                     },
                     tags +: ["fractal-frontend", "http-server"],
@@ -313,12 +313,12 @@ local credentials = import "credentials.jsonnet";
                 */
 
             } + {
-                // The image processor instances are similar to the frontend ones, but do not
+                // The tile generation instances are similar to the frontend ones, but do not
                 // require database credentials so these are omitted for security.
-                ["imgproc" + k]: resource.FractalInstance(k) {
-                    name: "imgproc" + k,
-                    image: "imgproc-v20141211-1100",
-                    tags +: ["fractal-imgproc", "http-server"],
+                ["tilegen" + k]: resource.FractalInstance(k) {
+                    name: "tilegen" + k,
+                    image: "tilegen-v20141222-0300",
+                    tags +: ["fractal-tilegen", "http-server"],
                     startup_script +: [self.addFile($.ApplicationConf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3, 4]

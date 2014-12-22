@@ -77,7 +77,7 @@ function refresh_fimgs() {
     var str = '';
     for (var y=max_cell_y-1 ; y>=min_cell_y ; --y) {
         for (var x=min_cell_x ; x<max_cell_x ; ++x) {
-            var url = 'http://{{ imgproc }}/?l=' + level + '&y=' + y + '&x=' + x;
+            var url = 'http://{{ tilegen }}/?l=' + level + '&y=' + y + '&x=' + x;
             str += '<img width={{ width }} height={{ height }} class=fimg src=' + url + '>';
         }
     }
@@ -212,7 +212,7 @@ function update_list() {
   } else {
       for (var i in server_json) {
         var item = server_json[i];
-        var url = 'http://{{ imgproc }}/thumb?l=' + item.l + '&y=' + item.y + '&x=' + item.x;
+        var url = 'http://{{ tilegen }}/thumb?l=' + item.l + '&y=' + item.y + '&x=' + item.x;
 
         // Hack to escape HTML
         var tmp = document.createElement("DIV");
