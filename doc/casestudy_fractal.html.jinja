@@ -37,7 +37,7 @@ tier is scalable and fault-tolerant.</p>
 <img src="fractal_architecture.png">
 
 <p>The application server hosts static content (CSS) and Jinja'd HTML.  The HTML <a
-href="{{srcroot}}/fractal/frontend/templates/page.html">contains</a> Javascript that issues AJAX
+href="{{srcroot}}/fractal/appserv/templates/page.html">contains</a> Javascript that issues AJAX
 requests to 1) the tile generation backend and 2) the application server (to fetch / amend the
 discoveries list).  The application server therefore does not communicate directly with the fractal
 tile generation service, but it needs to know the host:port endpoint in order to embed it in the
@@ -46,7 +46,7 @@ Cassandra database.</p>
 
 <p>Both the application server and the tile generation service use Nginx, uWSGI and flask to host
 their content.  For the application server, this means transforming HTTP requests into database
-accesses and/or serving content (code <a href="{{srcroot}}/frontend/main.py">here</a>).  For the
+accesses and/or serving content (code <a href="{{srcroot}}/appserv/main.py">here</a>).  For the
 tile generation service, this means invoking a compiled C++ <a
 href="{{srcroot}}/tilegen/mandelbrot.cpp">executable</a> from the Flask <a
 href="{{srcroot}}/tilegen/mandelbrot_service.py">handler</a> in order to construct a PNG for a given
@@ -148,7 +148,7 @@ are installed on every image.  Note that since this object is not intended to be
 (it existing only for reference from other parts of the configuration) it is stored in a hidden
 field (:: syntax).</p>
 
-<p>Both the application server's image configuration <tt>frontend.packer.json</tt> and the tile
+<p>Both the application server's image configuration <tt>appserv.packer.json</tt> and the tile
 generation service's image configuration <tt>tilegen.packer.json</tt> extend
 <code>MyFlaskImage</code>, which exists merely to add the aforementioned <code>ImageMixin</code> to
 the <code>GcpDebianNginxUwsgiFlaskImage</code> template from {{packer_jsonnet|safe}}.  That template
@@ -168,7 +168,7 @@ is configured with JSON, or even YAML, then no conversion is required.  An examp
 default Cassandra configuration file held in the <code>conf</code> field of
 {{cassandra_jsonnet|safe}}.</p>
 
-<p>Looking back at <tt>frontend.packer.json</tt> and <tt>tilegen.packer.json</tt> in
+<p>Looking back at <tt>appserv.packer.json</tt> and <tt>tilegen.packer.json</tt> in
 {{service_jsonnet|safe}}, while both use Nginx/uWSGI/Flask there are some subtle differences.  Since
 the HTTP request handlers are different in each case, the module (uWSGI entrypoint) and also
 required packages are different.  Firstly, the tile generation image needs a provisioner to build
@@ -211,20 +211,35 @@ balancers, etc.</p>
 
 <p>The function <code>zone</code> is used to statically assign zones to instances on a round robin
 basis.  All the instances extend from <code>FractalInstance</code>, which is parameterized by the
-index <code>zone_hash</code>.  It is this index that is used to compute the zone, as can be seen in
-the body of <code>FractalInstance</code>.  The zone is also also a namespace for the instance name,
-so when we list the instances behind each load balancer in the
-<code>google_compute_target_pool</code> object, we compute the zone for each instance there as
-well.</p>
+index <code>zone_hash</code> (it's actually just a function that takes zone_hash and returns an
+instance template).  It is this index that is used to compute the zone, as can be seen in the body
+of <code>FractalInstance</code>.  The zone is also also a namespace for the instance name, so when
+we list the instances behind each load balancer in the <code>google_compute_target_pool</code>
+object, we compute the zone for each instance there as well.</p>
 
 <p><code>FractalInstance</code> also specifies some default API access scopes and tags, as well as
 the network over which the instances communicate.  It extends <code>GcpInstance</code> from
-{{terraform_jsonnet|safe}}, which brings default service account scopes, the network, and the
-startup script to the top level, and provides some defaults for other parameters.  </p>
+{{terraform_jsonnet|safe}}, which brings Default service account scopes, the network, and the
+startup script to the top level, and provides some defaults for other parameters.</p>
 
+<p>Back in {{service_jsonnet|safe}} we now have the instance definitions themselves.  Jsonnet can
+help us define many instances that are essentially replicas.  The instances are actually given as a
+map (i.e. an object), since the instances each have unique names in Terraform.  There are 3 different kinds of instances:
+application server, db (cassandra) and tile generation.  The replicas in
+each case are formed as an object mapping their names to definitions, and these 3 objects are
+composed with the <code>+</code> operator.</p>
 
-use of object comprehension to create several instances with indexed names
-
+<p>The appserv and tilegen replicas are given using an object comprehension in which the field name
+and value are computed with <code>k</code> set to each index in the given list.  The variable
+<code>k</code> also ends up as an argument to <code>FractalInstance</code> and thus defines the
+zone.  In both cases, we also place a file <tt>/var/www/conf.json</tt>.  This is read by the Python
+code at startup and used to configure the service.  In the tilegen replicas the configuration comes
+from <code>ApplicationConf</code> from the top of the file.  In the appserv instances, this
+configuration is extended with some extra fields before being put in the file.  In both cases, the
+startup script has added an extra line, computed by <code>self.addFile()</code>, a method (i.e. a
+field containing a function) inherited from <code>GcpInstance</code> in {{terraform_jsonnet|safe}}.
+Examining its definition shows that it uses echo to write the given content to the given filename.
+</p>
 
 
 
@@ -251,7 +266,9 @@ your $PATH.</li>
 
 <ol>
 
-<li>Create a new service account, and download a JSON key.  Move it to the fractal directory, and
+<li>In the Google Cloud Platform console, open your project, go to credentials, and create a new
+service account.  This will automatic download a p12 key, which you can delete as we will not be
+using it.  Instead, click the button to download a JSON key, move it to the fractal directory, and
 call it <tt>service_account_key.json</tt>.</li>
 
 <li>Create a credentials.jsonnet file based on the template, fill in your GCP project name and make
@@ -264,13 +281,20 @@ up some unique passwords.</li>
 <p>To deploy the app, run make -j.  This should start running 3 Packer builds in parallel.  In a
 separate terminal, use tail -f *.log in order to watch their progress.  When the images are built,
 Terraform is run and will show you the proposed changes.  Enter y to confirm the changes.  In time,
-the application will be deployed.  Now you only need the frontend ip address to start using it.  You
+the application will be deployed.  Now you only need the appserv ip address to connect to it.  You
 can get this using "gcloud compute addresses list" or by navigating the Google Cloud Platform
-console to "networks".  Opening the ip in a web browser should take you to the application itself.
+console to "networks".  Opening that ip in a web browser should take you to the application itself.
 </p>
 
 <p>The application can be brought down again with terraform destroy.  This will not destroy the
 Packer images, they can be deleted from the console or from gcloud.</p>
+
+<p>Many people rightly point out that a production web service is brought up once and then
+maintained indefinitely afterwards, until it looks completely different to its original form.  It is
+never torn down, as to do so would cause an outage and lose all the data in the databases.  However
+there are two cases where bringing up a <i>copy</i> of a production service is useful:  Firstly, one
+can do full integration testing on a throw-away deployment.  This can even be automated.  Secondly,
+it can be used for load testing.</p>
 
 
 <h3>Add / Remove Cassandra Nodes</h3>
@@ -294,7 +318,7 @@ from any other node in the cluster.  It is probably also necessary to run nodeto
 other nodes.</p>
 
 
-<h3>Canary frontend change</h3>
+<h3>Canary Change to Application Server</h3>
 
 <h2>Conclusion</h2>
 
