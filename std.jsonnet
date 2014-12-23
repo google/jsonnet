@@ -25,7 +25,7 @@ limitations under the License.
     local std = self,
 
     toString(a)::
-        "" + a,
+        if std.type(a) == "string" then a else "" + a,
     
     substr(str, from, len)::
         if std.type(str) != "string" then
@@ -619,47 +619,43 @@ limitations under the License.
                               for k in std.objectFields(ini.sections)];
         std.join("\n", main_body + std.flattenArrays(all_sections) + [""]),
 
-    escapeStringJson(str)::
-        if std.type(str) != "string" then
-            error "escapeStringJson takes string, got " + std.type(str)
-        else
-            local trans(ch) =
-                if ch == "\"" then
-                    "\\\""
-                else if ch == "\\" then
-                    "\\\\"
-                else if ch == "\b" then
-                    "\\b"
-                else if ch == "\f" then
-                    "\\f"
-                else if ch == "\n" then
-                    "\\n"
-                else if ch == "\r" then
-                    "\\r"
-                else if ch == "\t" then
-                    "\\t"
-                else if ch == "\u0000" then
-                    "\\u0000"
+    escapeStringJson(str_)::
+        local str = std.toString(str_);
+        local trans(ch) =
+            if ch == "\"" then
+                "\\\""
+            else if ch == "\\" then
+                "\\\\"
+            else if ch == "\b" then
+                "\\b"
+            else if ch == "\f" then
+                "\\f"
+            else if ch == "\n" then
+                "\\n"
+            else if ch == "\r" then
+                "\\r"
+            else if ch == "\t" then
+                "\\t"
+            else if ch == "\u0000" then
+                "\\u0000"
+            else
+                local cp = std.codepoint(ch);
+                if cp < 32 || cp > 126 then
+                    "\\u%04x" % [cp]
                 else
-                    local cp = std.codepoint(ch);
-                    if cp < 32 || cp > 126 then
-                        "\\u%04x" % [cp]
-                    else
-                        ch;
-            "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+                    ch;
+        "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
     
     escapeStringPython(str):: std.escapeStringJson(str),
         
-    escapeStringBash(str)::
-        if std.type(str) != "string" then
-            error "escapeStringBash takes string, got " + std.type(str)
-        else
-            local trans(ch) =
-                if ch == "'" then
-                    "'\"'\"'"
-                else
-                    ch;
-            "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+    escapeStringBash(str_)::
+        local str = std.toString(str_);
+        local trans(ch) =
+            if ch == "'" then
+                "'\"'\"'"
+            else
+                ch;
+        "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
 
     manifestPython(o)::
         if std.type(o) == "object" then
