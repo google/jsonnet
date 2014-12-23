@@ -265,3 +265,12 @@ p.try_it_out {
     font-weight:bold;
     font-size: 130%;
 }
+
+img.thumb {
+    float: right;
+    max-width:200px;
+    max-height:200px;
+    width: auto;
+    height: auto;
+    margin: 0 0 0 16px;
+}
