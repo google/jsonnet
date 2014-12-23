@@ -1,18 +1,18 @@
 {% include 'header.html.jinja' %}
 
-<h1>Commandline Tool</h1>
+<h1 id=cmdline_tool>Commandline Tool</h1>
 
 <p>The commandline tool "jsonnet" will evaluate Jsonnet and emit JSON on stdout.  It can evaluate
 snippets of code, or files (by filename).  It is actually a commandline wrapper around the C API, a
 convenient way to evaluate Jsonnet code from shell scripts, build tools, or languages that do not
 yet have a library binding.</p>
 
-<h2>Building</h2>
+<h2 id=building>Building</h2>
 
 <p>The commandline tool will be built by simply invoking 'make', as it is the sole default
 target.  It can be built explicitly with 'make jsonnet'.</p>
 
-<h2>Usage</h2>
+<h2 id=usage>Usage</h2>
 
 <p>The tool is self-documenting:</p>
 
@@ -65,7 +65,7 @@ begin with -, it is advised to use -- with -e if the program is unknown.
 }
 </pre>
 
-<h2>Multiple file output</h2>
+<h2 id=multi>Multiple file output</h2>
 
 <p>The Jsonnet commandline tool has a special mode for generating multiple JSON files from a single
 Jsonnet file.  This can be useful if you want to avoid writing lots of small Jsonnet files, or if
