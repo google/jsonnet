@@ -1,0 +1,493 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Jsonnet - The Data Templating Language</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="keywords" content="Jsonnet, JSON, YAML, language, configuration, configuration language, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
+    <meta name="description" content="The Jsonnet language allows elegant and easy description of JSON data." />
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="stylesheet" href="prism.css" />
+    <link rel="stylesheet" type="text/css" href="doc.css" />
+
+    <script type="text/javascript"
+      src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-53570216-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+
+    <script src="prism.js" type="text/javascript">
+    </script>
+
+    <script type="text/javascript">
+    Prism.languages.jsonnet = {
+      'cppcomment': /\/\/.*/g,
+      'comment': /\/\*[\w\W]*?\*\//g,
+      'string': /("|')(\\?.)*?\1/g,
+      'keyword': /\b(self|super)\b|\$/g,
+      'boolean': /\b(true|false)\b/g,
+      'constant': /\bnull\b/g,
+      'error': /\berror\b/g,
+      'special': /\b(local|function|if|then|else|import|importstr|for|in)\b/g,
+      'number': /\b[0-9][0-9.eE]*\b/g,
+      'operator': /(\+|\*|\/)+/g,
+    };
+    </script>
+
+    <style type="text/css">
+    .token.comment,
+    .token.cppcomment {
+      color: #040;
+    }
+
+    .token.identifier {
+      color: #000;
+    }
+    .token.operator {
+      color: #000;
+    }
+
+    .token.boolean,
+    .token.number,
+    .token.constant {
+      color: #05a;
+    }
+
+    .token.string {
+      color: #000048;
+    }
+
+    .token.keyword,
+    .token.special {
+      color: blue;
+    }
+
+    .token.error {
+      color: red;
+    }
+    </style>
+
+
+    <script type="text/javascript">
+
+        var menu_timeout = null;
+
+        function set_visible(menu, b)
+        {
+            var category = menu.children[0];
+            var dropdown = menu.children[1];
+            category.style['border-radius'] = b && dropdown != null ? '4px 4px 0px 0px' : '4px';
+            if (dropdown != null) {
+                dropdown.style.visibility = b ? 'visible' : 'hidden';
+            }
+        }
+
+        function menu_open(el)
+        {
+            menu_close_all();
+            var menu = el;
+            while (menu.id === "") {
+                menu = menu.parentNode;
+            }
+            set_visible(menu, true);
+        }
+
+        function menu_leave()
+        {
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+            }
+            menu_timeout = window.setTimeout(menu_close_all, 300);
+        }
+
+        function menu_close_all()
+        {
+            var mb = document.getElementById("menubar");
+            if (mb == null) return;
+            var menus = mb.children;
+            for (var i = 0 ; i < menus.length ; ++i) {
+                set_visible(menus[i], false);
+            }
+            if (menu_timeout != null) {
+                window.clearTimeout(menu_timeout);
+                window_timeout = null;
+            }
+        }
+
+        document.onclick = menu_close_all(); 
+
+    </script>
+
+</head>
+
+<body class="language-jsonnet">
+
+<div class="header">
+
+<div class="tagline"><i>The data templating language</i></div>
+<div id="githubmarkbox">
+<a href="https://groups.google.com/forum/#!forum/jsonnet"><div id="groupsmark"></div></a>
+<a href="http://github.com/google/jsonnet"><div id="githubmark"></div></a>
+</div>
+<div class="title"><a href="index.html" class="title">Jsonnet</a></div>
+
+<ol id="menubar">
+
+    <li id="menu_userdocs">
+        <a href="userdocs.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">User docs</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="tutorial.html">Tutorial</a>
+            <a href="demo.html">Demo</a>
+            <a href="stdlib.html">Standard Library</a>
+        </div>
+    </li>
+
+    <li id="menu_casestudies">
+        <a href="casestudies.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Case Studies</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="casestudy_fractal.html">Fractal</a>
+        </div>
+    </li>
+
+    <li id="menu_language">
+        <a href="language.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Language</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="design.html">Design</a>
+            <a href="comparisons.html">Comparisons</a>
+            <a href="spec.html">Specification</a>
+        </div>
+    </li>
+
+    <li id="menu_implementation">
+        <a href="implementation.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Implementation</a>
+        <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
+            <a href="commandline.html">Cmdline Tool</a>
+            <a href="bindings.html">Libraries</a>
+            <a href="cpp.html">C++ Internals</a>
+            <a href="javascript.html">Javascript</a>
+            <a href="tests.html">Tests</a>
+        </div>
+    </li>
+
+    <li id="menu_contributing">
+        <a href="contributing.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Contributing</a>
+    </li>
+
+</ol>
+
+<div style="clear: both"></div>
+
+</div>
+
+
+
+<h1>Cloud Application Case Study</h1>
+
+<!-- needs index here -->
+
+<p> This case study illustrates that <a href="index.html">Jsonnet</a> can be used to centralize,
+unify, and manage configuration for all parts of a realistic web application hosted on the cloud.
+That includes application configuration files for each piece of software involved, database schemas
+and initial data sets, system configuration files, package manifests, software build configurations,
+image configurations (<a href="http://www.packer.io/">Packer</a>) and cloud resources / connectivity
+(<a href="http://www.terraform.io/">Terraform</a>).  Although the running example is deployed on <a
+href="https://cloud.google.com">Google Cloud Platform</a> and uses specific application software,
+Jsonnet can be used to generate configuration for any application and (via Packer &amp; Terraform) a
+wide range of cloud providers.  It is assumed that the reader has read the Jsonnet <a
+href="tutorial.html">tutorial</a>, and has a basic knowledge of Packer and Terraform.</p>
+
+
+<h2>Example Web Application</h2>
+
+<a href="fractal_screenshot.png"><img src="fractal_screenshot.png" class=thumb></a>
+
+<p>The example application allows the user to explore (zoom and pan) a Mandelbrot fractal, rendered
+server side by some C++ code.  The application is provisionally hosted <a
+href="http://fractal.noip.me/">here</a>, but you can easily deploy your own.  The user is able to
+save the location of interesting artifacts they find in the fractal, and a time-ordered list of
+these with thumbnails is displayed on the left hand side.</p>
+
+<p>Although admittedly a little contrived, this example is intended to represent the structure of a
+typical non-trivial real-world web application, and all of its components are available in the
+Jsonnet Github repository.  It consists of 3 tiers (illustrated below):  An application server, a
+backend database (Cassandra) and a backend service for generating the fractal PNG tiles (C++).  Each
+tier is scalable and fault-tolerant.</p>
+
+<img src="fractal_architecture.png">
+
+<p>The application server hosts static content (CSS) and Jinja'd HTML.  The HTML <a
+href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/frontend/templates/page.html">contains</a> Javascript that issues AJAX
+requests to 1) the tile generation backend and 2) the application server (to fetch / amend the
+discoveries list).  The application server therefore does not communicate directly with the fractal
+tile generation service, but it needs to know the host:port endpoint in order to embed it in the
+HTML so that the user's browser can do so.  The user does not communicate directly with the
+Cassandra database.</p>
+
+<p>Both the application server and the tile generation service use Nginx, uWSGI and flask to host
+their content.  For the application server, this means transforming HTTP requests into database
+accesses and/or serving content (code <a href="https://github.com/google/jsonnet/blob/master/case_studies/frontend/main.py">here</a>).  For the
+tile generation service, this means invoking a compiled C++ <a
+href="https://github.com/google/jsonnet/blob/master/case_studies/tilegen/mandelbrot.cpp">executable</a> from the Flask <a
+href="https://github.com/google/jsonnet/blob/master/case_studies/tilegen/mandelbrot_service.py">handler</a> in order to construct a PNG for a given
+tile / thumbnail of the fractal.  Both tiers consist of a group of machines behind a layer 3 cloud
+load balancer with a static IP and a simple health check.  The Cassandra database is simply a set of
+instances, as the Cassandra client library (used by the application server) does its own load
+balancing and transparent failover.</p>
+
+<p>The application is deployed by first building a image for each of the 3 kinds of cloud
+instances (application server, fractal image processing service, Cassandra) using Packer.  Then, all
+the cloud resources are deployed using Terraform.  The Packer build compiles / installs and
+configures all of the required software on each image.  The Terraform configuration uses instance
+metadata to communicate last minute configuration info (connectivity, passwords) that we cannot or
+prefer not to embed in the images.  The choice about what to do at image build vs deployment
+time is flexible.  In our case, we try to do all time consuming steps at build time, allowing new
+instances to be brought up very quickly.  This would be particularly important in an autoscaling
+situation.</p>
+
+
+<h2>Configuration Structure</h2>
+
+<p>A single Jsonnet configuration yields the 3 Packer builds (*.packer.json) and the Terraform
+configuration (terraform.tf), using <a href="commandline.html#multi">multiple file output</a>.
+Those files in turn embed other configurations for the application software that will run on the
+instances.</p>
+
+<p>The Jsonnet configuration is divided into several files (via the import construct), to promote
+re-use of some abstracted parts of the configuration, as well as having a separate credentials file
+(to avoid checking passwords into version control).  Note that Jsonnet did not require this
+structure:  Other separations (or no separation) would also have been possible.  Note also that the
+Jsonnet template libraries include some things not used in this example application, e.g. PostgreSQL
+and MySQL templates.</p>
+
+
+
+
+
+
+
+
+
+
+
+<ul>
+
+<li><tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt>: The Fractal application configuration, as a list of packer
+images and a Terraform configuration.  Note the first few lines import the other Jsonnet files and
+store their contents in top-level scoped variables of the same names.  When we access things from
+those libraries we will do so through the top-level variables.</li>
+
+<li><tt>credentials.jsonnet: User and superuser keys for Cassandra, and Google Cloud Platform
+project name.  A template for this file is <a
+href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/credentials.jsonnet.TEMPLATE">provided</a>.</li>
+
+<li><tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/packer.jsonnet">lib/packer.jsonnet</a></tt>: Some templates to help with writing Packer configurations.</li>
+
+<li><tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/terraform.jsonnet">lib/terraform.jsonnet</a></tt>: Some templates to help with writing Terraform
+configurations.</li>
+
+<li><tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/cassandra.jsonnet">lib/cassandra.jsonnet</a></tt>: Some templates to help with writing Packer and Terraform
+configurations for Cassandra.</li>
+
+</ul>
+
+<p>To integrate Jsonnet with Packer and Terraform, a <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/Makefile">Makefile</a></tt> is used.  This first runs
+Jsonnet on the configuration and then runs Packer / Terraform on the resulting files (if they have
+changed).  Using make as an ops tool is unusual, and probably not advisable in production.  However
+it is well understood, available everywhere, and does 3 things that we want:  Invoke other programs,
+run things in parallel, and avoid repeating work that is already complete.  For example, Packer is
+only invoked if its configuration file has changed, and the 3 image builds will proceed in parallel
+(they take a few minutes each).  The choice of 'glue' is not particularly relevant to this case
+study.  One could also use a small Python script.</p>
+
+<p>Ignoring the re-usable templates, whitespace, and comments, the Jsonnet configuration is 217
+lines (9.7kB).  The generated Packer and Terraform files are 740 lines (25kB) in total.  This
+demonstrates the productivity benefits of using template expansion when writing configurations.</p>
+
+
+<h3>Whirlwind Tour</h3>
+
+<p> The fractal example is a complete application and therefore its configuration is quite long and
+technical.  Some interesting features are described below, but to gain a complete understanding of
+this configuration would require studying the full Jsonnet files.  If parts are unclear, please seek
+answers from the <a href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
+
+
+<h4>Packer And Application Configuration</h4>
+
+<p>The <code>ImageMixin</code> object in <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt> is used to factor out common
+configuration from the 3 images (Packer configurations).  This includes the Google Cloud Platform
+project id and filename of the service account key.  Since all the images are derived ultimately
+from the <code>GcpDebian</code> image (in <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/packer.jsonnet">lib/packer.jsonnet</a></tt>), and this image includes apt
+&amp; pip provisioners (discussed shortly), this is also a good place to ensure some basic packages
+are installed on every image.  Note that since this object is not intended to be actually created
+(it existing only for reference from other parts of the configuration) it is stored in a hidden
+field (:: syntax).</p>
+
+<p>Both the application server's image configuration <tt>frontend.packer.json</tt> and the tile
+generation service's image configuration <tt>tilegen.packer.json</tt> extend
+<code>MyFlaskImage</code>, which exists merely to add the aforementioned <code>ImageMixin</code> to
+the <code>GcpDebianNginxUwsgiFlaskImage</code> template from <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/packer.jsonnet">lib/packer.jsonnet</a></tt>.  That template
+builds on the basic <code>GcpDebianImage</code> template from the same library, and adds all the
+packages (and default configuration) for both Nginx and uWSGI.</p>
+
+<p>In Jsonnet we use JSON as the canonical data model and convert to other formats as needed.  An
+example of this is the uWSGI configuration, an <a
+href="http://en.wikipedia.org/wiki/INI_file">INI</a> file, which specified in Jsonnet under the
+<code>uwsgiConf</code> field in <code>GcpDebianNginxUwsgiFlaskImage</code>.  The JSON version is
+converted to INI by the call to <code>std.manifestIni</code> (documented <a
+href="stdlib.html">here</a>) in the provisioner below.  Representing the INI file with the JSON
+object model (instead of as a string) allows elements of the uWSGI configuration, such as the
+filename of the UNIX domain socket, to be easily kept in sync with other elements of the
+configuration, e.g. the Nginx configuration file below needs the same filename.  If the application
+is configured with JSON, or even YAML, then no conversion is required.  An example of that is the
+default Cassandra configuration file held in the <code>conf</code> field of
+<tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/cassandra.jsonnet">lib/cassandra.jsonnet</a></tt>.</p>
+
+<p>Looking back at <tt>frontend.packer.json</tt> and <tt>tilegen.packer.json</tt> in
+<tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt>, while both use Nginx/uWSGI/Flask there are some subtle differences.  Since
+the HTTP request handlers are different in each case, the module (uWSGI entrypoint) and also
+required packages are different.  Firstly, the tile generation image needs a provisioner to build
+the C++ code.  Secondly, since the application server talks to the Cassandra database using
+cassandra-driver, which interferes with preforking, it was necessary to override the
+<code>lazy</code> field of the uWSGI configuration in that image.  This is an example of how an
+abstract template can unify two similar parts of the configuration, while still allowing the
+overriding of small details as needed.  Note also that such precise manipulation of configuration
+details would be much harder if the uWSGI configuration was represented as a single string instead
+of as a structure within the object model.</p>
+
+<p>Going up to the top of the template hierarchy we have <code>GcpDebianImage</code> and finally
+<code>GcpImage</code> in <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/packer.jsonnet">lib/packer.jsonnet</a></tt>.  The latter gives the Packer builder configuration
+for Google Cloud Platform, bringing out some fields to the top level, essentially hiding the
+<code>builder</code> subobject.  We can hide the builder configuration because we only ever need one
+builder per image.  We can support multiple cloud providers by deriving an entire new Packer
+configuration at the top level, overriding as necessary to specialize for that platform.  The
+<code>GcpDebianImage</code> selects the base image (Backports) and adds provisioners for apt and pip
+packages.  The configuration of those provisioners (the list of installed packages, and additional
+repositories / keys) is brought out to the top level of the image configuration.  By default, the
+lists are empty but subobjects can override and extend them as we saw with
+<code>GcpDebianNginxUwsgiFlaskImage</code>.</p>
+
+<p>The actual provisioners <code>Apt</code> and <code>Pip</code> are defined further up
+<tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/packer.jsonnet">lib/packer.jsonnet</a></tt>.  In their definitions, one can see how the various shell commands are built
+up from the declarative lists of repositories, package names, etc.  Installing packages in a
+non-interactive context requires a few extra switches and an environment variable, but the
+<code>Apt</code> provisioner handles all that.  Also note how these provisioners both derive from
+<code>RootShell</code> (defined right at the top of the file) because those commands need to be run
+as root.  All of this is plain Jsonnet code, so it is possible to create your own provisioners
+(based on these or from scratch) in order to declaratively control packages in a Packer image.</p>
+
+
+<h4>Terraform</h4>
+
+<p>The remainder of <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt> is the Terraform configuration that defines all the
+cloud resources that are required to run the fractal web application.  That includes the instances
+of the images built by Packer, but also resources that configure network routing / firewalls, load
+balancers, etc.</p>
+
+<p>The function <code>zone</code> is used to statically assign zones to instances on a round robin
+basis.  All the instances extend from <code>FractalInstance</code>, which is parameterized by the
+index <code>zone_hash</code>.  It is this index that is used to compute the zone, as can be seen in
+the body of <code>FractalInstance</code>.  The zone is also also a namespace for the instance name,
+so when we list the instances behind each load balancer in the
+<code>google_compute_target_pool</code> object, we compute the zone for each instance there as
+well.</p>
+
+<p><code>FractalInstance</code> also specifies some default API access scopes and tags, as well as
+the network over which the instances communicate.  It extends <code>GcpInstance</code> from
+<tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/lib/terraform.jsonnet">lib/terraform.jsonnet</a></tt>, which brings default service account scopes, the network, and the
+startup script to the top level, and provides some defaults for other parameters.  </p>
+
+
+use of object comprehension to create several instances with indexed names
+
+
+
+
+<h2>Using The Configuration</h2>
+
+<p>In order to reproduce this case study there are a few pre-requisites:</p>
+
+<ul>
+
+<li>A Linux or OSX system with GNU Make</li>
+
+<li>Packer, built from github, in your $PATH.</li>
+
+<li>Terraform, built with <a href="https://github.com/hashicorp/terraform/pull/588">PR #588</a>, in
+your $PATH.</li>
+
+<li>Jsonnet, built from github (this is also where you find the configuration and source code).</li>
+
+<li>An account on Google Cloud Platform (hosting the application will incur charges).</li>
+
+</ul>
+
+<p>Once those are satisfied, follow these steps:</p>
+
+<ol>
+
+<li>Create a new service account, and download a JSON key.  Move it to the fractal directory, and
+call it <tt>service_account_key.json</tt>.</li>
+
+<li>Create a credentials.jsonnet file based on the template, fill in your GCP project name and make
+up some unique passwords.</li>
+
+</ol>
+
+<h3>Initial Deployment and Tear Down</h3>
+
+<p>To deploy the app, run make -j.  This should start running 3 Packer builds in parallel.  In a
+separate terminal, use tail -f *.log in order to watch their progress.  When the images are built,
+Terraform is run and will show you the proposed changes.  Enter y to confirm the changes.  In time,
+the application will be deployed.  Now you only need the frontend ip address to start using it.  You
+can get this using "gcloud compute addresses list" or by navigating the Google Cloud Platform
+console to "networks".  Opening the ip in a web browser should take you to the application itself.
+</p>
+
+<p>The application can be brought down again with terraform destroy.  This will not destroy the
+Packer images, they can be deleted from the console or from gcloud.</p>
+
+
+<h3>Add / Remove Cassandra Nodes</h3>
+
+<p>Managing the Cassandra cluster requires a combination of configuration alteration (to control the
+fundamental compute resources) and use of the Cassandra commandline tool "nodetool".  For example
+"nodetool status fractal" will give information about the cluster.</p>
+
+<p>To add a new node, simply edit <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt>, add another instance in the Terraform
+configuration and run make -j.  Confirm the changes (the only change should be the new instance,
+e.g. db4).  It will start up and soon become part of the cluster.</p>
+
+<p>To remove a node, first decommission it using nodetool -h HOSTNAME decommission.  When that is
+complete, update <tt><a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/service.jsonnet">service.jsonnet</a></tt> to remove the resource and run make -j again.  Confirm the
+removal of the instance.</p>
+
+<p>If a node is lost (e.g. a disk error), or you removed it without first decommissioning it, the
+cluster will expect it to return at some point (as if it were temporarily powered down or on the
+wrong side of a network split).  This situationc an be rectified with nodetool removenode UUID, run
+from any other node in the cluster.  It is probably also necessary to run nodetool repair on the
+other nodes.</p>
+
+
+<h3>Canary frontend change</h3>
+
+<h2>Conclusion</h2>
+
+<div style="margin-bottom: 50px"></div>
+<hr />
+<p class="copyright">
+Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+</p>
+</body>
+
+</html>
