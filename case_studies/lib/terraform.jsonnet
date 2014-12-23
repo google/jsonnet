@@ -45,7 +45,7 @@ limitations under the License.
         startup_script:: [],
 
         addFile(v, dest)::
-            "echo %s > %s" % [std.escapeStringBash("" + v), dest],
+            "echo %s > %s" % [std.escapeStringBash(v), std.escapeStringBash(dest)],
 
         metadata: {
             "startup-script": std.lines(instance.startup_script),
@@ -60,26 +60,16 @@ limitations under the License.
 
     // Allow http for servers tagged with "http-server" on the given network.
     GcpFirewallHttp:: {
-        local fw = self,
-        network:: error "GcpFirewallHttp must have field: network",
-        http: {
-            name: "http",
-            source_ranges: ["0.0.0.0/0"],
-            network: fw.network,
-            allow: [{ protocol: "tcp", ports: ["80"] }],
-            target_tags: ["http-server"],
-        },
+        source_ranges: ["0.0.0.0/0"],
+        network: error "GcpFirewallHttp must have field: network",
+        allow: [{ protocol: "tcp", ports: ["80"] }],
+        target_tags: ["http-server"],
     },
 
     // Allow ssh for all servers on the given network.
     GcpFirewallSsh:: {
-        local fw = self,
-        network:: error "GcpFirewallHttp must have field: network",
-        ssh: {
-            name: "ssh",
-            source_ranges: ["0.0.0.0/0"],
-            network: fw.network,
-            allow: [{ protocol: "tcp", ports: ["22"] }],
-        },
+        source_ranges: ["0.0.0.0/0"],
+        network: error "GcpFirewallSsh must have field: network",
+        allow: [{ protocol: "tcp", ports: ["22"] }],
     },
 }

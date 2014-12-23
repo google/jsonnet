@@ -31,7 +31,7 @@ local credentials = import "credentials.jsonnet";
     cassandraKeyspace:: "fractal",
     cassandraReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 2 }",
 
-    // These are the nodes the frontends attempt to use (client-side load balancing).
+    // These are the nodes the application server attempts to use (client-side load balancing).
     cassandraNodes:: ["db1", "db2", "db3", "db4", "db5"],
 
     // The Cassandra configuration file we use for this service.
@@ -99,23 +99,24 @@ local credentials = import "credentials.jsonnet";
         aptPackages +: ["vim", "git", "psmisc", "screen", "strace" ] + network_debug,
     },
 
-    // An Nginx/uwsgi/flask installation is used to serve HTTP on the frontend and tile generators.
+    // An Nginx/uwsgi/flask installation is used to serve HTTP on the application server and tile
+    // generators.
     MyFlaskImage:: packer.GcpDebianNginxUwsgiFlaskImage + $.ImageMixin,
 
     // Frontend image.
-    "frontend.packer.json": $.MyFlaskImage {
-        name: "frontend-v20141222-0300",
+    "appserv.packer.json": $.MyFlaskImage {
+        name: "appserv-v20141222-0300",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
         // Copy website content and code.
         provisioners +: [
             packer.File {
-                source: "frontend",
+                source: "appserv",
                 destination: "/tmp/",
             },
             packer.RootShell { inline: [
-                "mv /tmp/frontend/* /var/www/",
+                "mv /tmp/appserv/* /var/www/",
                 "chown -R www-data.www-data /var/www/*",
             ] },
         ],
@@ -192,11 +193,11 @@ local credentials = import "credentials.jsonnet";
 
             // Publicly visible static ip addresses.
             google_compute_address: {
-                frontend: { name: "frontend" },
+                appserv: { name: "appserv" },
                 tilegen: { name: "tilegen" },
             },
 
-            // The next 3 resource types configure load balancing for the frontend and tilegen.
+            // The next 3 resource types configure load balancing for the appserv and tilegen.
             google_compute_http_health_check: {
                 fractal: {
                     name: "fractal",
@@ -205,10 +206,10 @@ local credentials = import "credentials.jsonnet";
             },
 
             google_compute_target_pool: {
-                frontend: {
-                    name: "frontend",
+                appserv: {
+                    name: "appserv",
                     health_checks: ["${google_compute_http_health_check.fractal.name}"],
-                    instances: [ "%s/frontend%d" % [zone(k), k] for k in [1, 2, 3] ],
+                    instances: [ "%s/appserv%d" % [zone(k), k] for k in [1, 2, 3] ],
                 },
                 tilegen: {
                     name: "tilegen",
@@ -218,10 +219,10 @@ local credentials = import "credentials.jsonnet";
             },
 
             google_compute_forwarding_rule: {
-                frontend: {
-                    ip_address: "${google_compute_address.frontend.address}",
-                    name: "frontend",
-                    target: "${google_compute_target_pool.frontend.self_link}",
+                appserv: {
+                    ip_address: "${google_compute_address.appserv.address}",
+                    name: "appserv",
+                    target: "${google_compute_target_pool.appserv.self_link}",
                     port_range: "80",
                 },
                 tilegen: {
@@ -233,9 +234,12 @@ local credentials = import "credentials.jsonnet";
             },
 
             // Open ports for the various services, to instances (identified by tags)
-            google_compute_firewall: terraform.GcpFirewallSsh + terraform.GcpFirewallHttp
-                                     + cassandra.GcpFirewall {
-                network:: "${google_compute_network.fractal.name}",
+            google_compute_firewall: {
+                NetworkMixin:: { network: "${google_compute_network.fractal.name}", },
+                ssh: terraform.GcpFirewallSsh + self.NetworkMixin { name: "ssh" },
+                http: terraform.GcpFirewallHttp + self.NetworkMixin { name: "http" },
+                cassandra: cassandra.GcpFirewall + self.NetworkMixin { name: "cassandra" },
+                gossip: cassandra.GcpFirewallGossip + self.NetworkMixin { name: "gossip" },
             },
 
             // All our instances share this configuration.
@@ -259,11 +263,12 @@ local credentials = import "credentials.jsonnet";
 
             google_compute_instance: {
 
-                // The frontend instances have database credentials and the address of the tilegen
-                // loadbalancer.  This is all stored in a conf.json, read by the python code.
-                ["frontend" + k]: resource.FractalInstance(k) {
-                    name: "frontend" + k,
-                    image: "frontend-v20141222-0300",
+                // The application server instances have database credentials and the address of the
+                // tilegen loadbalancer.  This is all stored in a conf.json, read by the python
+                // code.
+                ["appserv" + k]: resource.FractalInstance(k) {
+                    name: "appserv" + k,
+                    image: "appserv-v20141222-0300",
                     conf:: $.ApplicationConf {
                         database_name: $.cassandraKeyspace,
                         database_user: $.cassandraUser,
@@ -271,7 +276,7 @@ local credentials = import "credentials.jsonnet";
                         tilegen: "${google_compute_address.tilegen.address}",
                         db_endpoints: $.cassandraNodes,
                     },
-                    tags +: ["fractal-frontend", "http-server"],
+                    tags +: ["fractal-appserv", "http-server"],
                     startup_script +: [self.addFile(self.conf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3]
@@ -313,8 +318,8 @@ local credentials = import "credentials.jsonnet";
                 */
 
             } + {
-                // The tile generation instances are similar to the frontend ones, but do not
-                // require database credentials so these are omitted for security.
+                // The tile generation instances are similar to the application server ones, but do
+                // not require database credentials so these are omitted for security.
                 ["tilegen" + k]: resource.FractalInstance(k) {
                     name: "tilegen" + k,
                     image: "tilegen-v20141222-0300",
@@ -326,6 +331,6 @@ local credentials = import "credentials.jsonnet";
 
         }
 
-    } // deployment.tf
+    } // terraform.tf
 
 }

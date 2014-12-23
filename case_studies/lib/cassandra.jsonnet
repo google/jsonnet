@@ -110,27 +110,22 @@ local packer = import "packer.jsonnet";
     },
 
     // Some firewall resources to open up Cassandra ports.
-    GcpFirewall: {
-        local fw = self,
+    GcpFirewall:: {
         cassandraTag:: "cassandra-server",
-        network:: error "cassandra.Firewall must have field: network",
+        source_ranges: ["0.0.0.0/0"],
+        network: error "cassandra.GcpFirewall must have field: network",
+        allow: { protocol: "tcp", ports: ["9042", "9160"] },
         // From the Internet to these ports.
-        cassandra: {
-            name: "cassandra",
-            source_ranges: ["0.0.0.0/0"],
-            network: fw.network,
-            allow: { protocol: "tcp", ports: ["9042", "9160"] },
-            target_tags: [fw.cassandraTag],
-        },
+        target_tags: [self.cassandraTag],
+    },
+    GcpFirewallGossip:: { 
+        cassandraTag:: "cassandra-server",
+        source_ranges: ["0.0.0.0/0"],
+        network: error "cassandra.GcpFirewallGossip must have field: network",
+        allow: { protocol: "tcp", ports: ["7000", "7001", "7199"] },
         // From these machines amongst themselves.
-        gossip: { 
-            name: "gossip",
-            source_ranges: ["0.0.0.0/0"],
-            network: fw.network,
-            allow: { protocol: "tcp", ports: ["7000", "7001", "7199"] },
-            source_tags: [fw.cassandraTag],
-            target_tags: [fw.cassandraTag],
-        },
+        source_tags: [self.cassandraTag],
+        target_tags: [self.cassandraTag],
     },
 
     // Sets the root password to something, while the server is listening only on localhost.
