@@ -274,3 +274,20 @@ img.thumb {
     height: auto;
     margin: 0 0 0 16px;
 }
+
+div#contents {
+    float: center;
+    margin: 32px auto 32px auto;
+    width: 500px;
+    padding: 10px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #421;
+    border-radius: 2px;
+}
+
+div#contents > div,
+div#contents > div > div,
+div#contents > div > div > div {
+    margin: 8px 0 0 16px;
+}

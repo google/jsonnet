@@ -2,9 +2,31 @@
 
 {% set srcroot = 'https://github.com/google/jsonnet/blob/master/case_studies' %}
 
-<h1>Cloud Application Case Study</h1>
+<h1 id=top>Case Study: Cloud Application</h1>
 
-<!-- needs index here -->
+<div id=contents>
+    <div>
+        <a href="#intro">Introduction</a>
+    </div>
+    <div>
+        <a href="#app">Example Web Application</a>
+    </div>
+    <div>
+        <a href="#config">Configuration Structure</a>
+        <div><a href="#config_whirlwind">Whirlwind Tour</a></div>
+    </div>
+    <div>
+        <a href="#using">Using The Configuration</a>
+        <div><a href="#using_deploy">Initial Deployment and Tear Down</a></div>
+        <div><a href="#using_cassandra">Add / Remove Cassandra Nodes</a></div>
+        <div><a href="#using_appserv">Canary Change to Application Server</a></div>
+    </div>
+
+</div>
+
+<div style="clear:both"></div>
+
+<h2 id=intro>Introduction</h2>
 
 <p> This case study illustrates that <a href="index.html">Jsonnet</a> can be used to centralize,
 unify, and manage configuration for all parts of a realistic web application hosted on the cloud.
@@ -17,13 +39,12 @@ Jsonnet can be used to generate configuration for any application and (via Packe
 wide range of cloud providers.  It is assumed that the reader has read the Jsonnet <a
 href="tutorial.html">tutorial</a>, and has a basic knowledge of Packer and Terraform.</p>
 
-
-<h2>Example Web Application</h2>
+<h2 id=app>Example Web Application</h2>
 
 <a href="fractal_screenshot.png"><img src="fractal_screenshot.png" class=thumb></a>
 
 <p>The example application allows the user to explore (zoom and pan) a Mandelbrot fractal, rendered
-server side by some C++ code.  The application is provisionally hosted <a
+server side in C++.  The application is provisionally hosted <a
 href="http://fractal.noip.me/">here</a>, but you can easily deploy your own.  The user is able to
 save the location of interesting artifacts they find in the fractal, and a time-ordered list of
 these with thumbnails is displayed on the left hand side.</p>
@@ -66,7 +87,7 @@ instances to be brought up very quickly.  This would be particularly important i
 situation.</p>
 
 
-<h2>Configuration Structure</h2>
+<h2 id=config>Configuration Structure</h2>
 
 <p>A single Jsonnet configuration yields the 3 Packer builds (*.packer.json) and the Terraform
 configuration (terraform.tf), using <a href="commandline.html#multi">multiple file output</a>.
@@ -101,7 +122,7 @@ images and a Terraform configuration.  Note the first few lines import the other
 store their contents in top-level scoped variables of the same names.  When we access things from
 those libraries we will do so through the top-level variables.</li>
 
-<li><tt>credentials.jsonnet: User and superuser keys for Cassandra, and Google Cloud Platform
+<li><tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud Platform
 project name.  A template for this file is <a
 href="{{srcroot}}/fractal/credentials.jsonnet.TEMPLATE">provided</a>.</li>
 
@@ -129,7 +150,7 @@ lines (9.7kB).  The generated Packer and Terraform files are 740 lines (25kB) in
 demonstrates the productivity benefits of using template expansion when writing configurations.</p>
 
 
-<h3>Whirlwind Tour</h3>
+<h3 id=config_whirlwind>Whirlwind Tour</h3>
 
 <p> The fractal example is a complete application and therefore its configuration is quite long and
 technical.  Some interesting features are described below, but to gain a complete understanding of
@@ -173,7 +194,7 @@ default Cassandra configuration file held in the <code>conf</code> field of
 the HTTP request handlers are different in each case, the module (uWSGI entrypoint) and also
 required packages are different.  Firstly, the tile generation image needs a provisioner to build
 the C++ code.  Secondly, since the application server talks to the Cassandra database using
-cassandra-driver, which interferes with preforking, it was necessary to override the
+cassandra-driver, which interferes with pre-forking, it was necessary to override the
 <code>lazy</code> field of the uWSGI configuration in that image.  This is an example of how an
 abstract template can unify two similar parts of the configuration, while still allowing the
 overriding of small details as needed.  Note also that such precise manipulation of configuration
@@ -207,27 +228,49 @@ as root.  All of this is plain Jsonnet code, so it is possible to create your ow
 <p>The remainder of {{service_jsonnet|safe}} is the Terraform configuration that defines all the
 cloud resources that are required to run the fractal web application.  That includes the instances
 of the images built by Packer, but also resources that configure network routing / firewalls, load
-balancers, etc.</p>
+balancers, etc.  Terraform accepts two basic syntaxes, JSON and <a
+href="https://github.com/hashicorp/hcl">HCL</a> (a more concise form of JSON).  This provides a
+datastructure that specifies the resources required, but the model also has a few computational
+features:  The structure has 'variables' which an be resolved by <a
+href="http://en.wikipedia.org/wiki/String_interpolation">string interpolation</a> within the
+resources.  All resources are also extended with a <tt>count</tt> parameter for creating <i>n</i>
+replicas of that resource, and there is also some support for importing 'modules', i.e. another
+configuration of resources defined by a third party.</p>
 
-<p>The function <code>zone</code> is used to statically assign zones to instances on a round robin
-basis.  All the instances extend from <code>FractalInstance</code>, which is parameterized by the
-index <code>zone_hash</code> (it's actually just a function that takes zone_hash and returns an
-instance template).  It is this index that is used to compute the zone, as can be seen in the body
-of <code>FractalInstance</code>.  The zone is also also a namespace for the instance name, so when
-we list the instances behind each load balancer in the <code>google_compute_target_pool</code>
-object, we compute the zone for each instance there as well.</p>
+<p>The interpolation feature is also used to reference attributes of resources that are not known
+until after deployment (i.e. cannot be known during Jsonnet execution time).  For example, the
+generated IP address of a static IP resource called <tt>foo</tt> can be referenced from a string in
+the definition of a resource <tt>bar</tt> using the syntax
+<tt>${google_compute_address.foo.address}</tt>, which is resolved after the deployment of the
+<tt>foo</tt> in time for the deployment of <tt>bar</tt>.</p>
+
+<p>We choose to emit JSON instead of building an HCL manifestation layer.  We also do not make use
+of any of the Terraform language features, as Jsonnet provides similar or greater capabilities in
+each of those domains, and doing it at the Jsonnet level allows integration with the rest of the
+configuration.  We do, however, use Terraform interpolation for resolving the "not known until
+deployment" attributes.  For example, in order to configure the application server with the
+host:port endpoint of the tile processing service.  Such resolution can only be performed by
+Terraform and is an irreplaceable part of any deployment agent.</p>
+
+<p>Going through {{service_jsonnet|safe}}, the function <code>zone</code> is used to statically
+assign zones to instances on a round robin basis.  All the instances extend from
+<code>FractalInstance</code>, which is parameterized by the index <code>zone_hash</code> (it's
+actually just a function that takes zone_hash and returns an instance template).  It is this index
+that is used to compute the zone, as can be seen in the body of <code>FractalInstance</code>.  The
+zone is also also a namespace for the instance name, so when we list the instances behind each load
+balancer in the <code>google_compute_target_pool</code> object, we compute the zone for each
+instance there as well.</p>
 
 <p><code>FractalInstance</code> also specifies some default API access scopes and tags, as well as
 the network over which the instances communicate.  It extends <code>GcpInstance</code> from
-{{terraform_jsonnet|safe}}, which brings Default service account scopes, the network, and the
+{{terraform_jsonnet|safe}}, which brings default service account scopes, the network, and the
 startup script to the top level, and provides some defaults for other parameters.</p>
 
-<p>Back in {{service_jsonnet|safe}} we now have the instance definitions themselves.  Jsonnet can
-help us define many instances that are essentially replicas.  The instances are actually given as a
-map (i.e. an object), since the instances each have unique names in Terraform.  There are 3 different kinds of instances:
-application server, db (cassandra) and tile generation.  The replicas in
-each case are formed as an object mapping their names to definitions, and these 3 objects are
-composed with the <code>+</code> operator.</p>
+<p>Back in {{service_jsonnet|safe}} we now have the instance definitions themselves, which are
+replicas of one of 3 different images: application server, db (Cassandra) and tile generation.
+Terraform takes the instances in the form of a map (i.e. a JSON object), since it identifies them
+internally with unique string names.  The instances are defined as a group for each image, and these
+3 objects are composed with the object addition <code>+</code> operator.</p>
 
 <p>The appserv and tilegen replicas are given using an object comprehension in which the field name
 and value are computed with <code>k</code> set to each index in the given list.  The variable
@@ -238,12 +281,12 @@ from <code>ApplicationConf</code> from the top of the file.  In the appserv inst
 configuration is extended with some extra fields before being put in the file.  In both cases, the
 startup script has added an extra line, computed by <code>self.addFile()</code>, a method (i.e. a
 field containing a function) inherited from <code>GcpInstance</code> in {{terraform_jsonnet|safe}}.
-Examining its definition shows that it uses echo to write the given content to the given filename.
+Examining its definition shows that it uses echo to write the given content to the given filename.  
 </p>
 
+<p>Cassandra deployment, starter mixin, initcql</p>
 
-
-<h2>Using The Configuration</h2>
+<h2 id=using>Using The Configuration</h2>
 
 <p>In order to reproduce this case study there are a few pre-requisites:</p>
 
@@ -253,12 +296,12 @@ Examining its definition shows that it uses echo to write the given content to t
 
 <li>Packer, built from github, in your $PATH.</li>
 
-<li>Terraform, built with <a href="https://github.com/hashicorp/terraform/pull/588">PR #588</a>, in
+<li>Terraform, including <a href="https://github.com/hashicorp/terraform/pull/588">PR #588</a>, in
 your $PATH.</li>
 
 <li>Jsonnet, built from github (this is also where you find the configuration and source code).</li>
 
-<li>An account on Google Cloud Platform (hosting the application will incur charges).</li>
+<li>An account on Google Cloud Platform (hosting the application will incur charges).  To</li>
 
 </ul>
 
@@ -276,7 +319,7 @@ up some unique passwords.</li>
 
 </ol>
 
-<h3>Initial Deployment and Tear Down</h3>
+<h3 id=using_deploy>Initial Deployment and Tear Down</h3>
 
 <p>To deploy the app, run make -j.  This should start running 3 Packer builds in parallel.  In a
 separate terminal, use tail -f *.log in order to watch their progress.  When the images are built,
@@ -289,15 +332,13 @@ console to "networks".  Opening that ip in a web browser should take you to the 
 <p>The application can be brought down again with terraform destroy.  This will not destroy the
 Packer images, they can be deleted from the console or from gcloud.</p>
 
-<p>Many people rightly point out that a production web service is brought up once and then
-maintained indefinitely afterwards, until it looks completely different to its original form.  It is
-never torn down, as to do so would cause an outage and lose all the data in the databases.  However
-there are two cases where bringing up a <i>copy</i> of a production service is useful:  Firstly, one
-can do full integration testing on a throw-away deployment.  This can even be automated.  Secondly,
-it can be used for load testing.</p>
+<p>Managing a production web service usually means making continual changes to it instead of
+bringing the whole thing down and up again.  However it is still useful to do this for development
+or testing purposes.  A copy or variant of the production service can be brought up concurrently
+with the production service (e.g. in a different project).  This can be useful for QA, automatic
+integration testing, or load testing.</p>
 
-
-<h3>Add / Remove Cassandra Nodes</h3>
+<h3 id=using_cassandra>Add / Remove Cassandra Nodes</h3>
 
 <p>Managing the Cassandra cluster requires a combination of configuration alteration (to control the
 fundamental compute resources) and use of the Cassandra commandline tool "nodetool".  For example
@@ -313,13 +354,25 @@ removal of the instance.</p>
 
 <p>If a node is lost (e.g. a disk error), or you removed it without first decommissioning it, the
 cluster will expect it to return at some point (as if it were temporarily powered down or on the
-wrong side of a network split).  This situationc an be rectified with nodetool removenode UUID, run
+wrong side of a network split).  This situation an be rectified with nodetool removenode UUID, run
 from any other node in the cluster.  It is probably also necessary to run nodetool repair on the
 other nodes.</p>
 
 
-<h3>Canary Change to Application Server</h3>
+<h3 id=using_appserv>Canary Change to Application Server</h3>
 
-<h2>Conclusion</h2>
+Build new image
+
+Add more nodes
+
+Add to load balancer
+
+watch for errors
+
+if no errors remove original instances from load balancers
+
+remove instances altogether
+
+<h2 id=conclusion>Conclusion</h2>
 
 {% include 'footer.html.jinja' %}
