@@ -301,7 +301,7 @@ your $PATH.</li>
 
 <li>Jsonnet, built from github (this is also where you find the configuration and source code).</li>
 
-<li>An account on Google Cloud Platform (hosting the application will incur charges).  To</li>
+<li>An account on Google Cloud Platform (hosting the application will incur charges).</li>
 
 </ul>
 
@@ -309,10 +309,10 @@ your $PATH.</li>
 
 <ol>
 
-<li>In the Google Cloud Platform console, open your project, go to credentials, and create a new
-service account.  This will automatic download a p12 key, which you can delete as we will not be
-using it.  Instead, click the button to download a JSON key, move it to the fractal directory, and
-call it <tt>service_account_key.json</tt>.</li>
+<li>In the Google Cloud Platform console, open your project, go to APIs and Auth / credentials, and
+create a new service account.  This will automatic download a p12 key, which you can delete as we
+will not be using it.  Instead, click the button to download a JSON key, move it to the fractal
+directory, and call it <tt>service_account_key.json</tt>.</li>
 
 <li>Create a credentials.jsonnet file based on the template, fill in your GCP project name and make
 up some unique passwords.</li>
