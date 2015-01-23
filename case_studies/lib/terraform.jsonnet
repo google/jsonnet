@@ -27,9 +27,8 @@ limitations under the License.
 
         scopes:: ["devstorage.read_only"],
 
-        service_accounts: [
+        service_account: [
             {
-                email: "default",
                 scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
             }
         ],
