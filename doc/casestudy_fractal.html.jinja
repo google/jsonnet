@@ -29,31 +29,33 @@
 <h2 id=intro>Introduction</h2>
 
 <p> This case study illustrates that <a href="index.html">Jsonnet</a> can be used to centralize,
-unify, and manage configuration for all parts of a realistic web application hosted on the cloud.
-That includes application configuration files for each piece of software involved, database schemas
-and initial data sets, system configuration files, package manifests, software build configurations,
-image configurations (<a href="http://www.packer.io/">Packer</a>) and cloud resources / connectivity
-(<a href="http://www.terraform.io/">Terraform</a>).  Although the running example is deployed on <a
-href="https://cloud.google.com">Google Cloud Platform</a> and uses specific application software,
-Jsonnet can be used to generate configuration for any application and (via Packer &amp; Terraform) a
-wide range of cloud providers.  It is assumed that the reader has read the Jsonnet <a
+unify, and manage configuration for all parts of a cloud hosted multi-tier web application (a
+Mandelbrot viewer).  Jsonnet centralizes configuration files for the various application software,
+database schemas and initial data sets, system configuration files, package manifests, software
+build configurations, image configurations (<a href="http://www.packer.io/">Packer</a>) and cloud
+resources / connectivity (<a href="http://www.terraform.io/">Terraform</a>).  Although the running
+example is deployed on <a href="https://cloud.google.com">Google Cloud Platform</a> and uses
+specific application software, Jsonnet can be used to generate configuration for any application and
+(via Packer &amp; Terraform) a wide range of cloud providers.</p>
+
+<p>  Prerequisites: It is assumed that the reader has read the Jsonnet <a
 href="tutorial.html">tutorial</a>, and has a basic knowledge of Packer and Terraform.</p>
 
 <h2 id=app>Example Web Application</h2>
 
 <a href="fractal_screenshot.png"><img src="fractal_screenshot.png" class=thumb></a>
 
-<p>The example application allows the user to explore (zoom and pan) a Mandelbrot fractal, rendered
-server side in C++.  The application is provisionally hosted <a
-href="http://fractal.noip.me/">here</a>, but you can easily deploy your own.  The user is able to
-save the location of interesting artifacts they find in the fractal, and a time-ordered list of
-these with thumbnails is displayed on the left hand side.</p>
+<p>The example application allows the user to zoon and pan a Mandelbrot fractal (dynamically
+rendered server side, in C++).  The user is able to
+save the location of features they find, deep in the fractal, and a time-ordered list of these with
+thumbnails is displayed in the left hand pane.  The application is provisionally hosted <a
+href="http://fractal.noip.me/">here</a>, but you can easily deploy your own as all required files
+are available in the Jsonnet repository.</p>
 
 <p>Although admittedly a little contrived, this example is intended to represent the structure of a
-typical non-trivial real-world web application, and all of its components are available in the
-Jsonnet Github repository.  It consists of 3 tiers (illustrated below):  An application server, a
-backend database (Cassandra) and a backend service for generating the fractal PNG tiles (C++).  Each
-tier is scalable and fault-tolerant.</p>
+typical non-trivial real-world web application.  It consists of 3 tiers (illustrated below):  An
+application server, a backend database (Cassandra) and a backend service for generating the fractal
+PNG tiles (C++).  Each tier is scalable and fault-tolerant.</p>
 
 <img src="fractal_architecture.png">
 
@@ -67,39 +69,59 @@ Cassandra database.</p>
 
 <p>Both the application server and the tile generation service use Nginx, uWSGI and flask to host
 their content.  For the application server, this means transforming HTTP requests into database
-accesses and/or serving content (code <a href="{{srcroot}}/appserv/main.py">here</a>).  For the
-tile generation service, this means invoking a compiled C++ <a
+accesses and/or serving content (code <a href="{{srcroot}}/appserv/main.py">here</a>).  For the tile
+generation service, this means invoking a compiled C++ <a
 href="{{srcroot}}/tilegen/mandelbrot.cpp">executable</a> from the Flask <a
 href="{{srcroot}}/tilegen/mandelbrot_service.py">handler</a> in order to construct a PNG for a given
-tile / thumbnail of the fractal.  Both tiers consist of a group of machines behind a layer 3 cloud
-load balancer with a static IP and a simple health check.  The Cassandra database is simply a set of
-instances, as the Cassandra client library (used by the application server) does its own load
-balancing and transparent failover.</p>
+tile / thumbnail of the fractal.  Both tiers consist of a group of <a
+href="https://cloud.google.com/compute/docs/instances">instances</a> behind a <a
+href="https://cloud.google.com/compute/docs/load-balancing/network/">layer 3 cloud load balancer</a>
+with a static IP and a simple <a
+href="https://cloud.google.com/compute/docs/load-balancing/health-checks">health check</a>.  The
+Cassandra database is simply a set of instances, as the Cassandra client library (used by the
+application server) does client-side load balancing and transparent failover, thus does not need a
+cloud load balancer.</p>
 
-<p>The application is deployed by first building a image for each of the 3 kinds of cloud
-instances (application server, fractal image processing service, Cassandra) using Packer.  Then, all
-the cloud resources are deployed using Terraform.  The Packer build compiles / installs and
-configures all of the required software on each image.  The Terraform configuration uses instance
-metadata to communicate last minute configuration info (connectivity, passwords) that we cannot or
-prefer not to embed in the images.  The choice about what to do at image build vs deployment
-time is flexible.  In our case, we try to do all time consuming steps at build time, allowing new
-instances to be brought up very quickly.  This would be particularly important in an autoscaling
-situation.</p>
+<p>The application is deployed by first using Packer to build a image for each of the 3 kinds of
+cloud instances (application server, fractal image processing service, Cassandra).  Then, all the
+cloud resources (instances, load balancers, etc) are deployed using Terraform.  The Packer build
+compiles, installs and configures all of the required software on each image.  The Terraform
+configuration provides last minute configuration (host:port endpoints, passwords, etc) to the
+instances via <a href="https://cloud.google.com/compute/docs/metadata">metadata</a>.</p>
+
+<p>The choice about what configuration to provide at image build time (embedded in Packer
+configurations) vs deployment time (embedded in Terraform configuration) is up to the user.  The
+advantage of doing more at image build time is that instances can then be deployed more quickly
+(useful in an auto-scaling situation).  But allowing some configuration at deployment time makes the
+images more flexible.  Some configuration (e.g. host:port endpoints) is only known at deployment
+time so must be specified in the Terraform configuration.  In our case, we try to do all time
+consuming steps (downloading, generating, compiling) in Packer, while leaving finer details until
+deployment.</p>
 
 
 <h2 id=config>Configuration Structure</h2>
 
-<p>A single Jsonnet configuration yields the 3 Packer builds (*.packer.json) and the Terraform
-configuration (terraform.tf), using <a href="commandline.html#multi">multiple file output</a>.
-Those files in turn embed other configurations for the application software that will run on the
-instances.</p>
+<p>This example is configured with a single Jsonnet <i>configuration</i>, which is logically
+separated into several files via the <code>import</code> constructs.  This is to promote abstraction
+and re-usability, as well as having a separate credentials file (to avoid accidental checkin).  Note
+that Jsonnet did not mandate this structure:  Other separations (or a giant single file) would also
+have been possible.</p>
 
-<p>The Jsonnet configuration is divided into several files (via the import construct), to promote
-re-use of some abstracted parts of the configuration, as well as having a separate credentials file
-(to avoid checking passwords into version control).  Note that Jsonnet did not require this
-structure:  Other separations (or no separation) would also have been possible.  Note also that the
-Jsonnet template libraries include some things not used in this example application, e.g. PostgreSQL
-and MySQL templates.</p>
+<p>This single configuration yields the a JSON packer configuration for each image (*.packer.json)
+and the JSON Terraform configuration (terraform.tf), using <a href="commandline.html#multi">multiple
+file output</a>.  Those configurations in turn embed other configurations for the application
+software that will run on the instances.  The top-level structure of the generated configuration is
+therefore as follows (with the content of each file elided for clarity).</p>
+
+<pre class="large"><code> {
+    "appserv.packer.json": ...,
+    "cassandra.packer.json": ...,
+    "tilegen.packer.json": ...,
+    "terraform.tf": ...,
+}
+</code></pre>
+
+<p>The configuration is specified by the following input Jsonnet files:</p>
 
 {% set service_jsonnet =
         '<tt><a href="' + srcroot + '/fractal/service.jsonnet">service.jsonnet</a></tt>' %}
@@ -117,14 +139,16 @@ and MySQL templates.</p>
 
 <ul>
 
-<li>{{service_jsonnet|safe}}: The Fractal application configuration, as a list of packer
-images and a Terraform configuration.  Note the first few lines import the other Jsonnet files and
-store their contents in top-level scoped variables of the same names.  When we access things from
-those libraries we will do so through the top-level variables.</li>
+<li>{{service_jsonnet|safe}}: The top level file that imports the others.  This is the filename that
+is given to the jsonnet commandline utility.  In it are all the details that define the Fractal
+example application, as a list of packer images and a Terraform configuration.  Note the first few
+lines import the other Jsonnet files and store their contents in top-level scoped variables (of the
+same names).  When we access things from those libraries (e.g. when overriding templates) we will do
+so through the top-level variables.</li>
 
 <li><tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud Platform
-project name.  A template for this file is <a
-href="{{srcroot}}/fractal/credentials.jsonnet.TEMPLATE">provided</a>.</li>
+project name.  You must create this file yourself.  For convenience, there is a  <a
+href="{{srcroot}}/fractal/credentials.jsonnet.TEMPLATE">template</a>.</li>
 
 <li>{{packer_jsonnet|safe}}: Some templates to help with writing Packer configurations.</li>
 
@@ -136,14 +160,16 @@ configurations for Cassandra.</li>
 
 </ul>
 
+<p>Note that the Jsonnet template libraries also include some definitions not used in this
+example application, e.g.  PostgreSQL and MySQL templates.  Those can be ignored.</p>
+
 <p>To integrate Jsonnet with Packer and Terraform, a {{makefile|safe}} is used.  This first runs
 Jsonnet on the configuration and then runs Packer / Terraform on the resulting files (if they have
-changed).  Using make as an ops tool is unusual, and probably not advisable in production.  However
-it is well understood, available everywhere, and does 3 things that we want:  Invoke other programs,
-run things in parallel, and avoid repeating work that is already complete.  For example, Packer is
-only invoked if its configuration file has changed, and the 3 image builds will proceed in parallel
-(they take a few minutes each).  The choice of 'glue' is not particularly relevant to this case
-study.  One could also use a small Python script.</p>
+changed).  The choice of 'glue' tool is arbitrary, we could also have used a small Python script.
+We chose make because it is well understood, available everywhere, and does 3 things that we want:
+Invoke other programs, run things in parallel, and avoid repeating work that is already complete.
+For example, Packer is only invoked if its configuration file has changed, and the 3 image builds
+will proceed in parallel (they take a few minutes each).</p>
 
 <p>Ignoring the re-usable templates, whitespace, and comments, the Jsonnet configuration is 217
 lines (9.7kB).  The generated Packer and Terraform files are 740 lines (25kB) in total.  This
@@ -153,9 +179,10 @@ demonstrates the productivity benefits of using template expansion when writing 
 <h3 id=config_whirlwind>Whirlwind Tour</h3>
 
 <p> The fractal example is a complete application and therefore its configuration is quite long and
-technical.  Some interesting features are described below, but to gain a complete understanding of
-this configuration would require studying the full Jsonnet files.  If parts are unclear, please seek
-answers from the <a href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
+technical.  It also embeds configurations for the various pieces of off-the-shelf software used, so
+quite a lot of domain knowledge is required to fully understand it.  Our intention in this article
+is merely to highlight some of the more interesting features.  We'll gladly field specific questions
+on the <a href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
 
 
 <h4>Packer And Application Configuration</h4>
@@ -288,7 +315,9 @@ Examining its definition shows that it uses echo to write the given content to t
 
 <h2 id=using>Using The Configuration</h2>
 
-<p>In order to reproduce this case study there are a few pre-requisites:</p>
+<p>The rest of this article gives simple methodologies for deploying and managing the example
+application by applying changes to the Jsonnet configuration.  In order to reproduce this case study
+there are a few pre-requisites:</p>
 
 <ul>
 
@@ -311,8 +340,8 @@ your $PATH.</li>
 
 <li>In the Google Cloud Platform console, open your project, go to APIs and Auth / credentials, and
 create a new service account.  This will automatic download a p12 key, which you can delete as we
-will not be using it.  Instead, click the button to download a JSON key, move it to the fractal
-directory, and call it <tt>service_account_key.json</tt>.</li>
+will not be using it.  Instead, click the button to download a JSON key for the new service account,
+move it to the fractal directory, and call it <tt>service_account_key.json</tt>.</li>
 
 <li>Create a credentials.jsonnet file based on the template, fill in your GCP project name and make
 up some unique passwords.</li>
@@ -336,43 +365,141 @@ Packer images, they can be deleted from the console or from gcloud.</p>
 bringing the whole thing down and up again.  However it is still useful to do this for development
 or testing purposes.  A copy or variant of the production service can be brought up concurrently
 with the production service (e.g. in a different project).  This can be useful for QA, automatic
-integration testing, or load testing.</p>
+integration testing, or load testing.  It is also useful for training new staff or simulating a
+production change in a safe environment.</p>
 
 <h3 id=using_cassandra>Add / Remove Cassandra Nodes</h3>
 
 <p>Managing the Cassandra cluster requires a combination of configuration alteration (to control the
-fundamental compute resources) and use of the Cassandra commandline tool "nodetool".  For example
-"nodetool status fractal" will give information about the cluster.</p>
+fundamental compute resources) and use of the Cassandra commandline tool "nodetool" on the instances
+themselves.  For example "nodetool status fractal" on any Cassandra instance will give information
+about the whole cluster.</p>
 
-<p>To add a new node, simply edit {{service_jsonnet|safe}}, add another instance in the Terraform
-configuration and run make -j.  Confirm the changes (the only change should be the new instance,
-e.g. db4).  It will start up and soon become part of the cluster.</p>
+<p>To add a new node (expand the cluster), simply edit {{service_jsonnet|safe}}, add another
+instance in the Terraform configuration and run make -j.  Confirm the changes (the only change
+should be the new instance, e.g. db4).  It will start up and soon become part of the cluster.</p>
 
 <p>To remove a node, first decommission it using nodetool -h HOSTNAME decommission.  When that is
-complete, update {{service_jsonnet|safe}} to remove the resource and run make -j again.  Confirm the
-removal of the instance.</p>
+complete, destroy the actual instance by updating {{service_jsonnet|safe}} to remove the resource
+and run make -j again.  Confirm the removal of the instance.</p>
 
-<p>If a node is lost (e.g. a disk error), or you removed it without first decommissioning it, the
-cluster will expect it to return at some point (as if it were temporarily powered down or on the
-wrong side of a network split).  This situation an be rectified with nodetool removenode UUID, run
-from any other node in the cluster.  It is probably also necessary to run nodetool repair on the
-other nodes.</p>
+<p>If a node is permanently and unexpectedly lost (e.g. a disk error), or you removed it without
+first decommissioning it, the cluster will expect it to return at some point (as if it were
+temporarily powered down or on the wrong side of a network split).  This situation an be rectified
+with nodetool removenode UUID, run from any other node in the cluster.  It is probably also
+necessary to run nodetool repair on the other nodes to ensure data is properly distributed.</p>
 
 
-<h3 id=using_appserv>Canary Change to Application Server</h3>
+<h3 id=using_appserv>Canary A Change To The Application Server</h3>
 
-Build new image
+<p>To introduce new functionality to the application server it is useful to divert a small
+proportion of user traffic to the new code to ensure it is working properly.  After this initial
+"canary" test has passed, the remaining traffic will be transferred as well.  This process is the
+same for the tile generation service (e.g. to update the C++ code).</p>
 
-Add more nodes
+<p>The model employed by this example is that the application server logic and static content are
+embedded in the application server image.  Canarying consists of building a new image and then
+rolling it out gradually one step at a time.  Each step consists of a small modification to
+{{service_jsonnet|safe}} and then running make -j.</p>
 
-Add to load balancer
+<ol>
 
-watch for errors
+<li>Edit the <tt>appserv.packer.json</tt> packer configuration in {{service_jsonnet|safe}} to update
+the date embedded in the <tt>name</tt> field to the current date, and also make any desired changes
+to the configuration of the image or any of the referenced Python / HTML / CSS files.</li>
 
-if no errors remove original instances from load balancers
+<li>Run make -j to build the new image.  Note that the previous image is still available under the
+old name, which means it is possible to create new instances using either the old or new image.
+This feature is essential to allow ongoing maintenance of the cluster if the change is rolled
+back.</li>
 
-remove instances altogether
+<li>Create a single instance with the new image by adding it to the <tt>google_compute_instance</tt>
+section of {{service_jsonnet|safe}}.  The easiest way to do this is to copy-paste the existing
+definition, and modify the image name in the copy to reflect the new image.  This allows easily
+rolling back by deleting the copied code, and you can also transition the rest of the nodes by
+deleting the original copy.  Thus the duplication is only temporary.  The configuration may look
+like this:
+
+<pre class="large"><code>google_compute_instance: {
+
+    ["appserv" + k]: resource.FractalInstance(k) {
+        name: "appserv" + k,
+        image: "appserv-v20141222-0300",
+        ...
+    }
+    for k in [1, 2, 3]
+
+} + {
+
+    ["appserv" + k]: resource.FractalInstance(k) {
+        name: "appserv" + k,
+        image: "appserv-v20150102-1200",
+        ...
+    }
+    for k in [4]
+
+} + ...
+</code></pre>
+
+Also modify the appserv target pool to add the new instance 4, thus ensuring it receives
+traffic.</li>
+
+<pre class="large"><code>appserv: {
+    name: "appserv",
+    health_checks: ["${google_compute_http_health_check.fractal.name}"],
+    instances: [ "%s/appserv%d" % [zone(k), k] for k in [1, 2, 3, 4] ],
+},
+</code></pre>
+</li>
+
+<li>Run make -j to effect those changes, and monitor the situation to ensure that there is no spike
+in errors.  It is also possible to run make -j between the above two steps if it is desired to
+interact with the new instance before directing user traffic at it.</li>
+
+<li>If there is a problem, pull 4 out of the target pool and re-run make -j.  That will leave the
+instance up (useful for investigation) but it will no-longer receive user traffic.  Otherwise, add
+more instances (5, 6, ...) and add them to the target pool.  You can now start pulling the old
+instances out of the target pool ensuring that there is always sufficient capacity for your traffic
+load.  As always, make -j punctuates the steps.</li>
+
+<li>Once the old instances are drained of user traffic, they can be destroyed.  You can do this in
+batches or one at a time.  Eventually the configuration will look like this, at which point the
+first block no-longer contributes anything to the configuration and it can be deleted. 
+
+<pre class="large"><code>google_compute_instance: {
+
+    ["appserv" + k]: resource.FractalInstance(k) {
+        name: "appserv" + k,
+        image: "appserv-v20141222-0300",
+        ...
+    }
+    for k in []
+
+} + {
+
+    ["appserv" + k]: resource.FractalInstance(k) {
+        name: "appserv" + k,
+        image: "appserv-v20150102-1200",
+        ...
+    }
+    for k in [4, 5, 6]
+
+} + ...
+</code></pre>
+</li>
+
+</ol>
 
 <h2 id=conclusion>Conclusion</h2>
+
+<p>We have shown how Jsonnet can be used to centralize, unify, and manage configuration for a
+realistic cloud application.  We have demonstrated how programming language abstraction techniques
+make the configuration very concise, with re-usable elements separated into template libraries.
+This is in spite of the variety of different configurations, formats, and tasks, that we brought
+under our control.</p>
+
+<p>We demonstrated how with a little procedural glue to drive other processes (make), we were able
+to build an operations methodology where all aspects of running the service are controlled by
+editing a single Jsonnet file and issuing an update command.</p>
 
 {% include 'footer.html.jinja' %}
