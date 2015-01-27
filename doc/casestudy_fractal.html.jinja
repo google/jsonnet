@@ -45,7 +45,7 @@ href="tutorial.html">tutorial</a>, and has a basic knowledge of Packer and Terra
 
 <a href="fractal_screenshot.png"><img src="fractal_screenshot.png" class=thumb></a>
 
-<p>The example application allows the user to zoon and pan a Mandelbrot fractal (dynamically
+<p>The example application allows the user to zoom and pan a Mandelbrot fractal (dynamically
 rendered server side, in C++).  The user is able to
 save the location of features they find, deep in the fractal, and a time-ordered list of these with
 thumbnails is displayed in the left hand pane.  The application is provisionally hosted <a
@@ -141,10 +141,12 @@ therefore as follows (with the content of each file elided for clarity).</p>
 
 <li>{{service_jsonnet|safe}}: The top level file that imports the others.  This is the filename that
 is given to the jsonnet commandline utility.  In it are all the details that define the Fractal
-example application, as a list of packer images and a Terraform configuration.  Note the first few
-lines import the other Jsonnet files and store their contents in top-level scoped variables (of the
-same names).  When we access things from those libraries (e.g. when overriding templates) we will do
-so through the top-level variables.</li>
+example application, as a list of packer images and a Terraform configuration that refers to those
+images.  Note the first few lines import the other Jsonnet files and store their contents in
+top-level scoped variables (of the same names).  When we access things from those libraries (e.g.
+when overriding templates) we will do so through the top-level variables.  Also note the use of
+hidden fields (:: syntax) for things that are referenced within the structure but should not
+appear in the output configuration.</li>
 
 <li><tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud Platform
 project name.  You must create this file yourself.  For convenience, there is a  <a
@@ -178,11 +180,12 @@ demonstrates the productivity benefits of using template expansion when writing 
 
 <h3 id=config_whirlwind>Whirlwind Tour</h3>
 
-<p> The fractal example is a complete application and therefore its configuration is quite long and
-technical.  It also embeds configurations for the various pieces of off-the-shelf software used, so
-quite a lot of domain knowledge is required to fully understand it.  Our intention in this article
-is merely to highlight some of the more interesting features.  We'll gladly field specific questions
-on the <a href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
+<p> The fractal example is a complete realistic application and therefore its configuration has many
+technical details.  In particular, it also embeds configurations for the various pieces of
+off-the-shelf software used, so knowledge of that software is required to fully understand it.
+However we would like to draw attention to some particular uses of Jsonnet within the configuration.
+We'll gladly field specific questions on the <a
+href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
 
 
 <h4>Packer And Application Configuration</h4>
