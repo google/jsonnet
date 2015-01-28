@@ -215,6 +215,10 @@ pre > code.language-jsonnet {
     font-size: 7.5pt;
 }
 
+pre.medium > code.language-jsonnet {
+    font-size: 9.5pt;
+}
+
 pre.large > code.language-jsonnet {
     font-size: 11pt;
 }
