@@ -192,6 +192,7 @@ std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
 std.assertEqual(std.escapeStringBash("he\"l'lo"), "'he\"l'\"'\"'lo'") &&
+std.assertEqual(std.escapeStringDollars("The path is ${PATH}."), "The path is $${PATH}.") &&
 
 std.assertEqual(std.manifestPython({
     x: "test",

@@ -146,6 +146,12 @@ changing them to a sequence <tt>'"'"'</tt>.  This allows injection of arbitrary 
 of commands in bash scripts.</p>
 
 
+<h4>std.escapeStringDollars(str)</h4>
+
+<p>Convert $ to $$ in <code>str</code>.  This allows injection of arbitrary strings into systems
+that use $ for string interpolation (like Terraform).</p>
+
+
 <h4>std.escapeStringJson(str)</h4>
 
 <p>Convert <code>str</code> to allow it to be embedded in a JSON representation, within a string.  This adds quotes, escapes backslashes, and escapes unprintable characters.</p>

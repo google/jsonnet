@@ -657,6 +657,15 @@ limitations under the License.
                 ch;
         "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
 
+    escapeStringDollars(str_)::
+        local str = std.toString(str_);
+        local trans(ch) =
+            if ch == "$" then
+                "$$"
+            else
+                ch;
+        std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+
     manifestPython(o)::
         if std.type(o) == "object" then
             local fields = ["%s: %s" % [std.escapeStringPython(k), std.manifestPython(o[k])]
