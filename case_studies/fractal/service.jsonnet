@@ -164,7 +164,6 @@ local credentials = import "credentials.jsonnet";
         provider: {
             google: {
                 account_file: "service_account_key.json",
-                client_secrets_file: "service_account_key.json",
                 project: credentials.project,
                 region: "us-central1",
             }
