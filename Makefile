@@ -54,13 +54,12 @@ default: jsonnet
 
 all: $(ALL)
 
+TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
-	./jsonnet -e "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
-	ldd libjsonnet_test_snippet
-	ls -l
-	./libjsonnet_test_snippet "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
-	./libjsonnet_test_file "test_suite/object.jsonnet"
-	$(PYTHON) jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	./jsonnet -e $(TEST_SNIPPET)
+	LD_PRELOAD=libjsonnet.so ./libjsonnet_test_snippet $(TEST_SNIPPET)
+	LD_PRELOAD=libjsonnet.so ./libjsonnet_test_file "test_suite/object.jsonnet"
+	$(PYTHON) jsonnet_test_snippet.py $(TEST_SNIPPET)
 	$(PYTHON) jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
 	cd test_suite ; ./run_tests.sh
@@ -83,10 +82,10 @@ doc/libjsonnet.js: libjsonnet.js
 
 # Tests for C binding.
 libjsonnet_test_snippet: libjsonnet_test_snippet.c libjsonnet.so libjsonnet.h
-	$(CC) $(CFLAGS) $(LDFLAGS) $< libjsonnet.so -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
 
 libjsonnet_test_file: libjsonnet_test_file.c libjsonnet.so libjsonnet.h
-	$(CC) $(CFLAGS) $(LDFLAGS) $< libjsonnet.so -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
 
 # Python binding.
 _jsonnet.o: _jsonnet.c
