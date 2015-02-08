@@ -15,7 +15,7 @@
 CONTEXT = header.html.jinja footer.html.jinja ../examples/*.jsonnet ../examples/*.jsonnet.golden
 PAGES = index.html \
 		userdocs.html tutorial.html demo.html stdlib.html \
-		casestudies.html casestudy_fractal.html \
+		casestudies.html casestudy_fractal.1.html casestudy_fractal.2.html casestudy_fractal.3.html \
         language.html design.html comparisons.html spec.html \
 		implementation.html commandline.html bindings.html cpp.html javascript.html tests.html \
 		contributing.html

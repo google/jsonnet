@@ -155,7 +155,7 @@
     <li id="menu_casestudies">
         <a href="casestudies.html" onmouseover="menu_open(this)" onmouseout="menu_leave()">Case Studies</a>
         <div onmouseover="menu_open(this)" onmouseout="menu_leave()">
-            <a href="casestudy_fractal.html">Fractal</a>
+            <a href="casestudy_fractal.1.html">Fractal</a>
         </div>
     </li>
 
@@ -333,6 +333,12 @@ The <code>%</code> operator can be used as a shorthand for this function.  </p>
 <p>Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code> by
 changing them to a sequence <tt>'"'"'</tt>.  This allows injection of arbitrary strings as arguments
 of commands in bash scripts.</p>
+
+
+<h4>std.escapeStringDollars(str)</h4>
+
+<p>Convert $ to $$ in <code>str</code>.  This allows injection of arbitrary strings into systems
+that use $ for string interpolation (like Terraform).</p>
 
 
 <h4>std.escapeStringJson(str)</h4>

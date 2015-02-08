@@ -270,6 +270,20 @@ p.try_it_out {
     font-size: 130%;
 }
 
+p.jump_to_page {
+    text-align: right;
+    margin: 8px;
+}
+
+p.jump_to_page_top {
+    float: right;
+    font-size: 11pt;
+}
+
+p.jump_to_page_top a:visited {
+    color: #ffffff
+}
+
 img.thumb {
     float: right;
     max-width:200px;
