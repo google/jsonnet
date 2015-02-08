@@ -13,17 +13,43 @@ Case Study: Fractal Cloud Application
 
 <h2 id=config>Configuration Structure</h2>
 
-<p>This example is configured with a single Jsonnet <i>configuration</i>, which is logically
-separated into several files via <code>import</code> constructs.  This is to promote abstraction
-and re-usability, as well as having a separate credentials file (to avoid accidental checkin).  Note
-that Jsonnet did not mandate this structure; other separations (or a giant single file) would also
-have been possible.</p>
+<p>In this section we describe the ways in which Jsonnet aids with the configuration of the Fractal
+application.  These are the three main productivity benefits when using Jsonnet:</p>
 
-<p>This single configuration yields a JSON packer configuration for each image (*.packer.json)
-and the JSON Terraform configuration (terraform.tf), using <a href="commandline.html#multi">multiple
-file output</a>.  Those configurations in turn embed other configurations for the application
-software that will run on the instances.  The top-level structure of the generated configuration is
-therefore as follows (with the content of each file elided for clarity).</p>
+<ul>
+
+<li>Centralization:  Bringing all configuration into the same place, where it can be maintained as a
+single entity in a uniform format.  This allows maintaining the application as an application and
+not as a disparate set of components.</li>
+
+<li>Error avoidance:  Values that must be synchronized between different parts of the configuration
+can be factored out to a single variable, so that they are easy to maintain and never go out of
+sync.  For example the Tile Generation Service contains an Nginx configuration to listen on a
+particular port, but that port must also be open in the firewall configuration, and known to the
+clients that need to connect to it.  Specifying this port only once makes it a lot easier to avoid
+errors when changing the port later on.</li>
+
+<li>Brevity:  Given a large number of similar definitions, Jsonnet's object model allows abstracting
+the common parts into templates that can be instantiated very concisely.  For example all cloud
+instances have some common configuration, and the two HTTP services are also very similar.  Each
+instantiation of a template can override specific details in order to express how it deviates from
+the norm.  The net result is a reduction in the line count as well as making those critical
+differences between definitions more clear and not lost in a sea of repeated data.</li>
+
+</ul>
+
+<p>The configuration is logically separated into several files via <code>import</code> constructs.
+This is to promote abstraction and re-usability (some of our templates could be used by other
+applications, so are separated into libraries), as well as having a separate credentials file (to
+avoid accidental checkin).  Note that Jsonnet did not mandate this file structure; other separations
+(or a giant single file) would also have been possible.</p>
+
+<p>When the imports are realized, the result is a single configuration which yields a JSON packer
+configuration for each image (*.packer.json) and the JSON Terraform configuration (terraform.tf),
+using <a href="commandline.html#multi">multiple file output</a>.  Those configurations in turn embed
+other configurations for the application software that will run on the instances.  The top-level
+structure of the generated configuration is therefore as follows (with the content of each file
+elided for clarity).</p>
 
 <pre class="medium"><code>{
     "appserv.packer.json": ...,
@@ -53,16 +79,16 @@ therefore as follows (with the content of each file elided for clarity).</p>
 
 <li>{{service_jsonnet|safe}}: The top level file that imports the others.  This is the filename that
 is given to the jsonnet command line utility.  In it are all the details that define the Fractal
-example application, as a list of packer images and a Terraform configuration that refers to those
-images.  Note the first few lines import the other Jsonnet files and store their contents in
-top-level scoped variables (of the same names).  When we access definitions from those libraries
-(e.g.  templates to override) we do so through the top-level variables.  Also note the use of hidden
-fields (:: syntax) for fields that are referenced within the structure but should not appear in the
-output configuration.</li>
+example application, as a list of packer images and a Terraform configuration that creates cloud
+instances using those images.  Note the first few lines import the other Jsonnet files and store
+their contents in top-level scoped variables (of the same names).  When we access definitions from
+those libraries (e.g.  templates to override) we do so through the top-level variables.  Also note
+the use of hidden fields (:: syntax) for fields that are referenced within the structure but should
+not appear in the output configuration.</li>
 
 <li><tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud Platform
 project name.  You must create this file yourself, based on this <a
-href="{{srcroot}}/fractal/credentials.jsonnet.TEMPLATE">template file</a>.</li>
+href="{{srcroot}}/fractal/credentials.jsonnet.TEMPLATE">sample file</a>.</li>
 
 <li>{{packer_jsonnet|safe}}: Some templates to help with writing Packer configurations.</li>
 
