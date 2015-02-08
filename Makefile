@@ -56,6 +56,8 @@ all: $(ALL)
 
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
 	./jsonnet -e "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
+	ldd libjsonnet_test_snippet
+	ls -l
 	./libjsonnet_test_snippet "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 	./libjsonnet_test_file "test_suite/object.jsonnet"
 	$(PYTHON) jsonnet_test_snippet.py "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
