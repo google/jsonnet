@@ -57,8 +57,8 @@ all: $(ALL)
 TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
 	./jsonnet -e $(TEST_SNIPPET)
-	LD_PRELOAD=./libjsonnet.so ./libjsonnet_test_snippet $(TEST_SNIPPET)
-	LD_PRELOAD=./libjsonnet.so ./libjsonnet_test_file "test_suite/object.jsonnet"
+	LD_LIBRARY_PATH=. ./libjsonnet_test_snippet $(TEST_SNIPPET)
+	LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet"
 	$(PYTHON) jsonnet_test_snippet.py $(TEST_SNIPPET)
 	$(PYTHON) jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
