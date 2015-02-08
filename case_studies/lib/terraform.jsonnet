@@ -25,7 +25,7 @@ limitations under the License.
         image:: error "Instance must have field: image",
         address:: null,
 
-        scopes:: ["devstorage.read_only"],
+        scopes:: ["devstorage.read_only", "logging.write"],
 
         service_account: [
             {
@@ -50,18 +50,24 @@ limitations under the License.
             "startup-script": std.lines(instance.startup_script),
         },
 
-        network: {
-            source: "default",
-            [if instance.address != null then "address"]: instance.address,
-        },
+        network_interface: [{
+            network: "default",
+            access_config: if instance.address != null then [
+                { nat_ip: instance.address }
+            ] else [
+                { }
+            ]
+        }],
 
     },
 
     // Allow http for servers tagged with "http-server" on the given network.
     GcpFirewallHttp:: {
+        local fw = self,
         source_ranges: ["0.0.0.0/0"],
+        port:: 80,
         network: error "GcpFirewallHttp must have field: network",
-        allow: [{ protocol: "tcp", ports: ["80"] }],
+        allow: [{ protocol: "tcp", ports: [std.toString(fw.port)] }],
         target_tags: ["http-server"],
     },
 
