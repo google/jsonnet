@@ -70,9 +70,10 @@ struct JsonnetVm {
     std::map<std::string, std::string> extVars;
     JsonnetImportCallback *importCallback;
     void *importCallbackContext;
+    bool stringOutput;
     JsonnetVm(void)
       : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20),
-        importCallback(default_import_callback), importCallbackContext(this)
+        importCallback(default_import_callback), importCallbackContext(this), stringOutput(false)
     { }
 };
 
@@ -99,6 +100,11 @@ void jsonnet_gc_min_objects(JsonnetVm *vm, unsigned v)
 void jsonnet_gc_growth_trigger(JsonnetVm *vm, double v)
 {
     vm->gcGrowthTrigger = v;
+}
+
+void jsonnet_string_output(struct JsonnetVm *vm, int v)
+{
+    vm->stringOutput = bool(v);
 }
 
 void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, void *ctx)
@@ -139,11 +145,13 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
             if (multi) {
                 files = jsonnet_vm_execute_multi(alloc, expr, vm->extVars, vm->maxStack,
                                                  vm->gcMinObjects, vm->gcGrowthTrigger,
-                                                 vm->importCallback, vm->importCallbackContext);
+                                                 vm->importCallback, vm->importCallbackContext,
+                                                 vm->stringOutput);
             } else {
                 json_str = jsonnet_vm_execute(alloc, expr, vm->extVars, vm->maxStack,
                                               vm->gcMinObjects, vm->gcGrowthTrigger,
-                                              vm->importCallback, vm->importCallbackContext);
+                                              vm->importCallback, vm->importCallbackContext,
+                                              vm->stringOutput);
             }
         }
         if (multi) {

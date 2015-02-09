@@ -35,6 +35,9 @@ void jsonnet_gc_min_objects(struct JsonnetVm *vm, unsigned v);
 /** Run the garbage collector after this amount of growth in the number of objects. */
 void jsonnet_gc_growth_trigger(struct JsonnetVm *vm, double v);
 
+/** Expect a string as output and don't JSON encode it. */
+void jsonnet_string_output(struct JsonnetVm *vm, int v);
+
 /** Callback used to load imports.
  *
  * The returned char* should be allocated with jsonnet_realloc.  It will be cleaned up by
@@ -88,7 +91,8 @@ char *jsonnet_evaluate_file(struct JsonnetVm *vm,
  *
  * The returned string should be cleaned up with jsonnet_realloc.
  *
- * \param filename Path to a file containing Jsonnet code.
+ * \param filename Path to a file (used in error messages).
+ * \param snippet Jsonnet code to execute.
  * \param error Return by reference whether or not there was an error.
  * \returns Either JSON or the error message.
  */
@@ -116,6 +120,7 @@ char *jsonnet_evaluate_file_multi(struct JsonnetVm *vm,
  * JSON file interleaved.  It should be cleaned up with jsonnet_realloc.
  *
  * \param filename Path to a file containing Jsonnet code.
+ * \param snippet Jsonnet code to execute.
  * \param error Return by reference whether or not there was an error.
  * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
  */

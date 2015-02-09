@@ -2121,8 +2121,17 @@ namespace {
             return ss.str();
         }
 
-        // manifest the JSON assuming the result is an object.
-        StrMap manifestJsonMulti(void)
+        std::string manifestString(const LocationRange &loc)
+        {
+            if (scratch.t != Value::STRING) {
+                std::stringstream ss;
+                ss << "Expected string result, got: " << type_str(scratch.t);
+                throw makeError(loc, ss.str());
+            }
+            return static_cast<HeapString*>(scratch.v.h)->value;
+        }
+
+        StrMap manifestMulti(bool string)
         {
             StrMap r;
             LocationRange loc("During manifestation");
@@ -2144,7 +2153,8 @@ namespace {
                 stack.top().val = scratch;
                 stack.top().noTailCall = true;
                 evaluate(body);
-                auto vstr = manifestJson(body->location, true, "");
+                auto vstr = string ? manifestString(body->location)
+                                   : manifestJson(body->location, true, "");
                 // Reset scratch so that the object we're manifesting doesn't
                 // get GC'd.
                 scratch = stack.top().val;
@@ -2162,21 +2172,27 @@ std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
                                const StrMap &ext_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger,
-                               JsonnetImportCallback *import_callback, void *ctx)
+                               JsonnetImportCallback *import_callback, void *ctx,
+                               bool string_output)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
                    import_callback, ctx);
     vm.evaluate(ast);
-    return vm.manifestJson(LocationRange("During manifestation"), true, "");
+    if (string_output) {
+        return vm.manifestString(LocationRange("During manifestation"));
+    } else {
+        return vm.manifestJson(LocationRange("During manifestation"), true, "");
+    }
 }
 
 StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &ext_vars,
                                 unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-                                JsonnetImportCallback *import_callback, void *ctx)
+                                JsonnetImportCallback *import_callback, void *ctx,
+                                bool string_output)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
                    import_callback, ctx);
     vm.evaluate(ast);
-    return vm.manifestJsonMulti();
+    return vm.manifestMulti(string_output);
 }
 

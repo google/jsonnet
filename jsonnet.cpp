@@ -151,6 +151,7 @@ void usage(std::ostream &o)
     o << "  -V / --var <var>=<val>  Specify an 'external' var to the given value\n";
     o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
     o << "  -m / --multi            Write multiple files, list files on stdout\n";
+    o << "  -S / --string           Expect a string, manifest as plain text\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
@@ -186,6 +187,7 @@ int main(int argc, const char **argv)
     JsonnetVm *vm = jsonnet_make();
     std::string filename = "-";
     bool filename_is_code = false;
+        
     bool multi = false;
 
     auto args = simplify_args(argc, argv);
@@ -271,6 +273,8 @@ int main(int argc, const char **argv)
             filename_is_code = true;
         } else if (arg == "-m" || arg == "--multi") {
             multi = true;
+        } else if (arg == "-S" || arg == "--string") {
+            jsonnet_string_output(vm, 1);
         } else if (arg == "--debug-ast") {
             jsonnet_debug_ast(vm, true);
         } else if (arg == "--") {

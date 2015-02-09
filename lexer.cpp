@@ -51,6 +51,7 @@ static bool is_symbol(char c)
         case '&': case '|': case '^':
         case '=': case '<': case '>':
         case '*': case '/': case '%':
+        case '#':
         return true;
     }
     return false;
@@ -498,8 +499,19 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                 }
             } else if (is_symbol(*c)) {
 
-                // Single line comment
+                // Single line C++ style comment
                 if (*c == '/' && *(c+1) == '/') {
+                    while (*c != '\0' && *c != '\n') {
+                        ++c;
+                    }
+                    // Leaving it on the \n allows processing of \n on next iteration,
+                    // i.e. managing of the line & column counter.
+                    c--;
+                    continue;
+                }
+
+                // Single line # comment
+                if (*c == '#') {
                     while (*c != '\0' && *c != '\n') {
                         ++c;
                     }
