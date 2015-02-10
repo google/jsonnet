@@ -28,15 +28,15 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int debug_ast = 0, error;
-    PyObject *env = NULL;
+    PyObject *ext_vars = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
+    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", NULL};
 
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOiI", kwlist,
                                      &filename,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &env, &debug_ast, &max_trace)) {
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars, &debug_ast, &max_trace)) {
         return NULL;
     }
 
@@ -46,11 +46,11 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
     jsonnet_debug_ast(vm, debug_ast);
-    if (env != NULL) {
+    if (ext_vars != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
         
-        while (PyDict_Next(env, &pos, &key, &val)) {
+        while (PyDict_Next(ext_vars, &pos, &key, &val)) {
             const char *key_ = PyString_AsString(key);
             if (key_ == NULL) {
                 jsonnet_destroy(vm);
@@ -86,15 +86,15 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int debug_ast = 0, error;
-    PyObject *env = NULL;
+    PyObject *ext_vars = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "env", "debug_ast", "max_trace", NULL};
+    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", NULL};
 
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOiI", kwlist,
                                      &filename, &src,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &env, &debug_ast, &max_trace)) {
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars, &debug_ast, &max_trace)) {
         return NULL;
     }
 
@@ -104,11 +104,11 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
     jsonnet_debug_ast(vm, debug_ast);
-    if (env != NULL) {
+    if (ext_vars != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
         
-        while (PyDict_Next(env, &pos, &key, &val)) {
+        while (PyDict_Next(ext_vars, &pos, &key, &val)) {
             const char *key_ = PyString_AsString(key);
             if (key_ == NULL) {
                 jsonnet_destroy(vm);
