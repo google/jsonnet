@@ -1,0 +1,18 @@
+* text=auto
+
+*.py text
+*.cpp text
+*.c text
+*.h text
+*.jsonnet text
+*.jinja text
+*.html text
+README text
+*.TEMPLATE text
+*.css text
+Makefile text
+
+# These tests are explicitly given specific line endings
+tests/unix_line_endings.jsonnet text eol=lf
+tests/dos_line_endings.jsonnet text eol=crlf
+

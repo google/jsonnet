@@ -236,7 +236,7 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
         switch (*c) {
 
             // Skip non-\n whitespace
-            case ' ': case '\t':
+            case ' ': case '\t': case '\r':
             continue;
 
             // Skip \n and maintain line numbers
@@ -551,7 +551,11 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                 kind = Token::OPERATOR;
             } else {
                 std::stringstream ss;
-                ss << "Could not lex the character '" << *c << "'";
+                ss << "Could not lex the character ";
+                if (*c < 32)
+                    ss << "code " << int(*c);
+                else
+                    ss << "'" << *c << "'";
                 throw StaticError(filename, begin, ss.str());
             }
             break;
