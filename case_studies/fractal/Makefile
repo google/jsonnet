@@ -33,5 +33,10 @@ terraform.done: terraform.tf
 	@test -e terraform.plan || exit 1
 	@read -r -p "Are you sure? [y/N] " response && case "$$response" in [yY][eE][sS]|[yY]) terraform apply terraform.plan && cp $< $@ ;;  esac
 
+destroy:
+	@echo "======== DESTROYING DEPLOYMENT ======== "
+	@rm -vf terraform.plan terraform.done
+	@terraform destroy -force
+
 clean:
 	rm -fv service.list *.packer.log *.packer.json *~ *.packer.done *.tf
