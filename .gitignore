@@ -28,4 +28,5 @@ case_studies/fractal/*.pyc
 case_studies/fractal/*.tfstate
 case_studies/fractal/*.tfstate.backup
 case_studies/fractal/credentials.jsonnet
+case_studies/fractal-prod
 
