@@ -27,17 +27,17 @@ local credentials = import "credentials.jsonnet";
     // GENERAL CONFIGURATION //
     ///////////////////////////
 
-    tilegenPort:: 8080,
+    local tilegenPort = 8080,
 
-    cassandraUser:: "fractal",  // Password in credentials import.
-    cassandraKeyspace:: "fractal",
-    cassandraReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 2 }",
+    local cassandraUser = "fractal",  // Password in credentials import.
+    local cassandraKeyspace = "fractal",
+    local cassandraReplication = "{ 'class' : 'SimpleStrategy', 'replication_factor' : 2 }",
 
     // These are the nodes the application server attempts to use (client-side load balancing).
-    cassandraNodes:: ["db1", "db2", "db3", "db4", "db5"],
+    local cassandraNodes = ["db1", "db2", "db3", "db4", "db5"],
 
     // The Cassandra configuration file we use for this service.
-    cassandraConf:: cassandra.conf {
+    local cassandraConf = cassandra.conf {
         cluster_name: "Fractal Cluster",
         rpc_address:: null,  // Unset by making it hidden (::).
         listen_address:: null,  // Unset by making it hidden (::).
@@ -45,7 +45,7 @@ local credentials = import "credentials.jsonnet";
         seed_provider: [
             {
                 class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                parameters: [ { seeds: std.join(", ", $.cassandraNodes) } ],
+                parameters: [ { seeds: std.join(", ", cassandraNodes) } ],
             },
         ],
     },
@@ -55,10 +55,10 @@ local credentials = import "credentials.jsonnet";
         "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
         + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),
 
-    cassandraInitCql:: [
-        "CREATE USER %s WITH PASSWORD '%s';" % [$.cassandraUser, credentials.cassandraUserPass],
-        "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [$.cassandraKeyspace, $.cassandraReplication],
-        "USE %s;" % $.cassandraKeyspace,
+    local cassandraInitCql = [
+        "CREATE USER %s WITH PASSWORD '%s';" % [cassandraUser, credentials.cassandraUserPass],
+        "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [cassandraKeyspace, cassandraReplication],
+        "USE %s;" % cassandraKeyspace,
         "CREATE TABLE discoveries("
         + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
         + "PRIMARY KEY(Date, TimeId));",
@@ -78,15 +78,15 @@ local credentials = import "credentials.jsonnet";
     ],
 
     // Configuration shared by the application server and tile generation nodes.
-    ApplicationConf:: {
+    local ApplicationConf = {
         width: 256,
         height: 256,
         thumb_width: 64,
         thumb_height: 64,
         iters: 200,
-        database: $.cassandraKeyspace,
-        tilegen: "${google_compute_address.tilegen.address}:%d" % $.tilegenPort,
-        db_endpoints: $.cassandraNodes,
+        database: cassandraKeyspace,
+        tilegen: "${google_compute_address.tilegen.address}:%d" % tilegenPort,
+        db_endpoints: cassandraNodes,
     },
 
     ///////////////////////////
@@ -94,7 +94,7 @@ local credentials = import "credentials.jsonnet";
     ///////////////////////////
 
     // Some config used in every Packer image we create.
-    ImageMixin:: {
+    local ImageMixin = {
         project_id: credentials.project,
         account_file: "service_account_key.json",
 
@@ -105,11 +105,11 @@ local credentials = import "credentials.jsonnet";
 
     // An Nginx/uwsgi/flask installation is used to serve HTTP on the application server and tile
     // generators.
-    MyFlaskImage:: packer.GcpDebianNginxUwsgiFlaskImage + $.ImageMixin,
+    local MyFlaskImage = packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin,
 
     // Frontend image.
-    "appserv.packer.json": $.MyFlaskImage {
-        name: "appserv-v20150128-1807",
+    "appserv.packer.json": MyFlaskImage {
+        name: "appserv-v20150223-0032",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
@@ -127,20 +127,20 @@ local credentials = import "credentials.jsonnet";
     },
 
     // The Cassandra image is basic, but more configuration is done at deployment time.
-    "cassandra.packer.json": cassandra.GcpDebianImage + $.ImageMixin {
-        name: "cassandra-v20150128-1807",
+    "cassandra.packer.json": cassandra.GcpDebianImage + ImageMixin {
+        name: "cassandra-v20150223-0032",
         rootPassword: credentials.cassandraRootPass,
-        clusterName: $.cassandraConf.cluster_name,
+        clusterName: cassandraConf.cluster_name,
     },
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
-    "tilegen.packer.json": $.MyFlaskImage {
-        name: "tilegen-v20150206-1850",
+    "tilegen.packer.json": MyFlaskImage {
+        name: "tilegen-v20150223-1645",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
 
-        port: $.tilegenPort,
+        port: tilegenPort,
 
         // Copy the flask handlers and also build the C++ executable.
         provisioners +: [
@@ -177,7 +177,6 @@ local credentials = import "credentials.jsonnet";
 
         // The deployed resources.
         resource: {
-            local resource = self,
 
             // Instances are assigned zones on a round robin scheme.
             local zone(hash) =
@@ -210,7 +209,7 @@ local credentials = import "credentials.jsonnet";
                 },
                 tilegen: {
                     name: "tilegen",
-                    port: $.tilegenPort,
+                    port: tilegenPort,
                 },
             },
 
@@ -223,7 +222,7 @@ local credentials = import "credentials.jsonnet";
                 tilegen: {
                     name: "tilegen",
                     health_checks: ["${google_compute_http_health_check.tilegen.name}"],
-                    instances: [ "%s/tilegen%d" % [zone(k), k] for k in [1, 2, 3, 4] ],
+                    instances: [ "%s/tilegen%d" % [zone(k), k] for k in [1, 2, 3, 4, 5] ],
                 },
             },
 
@@ -238,22 +237,22 @@ local credentials = import "credentials.jsonnet";
                     ip_address: "${google_compute_address.tilegen.address}",
                     name: "tilegen",
                     target: "${google_compute_target_pool.tilegen.self_link}",
-                    port_range: $.tilegenPort,
+                    port_range: tilegenPort,
                 }
             },
 
             // Open ports for the various services, to instances (identified by tags)
             google_compute_firewall: {
-                NetworkMixin:: { network: "${google_compute_network.fractal.name}", },
-                ssh: terraform.GcpFirewallSsh + self.NetworkMixin { name: "ssh" },
-                appserv: terraform.GcpFirewallHttp + self.NetworkMixin { name: "appserv" },
-                tilegen: terraform.GcpFirewallHttp + self.NetworkMixin { name: "tilegen", port: $.tilegenPort },
-                cassandra: cassandra.GcpFirewall + self.NetworkMixin { name: "cassandra" },
-                gossip: cassandra.GcpFirewallGossip + self.NetworkMixin { name: "gossip" },
+                local NetworkMixin = { network: "${google_compute_network.fractal.name}", },
+                ssh: terraform.GcpFirewallSsh + NetworkMixin { name: "ssh" },
+                appserv: terraform.GcpFirewallHttp + NetworkMixin { name: "appserv" },
+                tilegen: terraform.GcpFirewallHttp + NetworkMixin { name: "tilegen", port: tilegenPort },
+                cassandra: cassandra.GcpFirewall + NetworkMixin { name: "cassandra" },
+                gossip: cassandra.GcpFirewallGossip + NetworkMixin { name: "gossip" },
             },
 
             // All our instances share this configuration.
-            FractalInstance(zone_hash):: terraform.GcpInstance {
+            local FractalInstance(zone_hash) = terraform.GcpInstance {
                 network_interface: [super.network_interface[0] + {network: "${google_compute_network.fractal.name}"} ],
                 tags +: ["fractal"],
                 scopes +: ["devstorage.full_control"],
@@ -261,14 +260,14 @@ local credentials = import "credentials.jsonnet";
             },
 
             // The various kinds of Cassandra instances all share this basic configuration.
-            CassandraInstance(zone_hash):: self.FractalInstance(zone_hash) {
-                image: "cassandra-v20150128-1807",
+            local CassandraInstance(zone_hash) = FractalInstance(zone_hash) {
+                image: "cassandra-v20150223-0032",
                 machine_type: "n1-standard-1",
                 tags +: ["fractal-db", "cassandra-server"],
-                user:: $.cassandraUser,
+                user:: cassandraUser,
                 userPass:: credentials.cassandraUserPass,
                 rootPass:: credentials.cassandraRootPass,
-                conf:: $.cassandraConf,
+                conf:: cassandraConf,
             },
 
             google_compute_instance: {
@@ -276,12 +275,12 @@ local credentials = import "credentials.jsonnet";
                 // The application server instances have database credentials and the address of the
                 // tilegen loadbalancer.  This is all stored in a conf.json, read by the python
                 // code.
-                ["appserv" + k]: resource.FractalInstance(k) {
+                ["appserv" + k]: FractalInstance(k) {
                     name: "appserv" + k,
-                    image: "appserv-v20150128-1807",
-                    conf:: $.ApplicationConf {
-                        database_name: $.cassandraKeyspace,
-                        database_user: $.cassandraUser,
+                    image: "appserv-v20150223-0032",
+                    conf:: ApplicationConf {
+                        database_name: cassandraKeyspace,
+                        database_user: cassandraUser,
                         database_pass: credentials.cassandraUserPass,
                     },
                     tags +: ["fractal-appserv", "http-server"],
@@ -295,20 +294,20 @@ local credentials = import "credentials.jsonnet";
                 // in parallel, one of which is special and creates the initial database.  The other
                 // two join it.  Note the two different mixins used to control that behavior.
 
-                db1: resource.CassandraInstance(1) + cassandra.GcpStarterMixin {
+                db1: CassandraInstance(1) + cassandra.GcpStarterMixin {
                     name: "db1",
                     // Replication of the system_auth table (user credentials).
-                    authReplication:: $.cassandraReplication,
+                    authReplication:: cassandraReplication,
                     // The CQL code is used to bootstrap the database.
-                    initCql:: $.cassandraInitCql,
+                    initCql:: cassandraInitCql,
                 },
 
                 // TopUpMixin creates an empty Cassandra node which can join an existing cluster.
-                db2: resource.CassandraInstance(2) + cassandra.GcpTopUpMixin {
+                db2: CassandraInstance(2) + cassandra.GcpTopUpMixin {
                     name: "db2",
                 },
 
-                db3: resource.CassandraInstance(3) + cassandra.GcpTopUpMixin {
+                db3: CassandraInstance(3) + cassandra.GcpTopUpMixin {
                     name: "db3",
                 },
 
@@ -320,7 +319,7 @@ local credentials = import "credentials.jsonnet";
                 // removenode <UUID>.  It is possible to completely recycle the nodes (including the
                 // first node) without data loss as long as nodetool is used judiciously.
                 /*
-                db4: resource.CassandraInstance(4) + cassandra.GcpTopUpMixin {
+                db4: CassandraInstance(4) + cassandra.GcpTopUpMixin {
                     name: "db4",
                 },
                 */
@@ -328,11 +327,11 @@ local credentials = import "credentials.jsonnet";
             } + {
                 // The tile generation instances are similar to the application server ones, but do
                 // not require database credentials so these are omitted for security.
-                ["tilegen" + k]: resource.FractalInstance(k) {
+                ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
-                    image: "tilegen-v20150206-1850",
+                    image: "tilegen-v20150223-1500",
                     tags +: ["fractal-tilegen", "http-server"],
-                    startup_script +: [self.addFile($.ApplicationConf, "/var/www/conf.json")],
+                    startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3, 4]
             }
