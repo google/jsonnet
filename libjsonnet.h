@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/** \file This file is a library interface for evaluating Jsonnet.  It is written in C++ but exposes
- * a C interface for easier wrapping by other languages.  See \see jsonnet_lib_test.c for an example
+/** This file is a library interface for evaluating Jsonnet.  It is written in C++ but exposes
+ * a C interface for easier wrapping by other languages.  See jsonnet_lib_test.c for an example
  * of using the library.
  */
 
