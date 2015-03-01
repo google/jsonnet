@@ -180,6 +180,11 @@ long strtol_check(const std::string &str)
 
 int main(int argc, const char **argv)
 {
+    if (1 == argc) {
+        usage(std::cout);
+        return EXIT_SUCCESS;
+    }
+
     std::vector<std::string> jpaths;
     jpaths.emplace_back("/usr/share/" JSONNET_VERSION "/");
     jpaths.emplace_back("/usr/local/share/" JSONNET_VERSION "/");
