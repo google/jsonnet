@@ -142,11 +142,11 @@ void usage(std::ostream &o)
 {
     version(o);
     o << "Usage:\n";
-    o << "jsonnet {<option>} [<filename>]\n";
-    o << "where <filename> defaults to - (stdin)\n";
+    o << "jsonnet {<option>} <filename>\n";
+    o << "where <filename> can be - (stdin)\n";
     o << "and <option> can be:\n";
     o << "  -h / --help             This message\n";
-    o << "  -e / --exec             Treat filename as code (requires explicit filename)\n";
+    o << "  -e / --exec             Treat filename as code\n";
     o << "  -J / --jpath <dir>      Specify an additional library search dir\n";
     o << "  -V / --var <var>=<val>  Specify an 'external' var to the given value\n";
     o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
@@ -185,7 +185,6 @@ int main(int argc, const char **argv)
     jpaths.emplace_back("/usr/local/share/" JSONNET_VERSION "/");
 
     JsonnetVm *vm = jsonnet_make();
-    std::string filename = "-";
     bool filename_is_code = false;
         
     bool multi = false;
@@ -288,18 +287,19 @@ int main(int argc, const char **argv)
     }
 
 
-    if (remaining_args.size() > 0)
-        filename = remaining_args[0];
+    const char *want = filename_is_code ? "code" : "filename";
 
-    if (remaining_args.size() > 1) {
-        std::cerr << "ERROR: Filename already specified as \"" << filename << "\"\n"
-                  << std::endl;
+    if (remaining_args.size() == 0) {
+        std::cerr << "ERROR: Must give " << want << "\n" << std::endl;
         usage(std::cerr);
         return EXIT_FAILURE;
     }
 
-    if (filename_is_code && remaining_args.size() == 0) {
-        std::cerr << "ERROR: Must give filename when using -e, --exec\n" << std::endl;
+    std::string filename = remaining_args[0];
+
+    if (remaining_args.size() > 1) {
+        std::cerr << "ERROR: Already specified " << want << " as \"" << filename << "\"\n"
+                  << std::endl;
         usage(std::cerr);
         return EXIT_FAILURE;
     }
