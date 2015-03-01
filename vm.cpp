@@ -14,26 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <cstdlib>
+#include "vm.h"
+
 #include <cassert>
 #include <cmath>
-#include <cerrno>
-#include <cstring>
 
-#include <map>
-#include <memory>
 #include <set>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <string>
 
-#include "ast.h"
-
 #include "parser.h"
-#include "static_analysis.h"
-#include "vm.h"
 #include "state.h"
+#include "static_analysis.h"
 
 namespace {
 
