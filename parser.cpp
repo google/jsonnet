@@ -1030,7 +1030,8 @@ static std::string unparse(const AST *ast_)
     return "(" + ss.str() + ")";
 }
 
-std::string jsonnet_unparse_jsonnet(const AST *ast) {
+std::string jsonnet_unparse_jsonnet(const AST *ast) 
+{
     const auto *wrapper = dynamic_cast<const Local*>(ast);
     if (wrapper == nullptr) {
         std::cerr << "INTERNAL ERROR: Unparsing an AST that wasn't wrapped in a std local."
