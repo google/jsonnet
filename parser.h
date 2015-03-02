@@ -27,7 +27,7 @@ limitations under the License.
  * \param input The string to be tokenized & parsed.
  * \returns The parsed abstract syntax tree.
  */
-AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input);
+AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input);
 
 /** Escapes a string for JSON output.
  */

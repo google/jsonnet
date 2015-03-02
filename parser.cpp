@@ -167,13 +167,13 @@ namespace {
         Token pop(void)
         {
             Token tok = peek();
-            tokens.pop_front();
+            tokens->pop_front();
             return tok;
         }
 
         Token peek(void)
         {
-            Token tok = tokens.front();
+            Token tok = tokens->front();
             return tok;
         }
 
@@ -193,12 +193,12 @@ namespace {
             return tok;
         }
 
-        std::list<Token> &tokens;
-        Allocator &alloc;
+        std::list<Token> *tokens;
+        Allocator *alloc;
 
         public:
 
-        Parser(std::list<Token> &tokens, Allocator &alloc)
+        Parser(std::list<Token> *tokens, Allocator *alloc)
           : tokens(tokens), alloc(alloc)
         { }
 
@@ -263,7 +263,7 @@ namespace {
         void parseBind(Local::Binds &binds, unsigned obj_level)
         {
             Token var_id = popExpect(Token::IDENTIFIER);
-            auto *id = alloc.makeIdentifier(var_id.data);
+            auto *id = alloc->makeIdentifier(var_id.data);
             if (binds.find(id) != binds.end()) {
                 throw StaticError(var_id.location,
                                   "Duplicate local var: " + var_id.data);
@@ -274,7 +274,7 @@ namespace {
                 auto params = parseIdentifierList("function parameter", obj_level);
                 popExpect(Token::OPERATOR, "=");
                 AST *body = parse(MAX_PRECEDENCE, obj_level);
-                init = alloc.make<Function>(span(var_id, body), params, body);
+                init = alloc->make<Function>(span(var_id, body), params, body);
             } else {
                 popExpect(Token::OPERATOR, "=");
                 init = parse(MAX_PRECEDENCE, obj_level);
@@ -291,8 +291,8 @@ namespace {
 
             // Hidden variable to allow outer/top binding.
             if (obj_level == 0) {
-                const Identifier *hidden_var = alloc.makeIdentifier("$");
-                let_binds[hidden_var] = alloc.make<Self>(LocationRange());
+                const Identifier *hidden_var = alloc->makeIdentifier("$");
+                let_binds[hidden_var] = alloc->make<Self>(LocationRange());
             }
 
             bool got_comma = true;
@@ -315,11 +315,11 @@ namespace {
                         r = fields;
                     } else {
                         for (const auto &f : fields) {
-                            AST *body = alloc.make<Local>(f.body->location, let_binds, f.body);
+                            AST *body = alloc->make<Local>(f.body->location, let_binds, f.body);
                             r.emplace_back(f.name, f.hide, body);
                         }
                     }
-                    obj = alloc.make<Object>(span(tok, next), r);
+                    obj = alloc->make<Object>(span(tok, next), r);
                     return next;
                 } else if (next.kind == Token::FOR) {
                     if (fields.size() != 1) {
@@ -334,7 +334,7 @@ namespace {
                     Object::Field::Hide field_hide = fields.front().hide;
                     AST *value = fields.front().body;
                     if (let_binds.size() > 0) {
-                        value = alloc.make<Local>(value->location, let_binds, value);
+                        value = alloc->make<Local>(value->location, let_binds, value);
                     }
                     if (field_hide != Object::Field::INHERIT) {
                         auto msg = "Object comprehensions cannot have hidden fields.";
@@ -344,11 +344,11 @@ namespace {
                         throw StaticError(next.location, "Unexpected comma before for.");
                     }
                     Token id_tok = popExpect(Token::IDENTIFIER);
-                    const Identifier *id = alloc.makeIdentifier(id_tok.data);
+                    const Identifier *id = alloc->makeIdentifier(id_tok.data);
                     popExpect(Token::IN);
                     AST *array = parse(MAX_PRECEDENCE, obj_level);
                     Token last = popExpect(Token::BRACE_R);
-                    obj = alloc.make<ObjectComposition>(span(tok, last), field, value, id, array);
+                    obj = alloc->make<ObjectComposition>(span(tok, last), field, value, id, array);
                     return last;
                 }
                 if (!got_comma)
@@ -386,16 +386,16 @@ namespace {
                         if (!literal_fields.insert(next.data).second) {
                             throw StaticError(next.location, "Duplicate field: "+next.data);
                         }
-                        AST *field_expr = alloc.make<LiteralString>(next.location, next.data);
+                        AST *field_expr = alloc->make<LiteralString>(next.location, next.data);
 
                         AST *body = parse(MAX_PRECEDENCE, obj_level+1);
                         if (is_method) {
-                            body = alloc.make<Function>(body->location, params, body);
+                            body = alloc->make<Function>(body->location, params, body);
                         }
                         if (plus_sugar) {
-                            AST *f = alloc.make<LiteralString>(plus_loc, next.data);
-                            AST *super_f = alloc.make<Index>(plus_loc, alloc.make<Super>(LocationRange()), f);
-                            body = alloc.make<Binary>(body->location, super_f, BOP_PLUS, body);
+                            AST *f = alloc->make<LiteralString>(plus_loc, next.data);
+                            AST *super_f = alloc->make<Index>(plus_loc, alloc->make<Super>(LocationRange()), f);
+                            body = alloc->make<Binary>(body->location, super_f, BOP_PLUS, body);
                         }
                         fields.emplace_back(field_expr, field_hide, body);
                     }
@@ -470,7 +470,7 @@ namespace {
                     Token next = peek();
                     if (next.kind == Token::BRACKET_R) {
                         pop();
-                        return alloc.make<Array>(span(tok, next), std::vector<AST*>{});
+                        return alloc->make<Array>(span(tok, next), std::vector<AST*>{});
                     }
                     AST *first = parse(MAX_PRECEDENCE, obj_level);
                     next = peek();
@@ -478,26 +478,26 @@ namespace {
                         LocationRange l;
                         pop();
                         Token id_token = popExpect(Token::IDENTIFIER);
-                        const Identifier *id = alloc.makeIdentifier(id_token.data);
+                        const Identifier *id = alloc->makeIdentifier(id_token.data);
                         std::vector<const Identifier*> params = {id};
-                        AST *std = alloc.make<Var>(l, alloc.makeIdentifier("std"));
-                        AST *map_func = alloc.make<Function>(first->location, params, first);
+                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier("std"));
+                        AST *map_func = alloc->make<Function>(first->location, params, first);
                         popExpect(Token::IN);
                         AST *arr = parse(MAX_PRECEDENCE, obj_level);
                         Token maybe_if = pop();
                         if (maybe_if.kind == Token::BRACKET_R) {
-                            AST *map_str = alloc.make<LiteralString>(l, "map");
-                            AST *map = alloc.make<Index>(l, std, map_str);
+                            AST *map_str = alloc->make<LiteralString>(l, "map");
+                            AST *map = alloc->make<Index>(l, std, map_str);
                             std::vector<AST*> args = {map_func, arr};
-                            return alloc.make<Apply>(span(tok, maybe_if), map, args);
+                            return alloc->make<Apply>(span(tok, maybe_if), map, args);
                         } else if (maybe_if.kind == Token::IF) {
                             AST *cond = parse(MAX_PRECEDENCE, obj_level);
                             Token last = popExpect(Token::BRACKET_R);
-                            AST *filter_func = alloc.make<Function>(cond->location, params, cond);
-                            AST *fmap_str = alloc.make<LiteralString>(l, "filterMap");
-                            AST *fmap = alloc.make<Index>(l, std, fmap_str);
+                            AST *filter_func = alloc->make<Function>(cond->location, params, cond);
+                            AST *fmap_str = alloc->make<LiteralString>(l, "filterMap");
+                            AST *fmap = alloc->make<Index>(l, std, fmap_str);
                             std::vector<AST*> args = {filter_func, map_func, arr};
-                            return alloc.make<Apply>(span(tok, last), fmap, args);
+                            return alloc->make<Apply>(span(tok, last), fmap, args);
                         } else {
                             std::stringstream ss;
                             ss << "Expected if or ] after for clause, got: " << maybe_if;
@@ -525,7 +525,7 @@ namespace {
                             }
                             elements.push_back(parse(MAX_PRECEDENCE, obj_level));
                         } while (true);
-                        return alloc.make<Array>(span(tok, next), elements);
+                        return alloc->make<Array>(span(tok, next), elements);
                     }
                 }
 
@@ -538,29 +538,29 @@ namespace {
 
                 // Literals
                 case Token::NUMBER:
-                return alloc.make<LiteralNumber>(span(tok), strtod(tok.data.c_str(), nullptr));
+                return alloc->make<LiteralNumber>(span(tok), strtod(tok.data.c_str(), nullptr));
 
                 case Token::STRING:
-                return alloc.make<LiteralString>(span(tok), tok.data);
+                return alloc->make<LiteralString>(span(tok), tok.data);
 
                 case Token::FALSE:
-                return alloc.make<LiteralBoolean>(span(tok), false);
+                return alloc->make<LiteralBoolean>(span(tok), false);
 
                 case Token::TRUE:
-                return alloc.make<LiteralBoolean>(span(tok), true);
+                return alloc->make<LiteralBoolean>(span(tok), true);
 
                 case Token::NULL_LIT:
-                return alloc.make<LiteralNull>(span(tok));
+                return alloc->make<LiteralNull>(span(tok));
 
                 // Import
                 case Token::IMPORT: {
                     Token file = popExpect(Token::STRING);
-                    return alloc.make<Import>(span(tok, file), file.data);
+                    return alloc->make<Import>(span(tok, file), file.data);
                 }
 
                 case Token::IMPORTSTR: {
                     Token file = popExpect(Token::STRING);
-                    return alloc.make<Importstr>(span(tok, file), file.data);
+                    return alloc->make<Importstr>(span(tok, file), file.data);
                 }
 
 
@@ -569,16 +569,16 @@ namespace {
                 if (obj_level == 0) {
                     throw StaticError(tok.location, "No top-level object found.");
                 }
-                return alloc.make<Var>(span(tok), alloc.makeIdentifier("$"));
+                return alloc->make<Var>(span(tok), alloc->makeIdentifier("$"));
 
                 case Token::IDENTIFIER:
-                return alloc.make<Var>(span(tok), alloc.makeIdentifier(tok.data));
+                return alloc->make<Var>(span(tok), alloc->makeIdentifier(tok.data));
 
                 case Token::SELF:
-                return alloc.make<Self>(span(tok));
+                return alloc->make<Self>(span(tok));
 
                 case Token::SUPER:
-                return alloc.make<Super>(span(tok));
+                return alloc->make<Super>(span(tok));
             }
 
             std::cerr << "INTERNAL ERROR: Unknown tok kind: " << tok.kind << std::endl;
@@ -597,7 +597,7 @@ namespace {
                 case Token::ERROR: {
                     pop();
                     AST *expr = parse(MAX_PRECEDENCE, obj_level);
-                    return alloc.make<Error>(span(begin, expr), expr);
+                    return alloc->make<Error>(span(begin, expr), expr);
                 }
 
                 case Token::IF: {
@@ -610,9 +610,9 @@ namespace {
                         pop();
                         branch_false = parse(MAX_PRECEDENCE, obj_level);
                     } else {
-                        branch_false = alloc.make<LiteralNull>(span(begin, branch_true));
+                        branch_false = alloc->make<LiteralNull>(span(begin, branch_true));
                     }
-                    return alloc.make<Conditional>(span(begin, branch_false),
+                    return alloc->make<Conditional>(span(begin, branch_false),
                                                    cond, branch_true, branch_false);
                 }
 
@@ -634,7 +634,7 @@ namespace {
                             }
                             params.push_back(p->id);
                         }
-                        return alloc.make<Function>(span(begin, body), params, body);
+                        return alloc->make<Function>(span(begin, body), params, body);
                     } else {
                         std::stringstream ss;
                         ss << "Expected ( but got " << next;
@@ -656,7 +656,7 @@ namespace {
                         if (delim.kind == Token::SEMICOLON) break;
                     } while (true);
                     AST *body = parse(MAX_PRECEDENCE, obj_level);
-                    return alloc.make<Local>(span(begin, body), binds, body);
+                    return alloc->make<Local>(span(begin, body), binds, body);
                 }
 
                 default:
@@ -672,7 +672,7 @@ namespace {
                     if (UNARY_PRECEDENCE == precedence) {
                         Token op = pop();
                         AST *expr = parse(precedence, obj_level);
-                        return alloc.make<Unary>(span(op, expr), uop, expr);
+                        return alloc->make<Unary>(span(op, expr), uop, expr);
                     }
                 }
 
@@ -720,32 +720,32 @@ namespace {
                     if (op.kind == Token::BRACKET_L) {
                         AST *index = parse(MAX_PRECEDENCE, obj_level);
                         Token end = popExpect(Token::BRACKET_R);
-                        lhs = alloc.make<Index>(span(begin, end), lhs, index);
+                        lhs = alloc->make<Index>(span(begin, end), lhs, index);
 
                     } else if (op.kind == Token::DOT) {
                         Token field = popExpect(Token::IDENTIFIER);
-                        AST *index = alloc.make<LiteralString>(span(field), field.data);
-                        lhs = alloc.make<Index>(span(begin, field), lhs, index);
+                        AST *index = alloc->make<LiteralString>(span(field), field.data);
+                        lhs = alloc->make<Index>(span(begin, field), lhs, index);
 
                     } else if (op.kind == Token::PAREN_L) {
                         std::vector<AST*> args;
                         Token end = parseCommaList(args, Token::PAREN_R,
                                                    "function argument", obj_level);
-                        lhs = alloc.make<Apply>(span(begin, end), lhs, args);
+                        lhs = alloc->make<Apply>(span(begin, end), lhs, args);
 
                     } else if (op.kind == Token::BRACE_L) {
                         AST *obj;
                         Token end = parseObjectRemainder(obj, op, obj_level);
-                        lhs = alloc.make<Binary>(span(begin, end), lhs, BOP_PLUS, obj);
+                        lhs = alloc->make<Binary>(span(begin, end), lhs, BOP_PLUS, obj);
 
                     } else if (op.data == "%") {
                         AST *rhs = parse(precedence - 1, obj_level);
                         LocationRange l;
-                        AST *std = alloc.make<Var>(l, alloc.makeIdentifier("std"));
-                        AST *mod_str = alloc.make<LiteralString>(l, "mod");
-                        AST *f_mod = alloc.make<Index>(l, std, mod_str);
+                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier("std"));
+                        AST *mod_str = alloc->make<LiteralString>(l, "mod");
+                        AST *f_mod = alloc->make<Index>(l, std, mod_str);
                         std::vector<AST*> args = {lhs, rhs};
-                        lhs = alloc.make<Apply>(span(begin, rhs), f_mod, args);
+                        lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args);
 
                     } else {
                         // Logical / arithmetic binary operator.
@@ -755,9 +755,9 @@ namespace {
                             bop = BOP_MANIFEST_EQUAL;
                             invert = true;
                         }
-                        lhs = alloc.make<Binary>(span(begin, rhs), lhs, bop, rhs);
+                        lhs = alloc->make<Binary>(span(begin, rhs), lhs, bop, rhs);
                         if (invert) {
-                            lhs = alloc.make<Unary>(lhs->location, UOP_NOT, lhs);
+                            lhs = alloc->make<Unary>(lhs->location, UOP_NOT, lhs);
                         }
                     }
                 }
@@ -804,13 +804,13 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
     return BuiltinDecl();
 }
 
-static AST *do_parse(Allocator &alloc, const std::string &file, const char *input)
+static AST *do_parse(Allocator *alloc, const std::string &file, const char *input)
 {
     // Lex the input.
     auto token_list = jsonnet_lex(file, input);
 
     // Parse the input.
-    Parser parser(token_list, alloc);
+    Parser parser(&token_list, alloc);
     AST *expr = parser.parse(MAX_PRECEDENCE, 0);
     if (token_list.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
@@ -825,7 +825,7 @@ static constexpr char STD_CODE[] = {
     #include "std.jsonnet.h"
 };
 
-AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
+AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
 {
     // Parse the actual file.
     AST *expr = do_parse(alloc, file, input);
@@ -842,14 +842,14 @@ AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input)
         const auto &decl = jsonnet_builtin_decl(c);
         std::vector<const Identifier*> params;
         for (const auto &p : decl.params)
-            params.push_back(alloc.makeIdentifier(p));
-        fields.emplace_back(alloc.make<LiteralString>(l, decl.name), Object::Field::HIDDEN,
-                            alloc.make<BuiltinFunction>(l, c, params));
+            params.push_back(alloc->makeIdentifier(p));
+        fields.emplace_back(alloc->make<LiteralString>(l, decl.name), Object::Field::HIDDEN,
+                            alloc->make<BuiltinFunction>(l, c, params));
     }
 
     Local::Binds std_binds;
-    std_binds[alloc.makeIdentifier("std")] = std_obj;
-    AST *wrapped = alloc.make<Local>(expr->location, std_binds, expr);
+    std_binds[alloc->makeIdentifier("std")] = std_obj;
+    AST *wrapped = alloc->make<Local>(expr->location, std_binds, expr);
     return wrapped;
 }
 
