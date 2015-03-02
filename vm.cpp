@@ -404,7 +404,7 @@ namespace {
          *
          * This is used at import time, and in a few other cases.
          */
-        Allocator &alloc;
+        Allocator *alloc;
 
         /** Used to "name" thunks crated on the inside of an array. */
         const Identifier *idArrayElement;
@@ -718,11 +718,11 @@ namespace {
          *
          * \param loc The location range of the file to be executed.
          */
-        Interpreter(Allocator &alloc, const StrMap &ext_vars,
+        Interpreter(Allocator *alloc, const StrMap &ext_vars,
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                     JsonnetImportCallback *import_callback, void *import_callback_context)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc.makeIdentifier("array_element")), externalVars(ext_vars),
+            idArrayElement(alloc->makeIdentifier("array_element")), externalVars(ext_vars),
             importCallback(import_callback), importCallbackContext(import_callback_context)
         {
             scratch = makeNull();
@@ -1805,7 +1805,7 @@ namespace {
                             }
                             const std::string &index_name =
                                 static_cast<HeapString*>(scratch.v.h)->value;
-                            auto *fid = alloc.makeIdentifier(index_name);
+                            auto *fid = alloc->makeIdentifier(index_name);
                             stack.pop();
                             ast_ = objectIndex(ast.location, obj, fid);
                             goto recurse;
@@ -1861,7 +1861,7 @@ namespace {
                                 throw makeError(ast.location, "Field name was not a string.");
                             }
                             const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
-                            const Identifier *fid = alloc.makeIdentifier(fname);
+                            const Identifier *fid = alloc->makeIdentifier(fname);
                             if (f.objectFields.find(fid) != f.objectFields.end()) {
                                 throw makeError(ast.location,
                                                 "Duplicate field name: \"" + fname + "\"");
@@ -1911,7 +1911,7 @@ namespace {
                             throw makeError(ast.location, ss.str());
                         }
                         const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
-                        const Identifier *fid = alloc.makeIdentifier(fname);
+                        const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.elements.find(fid) != f.elements.end()) {
                             throw makeError(ast.location,
                                             "Duplicate field name: \"" + fname + "\"");
@@ -2159,7 +2159,7 @@ namespace {
 
 }
 
-std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
+std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
                                const StrMap &ext_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger,
@@ -2176,7 +2176,7 @@ std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
     }
 }
 
-StrMap jsonnet_vm_execute_multi(Allocator &alloc, const AST *ast, const StrMap &ext_vars,
+StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const StrMap &ext_vars,
                                 unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                                 JsonnetImportCallback *import_callback, void *ctx,
                                 bool string_output)
