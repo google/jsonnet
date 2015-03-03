@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Google Inc. All rights reserved.
+Copyright 2015 Google Inc. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
 {
     try {
         Allocator alloc;
-        AST *expr = jsonnet_parse(alloc, filename, snippet);
+        AST *expr = jsonnet_parse(&alloc, filename, snippet);
         std::string json_str;
         std::map<std::string, std::string> files;
         if (vm->debugAst) {
@@ -143,12 +143,12 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
         } else {
             jsonnet_static_analysis(expr);
             if (multi) {
-                files = jsonnet_vm_execute_multi(alloc, expr, vm->extVars, vm->maxStack,
+                files = jsonnet_vm_execute_multi(&alloc, expr, vm->extVars, vm->maxStack,
                                                  vm->gcMinObjects, vm->gcGrowthTrigger,
                                                  vm->importCallback, vm->importCallbackContext,
                                                  vm->stringOutput);
             } else {
-                json_str = jsonnet_vm_execute(alloc, expr, vm->extVars, vm->maxStack,
+                json_str = jsonnet_vm_execute(&alloc, expr, vm->extVars, vm->maxStack,
                                               vm->gcMinObjects, vm->gcGrowthTrigger,
                                               vm->importCallback, vm->importCallbackContext,
                                               vm->stringOutput);

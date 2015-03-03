@@ -13,6 +13,6 @@ README text
 Makefile text
 
 # These tests are explicitly given specific line endings
-tests/unix_line_endings.jsonnet text eol=lf
-tests/dos_line_endings.jsonnet text eol=crlf
+test_suite/unix_line_endings.jsonnet text eol=lf
+test_suite/dos_line_endings.jsonnet text eol=crlf
 

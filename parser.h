@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Google Inc. All rights reserved.
+Copyright 2015 Google Inc. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ limitations under the License.
  * \param input The string to be tokenized & parsed.
  * \returns The parsed abstract syntax tree.
  */
-AST *jsonnet_parse(Allocator &alloc, const std::string &file, const char *input);
+AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input);
 
 /** Escapes a string for JSON output.
  */

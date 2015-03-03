@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Google Inc. All rights reserved.
+Copyright 2015 Google Inc. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ struct RuntimeError {
  * \throws RuntimeError reports runtime errors in the program.
  * \returns The JSON result in string form.
  */
-std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
+std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
                                const std::map<std::string, std::string> &ext_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger,
@@ -77,7 +77,7 @@ std::string jsonnet_vm_execute(Allocator &alloc, const AST *ast,
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
-    Allocator &alloc, const AST *ast, const std::map<std::string, std::string> &ext_vars,
+    Allocator *alloc, const AST *ast, const std::map<std::string, std::string> &ext_vars,
     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
     JsonnetImportCallback *import_callback, void *import_callback_ctx,
     bool string_output);
