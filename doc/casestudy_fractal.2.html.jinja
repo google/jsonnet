@@ -82,9 +82,7 @@ is given to the jsonnet command line utility.  In it are all the details that de
 example application, as a list of packer images and a Terraform configuration that creates cloud
 instances using those images.  Note the first few lines import the other Jsonnet files and store
 their contents in top-level scoped variables (of the same names).  When we access definitions from
-those libraries (e.g.  templates to override) we do so through the top-level variables.  Also note
-the use of hidden fields (:: syntax) for fields that are referenced within the structure but should
-not appear in the output configuration.</li>
+those libraries (e.g.  templates to override) we do so through the top-level variables.</li>
 
 <li><tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud Platform
 project name.  You must create this file yourself, based on this <a
@@ -136,16 +134,14 @@ needed, overridden with some fractal application details.  Generic provisioners 
 for easy installation of packages via package managers, creation of specific files / dirs, etc.</p>
 
 <p>In addition, the <code>ImageMixin</code> object in {{service_jsonnet|safe}} is used to factor out
-common fractal-specific configuration from the three images.  This includes the Google Cloud
-Platform project id and filename of the service account key.  Since all the images are derived
-ultimately from the <code>GcpDebian</code> image (in {{packer_jsonnet|safe}}), and this image
-includes <tt>apt</tt> &amp; <tt>pip</tt> provisioners (discussed shortly), this is also a good place
-to ensure some basic packages are installed on every image.  Note that since <code>ImageMixin</code>
-is not intended to define a file on disk (like the various json files that are defined at the root
-of the configuration), rather it is just a definition that is referenced from other parts of the
-configuration, its output is suppressed with the hidden field syntax (::).</p>
+common fractal-specific configuration from the three images.  Note that it is a variable, so will
+not appear in the output.  Factored out image config includes the Google Cloud Platform project id
+and filename of the service account key.  Since all the images are derived ultimately from the
+<code>GcpDebian</code> image (in {{packer_jsonnet|safe}}), and this image includes <tt>apt</tt>
+&amp; <tt>pip</tt> provisioners (discussed shortly), this is also a good place to ensure some basic
+packages are installed on every image.</p>
 
-<pre class="medium"><code>ImageMixin:: {
+<pre class="medium"><code>local ImageMixin = {
     project_id: credentials.project,
     account_file: "service_account_key.json",
 
@@ -162,7 +158,7 @@ the <code>GcpDebianNginxUwsgiFlaskImage</code> template from {{packer_jsonnet|sa
 builds on the basic <code>GcpDebianImage</code> template from the same library, and adds all the
 packages (and default configuration) for both Nginx and uWSGI:</p>
 
-<pre class="medium"><code>MyFlaskImage:: packer.GcpDebianNginxUwsgiFlaskImage + $.ImageMixin,
+<pre class="medium"><code>local MyFlaskImage = packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin,
 </code></pre>
 
 <p>In Jsonnet we use JSON as the canonical data model and convert to other formats as needed.  An
@@ -189,7 +185,7 @@ overriding of small details as needed.  Note also that such precise manipulation
 details would be much harder if the uWSGI configuration was represented as a single string instead
 of as a structure within the object model.</p>
 
-<pre class="medium"><code>"appserv.packer.json": $.MyFlaskImage {
+<pre class="medium"><code>"appserv.packer.json": MyFlaskImage {
     name: "appserv-v20141222-0300",
     module: "main",   // Entrypoint in the Python code.
     pipPackages +: ["httplib2", "cassandra-driver", "blist"],
@@ -308,12 +304,12 @@ the appserv instances, the same data is used, but extended with some extra field
 
 <pre class="medium"><code>resource.FractalInstance(k) {
     ...
-    conf:: $.ApplicationConf {
-        database_name: $.cassandraKeyspace,
-        database_user: $.cassandraUser,
+    conf:: ApplicationConf {
+        database_name: cassandraKeyspace,
+        database_user: cassandraUser,
         database_pass: credentials.cassandraUserPass,
         tilegen: "${google_compute_address.tilegen.address}",
-        db_endpoints: $.cassandraNodes,
+        db_endpoints: cassandraNodes,
     },
     startup_script +: [self.addFile(self.conf, "/var/www/conf.json")],
 }
