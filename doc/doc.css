@@ -280,8 +280,12 @@ p.jump_to_page_top {
     font-size: 11pt;
 }
 
+p.jump_to_page_top a {
+    color: #ffffff;
+}
+
 p.jump_to_page_top a:visited {
-    color: #ffffff
+    color: #c0c0c0;
 }
 
 img.thumb {
