@@ -36,9 +36,13 @@ class CustomBuild(DistutilsBuild):
         DistutilsBuild.run(self)
 
 
-setup(name='_jsonnet',
+setup(name='jsonnet',
+      url='https://google.github.io/jsonnet/doc/',
+      description='Python bindings for Jsonnet - The data templating language ',
+      author='David Cunningham',
+      author_email='dcunnin@google.com',
       version=get_version(),
       cmdclass={'build': CustomBuild},
       ext_modules=[Extension('_jsonnet', extra_compile_args=COMPILE_ARGS,
-                            sources=JSONNET_SOURCES)]
+                             sources=JSONNET_SOURCES)]
 )
