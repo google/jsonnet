@@ -109,7 +109,7 @@ local credentials = import "credentials.jsonnet";
 
     // Frontend image.
     "appserv.packer.json": MyFlaskImage {
-        name: "appserv-v20150223-0032",
+        name: "appserv-v20150417-1400",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
@@ -128,14 +128,14 @@ local credentials = import "credentials.jsonnet";
 
     // The Cassandra image is basic, but more configuration is done at deployment time.
     "cassandra.packer.json": cassandra.GcpDebianImage + ImageMixin {
-        name: "cassandra-v20150223-0032",
+        name: "cassandra-v20150417-1400",
         rootPassword: credentials.cassandraRootPass,
         clusterName: cassandraConf.cluster_name,
     },
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
     "tilegen.packer.json": MyFlaskImage {
-        name: "tilegen-v20150223-1645",
+        name: "tilegen-v20150417-1400",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
@@ -261,7 +261,7 @@ local credentials = import "credentials.jsonnet";
 
             // The various kinds of Cassandra instances all share this basic configuration.
             local CassandraInstance(zone_hash) = FractalInstance(zone_hash) {
-                image: "cassandra-v20150223-0032",
+                image: "cassandra-v20150417-1400",
                 machine_type: "n1-standard-1",
                 tags +: ["fractal-db", "cassandra-server"],
                 user:: cassandraUser,
@@ -277,7 +277,7 @@ local credentials = import "credentials.jsonnet";
                 // code.
                 ["appserv" + k]: FractalInstance(k) {
                     name: "appserv" + k,
-                    image: "appserv-v20150223-0032",
+                    image: "appserv-v20150417-1400",
                     conf:: ApplicationConf {
                         database_name: cassandraKeyspace,
                         database_user: cassandraUser,
@@ -329,7 +329,7 @@ local credentials = import "credentials.jsonnet";
                 // not require database credentials so these are omitted for security.
                 ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
-                    image: "tilegen-v20150223-1500",
+                    image: "tilegen-v20150417-1400",
                     tags +: ["fractal-tilegen", "http-server"],
                     startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
