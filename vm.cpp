@@ -465,10 +465,13 @@ namespace {
             return r;
         }
 
-        Value makeDoubleNanCheck(const LocationRange &loc, double v)
+        Value makeDoubleCheck(const LocationRange &loc, double v)
         {
             if (std::isnan(v)) {
                 throw makeError(loc, "Not a number");
+            }
+            if (std::isinf(v)) {
+                throw makeError(loc, "Overflow");
             }
             return makeDouble(v);
         }
@@ -1043,7 +1046,7 @@ namespace {
 
                 case AST_LITERAL_NUMBER: {
                     const auto &ast = *static_cast<const LiteralNumber*>(ast_);
-                    scratch = makeDouble(ast.value);
+                    scratch = makeDoubleCheck(ast_->location, ast.value);
                 } break;
 
                 case AST_LITERAL_STRING: {
@@ -1283,22 +1286,24 @@ namespace {
                             case Value::DOUBLE:
                             switch (ast.op) {
                                 case BOP_PLUS:
-                                scratch = makeDouble(lhs.v.d + rhs.v.d);
+                                scratch = makeDoubleCheck(ast.location, lhs.v.d + rhs.v.d);
                                 break;
 
                                 case BOP_MINUS:
-                                scratch = makeDouble(lhs.v.d - rhs.v.d);
+                                scratch = makeDoubleCheck(ast.location, lhs.v.d - rhs.v.d);
                                 break;
 
                                 case BOP_MULT:
-                                scratch = makeDouble(lhs.v.d * rhs.v.d);
+                                scratch = makeDoubleCheck(ast.location, lhs.v.d * rhs.v.d);
                                 break;
 
                                 case BOP_DIV:
                                 if (rhs.v.d == 0)
                                     throw makeError(ast.location, "Division by zero.");
-                                scratch = makeDouble(lhs.v.d / rhs.v.d);
+                                scratch = makeDoubleCheck(ast.location, lhs.v.d / rhs.v.d);
                                 break;
+
+                                // No need to check doubles made from longs
 
                                 case BOP_SHIFT_L: {
                                     long long_l = lhs.v.d;
@@ -1449,7 +1454,7 @@ namespace {
 
                                         auto *el = makeHeap<HeapThunk>(func->params[0], nullptr,
                                                                        0, nullptr);
-                                        el->fill(makeDouble(i));
+                                        el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
                                         th->upValues[func->params[0]] = el;
                                         elements[i] = th;
                                     }
@@ -1459,53 +1464,53 @@ namespace {
                                 case 1:  // pow
                                 validateBuiltinArgs(loc, builtin, args,
                                                     {Value::DOUBLE, Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc,
+                                scratch = makeDoubleCheck(loc,
                                                              std::pow(args[0].v.d, args[1].v.d));
                                 break;
 
                                 case 2:  // floor
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::floor(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::floor(args[0].v.d));
                                 break;
 
                                 case 3:  // ceil
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::ceil(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::ceil(args[0].v.d));
                                 break;
 
                                 case 4:  // sqrt
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::sqrt(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::sqrt(args[0].v.d));
                                 break;
 
                                 case 5:  // sin
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::sin(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::sin(args[0].v.d));
                                 break;
 
                                 case 6:  // cos
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::cos(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::cos(args[0].v.d));
                                 break;
 
                                 case 7:  // tan
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::tan(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::tan(args[0].v.d));
                                 break;
 
                                 case 8:  // asin
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::asin(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::asin(args[0].v.d));
                                 break;
 
                                 case 9:  // acos
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::acos(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::acos(args[0].v.d));
                                 break;
 
                                 case 10:  // atan
                                 validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleNanCheck(loc, std::atan(args[0].v.d));
+                                scratch = makeDoubleCheck(loc, std::atan(args[0].v.d));
                                 break;
 
                                 case 11: {  // type
@@ -1670,26 +1675,26 @@ namespace {
 
                                 case 18: {  // log
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                    scratch = makeDoubleNanCheck(loc, std::log(args[0].v.d));
+                                    scratch = makeDoubleCheck(loc, std::log(args[0].v.d));
                                 } break;
 
                                 case 19: {  // exp
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                    scratch = makeDoubleNanCheck(loc, std::exp(args[0].v.d));
+                                    scratch = makeDoubleCheck(loc, std::exp(args[0].v.d));
                                 } break;
 
                                 case 20: {  // mantissa
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
                                     int exp;
                                     double m = std::frexp(args[0].v.d, &exp);
-                                    scratch = makeDoubleNanCheck(loc, m);
+                                    scratch = makeDoubleCheck(loc, m);
                                 } break;
 
                                 case 21: {  // exponent
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
                                     int exp;
                                     std::frexp(args[0].v.d, &exp);
-                                    scratch = makeDoubleNanCheck(loc, exp);
+                                    scratch = makeDoubleCheck(loc, exp);
                                 } break;
 
                                 case 22: {  // modulo
@@ -1699,7 +1704,7 @@ namespace {
                                     double b = args[1].v.d;
                                     if (b == 0)
                                         throw makeError(ast.location, "Division by zero.");
-                                    scratch = makeDoubleNanCheck(loc, std::fmod(a, b));
+                                    scratch = makeDoubleCheck(loc, std::fmod(a, b));
                                 } break;
 
                                 case 23: {  // force
