@@ -103,12 +103,8 @@ local credentials = import "credentials.jsonnet";
         aptPackages +: ["vim", "git", "psmisc", "screen", "strace" ] + network_debug,
     },
 
-    // An Nginx/uwsgi/flask installation is used to serve HTTP on the application server and tile
-    // generators.
-    local MyFlaskImage = packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin,
-
     // Frontend image.
-    "appserv.packer.json": MyFlaskImage {
+    "appserv.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
         name: "appserv-v20150417-1400",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
@@ -134,8 +130,8 @@ local credentials = import "credentials.jsonnet";
     },
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
-    "tilegen.packer.json": MyFlaskImage {
-        name: "tilegen-v20150422-0045",
+    "tilegen.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
+        name: "tilegen-v20150422-2201",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
