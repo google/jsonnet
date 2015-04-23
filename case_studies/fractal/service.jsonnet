@@ -135,7 +135,7 @@ local credentials = import "credentials.jsonnet";
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
     "tilegen.packer.json": MyFlaskImage {
-        name: "tilegen-v20150417-1400",
+        name: "tilegen-v20150422-0045",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
@@ -255,7 +255,6 @@ local credentials = import "credentials.jsonnet";
             local FractalInstance(zone_hash) = terraform.GcpInstance {
                 network_interface: [super.network_interface[0] + {network: "${google_compute_network.fractal.name}"} ],
                 tags +: ["fractal"],
-                scopes +: ["devstorage.full_control"],
                 zone: zone(zone_hash),
             },
 
@@ -329,7 +328,7 @@ local credentials = import "credentials.jsonnet";
                 // not require database credentials so these are omitted for security.
                 ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
-                    image: "tilegen-v20150417-1400",
+                    image: "tilegen-v20150422-0045",
                     tags +: ["fractal-tilegen", "http-server"],
                     startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
