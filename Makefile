@@ -34,8 +34,8 @@ EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
 
-PYTHON_CFLAGS ?= -I/usr/include/python2.7
-PYTHON_LDFLAGS ?=
+PYTHON_CFLAGS ?= `python-config --includes`
+PYTHON_LDFLAGS ?= `python-config --ldflags --libs`
 
 SHARED_CFLAGS ?= -fPIC
 SHARED_LDFLAGS ?= -shared
@@ -92,7 +92,7 @@ _jsonnet.o: _jsonnet.c
 	$(CC) $(CFLAGS) $(PYTHON_CFLAGS) $(SHARED_CFLAGS) $< -c -o $@
 
 _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) $(PYTHON_LDFLAGS) -o $@
 
 # Encode standard library for embedding in C
 %.jsonnet.h: %.jsonnet
