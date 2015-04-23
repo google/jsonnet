@@ -120,4 +120,6 @@ std.assertEqual(4.5 >= 5, false) &&
 
 std.assertEqual(4.5 == 4.5, true) &&
 std.assertEqual(4.5 != 3.5, true) &&
+
+std.assertEqual(std.toString(1e20), "100000000000000000000") &&
 true

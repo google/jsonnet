@@ -888,7 +888,7 @@ std::string jsonnet_unparse_number(double v)
 {
     std::stringstream ss;
     if (v == floor(v)) {
-        ss << long(v);
+        ss << std::fixed << std::setprecision(0) << v;
     } else {
         // See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
         // Theorem 15
