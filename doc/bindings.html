@@ -218,8 +218,8 @@ _jsonnet.so'.  The Python module provides two functions, <tt>evaluate_file(f)</t
 traces due to errors raised in the snippet.</p>
 
 <p>Keyword arguments to these functions are used to control the virtual machine.  They are
-<tt>gc_min_objects</tt>, <tt>gc_growth_trigger</tt>, <tt>env</tt>, <tt>debug_ast</tt>, and
-<tt>max_trace</tt>.  The <tt>debug_ast</tt> argument is a boolean, and <tt>env</tt> is a dict
+<tt>gc_min_objects</tt>, <tt>gc_growth_trigger</tt>, <tt>ext_vars</tt>, <tt>debug_ast</tt>, and
+<tt>max_trace</tt>.  The <tt>debug_ast</tt> argument is a boolean, and <tt>ext_vars</tt> is a dict
 mapping strings to strings.  The other keyword arguments should be numbers.</p>
 
 <p>If an error is raised during the evaluation of the Jsonnet code, it is formed into a stack trace
