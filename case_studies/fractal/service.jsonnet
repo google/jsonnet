@@ -131,7 +131,7 @@ local credentials = import "credentials.jsonnet";
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
     "tilegen.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
-        name: "tilegen-v20150422-2201",
+        name: "tilegen-v20150424-1000",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
@@ -324,7 +324,7 @@ local credentials = import "credentials.jsonnet";
                 // not require database credentials so these are omitted for security.
                 ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
-                    image: "tilegen-v20150422-0045",
+                    image: "tilegen-v20150424-1000",
                     tags +: ["fractal-tilegen", "http-server"],
                     startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
