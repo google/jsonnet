@@ -105,7 +105,7 @@ local credentials = import "credentials.jsonnet";
 
     // Frontend image.
     "appserv.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
-        name: "appserv-v20150417-1400",
+        name: "appserv-v20150430-2145",
         module: "main",   // Entrypoint in the Python code.
         pipPackages +: ["httplib2", "cassandra-driver", "blist"],
         uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
@@ -124,14 +124,14 @@ local credentials = import "credentials.jsonnet";
 
     // The Cassandra image is basic, but more configuration is done at deployment time.
     "cassandra.packer.json": cassandra.GcpDebianImage + ImageMixin {
-        name: "cassandra-v20150417-1400",
+        name: "cassandra-v20150430-2145",
         rootPassword: credentials.cassandraRootPass,
         clusterName: cassandraConf.cluster_name,
     },
 
     // Tile Generation node runs a C++ program to generate PNG tiles for the fractal.
     "tilegen.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
-        name: "tilegen-v20150424-1000",
+        name: "tilegen-v20150430-2145",
         module: "mandelbrot_service",
 
         aptPackages +: ["g++", "libpng-dev"],
@@ -252,11 +252,12 @@ local credentials = import "credentials.jsonnet";
                 network_interface: [super.network_interface[0] + {network: "${google_compute_network.fractal.name}"} ],
                 tags +: ["fractal"],
                 zone: zone(zone_hash),
+                scopes +: ["devstorage.full_control"]
             },
 
             // The various kinds of Cassandra instances all share this basic configuration.
             local CassandraInstance(zone_hash) = FractalInstance(zone_hash) {
-                image: "cassandra-v20150417-1400",
+                image: "cassandra-v20150430-2145",
                 machine_type: "n1-standard-1",
                 tags +: ["fractal-db", "cassandra-server"],
                 user:: cassandraUser,
@@ -272,7 +273,7 @@ local credentials = import "credentials.jsonnet";
                 // code.
                 ["appserv" + k]: FractalInstance(k) {
                     name: "appserv" + k,
-                    image: "appserv-v20150417-1400",
+                    image: "appserv-v20150430-2145",
                     conf:: ApplicationConf {
                         database_name: cassandraKeyspace,
                         database_user: cassandraUser,
@@ -324,11 +325,55 @@ local credentials = import "credentials.jsonnet";
                 // not require database credentials so these are omitted for security.
                 ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
-                    image: "tilegen-v20150424-1000",
+                    image: "tilegen-v20150430-2145",
                     tags +: ["fractal-tilegen", "http-server"],
                     startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3, 4]
+            },
+
+            google_dns_managed_zone: {
+                "fractaldemo-com": {
+                    name: "fractaldemo-com",
+                    dns_name: credentials.dnsPrefix + "fractaldemo.com.",
+                    description: "Fractal Demo DNS Zone",
+                }
+            },
+
+            local instances = self.google_compute_instance,
+            local addresses = self.google_compute_address,
+
+            local DnsRecord = {
+                managed_zone: "${google_dns_managed_zone.fractaldemo-com.name}",
+                type: "A",
+                ttl: 300,
+            },
+
+            google_dns_record_set: {
+                [name]: DnsRecord {
+                    name: name + ".${google_dns_managed_zone.fractaldemo-com.dns_name}",
+                    rrdatas: ["${google_compute_address." + name + ".address}"],
+                } for name in std.objectFields(addresses)
+            } + {
+                [name]: DnsRecord {
+                    name: name + ".${google_dns_managed_zone.fractaldemo-com.dns_name}",
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
+                } for name in std.objectFields(instances)
+            } + {
+                www: {
+                    managed_zone: "${google_dns_managed_zone.fractaldemo-com.name}",
+                    name: "www.${google_dns_managed_zone.fractaldemo-com.dns_name}",
+                    type: "CNAME",
+                    ttl: 300,
+                    rrdatas: ["appserv.${google_dns_managed_zone.fractaldemo-com.dns_name}"],
+                },
+                zone: {
+                    managed_zone: "${google_dns_managed_zone.fractaldemo-com.name}",
+                    name: "${google_dns_managed_zone.fractaldemo-com.dns_name}",
+                    type: "A",
+                    ttl: 300,
+                    rrdatas: ["${google_compute_address.appserv.address}"],
+                },
             }
 
         },
