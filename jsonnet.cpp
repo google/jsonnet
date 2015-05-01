@@ -28,7 +28,7 @@ extern "C" {
     #include "libjsonnet.h"
 }
 
-#define JSONNET_VERSION "v0.6.0-beta"
+#define JSONNET_VERSION "v0.7.5"
 
 struct ImportCallbackContext {
     JsonnetVm *vm;
