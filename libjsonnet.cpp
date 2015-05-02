@@ -30,15 +30,32 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
+static char *from_string (JsonnetVm* vm, const std::string &v)
+{
+    char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
+    std::strcpy(r, v.c_str());
+    return r;
+}
+
 /** Resolve the absolute path and use C++ file io to load the file.
  */
 static char *default_import_callback (void *ctx, const char *base, const char *file, int *success)
 {
     auto *vm = static_cast<JsonnetVm*>(ctx);
 
+    if (std::strlen(file) == 0) {
+        *success = 0;
+        return from_string(vm, "The empty string is not a valid filename");
+    }
+
+    if (file[std::strlen(file) - 1] == '/') {
+        *success = 0;
+        return from_string(vm, "Attempted to import a directory");
+    }
+
     std::string abs_path;
     // It is possible that file is an absolute path
-    if (std::strlen(file) > 0 && file[0] == '/')
+    if (file[0] == '/')
         abs_path = file;
     else
         abs_path = std::string(base) + file;
@@ -47,17 +64,17 @@ static char *default_import_callback (void *ctx, const char *base, const char *f
     f.open(abs_path.c_str());
     if (!f.good()) {
         *success = 0;
-        const char *err = std::strerror(errno);
-        char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
-        std::strcpy(r, err);
-        return r;
+        return from_string(vm, std::strerror(errno));
     }
-    std::string input;
-    input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-    *success = 1;
-    char *r = jsonnet_realloc(vm, nullptr, input.length() + 1);
-    std::strcpy(r, input.c_str());
-    return r;
+    try {
+        std::string input;
+        input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+        *success = 1;
+        return from_string(vm, input);
+    } catch (const std::ios_base::failure &io_err) {
+        *success = 0;
+        return from_string(vm, io_err.what());
+    }
 }
 
 
@@ -127,8 +144,6 @@ void jsonnet_max_trace(JsonnetVm *vm, unsigned v)
 {
     vm->maxTrace = v;
 }
-
-char *jsonnet_realloc(char *buf, size_t sz);
 
 static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
                                           const char *snippet, int *error, bool multi)

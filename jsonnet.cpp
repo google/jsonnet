@@ -42,21 +42,39 @@ enum ImportStatus {
 };
 
 static enum ImportStatus try_path(const std::string &dir, const std::string &rel,
-                                  std::string &content)
+                                  std::string &content, std::string &err_msg)
 {
     std::string abs_path;
+    if (rel.length() == 0) {
+        err_msg = "The empty string is not a valid filename";
+        return IMPORT_STATUS_IO_ERROR;
+    }
     // It is possible that rel is actually absolute.
-    if (rel.length() > 0 && rel[0] == '/') {
+    if (rel[0] == '/') {
         abs_path = rel;
     } else {
         abs_path = dir + rel;
     }
 
+    if (abs_path[abs_path.length() - 1] == '/') {
+        err_msg = "Attempted to import a directory";
+        return IMPORT_STATUS_IO_ERROR;
+    }
+
     std::ifstream f;
     f.open(abs_path.c_str());
     if (!f.good()) return IMPORT_STATUS_FILE_NOT_FOUND;
-    content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-    if (!f.good()) return IMPORT_STATUS_IO_ERROR;
+    try {
+        content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    } catch (const std::ios_base::failure &io_err) {
+        err_msg = io_err.what();
+        return IMPORT_STATUS_IO_ERROR;
+    }
+    if (!f.good()) {
+        err_msg = strerror(errno);
+        return IMPORT_STATUS_IO_ERROR;
+    }
+
     return IMPORT_STATUS_OK;
 }
 
@@ -66,7 +84,9 @@ static char *import_callback (void *ctx_, const char *dir, const char *file, int
 
     std::string input;
 
-    ImportStatus status = try_path(dir, file, input);
+    std::string err_msg;
+
+    ImportStatus status = try_path(dir, file, input, err_msg);
 
     std::vector<std::string> jpaths(*ctx.jpaths);
 
@@ -79,15 +99,14 @@ static char *import_callback (void *ctx_, const char *dir, const char *file, int
             std::strcpy(r, err);
             return r;
         }
-        status = try_path(jpaths.back(), file, input);
+        status = try_path(jpaths.back(), file, input, err_msg);
         jpaths.pop_back();
     }
 
     if (status == IMPORT_STATUS_IO_ERROR) {
         *success = 0;
-        const char *err = std::strerror(errno);
-        char *r = jsonnet_realloc(ctx.vm, nullptr, std::strlen(err) + 1);
-        std::strcpy(r, err);
+        char *r = jsonnet_realloc(ctx.vm, nullptr, err_msg.length() + 1);
+        std::strcpy(r, err_msg.c_str());
         return r;
     } else {
         assert(status == IMPORT_STATUS_OK);
