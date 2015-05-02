@@ -92,11 +92,23 @@ limitations under the License.
             if i >= std.length(arr) then
                 running
             else if arr[i] == null then
-                aux(arr, i+1, first, running)
+                local i2 = i + 1;
+                if std.force(i2) then
+                    aux(arr, i2, first, running)
+                else
+                    null
             else if first then
-                aux(arr, i+1, false, running + arr[i])
+                local i2 = i + 1;
+                local running2 = running + arr[i];
+                if std.force(i2) && std.force(running2) then
+                    aux(arr, i2, false, running2)
+                else
+                    null
             else
-                aux(arr, i+1, false, running + sep + arr[i]);
+                local i2 = i + 1;
+                local running2 = running + sep + arr[i];
+                if std.force(i2) && std.force(running2) then
+                    aux(arr, i2, false, running2);
         if std.type(arr) != "array" then
             error "join second parameter should be array, got " + std.type(arr)
         else if std.type(sep) == "string" then
