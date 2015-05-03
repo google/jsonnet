@@ -20,5 +20,5 @@ local Fib = {
     r: if self.n <= 1 then 1 else (Fib {n: outer.n}).r + (Fib {n: outer.n}).r
 };
 
-std.assertEqual((Fib {n: 15}).r, 987)
+(Fib {n: 15}).r
 
