@@ -28,9 +28,7 @@ all_artifacts: $(ALL_IMAGES:.packer.json=.packer.done)
 
 terraform.done: terraform.tf
 	@echo "======== MODIFYING DEPLOYMENT ========"
-	@rm -vf terraform.plan
-	terraform plan -out=terraform.plan
-	@test -e terraform.plan || exit 1
+	terraform plan -detailed-exitcode -out=terraform.plan ; case "$$?" in "2") exit 0;; *) exit 1;; esac
 	@read -r -p "Are you sure? [y/N] " response && case "$$response" in [yY][eE][sS]|[yY]) terraform apply terraform.plan && cp $< $@ ;;  esac
 
 destroy:
