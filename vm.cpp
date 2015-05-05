@@ -92,8 +92,8 @@ namespace {
          */
         LocationRange location;
 
-        /** Do not reuse this stack frame for the purpose of tail call optimization. */
-        bool noTailCall;
+        /** Reuse this stack frame for the purpose of tail call optimization. */
+        bool tailCall;
 
         /** Used for a variety of purposes. */
         Value val;
@@ -142,14 +142,16 @@ namespace {
         BindingFrame bindings;
 
         Frame(const FrameKind &kind, const AST *ast)
-          : kind(kind), ast(ast), location(ast->location), context(NULL), self(NULL), offset(0)
+          : kind(kind), ast(ast), location(ast->location), tailCall(false), elementId(0),
+            context(NULL), self(NULL), offset(0)
         {
             val.t = Value::NULL_TYPE;
             val2.t = Value::NULL_TYPE;
         }
 
         Frame(const FrameKind &kind, const LocationRange &location)
-          : kind(kind), ast(nullptr), location(location), noTailCall(false), context(NULL), self(NULL), offset(0)
+          : kind(kind), ast(nullptr), location(location), tailCall(false), elementId(0),
+            context(NULL), self(NULL), offset(0)
         {
             val.t = Value::NULL_TYPE;
             val2.t = Value::NULL_TYPE;
@@ -317,12 +319,13 @@ namespace {
             stack.emplace_back(args...);
         }
 
+        /** If there is a tailcall annotated frame followed by some locals, pop them all. */
         void tailCallTrimStack (void)
         {
             for (int i=stack.size()-1 ; i>=0 ; --i) {
                 switch (stack[i].kind) {
                     case FRAME_CALL: {
-                        if (stack[i].noTailCall) {
+                        if (!stack[i].tailCall || stack[i].thunks.size() > 0) {
                             return;
                         }
                         // Remove all stack frames including this one.
@@ -352,10 +355,7 @@ namespace {
             top().self = self;
             top().offset = offset;
             top().bindings = up_values;
-            if (dynamic_cast<HeapThunk*>(context)) {
-                // Cannot optimize thunk context, need to "fill" thunk on unwind.
-                top().noTailCall = true;
-            }
+            top().tailCall = false;
 
             for (const auto &bind : up_values) {
                 assert(bind.second != nullptr);
@@ -1173,7 +1173,6 @@ namespace {
                             // attempt to bind to self (it's native code).
                             stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f.ast);
                             stack.top().thunks = args;
-                            stack.top().elementId = 0;
                             stack.top().val = scratch;
                             goto replaceframe;
                         } else {
@@ -1182,8 +1181,15 @@ namespace {
                             for (unsigned i=0 ; i<func->params.size() ; ++i)
                                 bindings[func->params[i]] = args[i];
                             stack.newCall(ast.location, func, func->self, func->offset, bindings);
-                            ast_ = func->body;
-                            goto recurse;
+                            if (ast.tailcall) {
+                                stack.top().thunks = args;
+                                stack.top().val = scratch;
+                                stack.top().tailCall = true;
+                                goto replaceframe;
+                            } else {
+                                ast_ = func->body;
+                                goto recurse;
+                            }
                         }
                     } break;
 
@@ -1707,13 +1713,7 @@ namespace {
                                     scratch = makeDoubleCheck(loc, std::fmod(a, b));
                                 } break;
 
-                                case 23: {  // force
-                                    // Thunk already forced.
-                                    scratch = makeBoolean(true);
-                                }
-                                break;
-
-                                case 24: {  // extVar
+                                case 23: {  // extVar
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
                                     const std::string &var = static_cast<HeapString*>(args[0].v.h)->value;
                                     if (externalVars.find(var) == externalVars.end()) {
@@ -1742,6 +1742,25 @@ namespace {
                         if (auto *thunk = dynamic_cast<HeapThunk*>(f.context)) {
                             // If we called a thunk, cache result.
                             thunk->fill(scratch);
+                        } else if (auto *closure = dynamic_cast<HeapClosure*>(f.context)) {
+                            if (f.elementId < f.thunks.size()) {
+                                // If tailcall, force thunks
+                                HeapThunk *th = f.thunks[f.elementId++];
+                                if (!th->filled) {
+                                    stack.newCall(f.location, th,
+                                                  th->self, th->offset, th->upValues);
+                                    ast_ = th->body;
+                                    goto recurse;
+                                }
+                            } else if (f.thunks.size() == 0) {
+                                // Body has now been executed
+                            } else {
+                                // Execute the body
+                                f.thunks.clear();
+                                f.elementId = 0;
+                                ast_ = closure->body;
+                                goto recurse;
+                            }
                         }
                         // Result of call is in scratch, just pop.
                     } break;
@@ -2039,14 +2058,12 @@ namespace {
                                 stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
                                 // Keep arr alive when scratch is overwritten
                                 stack.top().val = scratch;
-                                stack.top().noTailCall = true;
                                 scratch = thunk->content;
                             } else {
                                 stack.newCall(loc, thunk,
                                               thunk->self, thunk->offset, thunk->upValues);
                                 // Keep arr alive when scratch is overwritten
                                 stack.top().val = scratch;
-                                stack.top().noTailCall = true;
                                 evaluate(thunk->body);
                             }
                             auto element = manifestJson(tloc, multiline, indent2);
@@ -2093,7 +2110,6 @@ namespace {
                             // pushes FRAME_CALL
                             const AST *body = objectIndex(loc, obj, f.second);
                             stack.top().val = scratch;
-                            stack.top().noTailCall = true;
                             evaluate(body);
                             auto vstr = manifestJson(body->location, multiline, indent2);
                             // Reset scratch so that the object we're manifesting doesn't
@@ -2147,7 +2163,6 @@ namespace {
                 // pushes FRAME_CALL
                 const AST *body = objectIndex(loc, obj, f.second);
                 stack.top().val = scratch;
-                stack.top().noTailCall = true;
                 evaluate(body);
                 auto vstr = string ? manifestString(body->location)
                                    : manifestJson(body->location, true, "");

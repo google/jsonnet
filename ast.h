@@ -86,8 +86,9 @@ struct AST {
 struct Apply : public AST {
     AST *target;
     std::vector<AST*> arguments;
-    Apply(const LocationRange &lr, AST *target, const std::vector<AST*> &arguments)
-      : AST(lr, AST_APPLY), target(target), arguments(arguments)
+    bool tailcall;
+    Apply(const LocationRange &lr, AST *target, const std::vector<AST*> &arguments, bool tailcall)
+      : AST(lr, AST_APPLY), target(target), arguments(arguments), tailcall(tailcall)
     { }
 };
 

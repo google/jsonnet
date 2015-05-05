@@ -489,7 +489,7 @@ namespace {
                             AST *map_str = alloc->make<LiteralString>(l, "map");
                             AST *map = alloc->make<Index>(l, std, map_str);
                             std::vector<AST*> args = {map_func, arr};
-                            return alloc->make<Apply>(span(tok, maybe_if), map, args);
+                            return alloc->make<Apply>(span(tok, maybe_if), map, args, false);
                         } else if (maybe_if.kind == Token::IF) {
                             AST *cond = parse(MAX_PRECEDENCE, obj_level);
                             Token last = popExpect(Token::BRACKET_R);
@@ -497,7 +497,7 @@ namespace {
                             AST *fmap_str = alloc->make<LiteralString>(l, "filterMap");
                             AST *fmap = alloc->make<Index>(l, std, fmap_str);
                             std::vector<AST*> args = {filter_func, map_func, arr};
-                            return alloc->make<Apply>(span(tok, last), fmap, args);
+                            return alloc->make<Apply>(span(tok, last), fmap, args, false);
                         } else {
                             std::stringstream ss;
                             ss << "Expected if or ] after for clause, got: " << maybe_if;
@@ -731,7 +731,12 @@ namespace {
                         std::vector<AST*> args;
                         Token end = parseCommaList(args, Token::PAREN_R,
                                                    "function argument", obj_level);
-                        lhs = alloc->make<Apply>(span(begin, end), lhs, args);
+                        bool tailcall = false;
+                        if (peek().kind == Token::TAILCALL) {
+                            pop();
+                            tailcall = true;
+                        }
+                        lhs = alloc->make<Apply>(span(begin, end), lhs, args, tailcall);
 
                     } else if (op.kind == Token::BRACE_L) {
                         AST *obj;
@@ -745,7 +750,7 @@ namespace {
                         AST *mod_str = alloc->make<LiteralString>(l, "mod");
                         AST *f_mod = alloc->make<Index>(l, std, mod_str);
                         std::vector<AST*> args = {lhs, rhs};
-                        lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args);
+                        lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args, false);
 
                     } else {
                         // Logical / arithmetic binary operator.
@@ -767,7 +772,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 24;
+static unsigned long max_builtin = 23;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -794,8 +799,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 20: return {"mantissa", {"n"}};
         case 21: return {"exponent", {"n"}};
         case 22: return {"modulo", {"a", "b"}};
-        case 23: return {"force", {"x"}};
-        case 24: return {"extVar", {"x"}};
+        case 23: return {"extVar", {"x"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();

@@ -113,7 +113,7 @@
 
   { 
     'name': 'keyword.other.jsonnet'
-    'match': '\\b(local)\\b'
+    'match': '\\b(local|tailcall)\\b'
   },
 
   { 
