@@ -28,8 +28,8 @@ CP ?= cp
 OD ?= od
 PYTHON ?= python
 
-CXXFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c++0x
-CFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c99
+CXXFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c++0x -fPIC
+CFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c99 -fPIC
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
@@ -37,17 +37,16 @@ LDFLAGS ?=
 PYTHON_CFLAGS ?= `python-config --includes`
 PYTHON_LDFLAGS ?= `python-config --ldflags --libs`
 
-SHARED_CFLAGS ?= -fPIC
 SHARED_LDFLAGS ?= -shared
 
 ###################################################################################################
 # End of user-servicable parts
 ###################################################################################################
 
-SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp
-LIB_SRC = $(SRC) libjsonnet.cpp
+LIB_SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp libjsonnet.cpp
+LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
-ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js
+ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js $(LIB_OBJ)
 ALL_HEADERS = libjsonnet.h vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h std.jsonnet.h
 
 default: jsonnet
@@ -64,13 +63,20 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	cd examples ; ./check.sh
 	cd test_suite ; ./run_tests.sh
 
+depend:
+	makedepend -f Makefile $(LIB_SRC) jsonnet.cpp _jsonnet.c libjsonnet_test_snippet.c libjsonnet_test_file.c _jsonnet.c
+
+# Object files
+%.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
 # Commandline executable.
-jsonnet: jsonnet.cpp $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC) -o $@
+jsonnet: jsonnet.cpp $(LIB_OBJ)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC:.cpp=.o) -o $@
 
 # C binding.
-libjsonnet.so: $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $(SHARED_CFLAGS) $(SHARED_LDFLAGS) -o $@
+libjsonnet.so: $(LIB_OBJ)
+	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -o $@
 
 # Javascript build of C binding
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
@@ -89,10 +95,10 @@ libjsonnet_test_file: libjsonnet_test_file.c libjsonnet.so libjsonnet.h
 
 # Python binding.
 _jsonnet.o: _jsonnet.c
-	$(CC) $(CFLAGS) $(PYTHON_CFLAGS) $(SHARED_CFLAGS) $< -c -o $@
+	$(CC) $(CFLAGS) $(PYTHON_CFLAGS) $< -c -o $@
 
-_jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LIB_SRC) $< $(SHARED_CFLAGS) $(SHARED_LDFLAGS) $(PYTHON_LDFLAGS) -o $@
+_jsonnet.so: _jsonnet.o $(LIB_OBJ)
+	$(CXX) $(LDFLAGS) $(LIB_OBJ) $< $(SHARED_LDFLAGS) $(PYTHON_LDFLAGS) -o $@
 
 # Encode standard library for embedding in C
 %.jsonnet.h: %.jsonnet
@@ -101,3 +107,33 @@ _jsonnet.so: _jsonnet.o $(LIB_SRC) $(ALL_HEADERS)
 
 clean:
 	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.jsonnet.h
+
+
+# DO NOT DELETE
+
+lexer.o: static_error.h lexer.h
+parser.o: static_error.h ast.h lexer.h parser.h std.jsonnet.h
+static_analysis.o: static_analysis.h ast.h lexer.h static_error.h
+vm.o: vm.h ast.h lexer.h static_error.h libjsonnet.h parser.h state.h
+vm.o: static_analysis.h
+libjsonnet.o: libjsonnet.h parser.h lexer.h static_error.h ast.h
+libjsonnet.o: static_analysis.h vm.h
+jsonnet.o: libjsonnet.h
+_jsonnet.o: /usr/include/stdlib.h /usr/include/features.h
+_jsonnet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
+_jsonnet.o: /usr/include/stdio.h /usr/include/libio.h
+_jsonnet.o: /usr/include/_G_config.h /usr/include/wchar.h libjsonnet.h
+libjsonnet_test_snippet.o: /usr/include/stdlib.h /usr/include/features.h
+libjsonnet_test_snippet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
+libjsonnet_test_snippet.o: /usr/include/stdio.h /usr/include/libio.h
+libjsonnet_test_snippet.o: /usr/include/_G_config.h /usr/include/wchar.h
+libjsonnet_test_snippet.o: libjsonnet.h
+libjsonnet_test_file.o: /usr/include/stdlib.h /usr/include/features.h
+libjsonnet_test_file.o: /usr/include/stdc-predef.h /usr/include/alloca.h
+libjsonnet_test_file.o: /usr/include/stdio.h /usr/include/libio.h
+libjsonnet_test_file.o: /usr/include/_G_config.h /usr/include/wchar.h
+libjsonnet_test_file.o: libjsonnet.h
+_jsonnet.o: /usr/include/stdlib.h /usr/include/features.h
+_jsonnet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
+_jsonnet.o: /usr/include/stdio.h /usr/include/libio.h
+_jsonnet.o: /usr/include/_G_config.h /usr/include/wchar.h libjsonnet.h
