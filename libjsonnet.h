@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#ifndef LIB_JSONNET_H
+#define LIB_JSONNET_H
+
 /** \file This file is a library interface for evaluating Jsonnet.  It is written in C++ but exposes
  * a C interface for easier wrapping by other languages.  See \see jsonnet_lib_test.c for an example
  * of using the library.
@@ -132,3 +135,4 @@ char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
 /** Complement of \see jsonnet_vm_make. */
 void jsonnet_destroy(struct JsonnetVm *vm);
 
+#endif

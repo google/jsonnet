@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#ifndef JSONNET_PARSER_H
+#define JSONNET_PARSER_H
+
 #include <string>
 
 #include "lexer.h"
@@ -50,3 +53,4 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin);
  */
 std::string jsonnet_unparse_jsonnet(const AST *ast);
 
+#endif

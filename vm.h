@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef VM_H
-#define VM_H
+#ifndef JSONNET_VM_H
+#define JSONNET_VM_H
 
 #include "ast.h"
 #include "libjsonnet.h"

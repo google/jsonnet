@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef STATIC_ERROR_H
-#define STATIC_ERROR_H
+#ifndef JSONNET_STATIC_ERROR_H
+#define JSONNET_STATIC_ERROR_H
 
 struct Location {
     unsigned long line;

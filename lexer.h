@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef JSONNET_LEXER_H
+#define JSONNET_LEXER_H
 
 #include <cstdlib>
 #include <iostream>

@@ -14,9 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#ifndef JSONNET_STATIC_ANALYSIS_H
+#define JSONNET_STATIC_ANALYSIS_H
+
 #include "ast.h"
 
 /** Check the ast for appropriate use of self, super, and correctly bound variables.  Also
  * initialize the freeVariables member of function and object ASTs.
  */
 void jsonnet_static_analysis(AST *ast);
+
+#endif
