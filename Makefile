@@ -108,32 +108,3 @@ _jsonnet.so: _jsonnet.o $(LIB_OBJ)
 clean:
 	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.jsonnet.h
 
-
-# DO NOT DELETE
-
-lexer.o: static_error.h lexer.h
-parser.o: static_error.h ast.h lexer.h parser.h std.jsonnet.h
-static_analysis.o: static_analysis.h ast.h lexer.h static_error.h
-vm.o: vm.h ast.h lexer.h static_error.h libjsonnet.h parser.h state.h
-vm.o: static_analysis.h
-libjsonnet.o: libjsonnet.h parser.h lexer.h static_error.h ast.h
-libjsonnet.o: static_analysis.h vm.h
-jsonnet.o: libjsonnet.h
-_jsonnet.o: /usr/include/stdlib.h /usr/include/features.h
-_jsonnet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
-_jsonnet.o: /usr/include/stdio.h /usr/include/libio.h
-_jsonnet.o: /usr/include/_G_config.h /usr/include/wchar.h libjsonnet.h
-libjsonnet_test_snippet.o: /usr/include/stdlib.h /usr/include/features.h
-libjsonnet_test_snippet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
-libjsonnet_test_snippet.o: /usr/include/stdio.h /usr/include/libio.h
-libjsonnet_test_snippet.o: /usr/include/_G_config.h /usr/include/wchar.h
-libjsonnet_test_snippet.o: libjsonnet.h
-libjsonnet_test_file.o: /usr/include/stdlib.h /usr/include/features.h
-libjsonnet_test_file.o: /usr/include/stdc-predef.h /usr/include/alloca.h
-libjsonnet_test_file.o: /usr/include/stdio.h /usr/include/libio.h
-libjsonnet_test_file.o: /usr/include/_G_config.h /usr/include/wchar.h
-libjsonnet_test_file.o: libjsonnet.h
-_jsonnet.o: /usr/include/stdlib.h /usr/include/features.h
-_jsonnet.o: /usr/include/stdc-predef.h /usr/include/alloca.h
-_jsonnet.o: /usr/include/stdio.h /usr/include/libio.h
-_jsonnet.o: /usr/include/_G_config.h /usr/include/wchar.h libjsonnet.h
