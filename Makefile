@@ -64,7 +64,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	cd test_suite ; ./run_tests.sh
 
 depend:
-	makedepend -f Makefile $(LIB_SRC) jsonnet.cpp _jsonnet.c libjsonnet_test_snippet.c libjsonnet_test_file.c _jsonnet.c
+	makedepend -f- $(LIB_SRC) jsonnet.cpp _jsonnet.c libjsonnet_test_snippet.c libjsonnet_test_file.c _jsonnet.c > Makefile.depend 
 
 # Object files
 %.o: %.cpp
@@ -107,4 +107,8 @@ _jsonnet.so: _jsonnet.o $(LIB_OBJ)
 
 clean:
 	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o *.jsonnet.h
+
+-include Makefile.depend
+
+
 

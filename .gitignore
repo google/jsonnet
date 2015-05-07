@@ -13,6 +13,8 @@ core.*
 vgcore
 vgcore.*
 *.jsonnet.h
+Makefile.depend
+Makefile.depend.bak
 
 # Fractal demo
 case_studies/fractal/*.packer.log
