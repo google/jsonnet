@@ -17,6 +17,7 @@ limitations under the License.
 #include <cstdlib>
 #include <cstring>
 
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -94,14 +95,30 @@ struct JsonnetVm {
     { }
 };
 
+#define TRY try {
+#define CATCH(func) \
+    } catch (const std::bad_alloc &) {\
+        fputs("A memory allocation error occurred during " func ".\n", stderr); \
+        abort(); \
+    } catch (const std::exception &e) {\
+        std::cerr << "Something went wrong during " func ", please report this: " \
+                  << e.what() << std::endl; \
+        abort(); \
+    }
+
 JsonnetVm *jsonnet_make(void)
 {
+    TRY
     return new JsonnetVm();
+    CATCH("jsonnet_make")
+    return NULL;
 }
 
 void jsonnet_destroy(JsonnetVm *vm)
 {
+    TRY
     delete vm;
+    CATCH("jsonnet_destroy")
 }
 
 void jsonnet_max_stack(JsonnetVm *vm, unsigned v)
@@ -242,23 +259,35 @@ static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int 
 
 char *jsonnet_evaluate_file(JsonnetVm *vm, const char *filename, int *error)
 {
+    TRY
     return jsonnet_evaluate_file_aux(vm, filename, error, false);
+    CATCH("jsonnet_evaluate_file")
+    return NULL;  // Never happens.
 }
 
 char *jsonnet_evaluate_file_multi(JsonnetVm *vm, const char *filename, int *error)
 {
+    TRY
     return jsonnet_evaluate_file_aux(vm, filename, error, true);
+    CATCH("jsonnet_evaluate_file_multi")
+    return NULL;  // Never happens.
 }
 
 char *jsonnet_evaluate_snippet(JsonnetVm *vm, const char *filename, const char *snippet, int *error)
 {
+    TRY
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, false);
+    CATCH("jsonnet_evaluate_snippet")
+    return NULL;  // Never happens.
 }
 
 char *jsonnet_evaluate_snippet_multi(JsonnetVm *vm, const char *filename,
                                      const char *snippet, int *error)
 {
+    TRY
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, true);
+    CATCH("jsonnet_evaluate_snippet_multi")
+    return NULL;  // Never happens.
 }
 
 char *jsonnet_realloc(JsonnetVm *vm, char *str, size_t sz)
