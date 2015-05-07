@@ -66,6 +66,8 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 depend:
 	makedepend -f- $(LIB_SRC) jsonnet.cpp _jsonnet.c libjsonnet_test_snippet.c libjsonnet_test_file.c _jsonnet.c > Makefile.depend 
 
+parser.cpp: std.jsonnet.h
+
 # Object files
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
