@@ -54,7 +54,8 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * */
 typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, int *success);
 
-/** Allocate, resize, or free a buffer.
+/** Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will
+ * only return NULL if sz was zero.
  *
  * \param buf If NULL, allocate a new buffer.  If an previously allocated buffer, resize it.
  * \param sz The size of the buffer to return.  If zero, frees the buffer.

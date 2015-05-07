@@ -31,7 +31,13 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
-static char *from_string (JsonnetVm* vm, const std::string &v)
+static void memory_panic(void)
+{
+    fputs("FATAL ERROR: A memory allocation error occurred.\n", stderr);
+    abort();
+}
+
+static char *from_string(JsonnetVm* vm, const std::string &v)
 {
     char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
     std::strcpy(r, v.c_str());
@@ -40,7 +46,7 @@ static char *from_string (JsonnetVm* vm, const std::string &v)
 
 /** Resolve the absolute path and use C++ file io to load the file.
  */
-static char *default_import_callback (void *ctx, const char *base, const char *file, int *success)
+static char *default_import_callback(void *ctx, const char *base, const char *file, int *success)
 {
     auto *vm = static_cast<JsonnetVm*>(ctx);
 
@@ -98,8 +104,7 @@ struct JsonnetVm {
 #define TRY try {
 #define CATCH(func) \
     } catch (const std::bad_alloc &) {\
-        fputs("A memory allocation error occurred during " func ".\n", stderr); \
-        abort(); \
+        memory_panic(); \
     } catch (const std::exception &e) {\
         std::cerr << "Something went wrong during " func ", please report this: " \
                   << e.what() << std::endl; \
@@ -111,7 +116,7 @@ JsonnetVm *jsonnet_make(void)
     TRY
     return new JsonnetVm();
     CATCH("jsonnet_make")
-    return NULL;
+    return nullptr;
 }
 
 void jsonnet_destroy(JsonnetVm *vm)
@@ -193,6 +198,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
                 sz += pair.second.length() + 2; // Add a '\n' as well as sentinel
             }
             char *buf = (char*)::malloc(sz);
+            if (buf == nullptr) memory_panic();
             std::ptrdiff_t i = 0;
             for (const auto &pair : files) {
                 memcpy(&buf[i], pair.first.c_str(), pair.first.length() + 1);
@@ -210,14 +216,14 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
         } else {
             json_str += "\n";
             *error = false;
-            return ::strdup(json_str.c_str());
+            return from_string(vm, json_str);
         }
 
     } catch (StaticError &e) {
         std::stringstream ss;
         ss << "STATIC ERROR: " << e << std::endl;
         *error = true;
-        return ::strdup(ss.str().c_str());
+        return from_string(vm, ss.str());
 
     } catch (RuntimeError &e) {
         std::stringstream ss;
@@ -235,7 +241,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
             }
         }
         *error = true;
-        return ::strdup(ss.str().c_str());
+        return from_string(vm, ss.str());
     }
 
 }
@@ -262,7 +268,7 @@ char *jsonnet_evaluate_file(JsonnetVm *vm, const char *filename, int *error)
     TRY
     return jsonnet_evaluate_file_aux(vm, filename, error, false);
     CATCH("jsonnet_evaluate_file")
-    return NULL;  // Never happens.
+    return nullptr;  // Never happens.
 }
 
 char *jsonnet_evaluate_file_multi(JsonnetVm *vm, const char *filename, int *error)
@@ -270,7 +276,7 @@ char *jsonnet_evaluate_file_multi(JsonnetVm *vm, const char *filename, int *erro
     TRY
     return jsonnet_evaluate_file_aux(vm, filename, error, true);
     CATCH("jsonnet_evaluate_file_multi")
-    return NULL;  // Never happens.
+    return nullptr;  // Never happens.
 }
 
 char *jsonnet_evaluate_snippet(JsonnetVm *vm, const char *filename, const char *snippet, int *error)
@@ -278,7 +284,7 @@ char *jsonnet_evaluate_snippet(JsonnetVm *vm, const char *filename, const char *
     TRY
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, false);
     CATCH("jsonnet_evaluate_snippet")
-    return NULL;  // Never happens.
+    return nullptr;  // Never happens.
 }
 
 char *jsonnet_evaluate_snippet_multi(JsonnetVm *vm, const char *filename,
@@ -287,7 +293,7 @@ char *jsonnet_evaluate_snippet_multi(JsonnetVm *vm, const char *filename,
     TRY
     return jsonnet_evaluate_snippet_aux(vm, filename, snippet, error, true);
     CATCH("jsonnet_evaluate_snippet_multi")
-    return NULL;  // Never happens.
+    return nullptr;  // Never happens.
 }
 
 char *jsonnet_realloc(JsonnetVm *vm, char *str, size_t sz)
@@ -295,13 +301,17 @@ char *jsonnet_realloc(JsonnetVm *vm, char *str, size_t sz)
     (void) vm;
     if (str == nullptr) {
         if (sz == 0) return nullptr;
-        return static_cast<char*>(::malloc(sz));
+        auto *r = static_cast<char*>(::malloc(sz));
+        if (r == nullptr) memory_panic();
+        return r;
     } else {
         if (sz == 0) {
             ::free(str);
             return nullptr;
         } else {
-            return static_cast<char*>(::realloc(str, sz));
+            auto *r = static_cast<char*>(::realloc(str, sz));
+            if (r == nullptr) memory_panic();
+            return r;
         }
     }
 }
