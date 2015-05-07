@@ -254,7 +254,7 @@ static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int 
         std::stringstream ss;
         ss << "Opening input file: " << filename << ": " << strerror(errno);
         *error = true;
-        return ::strdup(ss.str().c_str());
+        return from_string(vm, ss.str());
     }
     std::string input;
     input.assign(std::istreambuf_iterator<char>(f),
