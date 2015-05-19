@@ -33,7 +33,7 @@ for TEST in *.jsonnet ; do
         echo "FAIL (exit code): $TEST"
         echo "Output:"
         echo "$OUTPUT"
-    elif [ "$OUTPUT" != "$GOLDEN" ] ; then
+    elif [[ ! "$OUTPUT" =~ $GOLDEN ]] ; then
         FAILED=$((FAILED + 1))
         echo "FAIL (output): $TEST"
         echo "Output:"

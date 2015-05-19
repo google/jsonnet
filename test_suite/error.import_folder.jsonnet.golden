@@ -1,2 +1,2 @@
-RUNTIME ERROR: Couldn't open import "lib": basic_filebuf::underflow error reading the file
+RUNTIME ERROR: Couldn't open import "lib": .*
 	error.import_folder.jsonnet:17:1-12	
