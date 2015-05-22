@@ -453,7 +453,7 @@ namespace {
                 case Token::OPERATOR:
                 case Token::PAREN_R:
                 case Token::SEMICOLON:
-                case Token::TAILCALL:
+                case Token::TAILSTRICT:
                 case Token::THEN:
                 throw unexpected(tok, "parsing terminal");
 
@@ -731,12 +731,12 @@ namespace {
                         std::vector<AST*> args;
                         Token end = parseCommaList(args, Token::PAREN_R,
                                                    "function argument", obj_level);
-                        bool tailcall = false;
-                        if (peek().kind == Token::TAILCALL) {
+                        bool tailstrict = false;
+                        if (peek().kind == Token::TAILSTRICT) {
                             pop();
-                            tailcall = true;
+                            tailstrict = true;
                         }
-                        lhs = alloc->make<Apply>(span(begin, end), lhs, args, tailcall);
+                        lhs = alloc->make<Apply>(span(begin, end), lhs, args, tailstrict);
 
                     } else if (op.kind == Token::BRACE_L) {
                         AST *obj;

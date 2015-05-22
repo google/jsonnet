@@ -27,7 +27,7 @@ local sum(x, v) =
     if x <= 0 then
         v
     else
-        sum(x - 1, x + v) tailcall;
+        sum(x - 1, x + v) tailstrict;
 
 local sz = 10000;
 std.assertEqual(sum(sz, 0), sz * (sz+1)/2) &&

@@ -486,8 +486,8 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                     kind = Token::SELF;
                 } else if (id == "super") {
                     kind = Token::SUPER;
-                } else if (id == "tailcall") {
-                    kind = Token::TAILCALL;
+                } else if (id == "tailstrict") {
+                    kind = Token::TAILSTRICT;
                 } else if (id == "then") {
                     kind = Token::THEN;
                 } else if (id == "true") {

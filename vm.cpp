@@ -319,7 +319,7 @@ namespace {
             stack.emplace_back(args...);
         }
 
-        /** If there is a tailcall annotated frame followed by some locals, pop them all. */
+        /** If there is a tailstrict annotated frame followed by some locals, pop them all. */
         void tailCallTrimStack (void)
         {
             for (int i=stack.size()-1 ; i>=0 ; --i) {
@@ -1181,7 +1181,7 @@ namespace {
                             for (unsigned i=0 ; i<func->params.size() ; ++i)
                                 bindings[func->params[i]] = args[i];
                             stack.newCall(ast.location, func, func->self, func->offset, bindings);
-                            if (ast.tailcall) {
+                            if (ast.tailstrict) {
                                 stack.top().thunks = args;
                                 stack.top().val = scratch;
                                 stack.top().tailCall = true;
@@ -1744,7 +1744,7 @@ namespace {
                             thunk->fill(scratch);
                         } else if (auto *closure = dynamic_cast<HeapClosure*>(f.context)) {
                             if (f.elementId < f.thunks.size()) {
-                                // If tailcall, force thunks
+                                // If tailstrict, force thunks
                                 HeapThunk *th = f.thunks[f.elementId++];
                                 if (!th->filled) {
                                     stack.newCall(f.location, th,

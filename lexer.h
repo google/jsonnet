@@ -58,7 +58,7 @@ struct Token {
         IN,
         LOCAL,
         NULL_LIT,
-        TAILCALL,
+        TAILSTRICT,
         THEN,
         SELF,
         SUPER,
@@ -112,7 +112,7 @@ struct Token {
             case NULL_LIT: return "null";
             case SELF: return "self";
             case SUPER: return "super";
-            case TAILCALL: return "tailcall";
+            case TAILSTRICT: return "tailstrict";
             case THEN: return "then";
             case TRUE: return "true";
 

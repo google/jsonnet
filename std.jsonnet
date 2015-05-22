@@ -56,9 +56,9 @@ limitations under the License.
                 if i >= std.length(str) then
                     arr + [v]
                 else if c == delim then
-                    aux(str, delim, i2, arr + [v], "") tailcall
+                    aux(str, delim, i2, arr + [v], "") tailstrict
                 else
-                    aux(str, delim, i2, arr, v + c) tailcall;
+                    aux(str, delim, i2, arr, v + c) tailstrict;
             aux(str, c, 0, [], ""),
 
     range(from, to)::
@@ -85,11 +85,11 @@ limitations under the License.
             if i >= std.length(arr) then
                 running
             else if arr[i] == null then
-                aux(arr, i + 1, first, running) tailcall
+                aux(arr, i + 1, first, running) tailstrict
             else if first then
-                aux(arr, i + 1, false, running + arr[i]) tailcall
+                aux(arr, i + 1, false, running + arr[i]) tailstrict
             else
-                aux(arr, i + 1, false, running + sep + arr[i]) tailcall;
+                aux(arr, i + 1, false, running + sep + arr[i]) tailstrict;
         if std.type(arr) != "array" then
             error "join second parameter should be array, got " + std.type(arr)
         else if std.type(sep) == "string" then
@@ -545,7 +545,7 @@ limitations under the License.
             if idx < 0 then
                 running
             else
-                aux(func, arr, func(arr[idx], running), idx - 1) tailcall;
+                aux(func, arr, func(arr[idx], running), idx - 1) tailstrict;
         aux(func, arr, init, std.length(arr) - 1),
 
     foldl(func, arr, init)::
@@ -553,7 +553,7 @@ limitations under the License.
             if idx >= std.length(arr) then
                 running
             else
-                aux(func, arr, func(running, arr[idx]), idx + 1) tailcall;
+                aux(func, arr, func(running, arr[idx]), idx + 1) tailstrict;
         aux(func, arr, init, 0),
 
 
@@ -698,7 +698,7 @@ limitations under the License.
                     // 2 LSB of i
                     base64_table[(arr[i] & 3) << 4] +
                     "==";
-                aux(arr, i + 3, r + str) tailcall
+                aux(arr, i + 3, r + str) tailstrict
             else if i + 2 >= std.length(arr) then
                 local str = 
                     // 6 MSB of i 
@@ -708,7 +708,7 @@ limitations under the License.
                     // 4 LSB of i+1 
                     base64_table[(arr[i+1] & 15) << 2] +
                     "="; 
-                aux(arr, i + 3, r + str) tailcall
+                aux(arr, i + 3, r + str) tailstrict
             else
                 local str = 
                     // 6 MSB of i 
@@ -719,7 +719,7 @@ limitations under the License.
                     base64_table[(arr[i+1] & 15) << 2 | (arr[i+2] & 192) >> 6] +
                     // 6 LSB of i+2 
                     base64_table[(arr[i+2] & 63)];
-                aux(arr, i + 3, r + str) tailcall;
+                aux(arr, i + 3, r + str) tailstrict;
 
         local sanity = std.foldl(function(r, a) r && (a < 256), bytes, true);
         if !sanity then
@@ -746,7 +746,7 @@ limitations under the License.
                     local n3 =
                         if str[i+3] == "=" then []
                         else [(base64_inv[str[i+2]] & 3) << 6 | base64_inv[str[i+3]]];
-                    aux(str, i+4, r + n1 + n2 + n3) tailcall;
+                    aux(str, i+4, r + n1 + n2 + n3) tailstrict;
             aux(str, 0, []),
 
     base64Decode(str)::
