@@ -282,20 +282,25 @@ namespace {
          */
         std::vector<HeapEntity*> entities;
 
-        /** A stash of entities that are intermediate values during computation.
-         *
-         * These are still live but are not reachable from the stack or heap, because they are the
-         * result of evaluating sub-expressions.  The garbage collector looks here as well as the
-         * stack and heap.  The stash is popped via the ScopedStashCleanUp class, which uses the
-         * RAII pattern to ensure the stash operations are balanced during execution.
-         */
-        std::vector<HeapEntity*> stash;
-
         /** The number of heap entities at the last garbage collection cycle. */
         unsigned long lastNumEntities;
 
         /** The number of heap entities now. */
         unsigned long numEntities;
+
+        /** Add the HeapEntity inside v to vec, if the value exists on the heap.   
+         */
+        void addIfHeapEntity(Value v, std::vector<HeapEntity*> &vec)
+        {
+            if (v.isHeap()) vec.push_back(v.v.h);
+        }
+
+        /** Add the HeapEntity inside v to vec, if the value exists on the heap.   
+         */
+        void addIfHeapEntity(HeapEntity *v, std::vector<HeapEntity*> &vec)
+        {
+            vec.push_back(v);
+        }
 
         public:
 
@@ -321,65 +326,71 @@ namespace {
         void markFrom(HeapEntity *from)
         {
             assert(from != nullptr);
-            GarbageCollectionMark thisMark = lastMark + 1;
-            if (from->mark == thisMark) return;
-            from->mark = thisMark;
-            if (auto *obj = dynamic_cast<HeapSimpleObject*>(from)) {
-                for (auto upv : obj->upValues)
-                    markFrom(upv.second);
-            } else if (auto *obj = dynamic_cast<HeapExtendedObject*>(from)) {
-                markFrom(obj->left);
-                markFrom(obj->right);
-            } else if (auto *obj = dynamic_cast<HeapComprehensionObject*>(from)) {
-                for (auto upv : obj->upValues)
-                    markFrom(upv.second);
-                for (auto upv : obj->compValues)
-                    markFrom(upv.second);
-            } else if (auto *obj = dynamic_cast<HeapSuperObject*>(from)) {
-                markFrom(obj->root);
-            } else if (auto *arr = dynamic_cast<HeapArray*>(from)) {
-                for (auto el : arr->elements)
-                    markFrom(el);
-            } else if (auto *func = dynamic_cast<HeapClosure*>(from)) {
-                for (auto upv : func->upValues)
-                    markFrom(upv.second);
-                if (func->self) markFrom(func->self);
-            } else if (auto *thunk = dynamic_cast<HeapThunk*>(from)) {
-                if (thunk->filled) {
-                    if (thunk->content.isHeap())
-                        markFrom(thunk->content.v.h);
-                } else {
-                    for (auto upv : thunk->upValues)
-                        markFrom(upv.second);
-                    if (thunk->self) markFrom(thunk->self);
+            const GarbageCollectionMark thisMark = lastMark + 1;
+            struct State {
+                HeapEntity *ent;
+                std::vector<HeapEntity*> children;
+                State(HeapEntity *ent) : ent(ent) { }
+            };
+
+            std::vector<State> stack;
+            stack.emplace_back(from);
+
+            while (stack.size() > 0) {
+                size_t curr_index = stack.size() - 1;
+                State &s = stack[curr_index];
+                HeapEntity *curr = s.ent;
+                if (curr->mark != thisMark) {
+                    curr->mark = thisMark;
+
+                    if (auto *obj = dynamic_cast<HeapSimpleObject*>(curr)) {
+                        for (auto upv : obj->upValues)
+                            addIfHeapEntity(upv.second, s.children);
+
+                    } else if (auto *obj = dynamic_cast<HeapExtendedObject*>(curr)) {
+                        addIfHeapEntity(obj->left, s.children);
+                        addIfHeapEntity(obj->right, s.children);
+
+                    } else if (auto *obj = dynamic_cast<HeapComprehensionObject*>(curr)) {
+                        for (auto upv : obj->upValues)
+                            addIfHeapEntity(upv.second, s.children);
+                        for (auto upv : obj->compValues)
+                            addIfHeapEntity(upv.second, s.children);
+
+
+                    } else if (auto *obj = dynamic_cast<HeapSuperObject*>(curr)) {
+                        addIfHeapEntity(obj->root, s.children);
+
+                    } else if (auto *arr = dynamic_cast<HeapArray*>(curr)) {
+                        for (auto el : arr->elements)
+                            addIfHeapEntity(el, s.children);
+
+                    } else if (auto *func = dynamic_cast<HeapClosure*>(curr)) {
+                        for (auto upv : func->upValues)
+                            addIfHeapEntity(upv.second, s.children);
+                        if (func->self)
+                            addIfHeapEntity(func->self, s.children);
+
+                    } else if (auto *thunk = dynamic_cast<HeapThunk*>(curr)) {
+                        if (thunk->filled) {
+                            if (thunk->content.isHeap())
+                                addIfHeapEntity(thunk->content.v.h, s.children);
+                        } else {
+                            for (auto upv : thunk->upValues)
+                                addIfHeapEntity(upv.second, s.children);
+                            if (thunk->self)
+                                addIfHeapEntity(thunk->self, s.children);
+                        }
+                    }
                 }
-            }
-        }
 
-        /** Avoid garbage collecting the given value.
-         *
-         * This is to be used in conjunction with ScopedStashCleanUp.
-         */
-        void stashIfIsHeap(const Value &v)
-        {
-            if (!v.isHeap()) return;
-            stash.push_back(v.v.h);
-        }
-
-        /** Avoid garbage collecting the given value.
-         *
-         * This is to be used in conjunction with ScopedStashCleanUp.
-         */
-        void stashIfIsHeap(HeapEntity *h)
-        {
-            stash.push_back(h);
-        }
-
-        /** Mark all objects reachable from the stash. */
-        void markFromStash(void)
-        {
-            for (HeapEntity *l : stash) {
-                markFrom(l);
+                if (s.children.size() > 0) {
+                    HeapEntity *next = s.children[s.children.size() - 1];
+                    s.children.pop_back();
+                    stack.emplace_back(next);  // CAUTION: s invalidated here
+                } else {
+                    stack.pop_back();  // CAUTION: s invalidated here
+                }
             }
         }
 
@@ -402,21 +413,6 @@ namespace {
             }
             lastNumEntities = numEntities = entities.size();
         }
-
-        /** Returns the stash stack to the size it was earlier. */
-        class ScopedStashCleanUp {
-            Heap &heap;
-            unsigned long sz;
-
-            public:
-            ScopedStashCleanUp(Heap &heap)
-              : heap(heap), sz(heap.stash.size())
-            { }
-            ~ScopedStashCleanUp(void)
-            {
-                heap.stash.resize(sz);
-            }
-        };
 
         /** Is it time to initiate a GC cycle? */
         bool checkHeap(void)
