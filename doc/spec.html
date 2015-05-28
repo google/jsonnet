@@ -1141,11 +1141,11 @@ v ↓ v
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{object} {
-∀i∈\{1\ldots n\}: e_i ↓ f_i ∈ String
+∀i∈\{1\ldots n\}: e_i ↓ f_i ∈ String\ ∪\ \{\null\}
 \\
 ∀i,j∈\{1\ldots n\}: f_i = f_j ⇒ i = j
 \\
-o = λf∈\{ f_1 \ldots f_n \}.\textrm{let }i\textrm{ such that } f=f_i
+o = λf∈(\{ f_1 \ldots f_n \} \setminus \null).\textrm{let }i\textrm{ such that } f=f_i
 \\
 \hspace{20pt} \left\{\begin{array}{ll}
 (\false, e'_i)  &amp;  \textrm{if }i≤m \\
