@@ -256,20 +256,18 @@ div.rules {
 
 <h1>Specification</h1>
 
-<p>
-This page is the authority on what Jsonnet programs should do.  It defines what
-input is / is not a syntactically valid Jsonnet program, and precisely how they are parsed.  It
-describes which programs should be rejected statically (i.e. before execution).  Finally, it
-specifies the manner in which the program is executed, i.e. the JSON that is output, or the dynamic
-error if there is one.</p>
+<p> This page is the authority on what Jsonnet programs should do.  It defines Jsonnet syntax and
+parsing.  It describes which programs should be rejected statically (i.e. before execution).
+Finally, it specifies the manner in which the program is executed, i.e. the JSON that is output, or
+the dynamic error if there is one.</p>
 
-<p>The specification is intended be terse but precise.  The intention is to illuminate various
-subtleties and edge cases in order to allow fully-compatible reimplementations of the language,
-refactoring tools, etc.  The specification employs some standard theoretical computer science
-techniques, namely <a href="http://en.wikipedia.org/wiki/Type_systems">type systems</a> and <a
-href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational semantics</a>.  If
-that's not your cup of tea, then see the more discussive description of Jsonnet behavior in <a
-href="tutorial.html">tutorial</a>.</p>
+<p>The specification is intended to be terse but precise.  The intention is to illuminate various
+subtleties and edge cases in order to allow fully-compatible reimplementations of the language, as
+well as analysis tools, refactoring tools, etc.  The specification employs some standard theoretical
+computer science techniques, namely <a href="http://en.wikipedia.org/wiki/Type_systems">type
+systems</a> and <a href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational
+semantics</a>.  If that's not your cup of tea, then see the more discussive description of Jsonnet
+behavior in <a href="tutorial.html">tutorial</a>.</p>
 
 <h2>Abstract Syntax</h2>
 
@@ -409,6 +407,7 @@ and + have their usual meaning, i.e. repetition without commas.  </p>
 <table>
 <tr><td><i>field</i></td><td>::=</td><td>
 <i>fieldname</i>
+[ '<code>+</code>' ]
 '<code>:</code>'
 [ '<code>:</code>' ]
 <i>e</i>
@@ -418,6 +417,7 @@ and + have their usual meaning, i.e. repetition without commas.  </p>
 '<code>(</code>'
 <i>id</i>★
 '<code>)</code>'
+[ '<code>+</code>' ]
 '<code>:</code>'
 [ '<code>:</code>' ]
 <i>e</i>
@@ -756,6 +756,17 @@ Other cases invoke structural recursion.
 <i>desugarfield</i>(<i>fname</i> : <i>expr</i>, <i>binds</i>, <i>b</i>)
 </td><td> = </td><td>
 <i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+
+</td></tr><tr><td>
+<i>desugarfield</i>(<i>fname</i> +:: <i>expr</i>, <i>binds</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) :: <code>super</code>.<i>fname</i> <code>+</code> <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
+
+</td></tr><tr><td>
+<i>desugarfield</i>(<i>fname</i> +: <i>expr</i>, <i>binds</i>, <i>b</i>)
+</td><td> = </td><td>
+<i>desugarfname</i>(<i>fname</i>, <i>b</i>) : <code>super</code>.<i>fname</i> <code>+</code> <code>local</code> <i>binds</i> <code>;</code> <i>desugar</i>(<i>expr</i>, <code>true</code>)
 
 
 </td></tr><tr><td>
