@@ -373,6 +373,10 @@ namespace {
                             pop();
                         }
 
+                        if (is_method && plus_sugar) {
+                            throw StaticError(next.location, "Cannot use +: syntax sugar in a method: "+next.data);
+                        }
+
                         popExpect(Token::COLON);
                         Object::Field::Hide field_hide = Object::Field::INHERIT;
                         if (peek().kind == Token::COLON) {
