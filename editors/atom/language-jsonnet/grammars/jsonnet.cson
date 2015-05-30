@@ -46,7 +46,11 @@
   },
   { 
     'name': 'support.function.jsonnet'
-    'match': '\\bstd[.](range|split|stringChars|substr|toString)\\b'
+    'match': '\\bstd[.](set|set(Diff|Inter|Union)|sort)\\b'
+  },
+  { 
+    'name': 'support.function.jsonnet'
+    'match': '\\bstd[.](range|split|stringChars|substr|toString|uniq)\\b'
   },
 
   { 
