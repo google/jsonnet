@@ -26,7 +26,7 @@ limitations under the License.
 
     toString(a)::
         if std.type(a) == "string" then a else "" + a,
-    
+
     substr(str, from, len)::
         if std.type(str) != "string" then
             error "substr first parameter should be a string, got " + std.type(str)
@@ -751,7 +751,18 @@ limitations under the License.
 
     base64Decode(str)::
         local bytes = std.base64DecodeBytes(str);
-        std.join("", std.map(function(b) std.char(b), bytes))
+        std.join("", std.map(function(b) std.char(b), bytes)),
 
+    // Quicksort
+    sort(arr)::
+        local l = std.length(arr);
+        if std.length(arr) == 0 then
+            []
+        else
+            local pivot = arr[0];
+            local rest = std.makeArray(l - 1, function(i) arr[i + 1]);
+            local left = std.filter(function(x) x <= pivot, rest);
+            local right = std.filter(function(x) x > pivot, rest);
+            std.sort(left) + [pivot] + std.sort(right),
 
 }

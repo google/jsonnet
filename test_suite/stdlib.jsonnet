@@ -14,11 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This file tests functions from the standard library (std.jsonnet and builtins).
+
 // Can capture std from another file.
 std.assertEqual((import "lib/capture_std_func.jsonnet")().sqrt(4), 2) &&
 
 // Each import has its own std.
-std.assertEqual(local std = { sqrt: function(x) x }; local lib = import "lib/capture_std.jsonnet"; lib.sqrt(4), 2) &&
+std.assertEqual(
+    local std = { sqrt: function(x) x };
+    local lib = import "lib/capture_std.jsonnet";
+    lib.sqrt(4),
+    2) &&
 
 // Now, test each std library function in turn.
 
@@ -244,5 +250,16 @@ std.assertEqual(std.base64Decode("SGVsbG8gV29ybGQh"), "Hello World!") &&
 std.assertEqual(std.base64Decode("SGVsbG8gV29ybGQ="), "Hello World") &&
 std.assertEqual(std.base64Decode("SGVsbG8gV29ybA=="), "Hello Worl") &&
 std.assertEqual(std.base64Decode(""), "") &&
+
+std.assertEqual(std.sort([]), []) &&
+std.assertEqual(std.sort([1]), [1]) &&
+std.assertEqual(std.sort([1, 2]), [1, 2]) &&
+std.assertEqual(std.sort([2, 1]), [1, 2]) &&
+std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
+std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
+std.assertEqual(
+    std.sort(["The", "rain", "in", "spain", "falls", "mainly", "on", "the", "plain."]),
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+
 
 true
