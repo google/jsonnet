@@ -61,6 +61,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonne
 	$(PYTHON) jsonnet_test_snippet.py $(TEST_SNIPPET)
 	$(PYTHON) jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
+	cd examples/terraform ; ./check.sh
 	cd test_suite ; ./run_tests.sh
 
 depend:
