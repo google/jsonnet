@@ -1384,14 +1384,37 @@ namespace {
                             }
                             break;
 
-                            case Value::STRING:
-                            if (ast.op == BOP_PLUS) {
-                                scratch = makeString(static_cast<HeapString*>(lhs.v.h)->value +
-                                                     static_cast<HeapString*>(rhs.v.h)->value);
-                            } else {
-                                throw makeError(ast.location,
-                                                "Binary operator " + bop_string(ast.op)
-                                                + " does not operate on strings.");
+                            case Value::STRING: {
+                                const std::string &lhs_str =
+                                    static_cast<HeapString*>(lhs.v.h)->value;
+                                const std::string &rhs_str =
+                                    static_cast<HeapString*>(rhs.v.h)->value;
+                                switch (ast.op) {
+                                    case BOP_PLUS:
+                                    scratch = makeString(lhs_str + rhs_str);
+                                    break;
+
+                                    case BOP_LESS_EQ:
+                                    scratch = makeBoolean(lhs_str <= rhs_str);
+                                    break;
+
+                                    case BOP_GREATER_EQ:
+                                    scratch = makeBoolean(lhs_str >= rhs_str);
+                                    break;
+
+                                    case BOP_LESS:
+                                    scratch = makeBoolean(lhs_str < rhs_str);
+                                    break;
+
+                                    case BOP_GREATER:
+                                    scratch = makeBoolean(lhs_str > rhs_str);
+                                    break;
+
+                                    default:
+                                    throw makeError(ast.location,
+                                                    "Binary operator " + bop_string(ast.op)
+                                                    + " does not operate on strings.");
+                                }
                             }
                             break;
                         }
