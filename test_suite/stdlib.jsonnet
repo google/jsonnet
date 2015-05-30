@@ -268,8 +268,33 @@ std.assertEqual(std.uniq(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(
     std.uniq(["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]),
     ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+
+local animal_set = ["ant", "bat", "cat", "dog", "elephant", "fish", "giraffe"];
+
 std.assertEqual(
     std.uniq(["ant", "bat", "cat", "dog", "dog", "elephant", "fish", "fish", "giraffe"]),
-    ["ant", "bat", "cat", "dog", "elephant", "fish", "giraffe"]) &&
+    animal_set) &&
+
+std.assertEqual(
+    std.set(["dog", "ant", "bat", "cat", "dog", "elephant", "fish", "giraffe", "fish"]),
+    animal_set) &&
+
+std.assertEqual(std.setUnion(animal_set, animal_set), animal_set) &&
+std.assertEqual(std.setUnion(animal_set, []), animal_set) &&
+std.assertEqual(std.setUnion([], animal_set), animal_set) &&
+std.assertEqual(std.setUnion([], []), []) &&
+std.assertEqual(std.setUnion(["a", "b"], ["b", "c"]), ["a", "b", "c"]) &&
+
+std.assertEqual(std.setInter(animal_set, animal_set), animal_set) &&
+std.assertEqual(std.setInter(animal_set, []), []) &&
+std.assertEqual(std.setInter([], animal_set), []) &&
+std.assertEqual(std.setInter([], []), []) &&
+std.assertEqual(std.setInter(["a", "b"], ["b", "c"]), ["b"]) &&
+
+std.assertEqual(std.setDiff(animal_set, animal_set), []) &&
+std.assertEqual(std.setDiff(animal_set, []), animal_set) &&
+std.assertEqual(std.setDiff([], animal_set), []) &&
+std.assertEqual(std.setDiff([], []), []) &&
+std.assertEqual(std.setDiff(["a", "b"], ["b", "c"]), ["a"]) &&
 
 true

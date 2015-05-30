@@ -327,6 +327,31 @@ is suitable for constructing bash scripts and the like.</p>
 <p>Removes successive duplicates.  When given a sorted array, removes all duplicates.</p>
 
 
+<h3>Sets</h3>
+
+Sets are represented as ordered arrays without duplicates.
+
+<h4>std.set(arr)</h4>
+
+<p>Syntax sugar for std.uniq(std.sort(arr)).</p>
+
+
+<h4>std.setInter(a, b)</h4>
+
+<p>Set intersection operation (values in both a and b).</p>
+
+
+<h4>std.setUnion(a, b)</h4>
+
+<p>Set union operation (values in either a or b).  Note that + on sets will simply concatenate the
+arrays, possibly forming an array that is not a set (due to not bein ordered without duplicates).</p>
+
+
+<h4>std.setDiff(a, b)</h4>
+
+<p>Set difference operation (values in a but not b).</p>
+
+
 <h3>Base 64</h3>
 
 <h4>std.base64(v)</h4>

@@ -633,7 +633,8 @@ limitations under the License.
                     ch;
         "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
     
-    escapeStringPython(str):: std.escapeStringJson(str),
+    escapeStringPython(str)::
+        std.escapeStringJson(str),
         
     escapeStringBash(str_)::
         local str = std.toString(str_);
@@ -728,7 +729,7 @@ limitations under the License.
             aux(bytes, 0, ""),
 
     
-    base64DecodeBytes(str):: 
+    base64DecodeBytes(str)::
         if std.length(str) % 4 != 0 then
             error "Not a base64 encoded string \"%s\"" % str
         else
@@ -774,4 +775,39 @@ limitations under the License.
             else
                 a + [b];
         std.foldl(f , arr, []),
+
+    set(arr)::
+        std.uniq(std.sort(arr)),
+
+    setUnion(a, b)::
+        std.set(a + b),
+
+    setInter(a, b)::
+        local aux(a, b, i, j, acc) =
+            if i >= std.length(a) || j >= std.length(b) then
+                acc
+            else
+                if a[i] == b[j] then
+                    aux(a, b, i + 1, j + 1, acc + [a[i]]) tailstrict
+                else if a[i] < b[j] then
+                    aux(a, b, i + 1, j, acc) tailstrict
+                else
+                    aux(a, b, i, j + 1, acc) tailstrict;
+        aux(a, b, 0, 0, []) tailstrict,
+
+    setDiff(a, b)::
+        local aux(a, b, i, j, acc) =
+            if i >= std.length(a) then
+                acc
+            else if j >= std.length(b) then
+                aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
+            else
+                if a[i] == b[j] then
+                    aux(a, b, i + 1, j + 1, acc) tailstrict
+                else if a[i] < b[j] then
+                    aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
+                else
+                    aux(a, b, i, j + 1, acc) tailstrict;
+        aux(a, b, 0, 0, []) tailstrict,
+
 }
