@@ -765,4 +765,13 @@ limitations under the License.
             local right = std.filter(function(x) x > pivot, rest);
             std.sort(left) + [pivot] + std.sort(right),
 
+    uniq(arr)::
+        local f(a, b) =
+            if std.length(a) == 0 then
+                [b]
+            else if a[std.length(a) - 1] == b then
+                a
+            else
+                a + [b];
+        std.foldl(f , arr, []),
 }

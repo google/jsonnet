@@ -255,11 +255,21 @@ std.assertEqual(std.sort([]), []) &&
 std.assertEqual(std.sort([1]), [1]) &&
 std.assertEqual(std.sort([1, 2]), [1, 2]) &&
 std.assertEqual(std.sort([2, 1]), [1, 2]) &&
-std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
+std.assertEqual(std.sort(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
 std.assertEqual(
     std.sort(["The", "rain", "in", "spain", "falls", "mainly", "on", "the", "plain."]),
     ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
 
+std.assertEqual(std.uniq([]), []) &&
+std.assertEqual(std.uniq([1]), [1]) &&
+std.assertEqual(std.uniq([1, 2]), [1, 2]) &&
+std.assertEqual(std.uniq(["1", "2"]), ["1", "2"]) &&
+std.assertEqual(
+    std.uniq(["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]),
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+std.assertEqual(
+    std.uniq(["ant", "bat", "cat", "dog", "dog", "elephant", "fish", "fish", "giraffe"]),
+    ["ant", "bat", "cat", "dog", "elephant", "fish", "giraffe"]) &&
 
 true
