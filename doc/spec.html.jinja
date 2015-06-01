@@ -768,10 +768,10 @@ judgement and in the \(v ⇓ j\) judgement (because it is defined in terms of \(
 
 <h4>Jsonnet Values</h4>
 
-<p>
-Jsonnet values are yielded by executing Jsonnet expressions.  These are not the same as JSON values,
-although there is some overlap.  In particular, they contain functions which are not representable
-in JSON, and both object fields and array elements have yet to be executed to yield values.</p>
+<p> Jsonnet values are the result of executing Jsonnet expressions.  These are not the same as JSON
+values, although there is some overlap.  In particular, they contain functions which are not
+representable in JSON, and both object fields and array elements have yet to be executed to yield
+values.</p>
 
 <table>
 <tr><td><em>v</em></td><td>∈</td><td><em>Value</em></td><td>=</td><td>
@@ -788,7 +788,7 @@ in JSON, and both object fields and array elements have yet to be executed to yi
 </td></tr>
 
 <tr><td>                            </td><td> </td><td><em>Hidden</em></td><td>=</td><td>
-{ <code>true</code>, <code>false</code> }
+{ <code>:</code>, <code>::</code>, <code>:::</code> }
 </td></tr>
 
 <tr><td>                            </td><td> </td><td><em>Function</em></td><td>::=</td><td>
@@ -810,23 +810,39 @@ expression to be evaluated when the field is accessed.  </p>
 <p> To construct a partial function, we use a bounded lambda notation, e.g. the object
 <code>{a: 5, b: 5}</code> would be represented by
 λ<i>x</i>∈{<code>"a"</code>, <code>"b"</code>}.
-(<code>false</code>, <code>5</code>).  In order to allow substituting objects into
+(<code>:</code>, <code>5</code>).  In order to allow substituting objects into
 expressions e, we use the following function to convert:</p>
 
 <div class="rules">
 
 <div class="sequent-rule">
 \[\begin{array}{l}
-exp(o) = \object{[e_1]:o(f_1) \ldots [e_m]:o(f_m), [e_{m+1}]::f_{m+1} \ldots [e_n]::e'_n } \\
+exp(o) = \object{[f_1]:e_1 \ldots f_p:e_p, [f_{p+1}]::e_{p+1} \ldots [f_q]::e_q , [f_{q+1}]:::e_{q+1} \ldots [f_r]:::e_r } \\
 \textrm{where }\\
-\hspace{20pt}\{(f_1,e_1) \ldots (f_m,e_m)\} = \{ (f,e) | f ∈ dom(o), o(f) = (\false, e) \} \\
-\hspace{20pt}\{(f_{m+1}, f_{m+1}) \ldots (f_n, e_n)\} = \{ (f,e) | f ∈ dom(o), o(f) = (\true, e) \} \\
+\hspace{20pt}\{(f_1,e_1) \ldots (f_p,e_p)\} = \{ (f,e) | f ∈ dom(o), o(f) = (:, e) \} \\
+\hspace{20pt}\{(f_{p+1}, f_{p+1}) \ldots (f_q, e_q)\} = \{ (f,e) | f ∈ dom(o), o(f) = (::, e) \} \\
+\hspace{20pt}\{(f_{q+1}, f_{q+1}) \ldots (f_r, e_r)\} = \{ (f,e) | f ∈ dom(o), o(f) = (:::, e) \} \\
 \end{array}
 \]
 </div>
 
 </div>
 
+<p>The hidden status of fields is preserved over inheritance if the right hand side uses the
+<code>:</code> form.  This is codified with the following function:</p>
+
+<div class="rules">
+
+<div class="sequent-rule">
+\[
+h_L + h_R = \left\{\begin{array}{ll}
+h_L &amp; \textrm{if }h_R = \texttt{:} \\
+h_R &amp; \textrm{otherwise} \\
+\end{array}\right.
+\]
+</div>
+
+</div>
 
 <h4>Capture-Avoiding Substitution</h4>
 
@@ -852,6 +868,7 @@ calculus</a>.  In the following, assume that y ≠ x.</p>
 [ <i>e'</i> / <i>x</i> ] =
 <code>{</code>...<code>[</code><i>e</i>[<i>e'</i> / <i>x</i>]<code>]</code>: <i>e''</i>[<i>e'</i> /
 <i>x</i>]...<code>}</code>
+</td><td>Similarly for ::, :::.
 </td></tr> <tr><td>
 
 <code>{[</code><i>e</i><code>]: </code><i>e''</i> <code>for</code> <i>x</i> <code>in</code>
@@ -883,13 +900,13 @@ calculus</a>.  In the following, assume that y ≠ x.</p>
 (<code>function (...</code><i>x</i><code>...) </code><i>e</i>)
 [ <i>e'</i> / <i>x</i> ] =
 <code>function (...</code><i>x</i><code>...) </code><i>e</i>
-</td><td>If any variable matches.
+</td><td>If any param matches.
 </td></tr> <tr><td>
 
 (<code>function (...</code><i>y</i><code>...) </code><i>e</i>)
 [ <i>e'</i> / <i>x</i> ] =
 <code>function (...</code><i>x</i><code>...) </code><i>e</i>[ <i>e'</i> / <i>x</i> ]
-</td><td>If no variable matches.
+</td><td>If no param matches.
 </td></tr> <tr><td>
 
 Otherwise, <i>e</i> [ <i>e'</i> / <i>x</i> ] proceeds via syntax-directed recursion into subterms
@@ -922,6 +939,7 @@ objects: </p>
 ⟦ <i>e'</i> / <i>kw</i> ⟧ =
 <code>{</code>...<code>[</code><i>e</i>⟦ <i>e'</i> / <i>kw</i> ⟧<code>]</code>:
 <i>e''</i>...<code>}</code>
+</td><td>Similarly for ::, :::.
 </td></tr> <tr><td>
 
 <code>{</code>[<i>e</i>]: <i>e''</i> <code>for</code> <i>x</i> <code>in</code>
@@ -954,16 +972,17 @@ v ↓ v
 <div class="sequent-rule"> \[\rule{object} {
 ∀i∈\{1\ldots n\}: e_i ↓ f_i ∈ String\ ∪\ \{\null\}
 \\
-∀i,j∈\{1\ldots n\}: f_i = f_j ⇒ i = j
+∀i,j∈\{1\ldots n\}: f_i = f_j ≠ \null ⇒ i = j
 \\
 o = λf∈(\{ f_1 \ldots f_n \} \setminus \null).\textrm{let }i\textrm{ such that } f=f_i
 \\
 \hspace{20pt} \left\{\begin{array}{ll}
-(\false, e'_i)  &amp;  \textrm{if }i≤m \\
-(\true,  e'_i)  &amp;  \textrm{otherwise} \\
+(:, e'_i)  &amp;  \textrm{if }i≤p \\
+(::, e'_i)  &amp;  \textrm{if }i≤q \\
+(:::,  e'_i)  &amp;  \textrm{otherwise} \\
 \end{array}\right. \\
 } {
-\object{[e_1]:e'_1 \ldots [e_m]:e'_m, [e_{m+1}]::e'_{m+1} \ldots [e_n]::e'_n } ↓ o
+\object{[e_1]:e'_1 \ldots [e_p]:e'_p, [e_{p+1}]::e'_{p+1} \ldots [e_q]::e'_q, [e_{q+1}]:::e'_{q+1} \ldots [e_r]:::e'_r } ↓ o
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{object-comp} {
@@ -973,7 +992,7 @@ e_3 ↓ [ e'_1 \ldots e'_n ]
 \\
 ∀i,j∈\{1\ldots n\}: f_i = f_j ⇒ i = j
 \\
-o = λf∈\{ f_1 \ldots f_n \}. (\false, e_2[e'_i/x])\textrm{ if }f_i = f
+o = λf∈\{ f_1 \ldots f_n \}. (:, e_2[e'_i/x])\textrm{ if }f_i = f
 } {
 \ocomp{e_1}{e_2}{x}{e_3} ↓ o
 } \] </div>
@@ -1031,12 +1050,13 @@ e_1 ↓ \false \hspace{15pt} e_3 ↓ v
 <div class="sequent-rule"> \[\rule{object-inherit} {
 e_L ↓ o_L \hspace{15pt} e_R ↓ o_R \hspace{15pt}  y, z \textrm{ fresh}
 \\
-e_s = \super + exp(λf∈dom(o_L). o_L(f)⟦y / \self, z / \super ⟧)
+e_s = \super + exp(λf∈dom(o_L). (h_L, e_L⟦y / \self, z / \super ⟧))
 \\
 o = λf∈dom(o_L, o_R).
 \\
 \begin{array}{ll}
-\hspace{20pt} (h, \local{y = \self, z = \super}{e_{body} ⟦e_s / \super⟧})  &amp;  \textrm{if }o_R(f) = (h, e_{body}) \\
+\hspace{20pt} (h_L + h_R, \local{y = \self, z = \super}{e_R ⟦e_s / \super⟧})  &amp;  \textrm{if }o_L(f) = (h_L, e_L) ∧ o_R(f) = (h_R, e_R) \\
+\hspace{20pt} o_R(f)                 &amp;  \textrm{if }f∈o_R \\
 \hspace{20pt} o_L(f)                 &amp;  \textrm{otherwise} \\
 \end{array} \\
 } {
@@ -1182,7 +1202,7 @@ j ⇓ j
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{manifest-object} {
-visible = \{\ f\ |\ f∈dom(o) ∧ o(f) = (\false, \_)\ \}
+visible = \{\ f\ |\ f∈dom(o) ∧ o(f) ≠ (::, \_)\ \}
 \\
 j = λf∈visible. j'\textrm{ where }(\_, e_{body}) = o(f)\textrm{, and }e_{body}⟦exp(o)/self,\{\}/super⟧↓v⇓j'
 } {
@@ -1201,8 +1221,8 @@ o ⇓ j
 <h3>Properties of Jsonnet Inheritance</h3>
 
 <p> Let D, E, F range over arbitrary expressions.  Let ≡ mean contextual equivalence, i.e if D ≡ E
-then C[D] and C[E] will manifest to the same JSON, for any context C.  If D yields an error, and E
-yields an error, then D ≡ E (regardless of what the exact text of the message is).</p>
+then C[D] and C[E] will manifest to the same JSON, for any context C. Note that if D and E both
+yield errors, they are considered equivalent D ≡ E regardless of the text of the error messages.</p>
 
 <table>
 <tr>
@@ -1296,7 +1316,7 @@ b = ∃f∈dom(o). o(f) = (\false, \_)
 <div class="sequent-rule"> \[\rule{object-fields} {
 e ↓ o
 \\
-\{f_1 \ldots f_n\} = \{\ f\ |\ f∈dom(o) ∧ o(f) = (\false, \_)\ \}
+\{f_1 \ldots f_n\} = \{\ f\ |\ f∈dom(o) ∧ o(f) ≠ (::, \_)\ \}
 \\
 ∀i,j∈\{1 \ldots n\}: i≤j ⇒ f_i≤f_j
 } {
