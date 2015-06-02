@@ -357,9 +357,11 @@ namespace {
             top().bindings = up_values;
             top().tailCall = false;
 
+            #ifndef NDEBUG
             for (const auto &bind : up_values) {
                 assert(bind.second != nullptr);
             }
+            #endif
         }
 
         /** Look up the stack to find the self binding. */
