@@ -212,10 +212,12 @@ the JsonnetVM object itself must be cleaned up using the corresponding functions
 
 <h2>Python API</h2>
 
-<p>The Python API wraps the C API in a straightforward way.  It can be built with 'make
-_jsonnet.so'.  The Python module provides two functions, <tt>evaluate_file(f)</tt> and
-<tt>evaluate_snippet(f, e)</tt>.  In the latter case, the parameter <tt>f</tt> is used in stack
-traces due to errors raised in the snippet.</p>
+<p>The Python API wraps the C API in a straightforward way.  It can be installed with pip install
+jsonnet or built with setup.py directly.</p>
+
+<p>The Python module provides two functions, <tt>evaluate_file(f)</tt> and <tt>evaluate_snippet(f,
+e)</tt>.  In the latter case, the parameter <tt>f</tt> is used in stack traces due to errors raised
+in the snippet.</p>
 
 <p>Keyword arguments to these functions are used to control the virtual machine.  They are
 <tt>gc_min_objects</tt>, <tt>gc_growth_trigger</tt>, <tt>ext_vars</tt>, <tt>debug_ast</tt>, and
@@ -225,7 +227,27 @@ mapping strings to strings.  The other keyword arguments should be numbers.</p>
 <p>If an error is raised during the evaluation of the Jsonnet code, it is formed into a stack trace
 and thrown as a python RuntimeError.  Otherwise, the JSON string is returned.  To convert this
 into objects for easy interpretation in Python, use the <a
-href="https://docs.python.org/2/library/json.html">json</a> module.</p>
+href="https://docs.python.org/2/library/json.html">json</a> module.  An example:</p>
+
+<pre>
+import json
+import _jsonnet
+
+jsonnet_str = '''
+{
+    person1: {
+        name: "Alice",
+        welcome: "Hello " + self.name + "!",
+    },
+    person2: self.person1 { name: std.extVar("OTHER_NAME") },
+}
+'''
+
+json_str = _jsonnet.evaluate_snippet("snippet", jsonnet_str, ext_vars={'OTHER_NAME': 'Bob'})
+json_obj = json.loads(json_str)
+for person_id, person in json_obj.iteritems():
+    print('%s is %s, greeted by "%s"' % (person_id, person['name'], person['welcome']))
+</pre>
 
 
 <div style="margin-bottom: 50px"></div>
