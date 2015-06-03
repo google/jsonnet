@@ -23,6 +23,15 @@ limitations under the License.
  */
 
 
+#define LIB_JSONNET_VERSION "v0.7.5"
+
+
+/** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
+ * http://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between
+ * header and compiled library.
+ */
+const char *jsonnet_version(void);
+
 /** Jsonnet virtual machine context. */
 struct JsonnetVm;
 
@@ -51,7 +60,7 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * \param rel The path imported by the code.
  *\ param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
- * */
+ */
 typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, int *success);
 
 /** Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will

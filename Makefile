@@ -26,16 +26,12 @@ EMCC ?= emcc
 
 CP ?= cp
 OD ?= od
-PYTHON ?= python
 
 CXXFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c++0x -fPIC
 CFLAGS ?= -g -O3 -Wall -Wextra -pedantic -std=c99 -fPIC
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
-
-PYTHON_CFLAGS ?= `python-config --includes`
-PYTHON_LDFLAGS ?= `python-config --ldflags --libs`
 
 SHARED_LDFLAGS ?= -shared
 
@@ -46,7 +42,7 @@ SHARED_LDFLAGS ?= -shared
 LIB_SRC = lexer.cpp parser.cpp static_analysis.cpp vm.cpp libjsonnet.cpp
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
-ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so libjsonnet.js doc/libjsonnet.js $(LIB_OBJ)
+ALL = jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file libjsonnet.js doc/libjsonnet.js $(LIB_OBJ)
 ALL_HEADERS = libjsonnet.h vm.h static_analysis.h parser.h lexer.h ast.h static_error.h state.h std.jsonnet.h
 
 default: jsonnet
@@ -54,18 +50,16 @@ default: jsonnet
 all: $(ALL)
 
 TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
-test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file _jsonnet.so
+test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 	./jsonnet -e $(TEST_SNIPPET)
 	LD_LIBRARY_PATH=. ./libjsonnet_test_snippet $(TEST_SNIPPET)
 	LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet"
-	$(PYTHON) jsonnet_test_snippet.py $(TEST_SNIPPET)
-	$(PYTHON) jsonnet_test_file.py "test_suite/object.jsonnet"
 	cd examples ; ./check.sh
 	cd examples/terraform ; ./check.sh
 	cd test_suite ; ./run_tests.sh
 
 depend:
-	makedepend -f- $(LIB_SRC) jsonnet.cpp _jsonnet.c libjsonnet_test_snippet.c libjsonnet_test_file.c _jsonnet.c > Makefile.depend 
+	makedepend -f- $(LIB_SRC) jsonnet.cpp libjsonnet_test_snippet.c libjsonnet_test_file.c > Makefile.depend 
 
 parser.cpp: std.jsonnet.h
 
@@ -95,13 +89,6 @@ libjsonnet_test_snippet: libjsonnet_test_snippet.c libjsonnet.so libjsonnet.h
 
 libjsonnet_test_file: libjsonnet_test_file.c libjsonnet.so libjsonnet.h
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
-
-# Python binding.
-_jsonnet.o: _jsonnet.c
-	$(CC) $(CFLAGS) $(PYTHON_CFLAGS) $< -c -o $@
-
-_jsonnet.so: _jsonnet.o $(LIB_OBJ)
-	$(CXX) $(LDFLAGS) $(LIB_OBJ) $< $(SHARED_LDFLAGS) $(PYTHON_LDFLAGS) -o $@
 
 # Encode standard library for embedding in C
 %.jsonnet.h: %.jsonnet

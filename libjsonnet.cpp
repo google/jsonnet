@@ -111,6 +111,11 @@ struct JsonnetVm {
         abort(); \
     }
 
+const char *jsonnet_version(void)
+{
+    return LIB_JSONNET_VERSION;
+}
+
 JsonnetVm *jsonnet_make(void)
 {
     TRY

@@ -29,8 +29,6 @@ extern "C" {
     #include "libjsonnet.h"
 }
 
-#define JSONNET_VERSION "v0.7.5"
-
 struct ImportCallbackContext {
     JsonnetVm *vm;
     std::vector<std::string> *jpaths;
@@ -155,7 +153,7 @@ std::vector<std::string> simplify_args(int argc, const char **argv)
 
 void version(std::ostream &o)
 {
-    o << "Jsonnet commandline interpreter " << JSONNET_VERSION << std::endl;
+    o << "Jsonnet commandline interpreter " << jsonnet_version() << std::endl;
 }
 
 void usage(std::ostream &o)
@@ -202,8 +200,8 @@ int main(int argc, const char **argv)
 {
     try {
         std::vector<std::string> jpaths;
-        jpaths.emplace_back("/usr/share/" JSONNET_VERSION "/");
-        jpaths.emplace_back("/usr/local/share/" JSONNET_VERSION "/");
+        jpaths.emplace_back("/usr/share/" + std::string(jsonnet_version()) + "/");
+        jpaths.emplace_back("/usr/local/share/" + std::string(jsonnet_version()) + "/");
 
         JsonnetVm *vm = jsonnet_make();
         bool filename_is_code = false;
