@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import os
-from distutils.core import setup, Extension
-from distutils.command.build import build as DistutilsBuild
+from setuptools import setup
+from setuptools import Extension
+from setuptools.command.build_ext import build_ext as BuildExt
 from subprocess import Popen
 
 
@@ -33,20 +34,13 @@ def get_version():
                 return line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
 
 
-def make_targets(targets):
-    """
-    Runs the jsonnet C makefile to build the given targets
-    """
-    p = Popen(['make'] + targets, cwd=DIR)
-    p.wait()
-    if p.returncode != 0:
-        raise Exception('Could not build %s' % (', '.join(targets)))
-
-
-class CustomBuild(DistutilsBuild):
+class BuildJsonnetExt(BuildExt):
     def run(self):
-        make_targets(LIB_OBJECTS)
-        DistutilsBuild.run(self)
+        p = Popen(['make'] + LIB_OBJECTS, cwd=DIR)
+        p.wait()
+        if p.returncode != 0:
+            raise Exception('Could not build %s' % (', '.join(LIB_OBJECTS)))
+        BuildExt.run(self)
 
 
 jsonnet_ext = Extension(
@@ -56,12 +50,15 @@ jsonnet_ext = Extension(
     language='c++'
 )
 
+
 setup(name='jsonnet',
       url='https://google.github.io/jsonnet/doc/',
       description='Python bindings for Jsonnet - The data templating language ',
       author='David Cunningham',
       author_email='dcunnin@google.com',
       version=get_version(),
-      cmdclass={'build': CustomBuild},
-      ext_modules=[jsonnet_ext]
+      cmdclass={
+          'build_ext': BuildJsonnetExt,
+      },
+      ext_modules=[jsonnet_ext],
 )
