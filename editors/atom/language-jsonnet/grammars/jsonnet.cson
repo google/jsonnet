@@ -46,7 +46,7 @@
   },
   { 
     'name': 'support.function.jsonnet'
-    'match': '\\bstd[.](set|set(Diff|Inter|Union)|sort)\\b'
+    'match': '\\bstd[.](set|set(Diff|Inter|Member|Union)|sort)\\b'
   },
   { 
     'name': 'support.function.jsonnet'

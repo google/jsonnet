@@ -297,4 +297,8 @@ std.assertEqual(std.setDiff([], animal_set), []) &&
 std.assertEqual(std.setDiff([], []), []) &&
 std.assertEqual(std.setDiff(["a", "b"], ["b", "c"]), ["a"]) &&
 
+std.assertEqual(std.setMember("a", ["a", "b", "c"]), true) &&
+std.assertEqual(std.setMember("a", []), false) &&
+std.assertEqual(std.setMember("a", ["b", "c"]), false) &&
+
 true

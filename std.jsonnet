@@ -779,6 +779,10 @@ limitations under the License.
     set(arr)::
         std.uniq(std.sort(arr)),
 
+    setMember(x, arr)::
+        // TODO(dcunnin): Binary chop for O(log n) complexity
+        std.length(std.setInter([x], arr)) > 0,
+
     setUnion(a, b)::
         std.set(a + b),
 
