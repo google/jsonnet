@@ -177,7 +177,7 @@ local credentials = import "credentials.jsonnet";
             // Instances are assigned zones on a round robin scheme.
             local zone(hash) =
                 local arr = [
-                    "us-central1-a",
+                    "us-central1-c",
                     "us-central1-b",
                     "us-central1-f",
                 ];
