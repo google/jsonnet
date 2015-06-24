@@ -97,7 +97,7 @@ limitations under the License.
         else if std.type(sep) == "array" then
             aux(arr, 0, true, [])
         else
-            error "join first parameter should be string or array, got " + std.type(arr),
+            error "join first parameter should be string or array, got " + std.type(sep),
 
     lines(arr)::
         std.join("\n", arr + [""]),
