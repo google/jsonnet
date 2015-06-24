@@ -644,9 +644,14 @@ namespace {
          */
         AST *import(const LocationRange &loc, const std::string &file)
         {
+            std::string dir = dir_name(loc.file);
             const std::string *input = importString(loc, file);
 
-            auto *expr = jsonnet_parse(alloc, file, input->c_str());
+            std::string abs_file = file;
+            if (dir.length() > 0)
+                abs_file = dir + '/' + abs_file;
+
+            auto *expr = jsonnet_parse(alloc, abs_file, input->c_str());
             jsonnet_static_analysis(expr);
             return expr;
         }

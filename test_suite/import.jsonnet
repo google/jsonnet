@@ -22,5 +22,6 @@ std.assertEqual(local A = 7; local lib = import "lib/A_20.jsonnet"; lib, 20) &&
 std.assertEqual(local A = 7, lib = import "lib/A_20.jsonnet"; lib, 20) &&
 std.assertEqual(importstr "lib/some_file.txt", "Hello World!\n") &&
 std.assertEqual(import "lib/rel_path.jsonnet", "rel_path") &&
+std.assertEqual(import "lib/rel_path4.jsonnet", "rel_path") &&
 
 true
