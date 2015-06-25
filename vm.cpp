@@ -649,7 +649,7 @@ namespace {
 
             std::string abs_file = file;
             if (dir.length() > 0)
-                abs_file = dir + '/' + abs_file;
+                abs_file = dir + abs_file;
 
             auto *expr = jsonnet_parse(alloc, abs_file, input->c_str());
             jsonnet_static_analysis(expr);
