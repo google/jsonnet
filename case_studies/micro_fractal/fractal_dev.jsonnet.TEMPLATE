@@ -1,0 +1,43 @@
+local libservice = import "lib/libservice.jsonnet";
+
+import "fractal.jsonnet" {
+
+    environments: {
+        default: libservice.GcpCredentials {
+            project: "verbing-noun-123",  // CHANGE ME!
+            serviceAccount: import "dev_service_account_key.json",  // PROVIDE THIS FILE!
+            sshUser: "someuser",  // CHANGE ME!
+        }
+    },
+
+    cassandraUserPass: "xxxxxxxx",  // CHANGE ME!
+    cassandraRootPass: "XXXXXXXX",  // CHANGE ME!
+    dnsSuffix: "dev.yourdomain.com.",  // CHANGE ME!
+
+    zone: self.DnsZone,
+
+    appserv: self.Appserv {
+        tilegen: "tilegen",
+        dnsZone: "zone",
+        deployment: {
+            v1: {
+                deployed: [1],
+                attached: [1],
+            },
+        }
+    },
+
+    tilegen: self.Tilegen {
+        dnsZone: "zone",
+        deployment: {
+            v1: {
+                deployed: [1],
+                attached: [],
+            },
+        }, 
+    },
+
+    db: self.Db {
+        dnsZone: "zone",
+    },
+}
