@@ -37,7 +37,8 @@ local libhttp = import "lib/libhttp.jsonnet";
         tilegen:: error "Appserv needs tilegen field",
 
         versions: {
-            v1: service.CommonBaseInstance {
+            latest: self.v3,
+            v3: service.CommonBaseInstance {
                 Image+: app.ImageMixin {
                     pipPackages +: ["httplib2", "cassandra-driver", "blist"],
                 },
@@ -58,7 +59,7 @@ local libhttp = import "lib/libhttp.jsonnet";
                     libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
                 ],
                 zones: ["us-central1-c", "us-central1-b", "us-central1-f"],
-            }
+            },
         },
     },
 
@@ -67,12 +68,13 @@ local libhttp = import "lib/libhttp.jsonnet";
         dnsSuffix: app.dnsSuffix,
         port: app.tilegenPort,
         versions: {
-            v1: service.CommonBaseInstance {
+            latest: self.v4,
+            v4: service.CommonBaseInstance {
                 Image+: app.ImageMixin {
                     aptPackages +: ["g++", "libpng-dev"],
                 },
                 local version = self,
-                srcDir:: "tilegen",
+                srcDir:: "tilegen3",
                 conf:: app.ApplicationConf {
                     iters: 200,
                 },

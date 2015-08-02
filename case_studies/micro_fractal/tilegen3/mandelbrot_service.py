@@ -18,9 +18,11 @@
 """Serve fractal images over HTTP by calling out to mandelbrot.
 """
 
+import hashlib
 import json
 import math
 import os
+import string
 import subprocess
 import time
 
@@ -28,18 +30,37 @@ import flask
 
 app = flask.Flask(__name__)
 
-CONF = None
-for i in xrange(1, 60):
-    try:
-        with open('conf.json') as conf_file:
-            CONF = json.load(conf_file)
-    except IOError:
-        time.sleep(1)
+if __name__ == "__main__":
+    CONF = {
+        'width': 128,
+        'height': 128,
+        'iters': 100,
+    }
+else:
+    CONF = None
+    for i in xrange(1, 60):
+        print 'Attempting to read conf.json: Attempt %d' % i
+        try:
+            with open('conf.json') as conf_file:
+                CONF = json.load(conf_file)
+            print 'Success!'
+            break
+        except IOError:
+            time.sleep(1)
 
 if CONF == None:
     sys.stderr.write('ERROR: Could not open conf.json.')
     sys.exit(1)
 
+
+with open ('mandelbrot.cpp', "r") as stream:
+    content = stream.read()
+    ETAG = hashlib.sha1(content).hexdigest()
+
+def check_etag():
+    request_etag = flask.request.headers.get('If-None-Match', None)
+    print 'Request ETag: %s' % request_etag
+    return ETAG == request_etag
 
 @app.route("/")
 def handle_fractal():
@@ -48,6 +69,9 @@ def handle_fractal():
     Returns:
         The image, wrapped in an HTML response.
     """
+
+    if check_etag():
+        return flask.make_response(), 304
 
     level = int(flask.request.args.get("l", "0"))
     x = float(int(flask.request.args.get("x", "0")))
@@ -75,6 +99,7 @@ def handle_fractal():
     response = flask.make_response(image_data)
     response.headers["Content-Type"] = "image/png"
     response.headers["cache-control"] = "public, max-age=600"
+    response.headers["ETag"] = ETAG
 
     return response
 
@@ -85,6 +110,9 @@ def handle_thumb():
     Returns:
         The image, wrapped in an HTML response.
     """
+
+    if check_etag():
+        return flask.make_response(), 304
 
     level = int(flask.request.args.get("l", "0"))
     x = float(flask.request.args.get("x", "0"))
@@ -112,8 +140,9 @@ def handle_thumb():
     response = flask.make_response(image_data)
     response.headers["Content-Type"] = "image/png"
     response.headers["cache-control"] = "public, max-age=600"
+    response.headers["ETag"] = ETAG
 
     return response
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=False)

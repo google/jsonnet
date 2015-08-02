@@ -178,9 +178,14 @@ class Service:
         else:
             raise RuntimeError('Did not recognize image command kind: ' + cmd['kind'])
 
-    def compileStartupScript(self, cmds):
+    def compileStartupScript(self, cmds, bootCmds):
         lines = []
+        lines.append('if [ ! -r /micromanage_instance_initialized ] ; then')
         for cmd in cmds:
+            lines += self.compileCommandToBash(cmd)
+        lines.append('touch /micromanage_instance_initialized')
+        lines.append('fi')
+        for cmd in bootCmds:
             lines += self.compileCommandToBash(cmd)
         return '\n'.join(lines)
 

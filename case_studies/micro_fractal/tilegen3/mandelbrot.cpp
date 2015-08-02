@@ -27,6 +27,7 @@ limitations under the License.
 
 int main(int argc, const char **argv)
 {
+
     if (argc != 8) {
         std::cerr <<"Usage: <width> <height> <iters> <left> <bottom> <right> <top>" << std::endl;
         std::cerr <<"PNG file is written to stdout." << std::endl;

@@ -52,11 +52,12 @@ blueprint_schema = {
         },
     },
     'required': ['environments'],
-    'additionalProperties': {
-        'oneOf': [
-            GoogleService().serviceSchema,
-        ],
-    },
+    #'additionalProperties': {
+    #    'oneOf': [
+    #        GoogleService().serviceSchema,
+    #    ],
+    #},
+    'additionalProperties': GoogleService().serviceSchema,
 }
 
 class ConfigError (Exception):

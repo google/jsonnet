@@ -120,8 +120,9 @@ class GoogleService(Service):
                                     'minItems': 1,
                                 },
                                 'cmds': Service.cmdsSchema,
+                                'bootCmds': Service.cmdsSchema,
                             },
-                            'required': ['metadata', 'disk', 'cmds'],
+                            'required': ['metadata', 'disk', 'cmds', 'bootCmds'],
                             'additionalProperties': True,
                         },
                     }
@@ -254,17 +255,20 @@ class GoogleService(Service):
         # Process commands
         for inst_name, inst in instances.iteritems():
             cmds = inst['cmds']
+            boot_cmds = inst['bootCmds']
             metadata = inst['metadata']
             def curl_md(k):
                 md_pref = 'http://169.254.169.254/computeMetadata/v1/instance/attributes'
                 return 'curl -s -H Metadata-Flavor:Google %s/%s' % (md_pref, k)
             if 'startup-script' in metadata:
-                metadata['micromanage-startup-script'] = metadata['startup-script']
+                # Move user startup script out of the way (but still run it at every boot).
+                metadata['micromanage-user-startup-script'] = metadata['startup-script']
                 metadata.pop('startup-script', None)
-                cmds += ['%s | bash' % curl_md('micromanage-startup-script')]
+                bootCmds += ['%s | bash' % curl_md('micromanage-user-startup-script')]
             inst['metadata'] = metadata
-            inst['metadata_startup_script'] = self.compileStartupScript(cmds)
+            inst['metadata_startup_script'] = self.compileStartupScript(cmds, boot_cmds)
             inst.pop('cmds', None)
+            inst.pop('bootCmds', None)
 
         terraform_file = 'service.%s.tf' % service_name
 

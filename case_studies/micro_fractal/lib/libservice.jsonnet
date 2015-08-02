@@ -144,6 +144,7 @@ local libos = import "libos.jsonnet";
             machine_type: "f1-micro",
             scopes:: ["devstorage.read_only", "logging.write"],
             cmds: [],
+            bootCmds: [],
             network_interface: {
                 network: service.networkName,
                 access_config: {
