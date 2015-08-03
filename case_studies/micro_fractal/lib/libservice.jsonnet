@@ -111,6 +111,7 @@ local libos = import "libos.jsonnet";
     GcpService: {
         local service = self,
         kind: "Google",
+        children: {},
         dnsSuffix:: error "No dnsSuffix given.",
         infrastructure: if self.dnsZone == null then {
         } else {
@@ -139,7 +140,7 @@ local libos = import "libos.jsonnet";
         dnsZone:: null,
         networkName:: "default",
         
-       CommonBaseInstance:: {
+        CommonBaseInstance:: {
             local instance = self,
             machine_type: "f1-micro",
             scopes:: ["devstorage.read_only", "logging.write"],
@@ -245,6 +246,7 @@ local libos = import "libos.jsonnet";
     GcpZone:: {
         local service = self,
         kind: "Google",
+        children: {},
         dnsName:: error "GcpZone must have dnsName, e.g. example.com",
         description:: "Zone for " + self.dnsName,
         infrastructure: {

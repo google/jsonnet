@@ -53,6 +53,7 @@ blueprint_schema = {
     },
     'required': ['environments'],
     #'additionalProperties': {
+    #    'id': 'service',
     #    'oneOf': [
     #        GoogleService().serviceSchema,
     #    ],
@@ -86,9 +87,9 @@ def config_check(config):
                 raise ConfigError('Config error: No such environment %s in service %s' % (environment_name, service_name))
             
 
-def config_load(filename):
+def config_load(filename, ext_vars):
     try:
-        text = _jsonnet.evaluate_file(filename, max_trace=100)
+        text = _jsonnet.evaluate_file(filename, max_trace=100, ext_vars=ext_vars)
     except RuntimeError as e:
         # Error from Jsonnet
         sys.stderr.write(e.message)
@@ -114,17 +115,19 @@ def merge_into(a, b):
 # Build a Terraform and packer config for all services
 def compile(config):
     extras, packers, tfs = {}, {}, {}
-    for environment_name, environment in config['environments'].iteritems():
+    environments = config['environments']
+    for environment_name, environment in environments.iteritems():
         artefacts = service_kinds[environment['kind']].compileProvider(config, environment_name)
         merge_into(extras, artefacts['extras'])
         merge_into(tfs, artefacts['tfs'])
 
     for service_name, service in config.iteritems():
         if service_name != 'environments':
-            artefacts = service_kinds[service['kind']].compile(config, service_name)
-            merge_into(extras, artefacts['extras'])
-            merge_into(packers, artefacts['packers'])
-            merge_into(tfs, artefacts['tfs'])
+            artefact_collections = service_kinds[service['kind']].compile(environments, '', service_name, service)
+            for artefacts in artefact_collections:
+                merge_into(extras, artefacts['extras'])
+                merge_into(packers, artefacts['packers'])
+                merge_into(tfs, artefacts['tfs'])
 
     return extras, packers, tfs
 
@@ -186,6 +189,10 @@ def output_generate(config, check_environment):
             if image_name not in imgs:
                 buildables.append(dirfilename)
 
+    # Avoid a warning from Terraform that there are no tf files
+    if not len(tfs):
+        tfs['empty.tf'] = {}
+
     # Output Terraform configs
     for filename, tf in tfs.iteritems():
         dirfilename = '%s/%s' % (dirpath, filename)
@@ -200,21 +207,21 @@ def output_delete(dirpath):
     shutil.rmtree(dirpath)
 
 
-def action_blueprint(config, args):
+def action_blueprint(config_file, config, args):
     if args:
         sys.stderr.write('Action "blueprint" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
     print(jsonstr(config))
         
 
-def action_schema(config, args):
+def action_schema(config_file, config, args):
     if args:
         sys.stderr.write('Action "schema" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
     print(jsonstr(blueprint_schema))
         
 
-def action_generate_to_editor(config, args):
+def action_generate_to_editor(config_file, config, args):
     if args:
         sys.stderr.write('Action "generate-to-editor" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
@@ -225,7 +232,7 @@ def action_generate_to_editor(config, args):
     output_delete(dirpath)
 
 
-def action_apply(config, args):
+def action_apply(config_file, config, args):
     if args:
         sys.stderr.write('Action "apply" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
@@ -252,7 +259,7 @@ def action_apply(config, args):
             sys.stderr.write('Error from packer, aborting.\n')
             sys.exit(1)
 
-    state_file = 'tf.state'
+    state_file = config_file + '.tfstate'
 
     command = ['terraform', 'plan',
                '-state', '%s/%s' % (os.getcwd(), state_file),
@@ -281,13 +288,13 @@ def action_apply(config, args):
     output_delete(dirpath)
 
 
-def action_destroy(config, args):
+def action_destroy(config_file, config, args):
     if args:
         sys.stderr.write('Action "apply" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
     buildables, dirpath, extra_files, packer_files, tf_files = output_generate(config, False)
-    command = ['terraform', 'destroy', '-force', '-state', '%s/tf.state' % os.getcwd()]
+    command = ['terraform', 'destroy', '-force', '-state', '%s/%s.tfstate' % (os.getcwd(), config_file)]
     tf_process = subprocess.Popen(command, cwd=dirpath)
     exitcode = tf_process.wait()
     if exitcode != 0:
@@ -297,7 +304,7 @@ def action_destroy(config, args):
 
 
 
-def action_image_gc(config, args):
+def action_image_gc(config_file, config, args):
     extras, packers, tfs = compile(config)
     used_images = collections.defaultdict(lambda: [])
     all_images = {}
@@ -353,19 +360,52 @@ def print_usage(channel):
     channel.write("Usage: python micromanage.py <config.jsonnet> <action> <args>\n")
     channel.write("Available actions: %s\n" % ', '.join(actions.keys()))
 
-if len(sys.argv) < 3:
-    sys.stderr.write('Only %d cmdline param(s).\n' % (len(sys.argv) - 1))
+ext_vars = {}  # For Jsonnet evaluation
+remaining_args = []
+i = 1
+
+def next_arg(i):
+    i += 1
+    if i >= len(sys.argv):
+        sys.stderr.write('Expected another commandline argument.\n')
+        sys.exit(1)
+    return i, sys.argv[i]
+
+while i < len(sys.argv):
+    arg = sys.argv[i]
+    if arg == '-E' or arg == '--env':
+        i, env_var = next_arg(i)
+        env_val = os.environ.get(env_var)
+        if not env_val:
+            sys.stderr.write('-E referred to non-existent environment variable "%s".\n' % env_var)
+            sys.exit(1)
+        ext_vars[env_var] = env_val
+    elif arg == '-V' or arg == '--var':
+        i, data = next_arg(i)
+        splits = string.split(data, '=', 1)
+        if len(splits) < 2:
+            sys.stderr.write('-V must be followed by key=val, got "%s".\n' % data)
+            sys.exit(1)
+        ext_vars[splits[0]] = splits[1]
+    elif arg == '-f' or arg == '--force':
+        force = True
+    else:
+        remaining_args.append(arg)
+    i += 1
+
+if len(remaining_args) < 2:
+    sys.stderr.write('Not enough commandline arguments.\n')
     print_usage(sys.stderr)
     sys.exit(1)
 
-config_file = sys.argv[1]
-action = sys.argv[2]
-args = sys.argv[3:]
+config_file = remaining_args[0]
+action = remaining_args[1]
+args = remaining_args[2:]
 
 if action not in actions:
     sys.stderr.write('Invalid action: "%s"' % action)
     print_usage(sys.stderr)
     sys.exit(1)
 
-config = config_load(config_file)
-actions[action](config, args)
+config = config_load(config_file, ext_vars)
+actions[action](config_file, config, args)

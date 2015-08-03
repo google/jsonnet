@@ -42,7 +42,7 @@ class Service:
                 {
                     'type': 'object',
                     'properties': {
-                        'kind': {'type': 'string', 'pattern': '^CopyFile$'},
+                        'kind': {'enum': ['CopyFile']},
                         'owner': {'type': 'string' },
                         'group': {'type': 'string' },
                         'dirPermissions': {'type': 'string' },
@@ -56,7 +56,7 @@ class Service:
                 {
                     'type': 'object',
                     'properties': {
-                        'kind': {'type': 'string', 'pattern': '^LiteralFile$'},
+                        'kind': {'enum': ['LiteralFile']},
                         'owner': {'type': 'string' },
                         'group': {'type': 'string' },
                         'filePermissions': {'type': 'string' },
@@ -69,7 +69,7 @@ class Service:
                 {
                     'type': 'object',
                     'properties': {
-                        'kind': {'type': 'string', 'pattern': '^EnsureDir$'},
+                        'kind': {'enum': ['EnsureDir']},
                         'owner': {'type': 'string' },
                         'group': {'type': 'string' },
                         'dirPermissions': {'type': 'string' },
@@ -207,5 +207,5 @@ class Service:
     def translateSelfName(self, service_name, v):
         return self._selfNameRegex.sub(service_name, v)
     
-    def compile(self, config, service_name):
+    def compile(self, environments, prefix, service_name, service):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)

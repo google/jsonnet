@@ -22,7 +22,7 @@ class GoogleService(Service):
     environmentSchema = {
         'type': 'object',
         'properties': {
-            'kind': {'type': 'string', 'pattern': '^Google$'},
+            'kind': {'enum': ['Google']},
             'project': {'type': 'string'},
             'region': {'type': 'string'},
             'serviceAccount': {
@@ -32,7 +32,7 @@ class GoogleService(Service):
                     'private_key': {'type': 'string'},
                     'client_email': {'type': 'string'},
                     'client_id': {'type': 'string'},
-                    'type': {'type': 'string', 'pattern': '^service_account$'},
+                    'type': {'enum': ['service_account']},
 
                 },
                 'required': ['private_key', 'client_email'],
@@ -40,7 +40,7 @@ class GoogleService(Service):
             },
             'sshUser': {'type': 'string'},
         },
-        'required': ['project', 'region', 'serviceAccount', 'sshUser'],
+        'required': ['kind', 'project', 'region', 'serviceAccount', 'sshUser'],
         'additionalProperties': False,
     }
 
@@ -60,6 +60,10 @@ class GoogleService(Service):
         'properties' : {
             'environment' : {'type' : 'string'},
             'kind' : {'type' : 'string'},
+            'children': {
+                'type': 'object',
+                'additionalProperties': {'$ref': '#/additionalProperties'},
+            },
             'infrastructure' : {
                 'type': 'object',
                 'properties': {
@@ -138,6 +142,7 @@ class GoogleService(Service):
             'kind', 
             'infrastructure', 
             'outputs',
+            'children',
         ],
         'additionalProperties': False,
     }
@@ -192,24 +197,25 @@ class GoogleService(Service):
             },
         }
 
-    def compile(self, config, service_name):
-        service = config[service_name]
+    def compile(self, environments, prefix, service_name, service):
+        service_name = prefix + service_name
         environment_name = service.get('environment', 'default')
-        environment = config['environments'][environment_name]
+        environment = environments[environment_name]
         environment_name_tf = 'google.%s' % environment_name
         infra = service['infrastructure']
         packers = {}
         outputs = service['outputs']
+        children = service['children']
 
 
-        def all_resources(sname, s):
-            other_infra = s['infrastructure']
-            r = []
-            for res_kind_name, resources in other_infra.iteritems():
-                for res_name in resources:
-                    expanded_name = self.translateSelfName(sname, res_name)
-                    r.append('%s.%s' % (res_kind_name, expanded_name))
-            return r
+        #def all_resources(sname, s):
+        #    other_infra = s['infrastructure']
+        #    r = []
+        #    for res_kind_name, resources in other_infra.iteritems():
+        #        for res_name in resources:
+        #            expanded_name = self.translateSelfName(sname, res_name)
+        #            r.append('%s.%s' % (res_kind_name, expanded_name))
+        #    return r
         
         # Translate ${-} to service name
         def recursive_update(c):
@@ -228,9 +234,7 @@ class GoogleService(Service):
         outputs = recursive_update(outputs)
 
 
-        # Prepend all names
-        # Add name and provider attributes
-        # Fix up "depends_on" attributes
+        # Add provider attributes
         for res_kind_name, res_kind_obj in infra.iteritems():
             for res_name, res in res_kind_obj.iteritems():
                 res['provider'] = environment_name_tf
@@ -272,16 +276,22 @@ class GoogleService(Service):
 
         terraform_file = 'service.%s.tf' % service_name
 
-        return {
-            'packers': packers,
-            'tfs': {
-                terraform_file: {
-                    'resource': infra,
-                    'output': {
-                        k: { 'value': outputs[k] }
-                        for k in outputs
-                    }
+        return [
+            {
+                'packers': packers,
+                'tfs': {
+                    terraform_file: {
+                        'resource': infra,
+                        'output': {
+                            k: { 'value': outputs[k] }
+                            for k in outputs
+                        }
+                    },
                 },
-            },
-            'extras': { },
-        }
+                'extras': { },
+            }
+        ] + [
+            artefacts
+            for child_name, child in children.iteritems()
+            for artefacts in self.compile(environments, '%s%s-' % (prefix, service_name), child_name, child)
+        ]
