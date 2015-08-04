@@ -23,7 +23,7 @@ limitations under the License.
  */
 
 
-#define LIB_JSONNET_VERSION "v0.7.8"
+#define LIB_JSONNET_VERSION "v0.7.9"
 
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
