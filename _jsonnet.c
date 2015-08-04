@@ -33,7 +33,8 @@ struct ImportCtx {
     PyObject *callback;
 };
 
-static char *cpython_import_callback(void *ctx_, const char *base, const char *rel, int *success)
+static char *cpython_import_callback(void *ctx_, const char *base, const char *rel,
+                                     char **found_here, int *success)
 {
     const struct ImportCtx *ctx = ctx_;
     PyObject *arglist, *result;
@@ -57,13 +58,25 @@ static char *cpython_import_callback(void *ctx_, const char *base, const char *r
         return out;
     }
 
-    if (!PyString_Check(result)) {
-        out = jsonnet_str(ctx->vm, "import_callback did not return a string");
+    if (!PyTuple_Check(result)) {
+        out = jsonnet_str(ctx->vm, "import_callback did not return a tuple");
+        *success = 0;
+    } else if (PyTuple_Size(result) != 2) {
+        out = jsonnet_str(ctx->vm, "import_callback did not return a tuple (size 2)");
         *success = 0;
     } else {
-        const char *result_cstr = PyString_AsString(result);
-        out = jsonnet_str(ctx->vm, result_cstr);
-        *success = 1;
+        PyObject *file_name = PyTuple_GetItem(result, 0);
+        PyObject *file_content = PyTuple_GetItem(result, 1);
+        if (!PyString_Check(file_name) || !PyString_Check(file_content)) {
+            out = jsonnet_str(ctx->vm, "import_callback did not return a pair of strings");
+            *success = 0;
+        } else {
+            const char *found_here_cstr = PyString_AsString(file_name);
+            const char *content_cstr = PyString_AsString(file_content);
+            *found_here = jsonnet_str(ctx->vm, found_here_cstr);
+            out = jsonnet_str(ctx->vm, content_cstr);
+            *success = 1;
+        }
     }
 
     Py_DECREF(result);

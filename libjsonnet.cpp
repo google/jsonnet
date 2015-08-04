@@ -46,7 +46,8 @@ static char *from_string(JsonnetVm* vm, const std::string &v)
 
 /** Resolve the absolute path and use C++ file io to load the file.
  */
-static char *default_import_callback(void *ctx, const char *base, const char *file, int *success)
+static char *default_import_callback(void *ctx, const char *base, const char *file,
+                                     char **found_here_cptr, int *success)
 {
     auto *vm = static_cast<JsonnetVm*>(ctx);
 
@@ -77,6 +78,7 @@ static char *default_import_callback(void *ctx, const char *base, const char *fi
         std::string input;
         input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
         *success = 1;
+        *found_here_cptr = from_string(vm, abs_path);
         return from_string(vm, input);
     } catch (const std::ios_base::failure &io_err) {
         *success = 0;

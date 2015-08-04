@@ -58,10 +58,13 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * \param ctx User pointer, given in jsonnet_import_callback.
  * \param base The directory containing the code that did the import.
  * \param rel The path imported by the code.
+ * \param found_here Set this byref param to path to the file, absolute or relative to the
+ *     process's CWD.  This is necessary so that imports from the content of the imported file can
+ *     be resolved correctly.  Allocate memory with jsonnet_realloc.  Only use when *success = 0.
  *\ param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
  */
-typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, int *success);
+typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, char **found_here, int *success);
 
 /** Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will
  * only return NULL if sz was zero.

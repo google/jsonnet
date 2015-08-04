@@ -37,9 +37,11 @@ mapping strings to strings.  The other keyword arguments should be numbers.</p>
 
 <p>Another keyword argument <tt>import_callback</tt> can be used to pass a callable to trap the
 Jsonnet import constructs.  This allows, e.g., reading files out of archives or implementing library
-search paths.  The supplied function must take two string arguments (current working directory and
-the string given to the import construct, which can usually be concatenated to form an actual path)
-and return a string (the content of the file).</p>
+search paths.  The supplied function must take two string arguments (directory of the current file
+and the string given to the import construct, which can usually be concatenated to form an actual
+path but that is up to you).  It returns a tuple of two strings, the first being the actual path of
+the file and the second being the content.  The actual path is required so that imports can be
+resolved within the imported file.</p>
 
 <p>If an error is raised during the evaluation of the Jsonnet code, it is formed into a stack trace
 and thrown as a python RuntimeError.  Otherwise, the JSON string is returned.  To convert this

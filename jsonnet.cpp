@@ -41,7 +41,8 @@ enum ImportStatus {
 };
 
 static enum ImportStatus try_path(const std::string &dir, const std::string &rel,
-                                  std::string &content, std::string &err_msg)
+                                  std::string &content, std::string &found_here,
+                                  std::string &err_msg)
 {
     std::string abs_path;
     if (rel.length() == 0) {
@@ -74,18 +75,26 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         return IMPORT_STATUS_IO_ERROR;
     }
 
+    found_here = abs_path;
+
     return IMPORT_STATUS_OK;
 }
 
-static char *import_callback (void *ctx_, const char *dir, const char *file, int *success)
+static char *from_string(JsonnetVm* vm, const std::string &v)
+{   
+    char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
+    std::strcpy(r, v.c_str());
+    return r;
+}
+
+static char *import_callback (void *ctx_, const char *dir, const char *file,
+                              char **found_here_cptr, int *success)
 {
     const auto &ctx = *static_cast<ImportCallbackContext*>(ctx_);
 
-    std::string input;
+    std::string input, found_here, err_msg;
 
-    std::string err_msg;
-
-    ImportStatus status = try_path(dir, file, input, err_msg);
+    ImportStatus status = try_path(dir, file, input, found_here, err_msg);
 
     std::vector<std::string> jpaths(*ctx.jpaths);
 
@@ -98,21 +107,18 @@ static char *import_callback (void *ctx_, const char *dir, const char *file, int
             std::strcpy(r, err);
             return r;
         }
-        status = try_path(jpaths.back(), file, input, err_msg);
+        status = try_path(jpaths.back(), file, input, found_here, err_msg);
         jpaths.pop_back();
     }
 
     if (status == IMPORT_STATUS_IO_ERROR) {
         *success = 0;
-        char *r = jsonnet_realloc(ctx.vm, nullptr, err_msg.length() + 1);
-        std::strcpy(r, err_msg.c_str());
-        return r;
+        return from_string(ctx.vm, err_msg);
     } else {
         assert(status == IMPORT_STATUS_OK);
         *success = 1;
-        char *r = jsonnet_realloc(ctx.vm, nullptr, input.length() + 1);
-        std::strcpy(r, input.c_str());
-        return r;
+        *found_here_cptr = from_string(ctx.vm, found_here);
+        return from_string(ctx.vm, input);
     }
 }
 

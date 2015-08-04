@@ -411,8 +411,14 @@ namespace {
         /** Used to "name" thunks crated on the inside of an array. */
         const Identifier *idArrayElement;
 
+        struct ImportCacheValue {
+            std::string foundHere;
+            std::string content;
+        };
+
         /** Cache for imported Jsonnet files. */
-        std::map<std::pair<std::string, std::string>, const std::string *> cachedImports;
+        std::map<std::pair<std::string, std::string>,
+                 const ImportCacheValue *> cachedImports;
 
         /** External variables for std.extVar. */
         StrMap externalVars;
@@ -644,14 +650,8 @@ namespace {
          */
         AST *import(const LocationRange &loc, const std::string &file)
         {
-            std::string dir = dir_name(loc.file);
-            const std::string *input = importString(loc, file);
-
-            std::string abs_file = file;
-            if (dir.length() > 0)
-                abs_file = dir + abs_file;
-
-            auto *expr = jsonnet_parse(alloc, abs_file, input->c_str());
+            const ImportCacheValue *input = importString(loc, file);
+            AST *expr = jsonnet_parse(alloc, input->foundHere, input->content.c_str());
             jsonnet_static_analysis(expr);
             return expr;
         }
@@ -663,19 +663,23 @@ namespace {
          *
          * \param loc Location of the import statement.
          * \param file Path to the filename.
+         * \param found_here If non-null, used to store the actual path of the file
          */
-        const std::string *importString(const LocationRange &loc, const std::string &file)
+        const ImportCacheValue *importString(const LocationRange &loc, const std::string &file)
         {
             std::string dir = dir_name(loc.file);
 
             std::pair<std::string, std::string> key(dir, file);
-            const std::string *str = cachedImports[key];
-            if (str != nullptr) return str;
+            const ImportCacheValue *cached_value = cachedImports[key];
+            if (cached_value != nullptr)
+                return cached_value;
 
 
             int success = 0;
+            char *found_here_cptr;
             char *content =
-                importCallback(importCallbackContext, dir.c_str(), file.c_str(), &success);
+                importCallback(importCallbackContext, dir.c_str(), file.c_str(),
+                               &found_here_cptr, &success);
 
             std::string input(content);
 
@@ -688,7 +692,8 @@ namespace {
                     throw makeError(loc, msg);
             }
 
-            std::string *input_ptr = new std::string(input);
+            auto *input_ptr = new ImportCacheValue{found_here_cptr, input};
+            ::free(found_here_cptr);
             cachedImports[key] = input_ptr;
             return input_ptr;
         }
@@ -1012,8 +1017,8 @@ namespace {
 
                 case AST_IMPORTSTR: {
                     const auto &ast = *static_cast<const Importstr*>(ast_);
-                    const std::string *str = importString(ast.location, ast.file);
-                    scratch = makeString(*str);
+                    const ImportCacheValue *value = importString(ast.location, ast.file);
+                    scratch = makeString(value->content);
                 } break;
 
                 case AST_INDEX: {
