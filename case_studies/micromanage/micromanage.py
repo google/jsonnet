@@ -64,6 +64,7 @@ blueprint_schema = {
 class ConfigError (Exception):
     pass
 
+
 def path_to_string(path):
     arr = []
     for x in path:
@@ -72,6 +73,7 @@ def path_to_string(path):
         else:
             arr += '.%s' % x
     return ''.join(arr)
+
 
 def config_check(config):
     try:        
@@ -86,10 +88,46 @@ def config_check(config):
             if not config['environments'].get(environment_name):
                 raise ConfigError('Config error: No such environment %s in service %s' % (environment_name, service_name))
             
+ext_vars = {}  # For Jsonnet evaluation
+search_paths = [  # Where we look for imported jsonnet files
+    os.path.dirname(os.path.realpath(__file__)) + '/'
+]
+
+#  Returns content if worked, None if file not found, or throws an exception
+def jsonnet_try_path(dir, rel):
+    if not rel:
+        raise RuntimeError('Got invalid filename (empty string).')
+    if rel[0] == '/':
+        full_path = rel
+    else:
+        full_path = dir + rel
+    if full_path[-1] == '/':
+        raise RuntimeError('Attempted to import a directory')
+
+    if not os.path.isfile(full_path):
+        return full_path, None
+    with open(full_path) as f:
+        return full_path, f.read()
+
+    
+def jsonnet_import_callback(dir, rel):
+    full_path, content = jsonnet_try_path(dir, rel)
+    if content:
+        return full_path, content
+    for path in search_paths:
+        full_path, content = jsonnet_try_path(path, rel)
+        if content:
+            return full_path, content
+    raise RuntimeError('File not found')
+
 
 def config_load(filename, ext_vars):
     try:
-        text = _jsonnet.evaluate_file(filename, max_trace=100, ext_vars=ext_vars)
+        text = _jsonnet.evaluate_file(
+            filename,
+            max_trace=100,
+            ext_vars=ext_vars,
+            import_callback=jsonnet_import_callback)
     except RuntimeError as e:
         # Error from Jsonnet
         sys.stderr.write(e.message)
@@ -360,7 +398,6 @@ def print_usage(channel):
     channel.write("Usage: python micromanage.py <config.jsonnet> <action> <args>\n")
     channel.write("Available actions: %s\n" % ', '.join(actions.keys()))
 
-ext_vars = {}  # For Jsonnet evaluation
 remaining_args = []
 i = 1
 
@@ -387,6 +424,9 @@ while i < len(sys.argv):
             sys.stderr.write('-V must be followed by key=val, got "%s".\n' % data)
             sys.exit(1)
         ext_vars[splits[0]] = splits[1]
+    elif arg == '-J' or arg == '--jpath':
+        i, val = next_arg(i)
+        search_paths = [val] + search_paths
     elif arg == '-f' or arg == '--force':
         force = True
     else:
