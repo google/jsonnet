@@ -21,51 +21,58 @@ limitations under the License.
 
 #include "libjsonnet.h"
 
-static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
+static char *jsonnet_str(struct JsonnetVm *vm, const char *str)
 {
-    const char *filename;
-    char *out;
-    unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
-    double gc_growth_trigger = 2;
-    int debug_ast = 0, error;
-    PyObject *ext_vars = NULL;
+    char *out = jsonnet_realloc(vm, NULL, strlen(str) + 1);
+    memcpy(out, str, strlen(str) + 1);
+    return out;
+}
+
+struct ImportCtx {
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", NULL};
+    PyObject *callback;
+};
 
-    (void) self;
+static char *cpython_import_callback(void *ctx_, const char *base, const char *rel, int *success)
+{
+    const struct ImportCtx *ctx = ctx_;
+    PyObject *arglist, *result;
+    char *out;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOiI", kwlist,
-                                     &filename,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars, &debug_ast, &max_trace)) {
-        return NULL;
+    arglist = Py_BuildValue("(s, s)", base, rel);
+    result = PyEval_CallObject(ctx->callback, arglist);
+    Py_DECREF(arglist);
+
+    if (result == NULL) {
+        // Get string from exception
+        PyObject *ptype;
+        PyObject *pvalue;
+        PyObject *ptraceback;
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+        PyObject *exc_str = PyObject_Str(pvalue);
+        const char *exc_cstr = PyString_AsString(exc_str);
+        char *out = jsonnet_str(ctx->vm, exc_cstr);
+        *success = 0;
+        PyErr_Clear();
+        return out;
     }
 
-    vm = jsonnet_make();
-    jsonnet_max_stack(vm, max_stack);
-    jsonnet_gc_min_objects(vm, gc_min_objects);
-    jsonnet_max_trace(vm, max_trace);
-    jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    jsonnet_debug_ast(vm, debug_ast);
-    if (ext_vars != NULL) {
-        PyObject *key, *val;
-        Py_ssize_t pos = 0;
-        
-        while (PyDict_Next(ext_vars, &pos, &key, &val)) {
-            const char *key_ = PyString_AsString(key);
-            if (key_ == NULL) {
-                jsonnet_destroy(vm);
-                return NULL;
-            }
-            const char *val_ = PyString_AsString(val);
-            if (val_ == NULL) {
-                jsonnet_destroy(vm);
-                return NULL;
-            }
-            jsonnet_ext_var(vm, key_, val_);
-        }
+    if (!PyString_Check(result)) {
+        out = jsonnet_str(ctx->vm, "import_callback did not return a string");
+        *success = 0;
+    } else {
+        const char *result_cstr = PyString_AsString(result);
+        out = jsonnet_str(ctx->vm, result_cstr);
+        *success = 1;
     }
 
-    out = jsonnet_evaluate_file(vm, filename, &error);
+    Py_DECREF(result);
+
+    return out;
+}
+
+static PyObject *handle_result(struct JsonnetVm *vm, char *out, int error)
+{
     if (error) {
         PyErr_SetString(PyExc_RuntimeError, out);
         jsonnet_realloc(vm, out, 0);
@@ -79,22 +86,62 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     }
 }
 
-static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
+int handle_ext_vars(struct JsonnetVm *vm, PyObject *ext_vars)
 {
-    const char *filename, *src;
+    if (ext_vars == NULL) return 1;
+
+    PyObject *key, *val;
+    Py_ssize_t pos = 0;
+    
+    while (PyDict_Next(ext_vars, &pos, &key, &val)) {
+        const char *key_ = PyString_AsString(key);
+        if (key_ == NULL) {
+            jsonnet_destroy(vm);
+            return 0;
+        }
+        const char *val_ = PyString_AsString(val);
+        if (val_ == NULL) {
+            jsonnet_destroy(vm);
+            return 0;
+        }
+        jsonnet_ext_var(vm, key_, val_);
+    }
+    return 1;
+}
+
+
+int handle_import_callback(struct ImportCtx *ctx, PyObject *import_callback)
+{
+    if (import_callback == NULL) return 1;
+
+    if (!PyCallable_Check(import_callback)) {
+        PyErr_SetString(PyExc_TypeError, "import_callback must be callable");
+        return 0;
+    }
+
+    jsonnet_import_callback(ctx->vm, cpython_import_callback, ctx);
+
+    return 1;
+}
+
+
+static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
+{
+    const char *filename;
     char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int debug_ast = 0, error;
-    PyObject *ext_vars = NULL;
+    PyObject *ext_vars = NULL, *import_callback = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", NULL};
+    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", "import_callback", NULL};
 
     (void) self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOiI", kwlist,
-                                     &filename, &src,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars, &debug_ast, &max_trace)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOiIO", kwlist,
+                                     &filename,
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
+                                     &debug_ast, &max_trace, &import_callback)) {
         return NULL;
     }
 
@@ -104,37 +151,54 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
     jsonnet_debug_ast(vm, debug_ast);
-    if (ext_vars != NULL) {
-        PyObject *key, *val;
-        Py_ssize_t pos = 0;
-        
-        while (PyDict_Next(ext_vars, &pos, &key, &val)) {
-            const char *key_ = PyString_AsString(key);
-            if (key_ == NULL) {
-                jsonnet_destroy(vm);
-                return NULL;
-            }
-            const char *val_ = PyString_AsString(val);
-            if (val_ == NULL) {
-                jsonnet_destroy(vm);
-                return NULL;
-            }
-            jsonnet_ext_var(vm, key_, val_);
-        }
+    if (!handle_ext_vars(vm, ext_vars)) {
+        return NULL;
+    }
+    struct ImportCtx ctx = { vm, import_callback };
+    if (!handle_import_callback(&ctx, import_callback)) {
+        return NULL;
+    }
+
+    out = jsonnet_evaluate_file(vm, filename, &error);
+    return handle_result(vm, out, error);
+}
+
+static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
+{
+    const char *filename, *src;
+    char *out;
+    unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
+    double gc_growth_trigger = 2;
+    int debug_ast = 0, error;
+    PyObject *ext_vars = NULL, *import_callback = NULL;
+    struct JsonnetVm *vm;
+    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", "import_callback", NULL};
+
+    (void) self;
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOiIO", kwlist,
+                                     &filename, &src,
+                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
+                                     &debug_ast, &max_trace, &import_callback)) {
+        return NULL;
+    }
+
+    vm = jsonnet_make();
+    jsonnet_max_stack(vm, max_stack);
+    jsonnet_gc_min_objects(vm, gc_min_objects);
+    jsonnet_max_trace(vm, max_trace);
+    jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
+    jsonnet_debug_ast(vm, debug_ast);
+    if (!handle_ext_vars(vm, ext_vars)) {
+        return NULL;
+    }
+    struct ImportCtx ctx = { vm, import_callback };
+    if (!handle_import_callback(&ctx, import_callback)) {
+        return NULL;
     }
 
     out = jsonnet_evaluate_snippet(vm, filename, src, &error);
-    if (error) {
-        PyErr_SetString(PyExc_RuntimeError, out);
-        jsonnet_realloc(vm, out, 0);
-        jsonnet_destroy(vm);
-        return NULL;
-    } else {
-        PyObject *ret = PyString_FromString(out);
-        jsonnet_realloc(vm, out, 0);
-        jsonnet_destroy(vm);
-        return ret;
-    }
+    return handle_result(vm, out, error);
 }
 
 static PyMethodDef module_methods[] = {

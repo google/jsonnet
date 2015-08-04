@@ -18,4 +18,9 @@ import _jsonnet
 if len(sys.argv) != 2:
     raise Exception("Usage: <snippet>")
 
-sys.stdout.write(_jsonnet.evaluate_snippet("snippet", sys.argv[1]))
+def import_callback(a, b):
+    with open(a + b) as f:
+        content = f.read()
+    return content
+
+sys.stdout.write(_jsonnet.evaluate_snippet("snippet", sys.argv[1], import_callback=import_callback))
