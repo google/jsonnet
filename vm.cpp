@@ -692,7 +692,9 @@ namespace {
                     throw makeError(loc, msg);
             }
 
-            auto *input_ptr = new ImportCacheValue{found_here_cptr, input};
+            auto *input_ptr = new ImportCacheValue();
+            input_ptr->foundHere = found_here_cptr;
+            input_ptr->content = input;
             ::free(found_here_cptr);
             cachedImports[key] = input_ptr;
             return input_ptr;
