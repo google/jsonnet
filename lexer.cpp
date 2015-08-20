@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <cassert>
+
 #include <string>
 #include <sstream>
 
@@ -217,6 +219,18 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
     end:
     c--;
     return r;
+}
+
+// Check that b has at least the same whitespace prefix as a and returns the amount of this whitespace,
+// otherwise returns 0.  If a has no whitespace prefix than return 0.
+static int whitespace_check(const char *a, const char *b)
+{
+    int i = 0;
+    while (a[i] == ' ' || a[i] == '\t') {
+        if (b[i] != a[i]) return 0;
+        i++;
+    }
+    return i;
 }
 
 std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
@@ -539,6 +553,51 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                     // Leave the counter on the closing /.
                     c++;
                     continue;
+                }
+                // Text block
+                if (*c == '|' && *(c+1) == '|' && *(c+2) == '|' && *(c+3) == '\n') {
+                    std::stringstream block;
+                    c += 4; // Skip the "|||\n"
+                    line_number++;
+                    line_start = c;
+                    const char *first_line = c;
+                    int ws_chars = whitespace_check(first_line, c);
+                    if (ws_chars == 0) {
+                        auto msg = "Text block's first line must start with whitespace.";
+                        throw StaticError(filename, begin, msg);
+                    }
+                    while (true) {
+                        assert(ws_chars > 0);
+                        // Read up to the \n
+                        for (c = &c[ws_chars]; *c != '\n' ; ++c) {
+                            if (*c == '\0')
+                                throw StaticError(filename, begin, "Unexpected EOF");
+                            block << *c;
+                        }
+                        // Add the \n
+                        block << '\n';
+                        ++c;
+                        line_number++;
+                        line_start = c;
+                        // Examine next line
+                        ws_chars = whitespace_check(first_line, c);
+                        if (ws_chars == 0) {
+                            // End of text block
+                            // Skip over any whitespace
+                            while (*c == ' ' || *c == '\t') ++c;
+                            // Expect |||
+                            if (!(*c == '|' && *(c+1) == '|' && *(c+2) == '|')) {
+                                auto msg = "Text block not terminated with |||";
+                                throw StaticError(filename, begin, msg);
+                            }
+                            c += 2;  // Leave on the last |
+                            data = block.str();
+                            kind = Token::STRING;
+                            break;
+                        }
+                    }
+
+                    break;  // Out of the switch.
                 }
 
                 for (; *c != '\0' ; ++c) {
