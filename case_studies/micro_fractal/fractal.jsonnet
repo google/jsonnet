@@ -53,7 +53,7 @@ local libhttp = import "lib/libhttp.jsonnet";
                 module: "main",  // Entrypoint in the Python code.
                 uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
                 // Copy website content and code.
-                contentCmds+: [
+                httpContentCmds+: [
                     "echo '${google_compute_address.%s.address} tilegen' >> /etc/hosts" % service.tilegen,
                     libimgcmd.CopyFile { from: "appserv/*", to: "/var/www" },
                     libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
@@ -79,7 +79,7 @@ local libhttp = import "lib/libhttp.jsonnet";
                     iters: 200,
                 },
                 module: "mandelbrot_service",
-                contentCmds+: [
+                httpContentCmds+: [
                     libimgcmd.CopyFile { from: version.srcDir + "/*", to: "/var/www" },
                     "g++ -Wall -Wextra -ansi -pedantic -O3 -ffast-math -g /var/www/mandelbrot.cpp -lpng -o /var/www/mandelbrot",
                     libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },

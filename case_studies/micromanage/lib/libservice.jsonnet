@@ -243,6 +243,21 @@ local libos = import "libos.jsonnet";
         },
     },
 
+    UniCluster(zone):: {
+        local service = self,
+        versions: {
+            uni: service.CommonBaseInstance {
+                zones: [zone],
+            },
+        },
+        deployment: {
+            uni: {
+                deployed: [1],
+                attached: [1],
+            },
+        },
+    },
+
     GcpZone:: {
         local service = self,
         kind: "Google",

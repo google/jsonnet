@@ -3,7 +3,7 @@ local libservice = import "libservice.jsonnet";
 local libos = import "libos.jsonnet";
 
 {
-    GcpDebianNginxUwsgiFlask: libservice.GcpCluster3 {
+    GcpDebianNginx: libservice.GcpCluster3 {
         local service = self,
         lbTcpPorts+: [self.port],
         fwTcpPorts+: [self.port],
@@ -16,8 +16,7 @@ local libos = import "libos.jsonnet";
             Image:: libservice.GcpImage + libos.DebianMixin {
                 local image = self,
 
-                aptPackages+: ["nginx", "python-dev"],
-                pipPackages+: ["flask", "uwsgi"],
+                aptPackages+: ["nginx"],
 
                 nginxMonitoringConf:: [
                     "server {",
@@ -54,6 +53,47 @@ local libos = import "libos.jsonnet";
                     },
                 ] else []) + [
                     "rm /etc/nginx/sites-enabled/default",
+                ]
+            },
+
+            disk: [
+                {
+                    image: version.Image,
+                }
+            ],
+
+
+            enableMonitoring:: true,
+
+            // Filse that must exist on top before any handling daemons are started.
+            httpContentCmds:: [
+                libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
+            ],
+
+            // Running handling daemons.
+            httpHandlerCmds:: [
+            ],
+
+            // Additional Nginx config commands.
+            nginxAdditionalCmds:: [
+            ],
+
+            cmds+: self.httpContentCmds + self.httpHandlerCmds + self.nginxAdditionalCmds + [
+                "nginx -s reload",
+            ],
+        },
+    },
+
+    DebianUwsgiFlask: {
+        local service = self,
+
+        CommonBaseInstance+: {
+            local version = self,
+
+            Image+: {
+                aptPackages+: ["python-dev"],
+                pipPackages+: ["flask", "uwsgi"],
+                cmds+: [
                     libimgcmd.LiteralFile {
                         to: "/etc/cron.d/emperor",
                         content: "@reboot root /usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
@@ -64,17 +104,10 @@ local libos = import "libos.jsonnet";
                 ]
             },
 
-            disk: [
-                {
-                    image: version.Image,
-                }
-            ],
-
             application:: "app",
-            module:: error "GcpDebianNginxUwsgiFlask must have module",
+            module:: "uwsgi_module",
 
             uwsgiSocket:: "/var/www/uwsgi.sock",
-            enableMonitoring:: true,
 
             uwsgiConf:: {
                 chdir: "/var/www",
@@ -87,7 +120,41 @@ local libos = import "libos.jsonnet";
                 logto: "/var/log/uwsgi/uwsgi.log",
             },
 
-            nginxConf:: [
+            uwsgiModuleContent:: null,
+
+            httpContentCmds+: if version.uwsgiModuleContent == null then [ ] else [
+                libimgcmd.LiteralFile {
+                    content: version.uwsgiModuleContent,
+                    to: "/var/www/%s.py" % version.module,
+                },
+            ],
+
+
+            httpHandlerCmds+: [
+                libimgcmd.EnsureDir { dir: "/etc/uwsgi/vassals" },
+                libimgcmd.LiteralFile {
+                    to: "/etc/uwsgi/vassals/uwsgi.ini",
+                    content: std.manifestIni({
+                        sections: {
+                            uwsgi: version.uwsgiConf
+                        }
+                    })
+                },
+                libimgcmd.EnsureDir { dir: "/var/log/uwsgi", owner: "www-data" },
+                "/usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
+                         + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
+                         + "--die-on-term --uid www-data --gid www-data\n",
+            ],
+        },
+    },
+
+    NginxUwsgiGlue: {
+        local service = self,
+
+        CommonBaseInstance+: {
+            local version = self,
+
+            nginxUwsgiConf:: [
                 "server {",
                 "    listen %d;" % service.port,
                 "    server_name ~^.*$;",
@@ -101,31 +168,15 @@ local libos = import "libos.jsonnet";
                 "}",
             ],
 
-            contentCmds:: [
-                libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
-            ],
-            cmds+: [
+            nginxAdditionalCmds+: [
                 libimgcmd.LiteralFile {
                     to: "/etc/nginx/conf.d/frontend_nginx.conf",
-                    content: std.lines(version.nginxConf),
+                    content: std.lines(version.nginxUwsgiConf),
                 },
-            ] + [
-                libimgcmd.EnsureDir { dir: "/etc/uwsgi/vassals" },
-                libimgcmd.LiteralFile {
-                    to: "/etc/uwsgi/vassals/uwsgi.ini",
-                    content: std.manifestIni({
-                        sections: {
-                            uwsgi: version.uwsgiConf
-                        }
-                    })
-                },
-                libimgcmd.EnsureDir { dir: "/var/log/uwsgi", owner: "www-data" },
-            ] + self.contentCmds + [
-                "/usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
-                         + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
-                         + "--die-on-term --uid www-data --gid www-data\n",
-                "nginx -s reload",
             ],
         },
     },
+
+    GcpDebianNginxUwsgiFlask: self.GcpDebianNginx + self.DebianUwsgiFlask + self.NginxUwsgiGlue,
+
 }
