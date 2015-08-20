@@ -185,7 +185,7 @@ class GoogleService(Service):
                     'provider': {
                         'google': {
                             'alias': environment_name,
-                            'account_file': service_account_key_file,
+                            'account_file': json.dumps(environment['serviceAccount']),
                             'project': environment['project'],
                             'region' : environment['region'],
                         },
