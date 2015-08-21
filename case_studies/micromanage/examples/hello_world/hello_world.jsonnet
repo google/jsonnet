@@ -30,6 +30,9 @@ local libservice = import "lib/libservice.jsonnet";
     helloworld: libhttp.GcpDebianNginx + libhttp.DebianUwsgiFlask + libhttp.NginxUwsgiGlue
                 + libservice.UniCluster("us-central1-f") {
         CommonBaseInstance+: {
+            Image+: {
+                enableMonitoring: true,
+            },
             uwsgiModuleContent: |||
                 import flask
                 import socket
@@ -40,4 +43,5 @@ local libservice = import "lib/libservice.jsonnet";
             |||,
         },
     },
+
 }
