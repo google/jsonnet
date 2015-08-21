@@ -355,9 +355,23 @@ Tutorial code: bar_menu.3.jsonnet
     bar: 2 * self.foo,  // Multiplication.
     baz: &#34;The value &#34; + self.bar + &#34; is &#34;
          + (if self.bar &gt; 5 then &#34;large&#34; else &#34;small&#34;) + &#34;.&#34;,
+    word: &#34;horse&#34;,
+    fmt1: &#34;The word %s has %d letters.&#34;
+          % [self.word, std.length(self.word)],
+    fmt2: &#34;The word %(wd)s has %(le)d letters.  Go %(wd)s!&#34;
+          % {wd: $.word, le: std.length($.word)},
     array: [1, 2, 3] + [4],
     obj: {a: 1, b: 2} + {b: 3, c: 4},
     equality: 1 == &#34;1&#34;,
+    multiline_string: |||
+        1
+        2
+        3
+    |||,
+    multiline_string_fmt: |||
+        foo = %(foo)d
+        bar = %(bar)d
+    ||| % self,
 }
 </span>
 </a></li>

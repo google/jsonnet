@@ -80,19 +80,20 @@ object).</p>
 <h3>Arithmetic and Conditionals</h3>
 
 <p>Jsonnet has constructs for manipulating data.  There are the usual arithmetic operators on
-numbers (double precision floating point), booleans, and strings.  The + operator acts on arrays and
-strings to concatenate them.  It also acts on objects by fusing the two objects, i.e. yielding a new
-object with all of the fields and values from both.  In the event that the two objects both define
-the same field, then the resulting object will use the value from the object that was on the right
-hand side of the +. </p>
+numbers (double precision floating point), booleans, and strings.  The + operator also concatenates
+arrays and strings.  On objects, it fuses the two objects preferring the right hand side when fields
+conflict.  The <code>%</code> operator is compatible with Python's <code>%</code> operator and is
+used for string formatting.</p>
 
-<p>There is an <code>if</code> construct for conditional code.  Since Jsonnet is an
-expression language, the conditional behaves more like the ternary "?:" operator in C, or the "a if
-b else c" syntax of Python, in that it can be embedded in the middle of an expression.</p>
+<p>There is an <code>if</code> construct for conditional code.  Since Jsonnet is an expression
+language, the conditional behaves more like the ternary "?:" operator in C, or the "a if b else c"
+syntax of Python.  I.e., it can be embedded in the middle of an expression.</p>
 
 <p>The example below illustrates some of these features.  Note that equality returns false if the
 two values have different types, as is the case in most dynamically typed scripting languages (but
-not Javascript).</p>
+not Javascript).  Note also the <code>|||</code> syntax for text blocks.  This strips the leading
+whitespace but preserves the newlines in the string literal.  Just like any other string, one can
+use the string formatting operator <code>%</code>.</p>
 
 <table>
 <tr>
