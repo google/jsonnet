@@ -63,8 +63,6 @@ local libos = import "libos.jsonnet";
             ],
 
 
-            enableMonitoring:: true,
-
             // Filse that must exist on top before any handling daemons are started.
             httpContentCmds:: [
                 libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
