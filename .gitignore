@@ -37,6 +37,8 @@ case_studies/micromanage/tests/*.tfstate
 case_studies/micromanage/tests/*.tfstate.backup
 case_studies/micro_fractal/*.tfstate
 case_studies/micro_fractal/*.tfstate.backup
+case_studies/micro_fractal/dev
+case_studies/micro_fractal/prod
 
 build/
 dist/
