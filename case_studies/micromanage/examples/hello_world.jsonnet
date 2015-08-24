@@ -77,23 +77,21 @@ local libservice = import "lib/libservice.jsonnet";
             },
         },
 
-        /*
         // If you own a domain, enable this and the zone service below, then create an NS record to
         // the allocated nameserver.
-        dnsZone: "dns",
-        dnsSuffix: $.dns.dnsName,
-        infrastructure+: {
-            google_dns_record_set+: {
-                www: {
-                    managed_zone: "${google_dns_managed_zone.%s.name}" % service.dnsZone,
-                    name: "www." + service.dnsSuffix,
-                    type: "CNAME",
-                    ttl: 300,
-                    rrdatas: ["${-}." + service.dnsSuffix],
-                },
-            }
-        }
-        */
+        // dnsZone: "dns",
+        // dnsSuffix: $.dns.dnsName,
+        // infrastructure+: {
+        //     google_dns_record_set+: {
+        //         www: {
+        //             managed_zone: "${google_dns_managed_zone.%s.name}" % service.dnsZone,
+        //             name: "www." + service.dnsSuffix,
+        //             type: "CNAME",
+        //             ttl: 300,
+        //             rrdatas: ["${-}." + service.dnsSuffix],
+        //         },
+        //     }
+        // }
     },
 
     /*
