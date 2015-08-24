@@ -39,7 +39,7 @@ local libservice = import "lib/libservice.jsonnet";
         |||,
     },
 
-    // For production -- allows canarying changes.
+    // For production -- allows canarying changes, also use a dns zone
     helloworld2: libhttp.GcpStandardFlask {
         local service = self,
         httpPort: 8080,
@@ -76,6 +76,31 @@ local libservice = import "lib/libservice.jsonnet";
                 attached: [1],
             },
         },
+
+        /*
+        // If you own a domain, enable this and the zone service below, then create an NS record to
+        // the allocated nameserver.
+        dnsZone: "dns",
+        dnsSuffix: $.dns.dnsName,
+        infrastructure+: {
+            google_dns_record_set+: {
+                www: {
+                    managed_zone: "${google_dns_managed_zone.%s.name}" % service.dnsZone,
+                    name: "www." + service.dnsSuffix,
+                    type: "CNAME",
+                    ttl: 300,
+                    rrdatas: ["${-}." + service.dnsSuffix],
+                },
+            }
+        }
+        */
     },
+
+    /*
+    dns: libservice.GcpZone {
+        local service = self,
+        dnsName: "hw.example.com.",
+    },
+    */
 
 }

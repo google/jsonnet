@@ -4,10 +4,14 @@ local libos = import "libos.jsonnet";
 
 {
     GcpHttpService3: libservice.GcpCluster3 {
+        local service = self,
         httpPort:: 80,
         lbTcpPorts+: [self.httpPort],
         fwTcpPorts+: [self.httpPort],
         httpHealthCheckPort: self.httpPort,
+        outputs: {
+            "${-}": "http://${google_compute_address.${-}.address}:%d" % service.httpPort,
+        },
     },
 
     GcpDebianNginx:: {

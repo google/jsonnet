@@ -64,7 +64,7 @@ local libhttp = import "lib/libhttp.jsonnet";
     TilegenTemplate:: libhttp.GcpStandardFlask {
         local service = self,
         dnsSuffix: app.dnsSuffix,
-        port: app.tilegenPort,
+        httpPort: app.tilegenPort,
         versions: {
             latest: self.v4,
             v4: service.StandardVersion {
@@ -114,7 +114,7 @@ local libhttp = import "lib/libhttp.jsonnet";
         },
         StarterNode+: {
             local starter = self,
-            initReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
+            initReplication: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
             initAuthReplication: self.initReplication,
 
             local cql_insert(uuid, x, y, l, n) =
