@@ -129,7 +129,7 @@ local libos = import "libos.jsonnet";
             cmds+: monitoring + jmx + logging,
         },
 
-        StandardRootImage:: $.GcpImage + libos.GcpDebianMixin + instance.MonitoringLoggingImageMixin,
+        StandardRootImage:: $.GcpImage + instance.MonitoringLoggingImageMixin + libos.GcpDebianMixin,
 
         tags: ["${-}"],
         metadata: {},
