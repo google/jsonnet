@@ -267,16 +267,16 @@ limitations under the License.
                 local c = str[i];
                 if c == "%" then
                     local r = parse_code(str, i + 1);
-                    parse_codes(str, r.i, out+[r.code])
+                    parse_codes(str, r.i, out+[r.code]) tailstrict
                 else
                     local last = out[std.length(out)-1];
                     local append = std.length(out) > 0 && std.type(last) == "string";
                     parse_codes(str, i + 1, if append then
                         std.makeArray(std.length(out),
-                            function(i) if i < std.length(out)-1 then out[i] else last + c)
+                            function(i) if i < std.length(out)-1 then out[i] else last + c) tailstrict
                     else
                         std.makeArray(std.length(out) + 1,
-                            function(i) if i < std.length(out) then out[i] else c));
+                            function(i) if i < std.length(out) then out[i] else c)) tailstrict;
 
         local codes = parse_codes(str, 0, []);
 
@@ -499,7 +499,7 @@ limitations under the License.
             else
                 local code = codes[i];
                 if std.type(code) == "string" then
-                    format_codes_obj(codes, obj, i + 1, v + code)
+                    format_codes_obj(codes, obj, i + 1, v + code) tailstrict
                 else
                     local f =
                         if code.mkey == null then
@@ -520,7 +520,7 @@ limitations under the License.
                         if std.objectHas(obj, f) then
                             obj[f]
                         else
-                            error "No such field: " + std.length(f);
+                            error "No such field: " + f;
                     local s =
                         if code.ctype == "%" then
                             "%"
@@ -531,7 +531,7 @@ limitations under the License.
                             pad_right(s, fw, " ")
                         else
                             pad_left(s, fw, " ");
-                    format_codes_obj(codes, obj, i + 1, v + s_padded);
+                    format_codes_obj(codes, obj, i + 1, v + s_padded) tailstrict;
 
         if std.type(vals) == "array" then
             format_codes_arr(codes, vals, 0, 0, "")
