@@ -33,13 +33,16 @@ case_studies/fractal/*.tfstate.backup
 case_studies/fractal/credentials.jsonnet
 
 # Micromanage
+case_studies/micromanage/tests/testenv.jsonnet
 case_studies/micromanage/tests/*.tfstate
 case_studies/micromanage/tests/*.tfstate.backup
-case_studies/micro_fractal/*.tfstate
-case_studies/micro_fractal/*.tfstate.backup
+case_studies/micromanage/examples/test.jsonnet
+case_studies/micromanage/examples/*.tfstate
+case_studies/micromanage/examples/*.tfstate.backup
 case_studies/micro_fractal/dev
 case_studies/micro_fractal/prod
 
 build/
 dist/
 jsonnet.egg-info/
+

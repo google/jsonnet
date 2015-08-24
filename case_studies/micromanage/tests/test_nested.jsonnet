@@ -1,16 +1,5 @@
 {
-    environments: {
-        google: {
-            kind: "Google",
-            project: std.extVar("GCP_PROJECT"),
-            region: "us-central1",
-            serviceAccount: {
-                client_email: std.extVar("GCP_EMAIL"),
-                private_key: std.extVar("GCP_KEY"),
-            },
-            sshUser: std.extVar("USER"),
-        },
-    },
+    environments: import "testenv.jsonnet",
 
     local SingleInstance = {
         local service = self,
@@ -51,17 +40,25 @@
         },
     },
 
-    wheezy: SingleInstance {
-        image: "debian-7-wheezy-v20140814",
-        zone: "us-central1-b",
-    },
-    ubuntu: SingleInstance {
-        image: "ubuntu-1410-utopic-v20150625",
-        zone: "us-central1-c",
-    },
-    "core-os": SingleInstance {
-        image: "coreos-stable-717-3-0-v20150710",
-        zone: "us-central1-f",
-        externalIp: true,
-    },
+    instances: {
+        kind: "Google",
+        environment: "google",
+        infrastructure: {},
+        outputs: {},
+        children: {
+            wheezy: SingleInstance {
+                image: "debian-7-wheezy-v20140814",
+                zone: "us-central1-b",
+            },
+            ubuntu: SingleInstance {
+                image: "ubuntu-1410-utopic-v20150625",
+                zone: "us-central1-c",
+            },
+            "core-os": SingleInstance {
+                image: "coreos-stable-717-3-0-v20150710",
+                zone: "us-central1-f",
+                externalIp: true,
+            },
+        }
+    }
 }

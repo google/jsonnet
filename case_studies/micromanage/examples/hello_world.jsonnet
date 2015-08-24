@@ -42,6 +42,7 @@ local libservice = import "lib/libservice.jsonnet";
     // For production -- allows canarying changes.
     helloworld2: libhttp.GcpStandardFlask {
         local service = self,
+        httpPort: 8080,
         zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
         versions: {
             v1: service.StandardVersion {
