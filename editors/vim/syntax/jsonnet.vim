@@ -65,6 +65,7 @@ syn match Constant "std.uniq"
 syn match Type "\$"
 
 syn region String start='L\="' skip='\\\\\|\\"' end='"'
+syn region String start='|||' end='|||'
 
 syn region Comment start="/[*]" end="[*]/"
 syn match Comment "//.*$"
