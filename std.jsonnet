@@ -452,7 +452,7 @@ limitations under the License.
             else
                 local code = codes[i];
                 if std.type(code) == "string" then
-                    format_codes_arr(codes, arr, i + 1, j, v + code)
+                    format_codes_arr(codes, arr, i + 1, j, v + code) tailstrict
                 else
                     local tmp = if code.fw == "*" then {
                         j: j + 1,
@@ -490,7 +490,7 @@ limitations under the License.
                             pad_right(s, tmp.fw, " ")
                         else
                             pad_left(s, tmp.fw, " ");
-                    format_codes_arr(codes, arr, i + 1, j2 + 1, v + s_padded);
+                    format_codes_arr(codes, arr, i + 1, j2 + 1, v + s_padded) tailstrict;
 
         // Render a parsed format string with an object of values.
         local format_codes_obj(codes, obj, i, v) =
