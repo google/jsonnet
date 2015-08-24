@@ -4,81 +4,86 @@ local libos = import "libos.jsonnet";
 
 {
     GcpHttpService3: libservice.GcpCluster3 {
-        port:: 80,
-        lbTcpPorts+: [self.port],
-        fwTcpPorts+: [self.port],
-        httpHealthCheckPort: self.port,
+        httpPort:: 80,
+        lbTcpPorts+: [self.httpPort],
+        fwTcpPorts+: [self.httpPort],
+        httpHealthCheckPort: self.httpPort,
     },
 
-    GcpDebianNginx(port):: {
+    GcpDebianNginx:: {
 
-        local version = self,
+        local service = self,
 
-        port:: port,
+        StandardVersion+: {
 
-        enableMonitoring: true,
-        enableLogging: true,
+            local version = self,
 
-        StandardRootImage+: {
-            local image = self,
+            httpPort:: service.httpPort,
 
-            aptPackages+: ["nginx"],
+            enableMonitoring: true,
+            enableLogging: true,
 
-            nginxMonitoringConf:: |||
-                server {
-                    listen 80;
-                    server_name local-stackdriver-agent.stackdriver.com;
-                    location /nginx_status {
-                      stub_status on;
-                      access_log   off;
-                      allow 127.0.0.1;
-                      deny all;
+            StandardRootImage+: {
+                local image = self,
+
+                aptPackages+: ["nginx"],
+
+                nginxMonitoringConf:: |||
+                    server {
+                        listen 80;
+                        server_name local-stackdriver-agent.stackdriver.com;
+                        location /nginx_status {
+                          stub_status on;
+                          access_log   off;
+                          allow 127.0.0.1;
+                          deny all;
+                        }
+                        location / {
+                          root /dev/null;
+                        }
                     }
-                    location / {
-                      root /dev/null;
-                    }
-                }
-            |||,
+                |||,
 
-            nginxCollectdConf:: |||
-                LoadPlugin "nginx"
-                <Plugin "nginx">
-                  URL "http://local-stackdriver-agent.stackdriver.com/nginx_status"
-                </Plugin>
-            |||,
+                nginxCollectdConf:: |||
+                    LoadPlugin "nginx"
+                    <Plugin "nginx">
+                      URL "http://local-stackdriver-agent.stackdriver.com/nginx_status"
+                    </Plugin>
+                |||,
 
 
-            cmds+: (if version.enableMonitoring then [
-                libimgcmd.LiteralFile {
-                    to: "/etc/nginx/conf.d/monitoring.conf",
-                    content: image.nginxMonitoringConf,
-                },
-                libimgcmd.LiteralFile {
-                    to: "/opt/stackdriver/collectd/etc/collectd.d/nginx.conf",
-                    content: image.nginxCollectdConf,
-                },
-            ] else []) + [
-                "rm /etc/nginx/sites-enabled/default",
-            ]
+                cmds+: (if version.enableMonitoring then [
+                    libimgcmd.LiteralFile {
+                        to: "/etc/nginx/conf.d/monitoring.conf",
+                        content: image.nginxMonitoringConf,
+                    },
+                    libimgcmd.LiteralFile {
+                        to: "/opt/stackdriver/collectd/etc/collectd.d/nginx.conf",
+                        content: image.nginxCollectdConf,
+                    },
+                ] else []) + [
+                    "rm /etc/nginx/sites-enabled/default",
+                ]
+            },
+
+
+            // Filse that must exist on top before any handling daemons are started.
+            httpContentCmds:: [
+                libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
+            ],
+
+            // Running handling daemons.
+            httpHandlerCmds:: [
+            ],
+
+            // Additional Nginx config commands.
+            nginxAdditionalCmds:: [
+            ],
+
+            cmds+: self.httpContentCmds + self.httpHandlerCmds + self.nginxAdditionalCmds + [
+                "nginx -s reload",
+            ],
         },
-
-
-        // Filse that must exist on top before any handling daemons are started.
-        httpContentCmds:: [
-            libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
-        ],
-
-        // Running handling daemons.
-        httpHandlerCmds:: [
-        ],
-
-        // Additional Nginx config commands.
-        nginxAdditionalCmds:: [
-        ],
-
-        cmds+: self.httpContentCmds + self.httpHandlerCmds + self.nginxAdditionalCmds + [
-            "nginx -s reload",
-        ],
     },
 
     DebianUwsgiFlask:: {
@@ -154,10 +159,10 @@ local libos = import "libos.jsonnet";
                 location / { try_files $uri @yourapplication; }
                 location @yourapplication {
                     include uwsgi_params;
-                    uwsgi_pass unix:%(uwsgiSocket)s;
+                    uwsgi_pass unix:%(socket)s;
                 }
             }
-        ||| % {port: version.port, uwsgiSocket: version.uwsgiSocket},
+        ||| % {port: version.httpPort, socket: version.uwsgiSocket},
 
         nginxAdditionalCmds+: [
             libimgcmd.LiteralFile {
@@ -167,10 +172,10 @@ local libos = import "libos.jsonnet";
         ],
     },
 
-    GcpStandardFlask: $.GcpHttpService3 {
+    GcpStandardFlask: $.GcpHttpService3 + $.GcpDebianNginx {
         local service = self,
         uwsgiModuleContent:: null,
-        StandardVersion+: $.GcpDebianNginx(self.port) + $.DebianUwsgiFlask + $.NginxUwsgiGlue {
+        StandardVersion+: $.DebianUwsgiFlask + $.NginxUwsgiGlue {
             uwsgiModuleContent: service.uwsgiModuleContent
         }
     }
