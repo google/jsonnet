@@ -11,23 +11,43 @@ local libos = import "libos.jsonnet";
     },
 
     GcpImage:: {
-        local image = self,
         source: error "GcpImage must have 'source'",
         machine_type: "n1-standard-1",
         zone: "us-central1-f",
+        cmds: [],
+    },
 
+    GcpStandardInstance:: {
+        local instance = self,
+        machine_type: "f1-micro",
+        scopes:: ["devstorage.read_only", "logging.write"],
+        networkName:: "default",
+        cmds: [],
+        bootCmds: [],
+        network_interface: {
+            network: instance.networkName,
+            access_config: {
+            },
+        },  
+        service_account: [
+            {
+                scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
+            }
+        ],      
+        disk: [
+            {   
+                image: instance.StandardRootImage,
+            }   
+        ],      
+
+        enableLogging:: false,
         enableMonitoring:: false,
-        cmdsInstallMonitoringAgent::
-            if image.enableMonitoring then [
-                "curl -s https://repo.stackdriver.com/stack-install.sh | bash",
-            ] else [],
-
         enableJmxMonitoring:: false,
         jmxHost:: "localhost",
         jmxPort:: 9012,
         jmxHotspotConfig:: {
-            host: image.jmxHost,
-            port : image.jmxPort,
+            host: instance.jmxHost,
+            port : instance.jmxPort,
             numQueryThreads : 2,
             SdQuery:: {
                 outputWriters: [
@@ -76,36 +96,43 @@ local libos = import "libos.jsonnet";
                 }
             ],
         },
-        jmxLocalhostConfig:: image.jmxHotspotConfig,
+        jmxLocalhostConfig:: instance.jmxHotspotConfig,
         jmxConfig:: {
             servers: [
-                image.jmxLocalhostConfig,
+                instance.jmxLocalhostConfig,
             ]
         },
-        cmdsInstallJmxMonitoringAgent::
-            if image.enableJmxMonitoring then [
-                "mkdir -p /opt/jmxtrans/{conf,log}",
-                "curl https://repo.stackdriver.com/jmxtrans/jmxtrans-all.jar -o /opt/jmxtrans/jmxtrans-all.jar",
-                libimgcmd.LiteralFile {
-                    to: "/etc/cron.d/jmxtrans",
-                    content: "@reboot root /usr/bin/java -Djmxtrans.log.dir=/opt/jmxtrans/log -jar /opt/jmxtrans/jmxtrans-all.jar -j /opt/jmxtrans/conf/ &\n",
-                    filePermissions: "700",
-                },
-                libimgcmd.LiteralFile {
-                    to: "/opt/jmxtrans/conf/jmx.json",
-                    content: std.toString(image.jmxConfig),
-                },
-            ] else [],
 
-        enableLogging:: false,
-        cmdsInstallLoggingAgent::
-            if image.enableLogging then [
-                "curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | bash",
-            ] else [],
+        MonitoringLoggingImageMixin:: {
+            local monitoring =
+                if instance.enableMonitoring then [
+                    "curl -s https://repo.stackdriver.com/stack-install.sh | bash",
+                ] else [],
+            local jmx =
+                if instance.enableJmxMonitoring then [
+                    "mkdir -p /opt/jmxtrans/{conf,log}",
+                    "curl https://repo.stackdriver.com/jmxtrans/jmxtrans-all.jar -o /opt/jmxtrans/jmxtrans-all.jar",
+                    libimgcmd.LiteralFile {
+                        to: "/etc/cron.d/jmxtrans",
+                        content: "@reboot root /usr/bin/java -Djmxtrans.log.dir=/opt/jmxtrans/log -jar /opt/jmxtrans/jmxtrans-all.jar -j /opt/jmxtrans/conf/ &\n",
+                        filePermissions: "700",
+                    },
+                    libimgcmd.LiteralFile {
+                        to: "/opt/jmxtrans/conf/jmx.json",
+                        content: std.toString(instance.jmxConfig),
+                    },
+                ] else [],
+            local logging =
+                if instance.enableLogging then [
+                    "curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | bash",
+                ] else [],
+            cmds+: monitoring + jmx + logging,
+        },
 
-        cmds: image.cmdsInstallMonitoringAgent
-            + image.cmdsInstallJmxMonitoringAgent
-            + image.cmdsInstallLoggingAgent,
+        StandardRootImage:: $.GcpImage + libos.GcpDebianMixin + instance.MonitoringLoggingImageMixin,
+
+        tags: ["${-}"],
+        metadata: {},
     },
 
     GcpService: {
@@ -138,33 +165,7 @@ local libos = import "libos.jsonnet";
         },
         outputs: {},
         dnsZone:: null,
-        networkName:: "default",
         
-        CommonBaseInstance:: {
-            local instance = self,
-            machine_type: "f1-micro",
-            scopes:: ["devstorage.read_only", "logging.write"],
-            cmds: [],
-            bootCmds: [],
-            network_interface: {
-                network: service.networkName,
-                access_config: {
-                },
-            },  
-            service_account: [
-                {
-                    scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
-                }
-            ],      
-            disk: [
-                {   
-                    image: error "GcpInstance needs disk[0].image",
-                }   
-            ],      
-            tags: ["${-}"],
-            metadata: {},
-        },
-
     },
 
     GcpCluster3: self.GcpService {
@@ -174,9 +175,12 @@ local libos = import "libos.jsonnet";
         fwTcpPorts:: [22],
         fwUdpPorts:: [],
         httpHealthCheckPort:: 80,
+        networkName:: "default",
+        zones:: error "GcpCluster3 version (or service) needs an array of zones.",
 
-        CommonBaseInstance+: {
-            zones:: error "GcpCluster3 version needs an array of zones.",
+        StandardVersion:: $.GcpStandardInstance {
+            networkName: service.networkName,
+            zones:: service.zones,
         },
         versions:: {},
         deployment:: {},
@@ -246,7 +250,7 @@ local libos = import "libos.jsonnet";
     UniCluster(zone):: {
         local service = self,
         versions: {
-            uni: service.CommonBaseInstance {
+            uni: service.StandardVersion {
                 zones: [zone],
             },
         },

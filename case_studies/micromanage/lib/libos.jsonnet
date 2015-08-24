@@ -37,7 +37,7 @@
         aptPackages+: if std.length(self.pipPackages) == 0 then [] else ["python-pip"],
     },
 
-    DebianMixin:: {
+    GcpDebianMixin:: {
         source: "backports-debian-7-wheezy-v20150603",
     } + libos.AptMixin + libos.AptPipMixin,
 

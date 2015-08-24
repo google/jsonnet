@@ -27,19 +27,17 @@ local libhttp = import "lib/libhttp.jsonnet";
     ImageMixin:: {
         local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
         aptPackages +: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
-        enableMonitoring: true,
-        enableLogging: true,
     },
 
-    AppservTemplate:: libhttp.GcpDebianNginxUwsgiFlask {
+    AppservTemplate:: libhttp.GcpStandardFlask {
         local service = self,
         dnsSuffix: app.dnsSuffix,
         tilegen:: error "Appserv needs tilegen field",
 
         versions: {
             latest: self.v3,
-            v3: service.CommonBaseInstance {
-                Image+: app.ImageMixin {
+            v3: service.StandardVersion {
+                StandardRootImage+: app.ImageMixin {
                     pipPackages +: ["httplib2", "cassandra-driver", "blist"],
                 },
                 local version = self,
@@ -63,14 +61,14 @@ local libhttp = import "lib/libhttp.jsonnet";
         },
     },
 
-    TilegenTemplate:: libhttp.GcpDebianNginxUwsgiFlask {
+    TilegenTemplate:: libhttp.GcpStandardFlask {
         local service = self,
         dnsSuffix: app.dnsSuffix,
         port: app.tilegenPort,
         versions: {
             latest: self.v4,
-            v4: service.CommonBaseInstance {
-                Image+: app.ImageMixin {
+            v4: service.StandardVersion {
+                StandardRootImage+: app.ImageMixin {
                     aptPackages +: ["g++", "libpng-dev"],
                 },
                 local version = self,
@@ -97,52 +95,54 @@ local libhttp = import "lib/libhttp.jsonnet";
 
         clusterName: "fractal-cluster",
         rootPassword: app.cassandraRootPass,
-        initReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
-        initAuthReplication:: db.initReplication,
 
-        CommonBaseImage+: app.ImageMixin,
 
-        CommonBaseInstance+: {
+        StandardNode+: {
+            StandardRootImage+: app.ImageMixin,
+            conf+: {
+                cluster_name: db.clusterName,
+                rpc_address:: null,  // Unset by making it hidden (::).
+                listen_address:: null,  // Unset by making it hidden (::).
+                authenticator: "PasswordAuthenticator",
+                seed_provider: [
+                    {
+                        class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
+                        parameters: [ { seeds: std.join(", ", app.cassandraNodes) } ],
+                    },
+                ],
+            },
         },
+        StarterNode+: {
+            local starter = self,
+            initReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
+            initAuthReplication: self.initReplication,
 
-        conf+: {
-            cluster_name: db.clusterName,
-            rpc_address:: null,  // Unset by making it hidden (::).
-            listen_address:: null,  // Unset by making it hidden (::).
-            authenticator: "PasswordAuthenticator",
-            seed_provider: [
-                {
-                    class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                    parameters: [ { seeds: std.join(", ", app.cassandraNodes) } ],
-                },
+            local cql_insert(uuid, x, y, l, n) =
+                "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
+                + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),
+
+            initCql: [
+                "CREATE USER %s WITH PASSWORD '%s';" % [app.cassandraUser, app.cassandraUserPass],
+                "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [app.cassandraKeyspace, starter.initReplication],
+                "USE %s;" % app.cassandraKeyspace,
+                "CREATE TABLE discoveries("
+                + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
+                + "PRIMARY KEY(Date, TimeId));",
+                cql_insert("18063880-5a4d-11e4-ada4-247703d0f194", "0", "0", "0", "Zoomed Out"),
+                cql_insert("66b6d100-5a53-11e4-aa05-247703d0f194",
+                           "-1.21142578125", "0.3212890625", "4", "Lightning"),
+                cql_insert("77ffdd80-5a53-11e4-8ccf-247703d0f194",
+                           "-1.7568359375", "-0.0009765625", "5", "Self-similarity"),
+                cql_insert("7fbf8200-5a53-11e4-804a-247703d0f194",
+                           "0.342529296875", "0.419189453125", "5", "Windmills"),
+                cql_insert("9ae7bd00-5a66-11e4-9c66-247703d0f194",
+                           "-1.48309979046093", "0.00310595797955671", "39", "Star"),
+                cql_insert("75fe4480-5a7c-11e4-a747-247703d0f194",
+                           "-0.244976043701172", "0.716987609863281", "10", "Baroque"),
+                cql_insert("abf70380-5b24-11e4-8a46-247703d0f194",
+                           "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
             ],
         },
-
-        local cql_insert(uuid, x, y, l, n) =
-            "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
-            + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),
-
-        initCql: [
-            "CREATE USER %s WITH PASSWORD '%s';" % [app.cassandraUser, app.cassandraUserPass],
-            "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [app.cassandraKeyspace, db.initReplication],
-            "USE %s;" % app.cassandraKeyspace,
-            "CREATE TABLE discoveries("
-            + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
-            + "PRIMARY KEY(Date, TimeId));",
-            cql_insert("18063880-5a4d-11e4-ada4-247703d0f194", "0", "0", "0", "Zoomed Out"),
-            cql_insert("66b6d100-5a53-11e4-aa05-247703d0f194",
-                       "-1.21142578125", "0.3212890625", "4", "Lightning"),
-            cql_insert("77ffdd80-5a53-11e4-8ccf-247703d0f194",
-                       "-1.7568359375", "-0.0009765625", "5", "Self-similarity"),
-            cql_insert("7fbf8200-5a53-11e4-804a-247703d0f194",
-                       "0.342529296875", "0.419189453125", "5", "Windmills"),
-            cql_insert("9ae7bd00-5a66-11e4-9c66-247703d0f194",
-                       "-1.48309979046093", "0.00310595797955671", "39", "Star"),
-            cql_insert("75fe4480-5a7c-11e4-a747-247703d0f194",
-                       "-0.244976043701172", "0.716987609863281", "10", "Baroque"),
-            cql_insert("abf70380-5b24-11e4-8a46-247703d0f194",
-                       "-1.74749755859375", "0.009002685546875", "9", "Hairy windmills"),
-        ],
 
         nodes: {
             n1: db.StarterNode {

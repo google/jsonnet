@@ -97,16 +97,10 @@ local libos = import "libos.jsonnet";
             write_request_timeout_in_ms: 2000
         },
 
-        initCql:: [],
 
         // A line of bash that will wait for a Cassandra service to be "up".
-        waitForCqlsh(user, pass, host)::
+        local wait_for_cqlsh(user, pass, host) =
             "while ! echo show version | cqlsh -u %s -p %s %s ; do sleep 1; done" % [user, pass, host],
-
-        // A line of bash that will wait for the given port to accept connections.
-        waitForSeed(host, port)::
-            "while ! nc %s %d < /dev/null; do sleep 1; done" % [host, port],
-
 
         gossipPorts:: ["7000", "7001", "7199"],  // Only between this pool
         otherPorts:: ["9042", "9160"],
@@ -114,25 +108,18 @@ local libos = import "libos.jsonnet";
         rootPassword:: error "Cassandra Service must have field: rootPassword",
         clusterName:: error "Cassandra Service must have field: clusterName",
 
-        conf:: self.defaultConf {
-            authenticator: "PasswordAuthenticator",
-            cluster_name: service.clusterName,
-        },
-
-
         tcpFirewallPorts:: self.gossipPorts + self.otherPorts,
 
-        CommonBaseImage:: libservice.GcpImage + libos.DebianMixin {
-            aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
-            aptRepoLines+: {
-                cassandra: "deb http://www.apache.org/dist/cassandra/debian 21x main",
-            },
-            aptPackages+: ["cassandra"],
 
-            local bootstrapConf = service.defaultConf {
+
+
+        StandardNode:: libservice.GcpStandardInstance {
+            conf:: service.defaultConf {
                 authenticator: "PasswordAuthenticator",
                 cluster_name: service.clusterName,
             },
+            machine_type: "g1-small",
+            tags+: [service.clusterName],
 
             enableMonitoring: true,
             enableJmxMonitoring: true,
@@ -226,45 +213,52 @@ local libos = import "libos.jsonnet";
                     }
                 ]
             },
+
             enableLogging: true,
+            StandardRootImage+: {
+                aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
+                aptRepoLines+: {
+                    cassandra: "deb http://www.apache.org/dist/cassandra/debian 21x main",
+                },
+                aptPackages+: ["cassandra"],
 
-            cmds+: [
-                // Shut it down
-                "/etc/init.d/cassandra stop",
-                // Remove junk from unconfigured startup
-                "rm -rfv /var/lib/cassandra/*",
-                "rm -rfv /var/log/cassandra/*",
-                // Enable authentication
-                local dest = "/etc/cassandra/cassandra.yaml";
-                    "echo %s > %s" % [std.escapeStringBash("" + bootstrapConf), dest],
-                // Start it up again (for some reason 'start' does not do anything...)
-                "/etc/init.d/cassandra restart",
-                // Wait for it to be ready
-                service.waitForCqlsh("cassandra", "cassandra", "localhost"),
-                // Set root password
-                local cql = "ALTER USER cassandra WITH PASSWORD '%s';" % service.rootPassword;
-                    "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
+                local bootstrapConf = service.defaultConf {
+                    authenticator: "PasswordAuthenticator",
+                    cluster_name: service.clusterName,
+                },
 
-            ],
+                cmds+: [
+                    // Shut it down
+                    "/etc/init.d/cassandra stop",
+                    // Remove junk from unconfigured startup
+                    "rm -rfv /var/lib/cassandra/*",
+                    "rm -rfv /var/log/cassandra/*",
+                    // Enable authentication
+                    local dest = "/etc/cassandra/cassandra.yaml";
+                        "echo %s > %s" % [std.escapeStringBash("" + bootstrapConf), dest],
+                    // Start it up again (for some reason 'start' does not do anything...)
+                    "/etc/init.d/cassandra restart",
+                    // Wait for it to be ready
+                    wait_for_cqlsh("cassandra", "cassandra", "localhost"),
+                    // Set root password
+                    local cql = "ALTER USER cassandra WITH PASSWORD '%s';" % service.rootPassword;
+                        "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
+
+                ],
+            },
         },
 
-        CommonBaseInstance+: {
-
-            conf:: service.conf,
-            machine_type: "g1-small",
-            tags+: [service.clusterName],
-        },
-
-        StarterNode:: service.CommonBaseInstance {
+        StarterNode:: service.StandardNode {
             local node = self,
+            initCql:: [],
             cmds+: [
                 // Wait for the misconfigured cassandra to start up.
-                service.waitForCqlsh("cassandra", service.rootPassword, "localhost"),
+                wait_for_cqlsh("cassandra", service.rootPassword, "localhost"),
 
                 // Set up system_auth replication level
                 "echo %s | cqlsh -u cassandra -p %s localhost"
                     % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
-                                            % service.initAuthReplication),
+                                            % node.initAuthReplication),
                        service.rootPassword],
 
                 // Drop in the correct configuration.
@@ -275,19 +269,19 @@ local libos = import "libos.jsonnet";
                 "/etc/init.d/cassandra restart",
 
                 // Wait for the properly configured cassandra to start up and reach quorum.
-                service.waitForCqlsh("cassandra", service.rootPassword, "$HOSTNAME"),
+                wait_for_cqlsh("cassandra", service.rootPassword, "$HOSTNAME"),
 
                 // Set up users, empty tables, etc.
                 "echo %s | cqlsh -u cassandra -p %s $HOSTNAME"
-                    % [std.escapeStringBash(std.lines(service.initCql)), service.rootPassword],
+                    % [std.escapeStringBash(std.lines(node.initCql)), service.rootPassword],
             ]
         },
 
-        TopUpNode:: self.CommonBaseInstance {
+        TopUpNode:: self.StandardNode {
             local node = self,
             cmds+: [
                 // Wait for the misconfigured cassandra to start up.
-                service.waitForCqlsh("cassandra", service.rootPassword, "localhost"),
+                wait_for_cqlsh("cassandra", service.rootPassword, "localhost"),
 
                 // Kill it.
                 "/etc/init.d/cassandra stop",
@@ -311,7 +305,7 @@ local libos = import "libos.jsonnet";
             google_compute_disk: {
                 ["${-}-" + n]: {
                     name: "${-}-" + n,
-                    image: service.CommonBaseImage,
+                    image: service.nodes[n].StandardRootImage,
                     zone: service.nodes[n].zone,
                 }
                 for n in std.objectFields(service.nodes)

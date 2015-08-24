@@ -27,20 +27,53 @@ local libservice = import "lib/libservice.jsonnet";
         },
     },
 
-    helloworld: libhttp.GcpDebianNginx + libhttp.DebianUwsgiFlask + libhttp.NginxUwsgiGlue
-                + libservice.UniCluster("us-central1-f") {
-        CommonBaseInstance+: {
-            Image+: {
-                enableMonitoring: true,
+    // Simple case -- one machine serving this Python script.
+    helloworld: libhttp.GcpStandardFlask + libservice.UniCluster("us-central1-f") {
+        uwsgiModuleContent: |||
+            import flask
+            import socket
+            app = flask.Flask(__name__) 
+            @app.route('/') 
+            def hello_world():
+                return 'Hello from %s!' % socket.gethostname()
+        |||,
+    },
+
+    // For production -- allows canarying changes.
+    helloworld2: libhttp.GcpStandardFlask {
+        local service = self,
+        zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
+        versions: {
+            v1: service.StandardVersion {
+                uwsgiModuleContent: |||
+                    import flask
+                    import socket
+                    app = flask.Flask(__name__) 
+                    @app.route('/') 
+                    def hello_world():
+                        return 'Hello from %s!' % socket.gethostname()
+                |||,
             },
-            uwsgiModuleContent: |||
-                import flask
-                import socket
-                app = flask.Flask(__name__) 
-                @app.route('/') 
-                def hello_world():
-                    return 'Hello from %s!' % socket.gethostname()
-            |||,
+            v2: service.StandardVersion {
+                uwsgiModuleContent: |||
+                    import flask
+                    import socket
+                    app = flask.Flask(__name__) 
+                    @app.route('/') 
+                    def hello_world():
+                        return 'Greetings from %s!' % socket.gethostname()
+                |||,
+            },
+        },
+        deployment: {
+            v1: {
+                deployed: [1, 2, 3],
+                attached: [1, 2, 3],
+            },
+            v2: {
+                deployed: [1],
+                attached: [1],
+            },
         },
     },
 
