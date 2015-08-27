@@ -854,6 +854,8 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
         fields.emplace_back(alloc->make<LiteralString>(l, decl.name), Object::Field::HIDDEN,
                             alloc->make<BuiltinFunction>(l, c, params));
     }
+    fields.emplace_back(alloc->make<LiteralString>(l, "thisFile"), Object::Field::HIDDEN,
+                        alloc->make<LiteralString>(l, file));
 
     Local::Binds std_binds;
     std_binds[alloc->makeIdentifier("std")] = std_obj;

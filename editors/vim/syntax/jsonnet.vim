@@ -25,6 +25,7 @@ syn match Constant "std.pow"
 syn match Constant "std.sin"
 syn match Constant "std.sqrt"
 syn match Constant "std.tan"
+syn match Constant "std.thisFile"
 syn match Constant "std.type"
 
 " std.jsonnet

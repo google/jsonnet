@@ -25,7 +25,7 @@
   },
   { 
     'name': 'support.function.jsonnet'
-    'match': '\\bstd[.](objectFields|objectHas|pow|sin|sqrt|tan|type)\\b'
+    'match': '\\bstd[.](objectFields|objectHas|pow|sin|sqrt|tan|type|thisFile)\\b'
   },
   { 
     'name': 'support.function.jsonnet'
