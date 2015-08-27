@@ -611,8 +611,9 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
             } else {
                 std::stringstream ss;
                 ss << "Could not lex the character ";
+                auto uc = (unsigned char)(*c);
                 if (*c < 32)
-                    ss << "code " << int(*c);
+                    ss << "code " << unsigned(uc);
                 else
                     ss << "'" << *c << "'";
                 throw StaticError(filename, begin, ss.str());
