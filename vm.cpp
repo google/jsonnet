@@ -43,6 +43,7 @@ namespace {
         FRAME_APPLY_TARGET,
         FRAME_BINARY_LEFT,
         FRAME_BINARY_RIGHT,
+        FRAME_BUILTIN_EXT_VAR,
         FRAME_BUILTIN_FILTER,
         FRAME_BUILTIN_FORCE_THUNKS,
         FRAME_CALL,
@@ -380,6 +381,9 @@ namespace {
     };
 
     /** Typedef to save some typing. */
+    typedef std::map<std::string, VmExt> ExtMap;
+
+    /** Typedef to save some typing. */
     typedef std::map<std::string, std::string> StrMap;
 
 
@@ -421,7 +425,7 @@ namespace {
                  const ImportCacheValue *> cachedImports;
 
         /** External variables for std.extVar. */
-        StrMap externalVars;
+        ExtMap externalVars;
 
         /** The callback used for loading imported files. */
         JsonnetImportCallback *importCallback;
@@ -735,7 +739,7 @@ namespace {
          *
          * \param loc The location range of the file to be executed.
          */
-        Interpreter(Allocator *alloc, const StrMap &ext_vars,
+        Interpreter(Allocator *alloc, const ExtMap &ext_vars,
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                     JsonnetImportCallback *import_callback, void *import_callback_context)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
@@ -1756,7 +1760,17 @@ namespace {
                                     if (externalVars.find(var) == externalVars.end()) {
                                         throw makeError(ast.location, "Undefined external variable: " + var);
                                     }
-                                    scratch = makeString(externalVars[var]);
+                                    const VmExt &ext = externalVars[var];
+                                    if (ext.isCode) {
+                                        std::string filename = "<extvar:" + var + ">";
+                                        AST *expr = jsonnet_parse(alloc, filename, ext.data.c_str());
+                                        jsonnet_static_analysis(expr);
+                                        ast_ = expr;
+                                        stack.pop();
+                                        goto recurse;
+                                    } else {
+                                        scratch = makeString(ext.data);
+                                    }
                                 } break;
 
                                 default:
@@ -2217,7 +2231,7 @@ namespace {
 }
 
 std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
-                               const StrMap &ext_vars,
+                               const ExtMap &ext_vars,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger,
                                JsonnetImportCallback *import_callback, void *ctx,
@@ -2233,7 +2247,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
     }
 }
 
-StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const StrMap &ext_vars,
+StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
                                 unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                                 JsonnetImportCallback *import_callback, void *ctx,
                                 bool string_output)

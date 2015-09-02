@@ -174,6 +174,8 @@ void usage(std::ostream &o)
     o << "  -J / --jpath <dir>      Specify an additional library search dir\n";
     o << "  -V / --var <var>=<val>  Specify an 'external' var to the given value\n";
     o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
+    o << "  --code-var <var>=<val>  As --var but value is Jsonnet code\n";
+    o << "  --code-env <var>        As --env but env var contains Jsonnet code\n";
     o << "  -m / --multi            Write multiple files, list files on stdout\n";
     o << "  -S / --string           Expect a string, manifest as plain text\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
@@ -262,6 +264,26 @@ int main(int argc, const char **argv)
                 const std::string var = var_val.substr(0, eq_pos);
                 const std::string val = var_val.substr(eq_pos + 1, std::string::npos);
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
+            } else if (arg == "--code-env") {
+                const std::string var = next_arg(i, args);
+                const char *val = ::getenv(var.c_str());
+                if (val == nullptr) {
+                    std::cerr << "ERROR: Environment variable " << var
+                              << " was undefined." << std::endl;
+                    return EXIT_FAILURE;
+                }
+                jsonnet_ext_code(vm, var.c_str(), val);
+            } else if (arg == "--code-var") {
+                const std::string var_val = next_arg(i, args);
+                size_t eq_pos = var_val.find_first_of('=', 0);
+                if (eq_pos == std::string::npos) {
+                    std::cerr << "ERROR: argument not in form <var>=<val> \""
+                              << var_val << "\"." << std::endl;
+                    return EXIT_FAILURE;
+                }
+                const std::string var = var_val.substr(0, eq_pos);
+                const std::string val = var_val.substr(eq_pos + 1, std::string::npos);
+                jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--gc-min-objects") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {

@@ -26,7 +26,7 @@ for TEST in *.jsonnet ; do
     if [ -r "$TEST.golden" ] ; then
         GOLDEN=$(cat "$TEST.golden")
     fi
-    OUTPUT="$(../jsonnet --gc-min-objects 1 --gc-growth-trigger 1 "$TEST" 2>&1 )"
+    OUTPUT="$(../jsonnet --gc-min-objects 1 --gc-growth-trigger 1 --var var1=test --code-var var2='{x:1, y: 2}' "$TEST" 2>&1 )"
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne $EXPECTED_EXIT_CODE ] ; then
         FAILED=$((FAILED + 1))

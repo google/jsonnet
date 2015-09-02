@@ -304,4 +304,12 @@ std.assertEqual(std.setMember("a", ["b", "c"]), false) &&
 std.assertEqual(std.thisFile, "stdlib.jsonnet") &&
 std.assertEqual(import "this_file/a.jsonnet", "this_file/a.jsonnet") &&
 std.assertEqual(import "this_file/b.jsonnet", "this_file/a.jsonnet") &&
+
+
+std.assertEqual(std.extVar("var1"), "test") &&
+
+std.assertEqual(std.toString(std.extVar("var2")), "{\"x\": 1, \"y\": 2}") &&
+std.assertEqual(std.extVar("var2"), {x: 1, y: 2}) &&
+std.assertEqual(std.extVar("var2") { x+: 2}.x, 3) &&
+
 true

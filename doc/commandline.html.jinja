@@ -27,9 +27,13 @@ and &lt;option&gt; can be:
   -J / --jpath &lt;dir&gt;      Specify an additional library search dir
   -V / --var &lt;var&gt;=&lt;val&gt;  Specify an 'external' var to the given value
   -E / --env &lt;var&gt;        Bring in an environment var as an 'external' var
+  --code-var &lt;var&gt;=&lt;val&gt;  As --var but value is Jsonnet code
+  --code-env &lt;var&gt;        As --env but env var contains Jsonnet code
   -m / --multi            Write multiple files, list files on stdout
+  -S / --string           Expect a string, manifest as plain text
   -s / --max-stack &lt;n&gt;    Number of allowed stack frames
   -t / --max-trace &lt;n&gt;    Max length of stack trace before cropping
+
   --gc-min-objects &lt;n&gt;    Do not run garbage collector until this many
   --gc-growth-trigger &lt;n&gt; Run garbage collector after this amount of object growth
   --debug-ast             Unparse the parsed AST without executing it

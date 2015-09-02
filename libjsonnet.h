@@ -85,6 +85,12 @@ void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, vo
  */
 void jsonnet_ext_var(struct JsonnetVm *vm, const char *key, const char *val);
 
+/** Bind a Jsonnet external code var to the given value.
+ *
+ * Argument values are copied so memory should be managed by caller.
+ */
+void jsonnet_ext_code(struct JsonnetVm *vm, const char *key, const char *val);
+
 /** If set to 1, will emit the Jsonnet input after parsing / desugaring. */
 void jsonnet_debug_ast(struct JsonnetVm *vm, int v);
 

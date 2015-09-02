@@ -41,10 +41,22 @@ struct RuntimeError {
     { }
 };
 
+/** Stores external values / code. */
+struct VmExt {
+    std::string data;
+    bool isCode;
+    VmExt() : isCode(false) { }
+    VmExt(const std::string &data, bool is_code)
+      : data(data), isCode(is_code)
+    { }
+};
+
+
 /** Execute the program and return the value as a JSON string.
  *
  * \param alloc The allocator used to create the ast.
  * \param ast The program to execute.
+ * \param ext The external vars / code.
  * \param max_stack Recursion beyond this level gives an error.
  * \param gc_min_objects The garbage collector does not run when the heap is this small.
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
@@ -55,7 +67,7 @@ struct RuntimeError {
  * \returns The JSON result in string form.
  */
 std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
-                               const std::map<std::string, std::string> &ext_vars,
+                               const std::map<std::string, VmExt> &ext,
                                unsigned max_stack, double gc_min_objects,
                                double gc_growth_trigger,
                                JsonnetImportCallback *import_callback, void *import_callback_ctx,
@@ -67,6 +79,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  *
  * \param alloc The allocator used to create the ast.
  * \param ast The program to execute.
+ * \param ext The external vars / code.
  * \param max_stack Recursion beyond this level gives an error.
  * \param gc_min_objects The garbage collector does not run when the heap is this small.
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
@@ -77,7 +90,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
-    Allocator *alloc, const AST *ast, const std::map<std::string, std::string> &ext_vars,
+    Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext,
     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
     JsonnetImportCallback *import_callback, void *import_callback_ctx,
     bool string_output);

@@ -86,20 +86,20 @@ static char *default_import_callback(void *ctx, const char *base, const char *fi
     }
 }
 
-
 struct JsonnetVm {
     double gcGrowthTrigger;
     unsigned maxStack;
     unsigned gcMinObjects;
     bool debugAst;
     unsigned maxTrace;
-    std::map<std::string, std::string> extVars;
+    std::map<std::string, VmExt> ext;
     JsonnetImportCallback *importCallback;
     void *importCallbackContext;
     bool stringOutput;
     JsonnetVm(void)
       : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20),
-        importCallback(default_import_callback), importCallbackContext(this), stringOutput(false)
+        importCallback(default_import_callback), importCallbackContext(this),
+        stringOutput(false)
     { }
 };
 
@@ -161,7 +161,12 @@ void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, vo
 
 void jsonnet_ext_var(JsonnetVm *vm, const char *key, const char *val)
 {
-    vm->extVars[key] = val;
+    vm->ext[key] = VmExt(val, false);
+}
+
+void jsonnet_ext_code(JsonnetVm *vm, const char *key, const char *val)
+{
+    vm->ext[key] = VmExt(val, true);
 }
 
 void jsonnet_debug_ast(JsonnetVm *vm, int v)
@@ -187,12 +192,12 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
         } else {
             jsonnet_static_analysis(expr);
             if (multi) {
-                files = jsonnet_vm_execute_multi(&alloc, expr, vm->extVars, vm->maxStack,
+                files = jsonnet_vm_execute_multi(&alloc, expr, vm->ext, vm->maxStack,
                                                  vm->gcMinObjects, vm->gcGrowthTrigger,
                                                  vm->importCallback, vm->importCallbackContext,
                                                  vm->stringOutput);
             } else {
-                json_str = jsonnet_vm_execute(&alloc, expr, vm->extVars, vm->maxStack,
+                json_str = jsonnet_vm_execute(&alloc, expr, vm->ext, vm->maxStack,
                                               vm->gcMinObjects, vm->gcGrowthTrigger,
                                               vm->importCallback, vm->importCallbackContext,
                                               vm->stringOutput);
