@@ -16,6 +16,7 @@ vgcore.*
 *.jsonnet.h
 Makefile.depend
 Makefile.depend.bak
+bazel-*
 
 # Fractal demo
 case_studies/fractal/*.packer.log
