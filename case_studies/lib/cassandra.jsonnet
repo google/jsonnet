@@ -49,7 +49,7 @@ local packer = import "packer.jsonnet";
         cross_node_timeout: false,
         data_file_directories: ["/var/lib/cassandra/data"],
         disk_failure_policy: "stop",
-        dynamic_snitch_badness_threshold: 0.10000000000000001,
+        dynamic_snitch_badness_threshold: 0.1,
         dynamic_snitch_reset_interval_in_ms: 600000,
         dynamic_snitch_update_interval_in_ms: 100,
         endpoint_snitch: "SimpleSnitch",
