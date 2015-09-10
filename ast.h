@@ -373,9 +373,9 @@ class Allocator {
     std::map<std::string, const Identifier*> internedIdentifiers;
     std::vector<AST*> allocated;
     public:
-    template <class T, class... Args> T* make(Args... args)
+    template <class T, class... Args> T* make(Args&&... args)
     {
-        auto r = new T(args...);
+        auto r = new T(std::forward<Args>(args)...);
         allocated.push_back(r);
         return r;
     }

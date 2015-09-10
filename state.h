@@ -426,9 +426,9 @@ namespace {
          * If the heap is large enough (\see gcTuneMinObjects) and has grown by enough since the
          * last collection cycle (\see gcTuneGrowthTrigger), a collection cycle is performed.
         */
-        template <class T, class... Args> T* makeEntity(Args... args)
+        template <class T, class... Args> T* makeEntity(Args&&... args)
         {
-            T *r = new T(args...);
+            T *r = new T(std::forward<Args>(args)...);
             entities.push_back(r);
             r->mark = lastMark;
             numEntities = entities.size();

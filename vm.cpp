@@ -442,9 +442,9 @@ namespace {
          * \param T Something under HeapEntity
          * \returns The new object
          */
-        template <class T, class... Args> T* makeHeap(Args... args)
+        template <class T, class... Args> T* makeHeap(Args&&... args)
         {
-            T *r = heap.makeEntity<T, Args...>(args...);
+            T *r = heap.makeEntity<T, Args...>(std::forward<Args>(args)...);
             if (heap.checkHeap()) {  // Do a GC cycle?
                 // Avoid the object we just made being collected.
                 heap.markFrom(r);
