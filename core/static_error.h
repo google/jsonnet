@@ -102,4 +102,4 @@ static inline std::ostream &operator<<(std::ostream &o, const StaticError &err)
     return o;
 }
 
-#endif
+#endif  // JSONNET_ERROR_H

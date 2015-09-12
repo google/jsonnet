@@ -17,7 +17,7 @@ limitations under the License.
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "libjsonnet.h"
+#include "core/libjsonnet.h"
 
 int main(int argc, const char **argv)
 {
@@ -25,11 +25,11 @@ int main(int argc, const char **argv)
     char *output;
     struct JsonnetVm *vm;
     if (argc != 2) {
-        fprintf(stderr, "libjsonnet_test_snippet <string>\n");
+        fprintf(stderr, "libjsonnet_test_file <file>\n");
         return EXIT_FAILURE;
     }
     vm = jsonnet_make();
-    output = jsonnet_evaluate_snippet(vm, "snippet", argv[1], &error);
+    output = jsonnet_evaluate_file(vm, argv[1], &error);
     if (error) {
         fprintf(stderr, "%s", output);
         jsonnet_realloc(vm, output, 0);

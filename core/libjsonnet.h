@@ -154,4 +154,4 @@ char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
 /** Complement of \see jsonnet_vm_make. */
 void jsonnet_destroy(struct JsonnetVm *vm);
 
-#endif
+#endif  // LIB_JSONNET_H

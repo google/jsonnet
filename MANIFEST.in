@@ -1,2 +1,2 @@
-include LICENSE libjsonnet.h libjsonnet.cpp _jsonnet.c lexer.h lexer.cpp ast.h parser.h parser.cpp static_error.h static_analysis.h static_analysis.cpp state.h vm.h vm.cpp std.jsonnet Makefile
+include LICENSE core/*.cpp core/*.h python/*.c stdlib/std.jsonnet Makefile
 #recursive-include test_suite examples gc_stress benchmarks editors

@@ -445,4 +445,4 @@ namespace {
 
 }
 
-#endif
+#endif  // JSONNET_STATE_H
