@@ -177,7 +177,7 @@ void usage(std::ostream &o)
     o << "  --code-var <var>=<val>  As --var but value is Jsonnet code\n";
     o << "  --code-env <var>        As --env but env var contains Jsonnet code\n";
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
-    o << "  -m / --multi            Write multiple files, list files on stdout\n";
+    o << "  -m / --multi <dir>      Write multiple files to the directory, list files on stdout\n";
     o << "  -S / --string           Expect a string, manifest as plain text\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
@@ -249,6 +249,14 @@ class JsonnetConfig {
         output_file_ = output_file;
     }
 
+    const std::string& output_dir() const {
+        return output_dir_;
+    }
+
+    void set_output_dir(const std::string& output_dir) {
+        output_dir_ = output_dir;
+    }
+
     void AddJpath(const std::string& jpath) {
         jpaths_.emplace_back(jpath);
     }
@@ -266,6 +274,7 @@ class JsonnetConfig {
     bool multi_;
     std::string input_file_;
     std::string output_file_;
+    std::string output_dir_;
     std::vector<std::string> jpaths_;
 };
 
@@ -387,10 +396,19 @@ static bool process_args(int argc,
             config->set_filename_is_code(true);
         } else if (arg == "-m" || arg == "--multi") {
             config->set_multi(true);
+            std::string output_dir = next_arg(i, args);
+            if (output_dir.length() == 0) {
+                std::cerr << "ERROR: -m argument was empty string" << std::endl;
+                return EXIT_FAILURE;
+            }
+            if (output_dir[output_dir.length() - 1] != '/') {
+                output_dir += '/';
+            }
+            config->set_output_dir(output_dir);
         } else if (arg == "-o" || arg == "--output-file") {
             std::string output_file = next_arg(i, args);
             if (output_file.length() == 0) {
-                std::cerr << "ERROR: -o output was empty string" << std::endl;
+                std::cerr << "ERROR: -o argument was empty string" << std::endl;
                 return EXIT_FAILURE;
             }
             config->set_output_file(output_file);
@@ -458,7 +476,11 @@ static bool read_input(JsonnetConfig* config, std::string* input) {
 }
 
 /** Writes output files for multiple file output */
-static bool write_multi_output_files(JsonnetVm* vm, char* output) {
+static bool write_multi_output_files(JsonnetVm* vm, char* output,
+                                     const std::string& output_dir) {
+    // If multiple file output is used, then iterate over each string from
+    // the sequence of strings returned by jsonnet_evaluate_snippet_multi,
+    // construct pairs of filename and content, and write each output file.
     std::map<std::string, std::string> r;
     for (const char *c=output ; *c!='\0' ; ) {
         const char *filename = c;
@@ -474,7 +496,7 @@ static bool write_multi_output_files(JsonnetVm* vm, char* output) {
     jsonnet_realloc(vm, output, 0);
     for (const auto &pair : r) {
         const std::string &new_content = pair.second;
-        const std::string &filename = pair.first;
+        const std::string &filename = output_dir + pair.first;
         std::cout << filename << std::endl;
         {
             std::ifstream exists(filename.c_str());
@@ -578,7 +600,7 @@ int main(int argc, const char **argv)
 
         // Write output JSON.
         if (config.multi()) {
-            if (!write_multi_output_files(vm, output)) {
+            if (!write_multi_output_files(vm, output, config.output_dir())) {
                 return EXIT_FAILURE;
             }
         } else {
