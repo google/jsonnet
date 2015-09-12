@@ -176,6 +176,7 @@ void usage(std::ostream &o)
     o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
     o << "  --code-var <var>=<val>  As --var but value is Jsonnet code\n";
     o << "  --code-env <var>        As --env but env var contains Jsonnet code\n";
+    o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
     o << "  -m / --multi            Write multiple files, list files on stdout\n";
     o << "  -S / --string           Expect a string, manifest as plain text\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
@@ -204,6 +205,31 @@ long strtol_check(const std::string &str)
     return r;
 }
 
+// Writes the output JSON to the specified output file.
+static bool write_output_file(const char* output,
+                              const std::string &output_file) {
+    if (output_file.empty()) {
+        std::cout << output;
+        std::cout.flush();
+        return true;
+    }
+    std::ofstream f;
+    f.open(output_file.c_str());
+    if (!f.good()) {
+        std::string msg = "Writing to output file: " + output_file;
+        perror(msg.c_str());
+        return false;
+    }
+    f << output;
+    f.close();
+    if (!f.good()) {
+        std::string msg = "Writing to output file: " + output_file;
+        perror(msg.c_str());
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, const char **argv)
 {
     try {
@@ -218,6 +244,7 @@ int main(int argc, const char **argv)
 
         auto args = simplify_args(argc, argv);
         std::vector<std::string> remaining_args;
+        std::string output_file = "";
 
         for (unsigned i=0 ; i<args.size() ; ++i) {
             const std::string &arg = args[i];
@@ -320,6 +347,12 @@ int main(int argc, const char **argv)
                 filename_is_code = true;
             } else if (arg == "-m" || arg == "--multi") {
                 multi = true;
+            } else if (arg == "-o" || arg == "--output-file") {
+              output_file = next_arg(i, args);
+              if (output_file.length() == 0) {
+                  std::cerr << "ERROR: -o output was empty string" << std::endl;
+                  return EXIT_FAILURE;
+              }
             } else if (arg == "-S" || arg == "--string") {
                 jsonnet_string_output(vm, 1);
             } else if (arg == "--debug-ast") {
@@ -448,9 +481,11 @@ int main(int argc, const char **argv)
             }
             std::cout.flush();
         } else {
-            std::cout << output;
-            std::cout.flush();
             jsonnet_realloc(vm, output, 0);
+            if (!write_output_file(output, output_file)) {
+                jsonnet_destroy(vm);
+                return EXIT_FAILURE;
+            }
         }
         jsonnet_destroy(vm);
         return EXIT_SUCCESS;
