@@ -481,8 +481,9 @@ int main(int argc, const char **argv)
             }
             std::cout.flush();
         } else {
+            bool successful =  write_output_file(output, output_file);
             jsonnet_realloc(vm, output, 0);
-            if (!write_output_file(output, output_file)) {
+            if (!successful) {
                 jsonnet_destroy(vm);
                 return EXIT_FAILURE;
             }
