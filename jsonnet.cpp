@@ -81,14 +81,14 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
 }
 
 static char *from_string(JsonnetVm* vm, const std::string &v)
-{   
+{
     char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
     std::strcpy(r, v.c_str());
     return r;
 }
 
-static char *import_callback (void *ctx_, const char *dir, const char *file,
-                              char **found_here_cptr, int *success)
+static char *import_callback(void *ctx_, const char *dir, const char *file,
+                             char **found_here_cptr, int *success)
 {
     const auto &ctx = *static_cast<ImportCallbackContext*>(ctx_);
 
@@ -205,7 +205,315 @@ long strtol_check(const std::string &str)
     return r;
 }
 
-// Writes the output JSON to the specified output file.
+/** Class for representing configuration read from command line flags.  */
+class JsonnetConfig {
+  public:
+    JsonnetConfig()
+        : filename_is_code_(false),
+          multi_(false) {
+        jpaths_.emplace_back(
+            "/usr/share/" + std::string(jsonnet_version()) + "/");
+        jpaths_.emplace_back(
+            "/usr/local/share/" + std::string(jsonnet_version()) + "/");
+    }
+
+    bool filename_is_code() const {
+        return filename_is_code_;
+    }
+
+    void set_filename_is_code(bool filename_is_code) {
+        filename_is_code_ = filename_is_code;
+    }
+
+    bool multi() const {
+        return multi_;
+    }
+
+    void set_multi(bool multi) {
+        multi_ = multi;
+    }
+
+    const std::string& input_file() const {
+        return input_file_;
+    }
+
+    void set_input_file(const std::string& input_file) {
+        input_file_ = input_file;
+    }
+
+    const std::string& output_file() const {
+        return output_file_;
+    }
+
+    void set_output_file(const std::string& output_file) {
+        output_file_ = output_file;
+    }
+
+    void AddJpath(const std::string& jpath) {
+        jpaths_.emplace_back(jpath);
+    }
+
+    const std::vector<std::string>& jpaths() const {
+        return jpaths_;
+    }
+
+    std::vector<std::string>* mutable_jpaths() {
+        return &jpaths_;
+    }
+
+  private:
+    bool filename_is_code_;
+    bool multi_;
+    std::string input_file_;
+    std::string output_file_;
+    std::vector<std::string> jpaths_;
+};
+
+/** Parse the command line arguments, configuring the Jsonnet VM context and
+ * populating the JsonnetConfig.
+ */
+static bool process_args(int argc,
+                         const char **argv,
+                         JsonnetConfig *config,
+                         JsonnetVm *vm) {
+    auto args = simplify_args(argc, argv);
+    std::vector<std::string> remaining_args;
+
+    for (unsigned i=0 ; i<args.size() ; ++i) {
+        const std::string &arg = args[i];
+        if (arg == "-h" || arg == "--help") {
+            usage(std::cout);
+            return false;
+        } else if (arg == "-v" || arg == "--version") {
+            version(std::cout);
+            return false;
+        } else if (arg == "-s" || arg == "--max-stack") {
+            long l = strtol_check(next_arg(i, args));
+            if (l < 1) {
+                std::cerr << "ERROR: Invalid --max-stack value: " << l << "\n"
+                          << std::endl;
+                usage(std::cerr);
+                return false;
+            }
+            jsonnet_max_stack(vm, l);
+        } else if (arg == "-J" || arg == "--jpath") {
+            std::string dir = next_arg(i, args);
+            if (dir.length() == 0) {
+                std::cerr << "ERROR: -J argument was empty string" << std::endl;
+                return false;
+            }
+            if (dir[dir.length() - 1] != '/') {
+                dir += '/';
+            }
+            config->AddJpath(dir);
+        } else if (arg == "-E" || arg == "--env") {
+            const std::string var = next_arg(i, args);
+            const char *val = ::getenv(var.c_str());
+            if (val == nullptr) {
+                std::cerr << "ERROR: Environment variable " << var
+                          << " was undefined." << std::endl;
+                return false;
+            }
+            jsonnet_ext_var(vm, var.c_str(), val);
+        } else if (arg == "-V" || arg == "--var") {
+            const std::string var_val = next_arg(i, args);
+            size_t eq_pos = var_val.find_first_of('=', 0);
+            if (eq_pos == std::string::npos) {
+                std::cerr << "ERROR: argument not in form <var>=<val> \""
+                          << var_val << "\"." << std::endl;
+                return false;
+            }
+            const std::string var = var_val.substr(0, eq_pos);
+            const std::string val = var_val.substr(eq_pos + 1,
+                                                   std::string::npos);
+            jsonnet_ext_var(vm, var.c_str(), val.c_str());
+        } else if (arg == "--code-env") {
+            const std::string var = next_arg(i, args);
+            const char *val = ::getenv(var.c_str());
+            if (val == nullptr) {
+                std::cerr << "ERROR: Environment variable " << var
+                          << " was undefined." << std::endl;
+                return EXIT_FAILURE;
+            }
+            jsonnet_ext_code(vm, var.c_str(), val);
+        } else if (arg == "--code-var") {
+            const std::string var_val = next_arg(i, args);
+            size_t eq_pos = var_val.find_first_of('=', 0);
+            if (eq_pos == std::string::npos) {
+                std::cerr << "ERROR: argument not in form <var>=<val> \""
+                          << var_val << "\"." << std::endl;
+                return EXIT_FAILURE;
+            }
+            const std::string var = var_val.substr(0, eq_pos);
+            const std::string val = var_val.substr(eq_pos + 1,
+                                                   std::string::npos);
+            jsonnet_ext_code(vm, var.c_str(), val.c_str());
+        } else if (arg == "--gc-min-objects") {
+            long l = strtol_check(next_arg(i, args));
+            if (l < 0) {
+                std::cerr << "ERROR: Invalid --gc-min-objects value: " << l
+                          << std::endl;
+                usage(std::cerr);
+                return EXIT_FAILURE;
+            }
+            jsonnet_gc_min_objects(vm, l);
+        } else if (arg == "-t" || arg == "--max-trace") {
+            long l = strtol_check(next_arg(i, args));
+            if (l < 0) {
+                std::cerr << "ERROR: Invalid --max-trace value: " << l
+                          << std::endl;
+                usage(std::cerr);
+                return EXIT_FAILURE;
+            }
+            jsonnet_max_trace(vm, l);
+        } else if (arg == "--gc-growth-trigger") {
+            const char *arg = next_arg(i,args).c_str();
+            char *ep;
+            double v = std::strtod(arg, &ep);
+            if (*ep != '\0' || *arg == '\0') {
+                std::cerr << "ERROR: Invalid number \"" << arg << "\""
+                          << std::endl;
+                usage(std::cerr);
+                return EXIT_FAILURE;
+            }
+            if (v < 0) {
+                std::cerr << "ERROR: Invalid --gc-growth-trigger \""
+                          << arg << "\"\n" << std::endl;
+                usage(std::cerr);
+                return EXIT_FAILURE;
+            }
+            jsonnet_gc_growth_trigger(vm, v);
+        } else if (arg == "-e" || arg == "--exec") {
+            config->set_filename_is_code(true);
+        } else if (arg == "-m" || arg == "--multi") {
+            config->set_multi(true);
+        } else if (arg == "-o" || arg == "--output-file") {
+            std::string output_file = next_arg(i, args);
+            if (output_file.length() == 0) {
+                std::cerr << "ERROR: -o output was empty string" << std::endl;
+                return EXIT_FAILURE;
+            }
+            config->set_output_file(output_file);
+        } else if (arg == "-S" || arg == "--string") {
+            jsonnet_string_output(vm, 1);
+        } else if (arg == "--debug-ast") {
+            jsonnet_debug_ast(vm, true);
+        } else if (arg == "--") {
+            // All subsequent args are not options.
+            while ((++i) < args.size())
+                remaining_args.push_back(args[i]);
+            break;
+        } else {
+            remaining_args.push_back(args[i]);
+        }
+    }
+
+    const char *want = config->filename_is_code() ? "code" : "filename";
+    if (remaining_args.size() == 0) {
+        std::cerr << "ERROR: Must give " << want << "\n" << std::endl;
+        usage(std::cerr);
+        return false;
+    }
+
+    std::string filename = remaining_args[0];
+    if (remaining_args.size() > 1) {
+        std::cerr << "ERROR: Already specified " << want
+                  << " as \"" << filename << "\"\n"
+                  << std::endl;
+        usage(std::cerr);
+        return false;
+    }
+    config->set_input_file(filename);
+    return true;
+}
+
+/** Reads Jsonnet code from the input file or stdin into the input buffer. */
+static bool read_input(JsonnetConfig* config, std::string* input) {
+    if (config->filename_is_code()) {
+        *input = config->input_file();
+        config->set_input_file("<cmdline>");
+    } else {
+        if (config->input_file() == "-") {
+            config->set_input_file("<stdin>");
+            input->assign(std::istreambuf_iterator<char>(std::cin),
+                          std::istreambuf_iterator<char>());
+        } else {
+            std::ifstream f;
+            f.open(config->input_file().c_str());
+            if (!f.good()) {
+                std::string msg = "Opening input file: " + config->input_file();
+                perror(msg.c_str());
+                return false;
+            }
+            input->assign(std::istreambuf_iterator<char>(f),
+                          std::istreambuf_iterator<char>());
+            if (!f.good()) {
+                std::string msg = "Reading input file: " + config->input_file();
+                perror(msg.c_str());
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/** Writes output files for multiple file output */
+static bool write_multi_output_files(JsonnetVm* vm, char* output) {
+    std::map<std::string, std::string> r;
+    for (const char *c=output ; *c!='\0' ; ) {
+        const char *filename = c;
+        const char *c2 = c;
+        while (*c2 != '\0') ++c2;
+        ++c2;
+        const char *json = c2;
+        while (*c2 != '\0') ++c2;
+        ++c2;
+        c = c2;
+        r[filename] = json;
+    }
+    jsonnet_realloc(vm, output, 0);
+    for (const auto &pair : r) {
+        const std::string &new_content = pair.second;
+        const std::string &filename = pair.first;
+        std::cout << filename << std::endl;
+        {
+            std::ifstream exists(filename.c_str());
+            if (exists.good()) {
+                std::string existing_content;
+                existing_content.assign(std::istreambuf_iterator<char>(exists),
+                                        std::istreambuf_iterator<char>());
+                if (existing_content == new_content) {
+                    // Do not bump the timestamp on the file if its content is
+                    // the same. This may trigger other tools (e.g. make) to do
+                    // unnecessary work.
+                    continue;
+                }
+            }
+        }
+        std::ofstream f;
+        f.open(filename.c_str());
+        if (!f.good()) {
+            std::string msg = "Opening output file: " + filename;
+            perror(msg.c_str());
+            jsonnet_destroy(vm);
+            return false;
+        }
+        f << new_content;
+        f.close();
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + filename;
+            perror(msg.c_str());
+            jsonnet_destroy(vm);
+            return false;
+        }
+    }
+    std::cout.flush();
+    return true;
+}
+
+/** Writes the output JSON to the specified output file for single-file
+ * output
+ */
 static bool write_output_file(const char* output,
                               const std::string &output_file) {
     if (output_file.empty()) {
@@ -233,194 +541,31 @@ static bool write_output_file(const char* output,
 int main(int argc, const char **argv)
 {
     try {
-        std::vector<std::string> jpaths;
-        jpaths.emplace_back("/usr/share/" + std::string(jsonnet_version()) + "/");
-        jpaths.emplace_back("/usr/local/share/" + std::string(jsonnet_version()) + "/");
-
         JsonnetVm *vm = jsonnet_make();
-        bool filename_is_code = false;
-            
-        bool multi = false;
-
-        auto args = simplify_args(argc, argv);
-        std::vector<std::string> remaining_args;
-        std::string output_file = "";
-
-        for (unsigned i=0 ; i<args.size() ; ++i) {
-            const std::string &arg = args[i];
-            if (arg == "-h" || arg == "--help") {
-                usage(std::cout);
-                return EXIT_SUCCESS;
-            } else if (arg == "-v" || arg == "--version") {
-                version(std::cout);
-                return EXIT_SUCCESS;
-            } else if (arg == "-s" || arg == "--max-stack") {
-                long l = strtol_check(next_arg(i, args));
-                if (l < 1) {
-                    std::cerr << "ERROR: Invalid --max-stack value: " << l << "\n" << std::endl;
-                    usage(std::cerr);
-                    return EXIT_FAILURE;
-                }
-                jsonnet_max_stack(vm, l);
-            } else if (arg == "-J" || arg == "--jpath") {
-                std::string dir = next_arg(i, args);
-                if (dir.length() == 0) {
-                    std::cerr << "ERROR: -J argument was empty string" << std::endl;
-                    return EXIT_FAILURE;
-                }
-                if (dir[dir.length() - 1] != '/')
-                    dir += '/';
-                jpaths.push_back(dir);
-            } else if (arg == "-E" || arg == "--env") {
-                const std::string var = next_arg(i, args);
-                const char *val = ::getenv(var.c_str());
-                if (val == nullptr) {
-                    std::cerr << "ERROR: Environment variable " << var
-                              << " was undefined." << std::endl;
-                    return EXIT_FAILURE;
-                }
-                jsonnet_ext_var(vm, var.c_str(), val);
-            } else if (arg == "-V" || arg == "--var") {
-                const std::string var_val = next_arg(i, args);
-                size_t eq_pos = var_val.find_first_of('=', 0);
-                if (eq_pos == std::string::npos) {
-                    std::cerr << "ERROR: argument not in form <var>=<val> \""
-                              << var_val << "\"." << std::endl;
-                    return EXIT_FAILURE;
-                }
-                const std::string var = var_val.substr(0, eq_pos);
-                const std::string val = var_val.substr(eq_pos + 1, std::string::npos);
-                jsonnet_ext_var(vm, var.c_str(), val.c_str());
-            } else if (arg == "--code-env") {
-                const std::string var = next_arg(i, args);
-                const char *val = ::getenv(var.c_str());
-                if (val == nullptr) {
-                    std::cerr << "ERROR: Environment variable " << var
-                              << " was undefined." << std::endl;
-                    return EXIT_FAILURE;
-                }
-                jsonnet_ext_code(vm, var.c_str(), val);
-            } else if (arg == "--code-var") {
-                const std::string var_val = next_arg(i, args);
-                size_t eq_pos = var_val.find_first_of('=', 0);
-                if (eq_pos == std::string::npos) {
-                    std::cerr << "ERROR: argument not in form <var>=<val> \""
-                              << var_val << "\"." << std::endl;
-                    return EXIT_FAILURE;
-                }
-                const std::string var = var_val.substr(0, eq_pos);
-                const std::string val = var_val.substr(eq_pos + 1, std::string::npos);
-                jsonnet_ext_code(vm, var.c_str(), val.c_str());
-            } else if (arg == "--gc-min-objects") {
-                long l = strtol_check(next_arg(i, args));
-                if (l < 0) {
-                    std::cerr << "ERROR: Invalid --gc-min-objects value: " << l << std::endl;
-                    usage(std::cerr);
-                    return EXIT_FAILURE;
-                }
-                jsonnet_gc_min_objects(vm, l);
-            } else if (arg == "-t" || arg == "--max-trace") {
-                long l = strtol_check(next_arg(i, args));
-                if (l < 0) {
-                    std::cerr << "ERROR: Invalid --max-trace value: " << l << std::endl;
-                    usage(std::cerr);
-                    return EXIT_FAILURE;
-                }
-                jsonnet_max_trace(vm, l);
-            } else if (arg == "--gc-growth-trigger") {
-                const char *arg = next_arg(i,args).c_str();
-                char *ep;
-                double v = std::strtod(arg, &ep);
-                if (*ep != '\0' || *arg == '\0') {
-                    std::cerr << "ERROR: Invalid number \"" << arg << "\"" << std::endl;
-                    usage(std::cerr);
-                    return EXIT_FAILURE;
-                }
-                if (v < 0) {
-                    std::cerr << "ERROR: Invalid --gc-growth-trigger \"" << arg << "\"\n"
-                              << std::endl;
-                    usage(std::cerr);
-                    return EXIT_FAILURE;
-                }
-                jsonnet_gc_growth_trigger(vm, v);
-            } else if (arg == "-e" || arg == "--exec") {
-                filename_is_code = true;
-            } else if (arg == "-m" || arg == "--multi") {
-                multi = true;
-            } else if (arg == "-o" || arg == "--output-file") {
-              output_file = next_arg(i, args);
-              if (output_file.length() == 0) {
-                  std::cerr << "ERROR: -o output was empty string" << std::endl;
-                  return EXIT_FAILURE;
-              }
-            } else if (arg == "-S" || arg == "--string") {
-                jsonnet_string_output(vm, 1);
-            } else if (arg == "--debug-ast") {
-                jsonnet_debug_ast(vm, true);
-            } else if (arg == "--") {
-                // All subsequent args are not options.
-                while ((++i) < args.size())
-                    remaining_args.push_back(args[i]);
-                break;
-            } else {
-                remaining_args.push_back(args[i]);
-            }
-        }
-
-
-        const char *want = filename_is_code ? "code" : "filename";
-
-        if (remaining_args.size() == 0) {
-            std::cerr << "ERROR: Must give " << want << "\n" << std::endl;
-            usage(std::cerr);
+        JsonnetConfig config;
+        if (!process_args(argc, argv, &config, vm)) {
             return EXIT_FAILURE;
         }
 
-        std::string filename = remaining_args[0];
-
-        if (remaining_args.size() > 1) {
-            std::cerr << "ERROR: Already specified " << want << " as \"" << filename << "\"\n"
-                      << std::endl;
-            usage(std::cerr);
-            return EXIT_FAILURE;
-        }
-
+        // Read input files.
         std::string input;
-        if (filename_is_code) {
-            input = filename;
-            filename = "<cmdline>";
-        } else {
-            if (filename == "-") {
-                filename = "<stdin>";
-                input.assign(std::istreambuf_iterator<char>(std::cin),
-                             std::istreambuf_iterator<char>());
-            } else {
-                std::ifstream f;
-                f.open(filename.c_str());
-                if (!f.good()) {
-                    std::string msg = "Opening input file: " + filename;
-                    perror(msg.c_str());
-                    return EXIT_FAILURE;
-                }
-                input.assign(std::istreambuf_iterator<char>(f),
-                             std::istreambuf_iterator<char>());
-                if (!f.good()) {
-                    std::string msg = "Reading input file: " + filename;
-                    perror(msg.c_str());
-                    return EXIT_FAILURE;
-                }
-            }
+        if (!read_input(&config, &input)) {
+            return EXIT_FAILURE;
         }
 
-        ImportCallbackContext import_callback_ctx { vm, &jpaths };
+        // Set import callbacks for jpaths.
+        ImportCallbackContext import_callback_ctx{vm, config.mutable_jpaths()};
         jsonnet_import_callback(vm, import_callback, &import_callback_ctx);
 
+        // Evaluate input Jsonnet and handle any errors from Jsonnet VM.
         int error;
         char *output;
-        if (multi) {
-            output = jsonnet_evaluate_snippet_multi(vm, filename.c_str(), input.c_str(), &error);
+        if (config.multi()) {
+            output = jsonnet_evaluate_snippet_multi(
+                vm, config.input_file().c_str(), input.c_str(), &error);
         } else {
-            output = jsonnet_evaluate_snippet(vm, filename.c_str(), input.c_str(), &error);
+            output = jsonnet_evaluate_snippet(
+                vm, config.input_file().c_str(), input.c_str(), &error);
         }
 
         if (error) {
@@ -431,57 +576,13 @@ int main(int argc, const char **argv)
             return EXIT_FAILURE;
         }
 
-        if (multi) {
-            std::map<std::string, std::string> r;
-            for (const char *c=output ; *c!='\0' ; ) {
-                const char *filename = c;
-                const char *c2 = c;
-                while (*c2 != '\0') ++c2;
-                ++c2;
-                const char *json = c2;
-                while (*c2 != '\0') ++c2;
-                ++c2;
-                c = c2;
-                r[filename] = json;
+        // Write output JSON.
+        if (config.multi()) {
+            if (!write_multi_output_files(vm, output)) {
+                return EXIT_FAILURE;
             }
-            jsonnet_realloc(vm, output, 0);
-            for (const auto &pair : r) {
-                const std::string &new_content = pair.second;
-                const std::string &filename = pair.first;
-                std::cout << filename << std::endl;
-                {
-                    std::ifstream exists(filename.c_str());
-                    if (exists.good()) {
-                        std::string existing_content;
-                        existing_content.assign(std::istreambuf_iterator<char>(exists),
-                                                std::istreambuf_iterator<char>());
-                        if (existing_content == new_content) {
-                            // Do not bump the timestamp on the file if its content is the same.
-                            // This may trigger other tools (e.g. make) to do unnecessary work.
-                            continue;
-                        }
-                    }
-                }
-                std::ofstream f;
-                f.open(filename.c_str());
-                if (!f.good()) {
-                    std::string msg = "Opening output file: " + filename;
-                    perror(msg.c_str());
-                    jsonnet_destroy(vm);
-                    return EXIT_FAILURE;
-                }
-                f << new_content;
-                f.close();
-                if (!f.good()) {
-                    std::string msg = "Writing to output file: " + filename;
-                    perror(msg.c_str());
-                    jsonnet_destroy(vm);
-                    return EXIT_FAILURE;
-                }
-            }
-            std::cout.flush();
         } else {
-            bool successful =  write_output_file(output, output_file);
+            bool successful =  write_output_file(output, config.output_file());
             jsonnet_realloc(vm, output, 0);
             if (!successful) {
                 jsonnet_destroy(vm);
@@ -495,9 +596,11 @@ int main(int argc, const char **argv)
         // Avoid further allocation attempts
         fputs("Internal out-of-memory error (please report this)\n", stderr);
     } catch (const std::exception &e) {
-        std::cerr << "Internal error (please report this): " << e.what() << std::endl;
+        std::cerr << "Internal error (please report this): "
+                  << e.what() << std::endl;
     } catch (...) {
-        std::cerr << "An unknown exception occurred (please report this)." << std::endl;
+        std::cerr << "An unknown exception occurred (please report this)."
+                  << std::endl;
     }
     return EXIT_FAILURE;
 }
