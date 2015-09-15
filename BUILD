@@ -14,6 +14,8 @@ genrule(
           "echo >> $@",
 )
 
+# TODO(dzc): Remove the includes = ["."] lines from all cc_* targets once
+# bazelbuild/bazel#445 is fixed.
 cc_library(
     name = "jsonnet-common",
     srcs = [
@@ -30,6 +32,7 @@ cc_library(
         "static_error.h",
         "vm.h",
     ],
+    includes = ["."],
 )
 
 cc_library(
@@ -37,24 +40,28 @@ cc_library(
     srcs = ["libjsonnet.cpp"],
     hdrs = ["libjsonnet.h"],
     deps = [":jsonnet-common"],
+    includes = ["."],
 )
 
 cc_binary(
     name = "jsonnet",
     srcs = ["jsonnet.cpp"],
     deps = [":libjsonnet"],
+    includes = ["."],
 )
 
 cc_binary(
     name = "libjsonnet_test_snippet",
     srcs = ["libjsonnet_test_snippet.c"],
     deps = [":libjsonnet"],
+    includes = ["."],
 )
 
 cc_binary(
     name = "libjsonnet_test_file",
     srcs = ["libjsonnet_test_file.c"],
     deps = [":libjsonnet"],
+    includes = ["."],
 )
 
 filegroup(
