@@ -814,4 +814,15 @@ limitations under the License.
                     aux(a, b, i, j + 1, acc) tailstrict;
         aux(a, b, 0, 0, []) tailstrict,
 
+    objectFields(o)::
+        std.objectFieldsEx(o, false),
+
+    objectFieldsAll(o)::
+        std.objectFieldsEx(o, true),
+
+    objectHas(o, f)::
+        std.objectHasEx(o, f, false),
+
+    objectHasAll(o, f)::
+        std.objectHasEx(o, f, true),
 }

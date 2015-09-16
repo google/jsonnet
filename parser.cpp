@@ -793,9 +793,9 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 10: return {"atan", {"x"}};
         case 11: return {"type", {"x"}};
         case 12: return {"filter", {"func", "arr"}};
-        case 13: return {"objectHas", {"obj", "f"}};
+        case 13: return {"objectHasEx", {"obj", "f", "inc_hidden"}};
         case 14: return {"length", {"x"}};
-        case 15: return {"objectFields", {"obj"}};
+        case 15: return {"objectFieldsEx", {"obj", "inc_hidden"}};
         case 16: return {"codepoint", {"str"}};
         case 17: return {"char", {"n"}};
         case 18: return {"log", {"n"}};

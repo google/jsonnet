@@ -594,9 +594,9 @@ namespace {
 
         /** Auxiliary function.
          */
-         IdHideMap objectFields(const HeapObject *obj_,
-                                unsigned &counter, unsigned skip,
-                                bool manifesting)
+        IdHideMap objectFields(const HeapObject *obj_,
+                               unsigned &counter, unsigned skip,
+                               bool manifesting)
         {
             IdHideMap r;
             if (auto *obj = dynamic_cast<const HeapSimpleObject*>(obj_)) {
@@ -1621,13 +1621,14 @@ namespace {
                                     }
                                 } break;
 
-                                case 13: {  // objectHas
+                                case 13: {  // objectHasEx
                                     validateBuiltinArgs(loc, builtin, args,
-                                                        {Value::OBJECT, Value::STRING});
+                                                        {Value::OBJECT, Value::STRING, Value::BOOLEAN});
                                     const auto *obj = static_cast<const HeapObject*>(args[0].v.h);
                                     const auto *str = static_cast<const HeapString*>(args[1].v.h);
+                                    bool include_hidden = args[2].v.b;
                                     bool found = false;
-                                    for (const auto &field : objectFields(obj, true)) {
+                                    for (const auto &field : objectFields(obj, !include_hidden)) {
                                         if (field->name == str->value) {
                                             found = true;
                                             break;
@@ -1670,12 +1671,13 @@ namespace {
                                     }
                                 } break;
 
-                                case 15: {  // objectFields
-                                    validateBuiltinArgs(loc, builtin, args, {Value::OBJECT});
+                                case 15: {  // objectFieldsEx
+                                    validateBuiltinArgs(loc, builtin, args, {Value::OBJECT, Value::BOOLEAN});
                                     const auto *obj = static_cast<HeapObject*>(args[0].v.h);
+                                    bool include_hidden = args[1].v.b;
                                     // Stash in a set first to sort them.
                                     std::set<std::string> fields;
-                                    for (const auto &field : objectFields(obj, true)) {
+                                    for (const auto &field : objectFields(obj, !include_hidden)) {
                                         fields.insert(field->name);
                                     }
                                     scratch = makeArray({});

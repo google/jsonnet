@@ -226,13 +226,22 @@ fields in the object.  Raises an error if given a primitive value, i.e. <code>nu
 <h4>std.objectHas(o, f)</h4>
 
 <p>Returns <code>true</code> if the given object has the field (given as a string), otherwise
-<code>false</code>.  Raises an error if the arguments are not object and string respectively.  Note
-that hidden fields are not visible via reflection.</p>
+<code>false</code>.  Raises an error if the arguments are not object and string respectively.
+Returns false if the field is hidden..</p>
 
 <h4>std.objectFields(o)</h4>
 
-<p>Returns an array of strings, each element being a field from the given object.  Note that hidden
-fields are not visible via reflection.</p>
+<p>Returns an array of strings, each element being a field from the given object.  Does not include
+hidden fields.</p>
+
+
+<h4>std.objectHasAll(o, f)</h4>
+
+<p>As <code>std.objectHas</code> but also includes hidden fields.</p>
+
+<h4>std.objectFieldsAll(o)</h4>
+
+<p>As <code>std.objectFields</code> but also includes hidden fields.</p>
 
 
 <h3>Mathematical Utilities</h3>
