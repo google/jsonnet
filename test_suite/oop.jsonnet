@@ -58,8 +58,6 @@ local A = {name: "A"                 },
 
 std.assertEqual((A+B) + (C+D), { name: "D", sB: "A", sC: "B", sD: "C" }) &&
 
-std.assertEqual((({z:3, y:super}+{x:super})).z, 3) &&
-
 // Outer variable
 local a = {
     d: 0,
@@ -80,14 +78,6 @@ std.assertEqual(({x: 1, y: { a: $.x }} + {x: 2}).y.a, 2) &&
 
 // DAG
 std.assertEqual({x: 1, y: 2} + (local A = { x: super.y, y: super.x }; A + A), {x: 1, y: 2}) &&
-
-// extending super
-std.assertEqual(({x: 0, y: self.x} + {x: 1, y: super + {x : 2}}), {x: 1, y: {x: 2, y: 1} }) &&
-std.assertEqual(({x: 0, y: self.x} + {x: 1, y: super + {}}), {x: 1, y: {x: 0, y: 1} }) &&
-
-// super edge cases
-std.assertEqual(({x: 1, y: 1} + {y: 2}) + {s:super}, {x: 1, y: 2, s: {x: 1, y: 2}}) &&
-std.assertEqual({x: 1, y: 1} + ({y: 2} + {s:super}), {x: 1, y: 2, s: {x: 1, y: 2}}) &&
 
 
 // Object composition: inheritance

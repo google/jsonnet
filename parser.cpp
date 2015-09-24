@@ -197,8 +197,8 @@ static std::string unparse(const AST *ast_)
     } else if (dynamic_cast<const Self*>(ast_)) {
         ss << "self";
 
-    } else if (dynamic_cast<const Super*>(ast_)) {
-        ss << "super";
+    } else if (auto *ast = dynamic_cast<const SuperIndex*>(ast_)) {
+        ss << "super[" << unparse(ast->index) << "]";
 
     } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
         ss << uop_string(ast->op) << unparse(ast->expr);
@@ -600,7 +600,7 @@ namespace {
                         }
                         if (plus_sugar) {
                             AST *f = alloc->make<LiteralString>(plus_loc, next.data);
-                            AST *super_f = alloc->make<Index>(plus_loc, alloc->make<Super>(LocationRange()), f);
+                            AST *super_f = alloc->make<SuperIndex>(plus_loc, f);
                             body = alloc->make<Binary>(body->location, super_f, BOP_PLUS, body);
                         }
                         fields.emplace_back(field_expr, field_hide, body);
@@ -802,8 +802,23 @@ namespace {
                 case Token::SELF:
                 return alloc->make<Self>(span(tok));
 
-                case Token::SUPER:
-                return alloc->make<Super>(span(tok));
+                case Token::SUPER: {
+                    Token next = pop();
+                    AST *index;
+                    switch (next.kind) {
+                        case Token::DOT: {
+                            Token field_id = popExpect(Token::IDENTIFIER);
+                            index = alloc->make<LiteralString>(span(field_id), field_id.data);
+                        } break;
+                        case Token::BRACKET_L: {
+                            index = parse(MAX_PRECEDENCE, obj_level);
+                            popExpect(Token::BRACKET_R);
+                        } break;
+                        default:
+                        throw StaticError(tok.location, "Expected . or [ after super.");
+                    }
+                    return alloc->make<SuperIndex>(span(tok), index);
+                }
             }
 
             std::cerr << "INTERNAL ERROR: Unknown tok kind: " << tok.kind << std::endl;

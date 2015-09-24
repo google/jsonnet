@@ -55,13 +55,14 @@ namespace {
         FRAME_IF,  // e in if e then a else b
         FRAME_INDEX_TARGET,  // e in e[x]
         FRAME_INDEX_INDEX,  // e in x[e]
+        FRAME_INVARIANTS,  // Caches the thunks that need to be executed one at a time.
         FRAME_LOCAL,  // Stores thunk bindings as we execute e in local ...; e
         FRAME_OBJECT,  // Stores intermediate state as we execute es in { [e]: ..., [e]: ... }
         FRAME_OBJECT_COMP_ARRAY,  // e in {f:a for x in e]
         FRAME_OBJECT_COMP_ELEMENT,  // Stores intermediate state when building object
         FRAME_STRING_CONCAT,  // Stores intermediate state while co-ercing objects
+        FRAME_SUPER_INDEX,  // e in super[e]
         FRAME_UNARY,  // e in -e
-        FRAME_INVARIANTS  // Caches the thunks that need to be executed one at a time.
     };
 
     /** A frame on the stack.
@@ -580,13 +581,6 @@ namespace {
                 if (r) return r;
                 auto *l = findObject(f, root, ext->left, start_from, counter, self);
                 if (l) return l;
-            } else if (auto *super = dynamic_cast<HeapSuperObject*>(curr)) {
-                unsigned counter2 = 0;
-                auto *needle = findObject(f, super->root, super->root, super->offset, counter2, self);
-                if (needle != nullptr) {
-                    counter = counter2;
-                    return needle;
-                }
             } else {
                 if (counter >= start_from) {
                     if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
@@ -636,10 +630,6 @@ namespace {
                         r[pair.first] = pair.second;
                     }
                 }
-
-            } else if (auto *obj = dynamic_cast<const HeapSuperObject*>(obj_)) {
-                unsigned counter2 = 0;
-                return objectFields(obj->root, counter2, obj->offset, manifesting);
 
             } else if (auto *obj = dynamic_cast<const HeapComprehensionObject*>(obj_)) {
                 counter++;
@@ -744,8 +734,6 @@ namespace {
         {
             if (auto *ext = dynamic_cast<HeapExtendedObject*>(obj)) {
                 return countLeaves(ext->left) + countLeaves(ext->right);
-            } else if (auto *super = dynamic_cast<HeapSuperObject*>(obj)) {
-                return countLeaves(super->root);
             } else {
                 return 1;
             }
@@ -839,9 +827,6 @@ namespace {
             if (auto *ext = dynamic_cast<HeapExtendedObject*>(curr)) {
                 objectInvariants(ext->right, self, counter, thunks);
                 objectInvariants(ext->left, self, counter, thunks);
-            } else if (auto *super = dynamic_cast<HeapSuperObject*>(curr)) {
-                unsigned counter2 = 0;
-                objectInvariants(super->root, super->root, counter2, thunks);
             } else {
                 if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
                     for (AST *assert : simp->asserts) {
@@ -862,11 +847,11 @@ namespace {
          * \param f The field
          */
         const AST *objectIndex(const LocationRange &loc, HeapObject *obj,
-                               const Identifier *f)
+                               const Identifier *f, unsigned offset)
         {
             unsigned found_at = 0;
             HeapObject *self = nullptr;
-            HeapLeafObject *found = findObject(f, obj, obj, 0, found_at, self);
+            HeapLeafObject *found = findObject(f, obj, obj, offset, found_at, self);
             if (found == nullptr) {
                 throw makeError(loc, "Field does not exist: " + f->name);
             }
@@ -890,11 +875,7 @@ namespace {
 
         void runInvariants(const LocationRange &loc, HeapObject *self)
         {
-            HeapObject *self_marker = self;
-            while (auto *super = dynamic_cast<HeapSuperObject*>(self_marker)) {
-                self_marker = super->root;
-            }
-            if (stack.alreadyExecutingInvariants(self_marker)) return;
+            if (stack.alreadyExecutingInvariants(self)) return;
 
             unsigned counter = 0;
             std::vector<HeapThunk*> thunks;
@@ -1078,16 +1059,11 @@ namespace {
                     scratch.v.h = self;
                 } break;
 
-                case AST_SUPER: {
-                    HeapObject *self;
-                    unsigned offset;
-                    stack.getSelfBinding(self, offset);
-                    offset++;
-                    if (offset >= countLeaves(self)) {
-                        throw makeError(ast_->location,
-                                        "Attempt to use super when there is no super class.");
-                    }
-                    scratch = makeObject<HeapSuperObject>(self, offset);
+                case AST_SUPER_INDEX: {
+                    const auto &ast = *static_cast<const SuperIndex*>(ast_);
+                    stack.newFrame(FRAME_SUPER_INDEX, ast_);
+                    ast_ = ast.index;
+                    goto recurse;
                 } break;
 
                 case AST_UNARY: {
@@ -1847,6 +1823,30 @@ namespace {
                         goto recurse;
                     } break;
 
+                    case FRAME_SUPER_INDEX: {
+                        const auto &ast = *static_cast<const SuperIndex*>(f.ast);
+                        HeapObject *self;
+                        unsigned offset;
+                        stack.getSelfBinding(self, offset);
+                        offset++;
+                        if (offset >= countLeaves(self)) {
+                            throw makeError(ast.location,
+                                            "Attempt to use super when there is no super class.");
+                        }
+                        if (scratch.t != Value::STRING) {
+                            throw makeError(ast.location,
+                                            "Super index must be string, got "
+                                            + type_str(scratch) + ".");
+                        }
+
+                        const std::string &index_name =
+                            static_cast<HeapString*>(scratch.v.h)->value;
+                        auto *fid = alloc->makeIdentifier(index_name);
+                        stack.pop();
+                        ast_ = objectIndex(ast.location, self, fid, offset);
+                        goto recurse;
+                    } break;
+
                     case FRAME_INDEX_INDEX: {
                         const auto &ast = *static_cast<const Index*>(f.ast);
                         const Value &target = f.val;
@@ -1886,7 +1886,7 @@ namespace {
                                 static_cast<HeapString*>(scratch.v.h)->value;
                             auto *fid = alloc->makeIdentifier(index_name);
                             stack.pop();
-                            ast_ = objectIndex(ast.location, obj, fid);
+                            ast_ = objectIndex(ast.location, obj, fid, 0);
                             goto recurse;
                         } else if (target.t == Value::STRING) {
                             auto *obj = static_cast<HeapString*>(target.v.h);
@@ -1927,17 +1927,10 @@ namespace {
                         f.kind = FRAME_INDEX_INDEX;
                         if (scratch.t == Value::OBJECT) {
                             auto *self = static_cast<HeapObject*>(scratch.v.h);
-                            auto *self_marker = self;
-                            // Strip supers off of self, they are not relevant for invariant
-                            // checking and as they are not interned, they cause 
-                            // stack.alreadyExecutingInvariants to always fail.
-                            while (auto *super = dynamic_cast<HeapSuperObject*>(self_marker)) {
-                                self_marker = super->root;
-                            }
-                            if (!stack.alreadyExecutingInvariants(self_marker)) {
+                            if (!stack.alreadyExecutingInvariants(self)) {
                                 stack.newFrame(FRAME_INVARIANTS, ast.location);
                                 Frame &f2 = stack.top();
-                                f2.self = self_marker;
+                                f2.self = self;
                                 unsigned counter = 0;
                                 objectInvariants(self, self, counter, f2.thunks);
                                 if (f2.thunks.size() > 0) {
@@ -2209,7 +2202,7 @@ namespace {
                         const char *prefix = multiline ? "{\n" : "{";
                         for (const auto &f : fields) {
                             // pushes FRAME_CALL
-                            const AST *body = objectIndex(loc, obj, f.second);
+                            const AST *body = objectIndex(loc, obj, f.second, 0);
                             stack.top().val = scratch;
                             evaluate(body, stack.size());
                             auto vstr = manifestJson(body->location, multiline, indent2);
@@ -2263,7 +2256,7 @@ namespace {
             }
             for (const auto &f : fields) {
                 // pushes FRAME_CALL
-                const AST *body = objectIndex(loc, obj, f.second);
+                const AST *body = objectIndex(loc, obj, f.second, 0);
                 stack.top().val = scratch;
                 evaluate(body, stack.size());
                 auto vstr = string ? manifestString(body->location)
