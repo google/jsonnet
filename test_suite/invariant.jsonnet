@@ -22,6 +22,12 @@ std.assertEqual({assert true, f: 1}.f, 1) &&
 std.assertEqual({assert self.f == 1, f: 1}.f, 1) &&
 std.assertEqual({assert self.f == g, f: 1, local g = 1}.f, 1) &&
 
+local x = { assert x.f == y.f, f: 1},
+      y = {assert x.f == y.f, f: 1};
+
+std.assertEqual(x.f, y.f) &&
+
+
 local Mixin1 = {
     assert self.x > 0,
     x: super.x,

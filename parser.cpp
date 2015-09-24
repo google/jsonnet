@@ -170,7 +170,7 @@ static std::string unparse(const AST *ast_)
         } else {
             const char *prefix = "{";
             for (auto *assert : ast->asserts) {
-                ss << "assert " << unparse(assert);
+                ss << prefix << "assert " << unparse(assert);
                 prefix = ", ";
             }
             for (const auto &f : ast->fields) {
@@ -639,7 +639,7 @@ namespace {
                             pop();
                             msg = parse(MAX_PRECEDENCE, obj_level + 1);
                         } else {
-                            std::string msg_str = "Assertion failed " + unparse(cond);
+                            std::string msg_str = "Assertion failed.";
                             msg = alloc->make<LiteralString>(cond->location, msg_str);
                         }
                         AST *tru = alloc->make<LiteralBoolean>(gen, true);
@@ -827,7 +827,7 @@ namespace {
                         pop();
                         msg = parse(MAX_PRECEDENCE, obj_level);
                     } else {
-                        std::string msg_str = "Assertion failed " + unparse(cond);
+                        std::string msg_str = "Assertion failed.";
                         msg = alloc->make<LiteralString>(begin.location, msg_str);
                     }
                     popExpect(Token::SEMICOLON);
@@ -989,10 +989,9 @@ namespace {
 
                     } else if (op.data == "%") {
                         AST *rhs = parse(precedence - 1, obj_level);
-                        LocationRange l;
-                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier("std"));
-                        AST *mod_str = alloc->make<LiteralString>(l, "mod");
-                        AST *f_mod = alloc->make<Index>(l, std, mod_str);
+                        AST *std = alloc->make<Var>(gen, alloc->makeIdentifier("std"));
+                        AST *mod_str = alloc->make<LiteralString>(gen, "mod");
+                        AST *f_mod = alloc->make<Index>(gen, std, mod_str);
                         std::vector<AST*> args = {lhs, rhs};
                         lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args, false);
 
@@ -1004,7 +1003,15 @@ namespace {
                             bop = BOP_MANIFEST_EQUAL;
                             invert = true;
                         }
-                        lhs = alloc->make<Binary>(span(begin, rhs), lhs, bop, rhs);
+                        if (bop == BOP_MANIFEST_EQUAL) {
+                            AST *std = alloc->make<Var>(gen, alloc->makeIdentifier("std"));
+                            AST *equals_str = alloc->make<LiteralString>(gen, "equals");
+                            AST *f_equals = alloc->make<Index>(gen, std, equals_str);
+                            std::vector<AST*> args = {lhs, rhs};
+                            lhs = alloc->make<Apply>(span(begin, rhs), f_equals, args, false);
+                        } else {
+                            lhs = alloc->make<Binary>(span(begin, rhs), lhs, bop, rhs);
+                        }
                         if (invert) {
                             lhs = alloc->make<Unary>(lhs->location, UOP_NOT, lhs);
                         }
@@ -1016,7 +1023,7 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 23;
+static unsigned long max_builtin = 24;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -1044,6 +1051,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 21: return {"exponent", {"n"}};
         case 22: return {"modulo", {"a", "b"}};
         case 23: return {"extVar", {"x"}};
+        case 24: return {"primitiveEquals", {"a", "b"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
@@ -1079,7 +1087,11 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
     AST *expr = do_parse(alloc, file, input);
 
     // Now, implement the std library by wrapping in a local construct.
-    auto *std_obj = static_cast<Object*>(do_parse(alloc, "std.jsonnet", STD_CODE));
+    auto *std_obj = dynamic_cast<Object*>(do_parse(alloc, "std.jsonnet", STD_CODE));
+    if (std_obj == nullptr) {
+        std::cerr << "INTERNAL ERROR: std.jsonnet not an object." << std::endl;
+        std::abort();
+    }
 
     // Bind 'std' builtins that are implemented natively.
     Object::Fields &fields = std_obj->fields;

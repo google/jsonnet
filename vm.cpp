@@ -52,7 +52,6 @@ namespace {
         FRAME_BUILTIN_FORCE_THUNKS,  // When forcing builtin args, holds intermediate state. 
         FRAME_CALL,  // Used any time we have switched location in user code.
         FRAME_ERROR,  // e in error e
-        FRAME_EQUALITY_MANIFEST,  // Used when recursively checking manifest equality.
         FRAME_IF,  // e in if e then a else b
         FRAME_INDEX_TARGET,  // e in e[x]
         FRAME_INDEX_INDEX,  // e in x[e]
@@ -788,106 +787,6 @@ namespace {
         }
 
 
-
-
-
-        /** Test two values for equality.
-         *
-         * When not in strong mode, this will evaluate object fields, so can trigger a garbage
-         * collection cycle.  Be sure to stash any objects that aren't reachable via the stack or
-         * heap.
-         */
-        bool equality(const LocationRange &loc, const Value &a, const Value &b)
-        {
-            if (a.t != b.t) return false;
-
-            switch (a.t) {
-                case Value::ARRAY: {
-                    auto *arr_a = static_cast<HeapArray*>(a.v.h);
-                    auto *arr_b = static_cast<HeapArray*>(b.v.h);
-                    if (arr_a->elements.size() != arr_b->elements.size()) return false;
-                    for (unsigned long i=0 ; i<arr_a->elements.size() ; ++i) {
-                        auto th_a = arr_a->elements[i];
-                        if (!th_a->filled) {
-                            stack.newCall(loc, th_a, th_a->self, th_a->offset, th_a->upValues);
-                            evaluate(th_a->body, stack.size());
-                            stack.pop();
-                            th_a->fill(scratch);
-                        }
-
-                        auto th_b = arr_b->elements[i];
-                        if (!th_b->filled) {
-                            stack.newCall(loc, th_b, th_b->self, th_b->offset, th_b->upValues);
-                            evaluate(th_b->body, stack.size());
-                            stack.pop();
-                            th_b->fill(scratch);
-                        }
-
-                        if (!equality(loc, th_a->content, th_b->content))
-                                return false;
-                    }
-                    return true;
-                }
-
-                case Value::BOOLEAN:
-                return a.v.b == b.v.b;
-
-                case Value::DOUBLE:
-                return a.v.d == b.v.d;
-
-                case Value::FUNCTION:
-                return false;
-
-                case Value::NULL_TYPE:
-                return true;
-
-                case Value::OBJECT: {
-                    auto *obj_a = static_cast<HeapObject*>(a.v.h);
-                    auto *obj_b = static_cast<HeapObject*>(b.v.h);
-                    runInvariants(loc, obj_a);
-                    runInvariants(loc, obj_b);
-                    std::set<const Identifier *> fields_a = objectFields(obj_a, true);
-                    std::set<const Identifier *> fields_b = objectFields(obj_b, true);
-                    if (fields_a != fields_b) return false;
-
-                    // Put the two intermediate values on the stack so they won't get garbage
-                    // collected.
-                    stack.newFrame(FRAME_EQUALITY_MANIFEST, loc);
-                    bool different = false;
-                    for (const auto &f : fields_a) {
-
-
-                        const AST *body_a = objectIndex(loc, obj_a, f);
-                        evaluate(body_a, stack.size());
-                        stack.pop();
-                        stack.top().val = scratch;
-
-                        const AST *body_b = objectIndex(loc, obj_b, f);
-                        evaluate(body_b, stack.size());
-                        stack.pop();
-                        stack.top().val2 = scratch;
-
-                        if (!equality(loc, stack.top().val, stack.top().val2)) {
-                            different = true;
-                            break;
-                        }
-                    }
-                    stack.pop();
-                    return !different;
-                }
-
-                case Value::STRING: {
-                    auto *str_a = static_cast<HeapString*>(a.v.h);
-                    auto *str_b = static_cast<HeapString*>(b.v.h);
-                    return str_a->value == str_b->value;
-                }
-
-            }
-
-            // Compiler thinks this is reachable, even though it is not.
-            return false;
-        }
-
         /** Raise an error if the arguments aren't the expected types. */
         void validateBuiltinArgs(const LocationRange &loc,
                                  unsigned long builtin,
@@ -1151,7 +1050,7 @@ namespace {
                 case AST_OBJECT: {
                     const auto &ast = *static_cast<const Object*>(ast_);
                     if (ast.fields.empty()) {
-                        BindingFrame env;
+                        auto env = capture(ast.freeVariables);
                         std::map<const Identifier *, HeapSimpleObject::Field> fields;
                         scratch = makeObject<HeapSimpleObject>(env, fields, ast.asserts);
                     } else {
@@ -1327,12 +1226,11 @@ namespace {
                         // Equality can be used when the types don't match.
                         switch (ast.op) {
                             case BOP_MANIFEST_EQUAL:
-                            stack.top().kind = FRAME_EQUALITY_MANIFEST;
-                            stack.top().val2 = rhs;
-                            goto replaceframe;
+                            std::cerr << "INTERNAL ERROR: Equals not desugared" << std::endl;
+                            abort();
 
                             case BOP_MANIFEST_UNEQUAL:
-                            std::cerr << "INTERNAL ERROR: Inequalities not desugared" << std::endl;
+                            std::cerr << "INTERNAL ERROR: Notequals not desugared" << std::endl;
                             abort();
 
                             default:;
@@ -1852,6 +1750,41 @@ namespace {
                                     }
                                 } break;
 
+                                case 24: {  // primitiveEquals
+                                    if (args.size() != 2) {
+                                        throw makeError(loc, "primitiveEquals takes 2 parameters.");
+                                    }
+                                    if (args[0].t != args[1].t) {
+                                        scratch = makeBoolean(false);
+                                        break;
+                                    }
+                                    bool r;
+                                    switch (args[0].t) {
+                                        case Value::BOOLEAN:
+                                        r = args[0].v.b == args[1].v.b;
+                                        break;
+
+                                        case Value::DOUBLE:
+                                        r = args[0].v.d == args[1].v.d;
+                                        break;
+
+                                        case Value::STRING:
+                                        r = static_cast<HeapString*>(args[0].v.h)->value
+                                          == static_cast<HeapString*>(args[1].v.h)->value;
+                                        break;
+
+                                        case Value::NULL_TYPE:
+                                        r = true;
+                                        break;
+
+                                        default:
+                                        throw makeError(loc,
+                                                        "length operates on strings, objects, "
+                                                        "and arrays, got " + type_str(args[0]));
+                                    }
+                                    scratch = makeBoolean(r);
+                                } break;
+
                                 default:
                                 std::cerr << "INTERNAL ERROR: Unrecognized builtin: " << builtin
                                           << std::endl;
@@ -1893,14 +1826,6 @@ namespace {
                             }
                         }
                         // Result of call is in scratch, just pop.
-                    } break;
-
-                    case FRAME_EQUALITY_MANIFEST: {
-                        const auto &ast = *static_cast<const Binary*>(f.ast);
-                        const Value &lhs = stack.top().val;
-                        const Value &rhs = stack.top().val2;
-                        bool b = equality(ast.location, lhs, rhs);
-                        scratch = makeBoolean(b);
                     } break;
 
                     case FRAME_ERROR: {
