@@ -118,7 +118,16 @@ is <code>len</code> codepoints long.</p>
 <code>c</code>.</p>
 
 <p>Example: <code>std.split("foo/bar", "/")</code> yields <code>["foo", "bar"]</code>.  </p>
-<p>Example: <code>std.split("/foo/", "/")</code> yields <code>["" "foo", ""]</code>.  </p>
+<p>Example: <code>std.split("/foo/", "/")</code> yields <code>["", "foo", ""]</code>.  </p>
+
+
+<h4>std.splitLimit(str, c, maxsplits)</h4>
+
+<p>As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest array
+it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.</p>
+
+<p>Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>["foo", "bar"]</code>.  </p>
+<p>Example: <code>std.splitLimit("/foo/", "/", 1)</code> yields <code>["", "foo/"]</code>.  </p>
 
 
 <h4>std.stringChars(str)</h4>
