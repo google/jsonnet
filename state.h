@@ -167,9 +167,15 @@ namespace {
          */
         const std::map<const Identifier*, Field> fields;
 
+        /** The object invariant.
+         *
+         * This is evaluated in the captured environment with self and super bound.
+         */
+        std::vector<AST*> asserts;
+
         HeapSimpleObject(const BindingFrame &up_values,
-                         const std::map<const Identifier*, Field> fields)
-          : upValues(up_values), fields(fields)
+                         const std::map<const Identifier*, Field> fields, std::vector<AST*> asserts)
+          : upValues(up_values), fields(fields), asserts(asserts)
         { }
     };
 
@@ -235,9 +241,9 @@ namespace {
     struct HeapClosure : public HeapEntity {
         /** The captured environment. */
         const BindingFrame upValues;
-        /** The captured self variable, or nullptr if there was none.  \see CallFrame. */
+        /** The captured self variable, or nullptr if there was none.  \see Frame. */
         HeapObject *self;
-        /** The offset from the captured self variable.  \see CallFrame.*/
+        /** The offset from the captured self variable.  \see Frame.*/
         unsigned offset;
         const std::vector<const Identifier*> params;
         const AST *body;

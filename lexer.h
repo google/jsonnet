@@ -47,6 +47,7 @@ struct Token {
         STRING,
 
         // Keywords
+        ASSERT,
         ELSE,
         ERROR,
         FALSE,
@@ -99,6 +100,7 @@ struct Token {
             case OPERATOR: return "OPERATOR";
             case STRING: return "STRING";
 
+            case ASSERT: return "assert";
             case ELSE: return "else";
             case ERROR: return "error";
             case FALSE: return "false";

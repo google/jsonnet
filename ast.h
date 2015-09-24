@@ -29,6 +29,7 @@ limitations under the License.
 enum ASTType {
     AST_APPLY,
     AST_ARRAY,
+    AST_ASSERT,
     AST_BINARY,
     AST_BUILTIN_FUNCTION,
     AST_CONDITIONAL,
@@ -293,8 +294,10 @@ struct Object : public AST {
     };
     typedef std::list<Field> Fields;
     Fields fields;
-    Object(const LocationRange &lr, const Fields &fields)
-      : AST(lr, AST_OBJECT), fields(fields)
+    // These asserts are desugared to insert error throwing code, see parser.cpp.
+    std::vector<AST*> asserts;
+    Object(const LocationRange &lr, const Fields &fields, std::vector<AST*> asserts)
+      : AST(lr, AST_OBJECT), fields(fields), asserts(asserts)
     { }
 };
 

@@ -31,6 +31,201 @@ limitations under the License.
 #include "lexer.h"
 
 
+// For generated ASTs, use a bogus location.
+static const LocationRange gen;
+
+std::string jsonnet_unparse_escape(const std::string &str)
+{
+    std::stringstream ss;
+    ss << '\"';
+    for (std::size_t i=0 ; i<str.length() ; ++i) {
+        char c = str[i];
+        switch (c) {
+            case '"': ss << "\\\""; break;
+            case '\\': ss << "\\\\"; break;
+            case '\b': ss << "\\b"; break;
+            case '\f': ss << "\\f"; break;
+            case '\n': ss << "\\n"; break;
+            case '\r': ss << "\\r"; break;
+            case '\t': ss << "\\t"; break;
+            case '\0': ss << "\\u0000"; break;
+            default: {
+                if (c < 0x20 || c > 0x7e) {
+                    //Unprintable, use \u
+                    ss << "\\u" << std::hex << std::setfill('0') << std::setw(4)
+                       << unsigned((unsigned char)(c));
+                } else {
+                    // Printable, write verbatim
+                    ss << c;
+                }
+            }
+        }
+    }
+    ss << '\"';
+    return ss.str();
+}
+
+std::string jsonnet_unparse_number(double v)
+{
+    std::stringstream ss;
+    if (v == floor(v)) {
+        ss << std::fixed << std::setprecision(0) << v;
+    } else {
+        // See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
+        // Theorem 15
+        // http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
+        ss << std::setprecision(17);
+        ss << v;
+    }
+    return ss.str();
+}
+
+static std::string unparse(const AST *ast_)
+{
+    std::stringstream ss;
+    if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
+        ss << unparse(ast->target);
+        if (ast->arguments.size() == 0) {
+            ss << "()";
+        } else {
+            const char *prefix = "(";
+            for (auto arg : ast->arguments) {
+                ss << prefix << unparse(arg);
+                prefix = ", ";
+            }
+            ss << ")";
+        }
+
+    } else if (auto *ast = dynamic_cast<const Array*>(ast_)) {
+        if (ast->elements.size() == 0) {
+            ss << "[ ]";
+        } else {
+            const char *prefix = "[";
+            for (const auto &element : ast->elements) {
+                ss << prefix;
+                ss << unparse(element);
+                prefix = ", ";
+            }
+            ss << "]";
+        }
+
+    } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
+        ss << unparse(ast->left) << " " << bop_string(ast->op)
+           << " " << unparse(ast->right);
+
+    } else if (dynamic_cast<const BuiltinFunction*>(ast_)) {
+        std::cerr << "INTERNAL ERROR: Unparsing builtin function." << std::endl;
+        std::abort();
+
+    } else if (auto *ast = dynamic_cast<const Conditional*>(ast_)) {
+        ss << "if " << unparse(ast->cond) << " then "
+           << unparse(ast->branchTrue) << " else "
+           << unparse(ast->branchFalse);
+
+    } else if (auto *ast = dynamic_cast<const Error*>(ast_)) {
+        ss << "error " << unparse(ast->expr);
+
+    } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
+        ss << "function ";
+        const char *prefix = "(";
+        for (const Identifier *arg : ast->parameters) {
+            ss << prefix << arg->name;
+            prefix = ", ";
+        }
+        ss << ") " << unparse(ast->body);
+
+    } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
+        ss << "import " << jsonnet_unparse_escape(ast->file);
+
+    } else if (auto *ast = dynamic_cast<const Importstr*>(ast_)) {
+        ss << "importstr " << jsonnet_unparse_escape(ast->file);
+
+    } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
+        ss << unparse(ast->target) << "["
+           << unparse(ast->index) << "]";
+
+    } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
+        const char *prefix = "local ";
+        for (const auto &bind : ast->binds) {
+            ss << prefix << bind.first->name << " = " << unparse(bind.second);
+            prefix = ", ";
+        }
+        ss << "; " << unparse(ast->body);
+
+    } else if (auto *ast = dynamic_cast<const LiteralBoolean*>(ast_)) {
+        ss << (ast->value ? "true" : "false");
+
+    } else if (auto *ast = dynamic_cast<const LiteralNumber*>(ast_)) {
+        ss << ast->value;
+
+    } else if (auto *ast = dynamic_cast<const LiteralString*>(ast_)) {
+        ss << jsonnet_unparse_escape(ast->value);
+
+    } else if (dynamic_cast<const LiteralNull*>(ast_)) {
+        ss << "null";
+
+    } else if (auto *ast = dynamic_cast<const Object*>(ast_)) {
+        if (ast->fields.size() == 0 && ast->asserts.size() == 0) {
+            ss << "{ }";
+        } else {
+            const char *prefix = "{";
+            for (auto *assert : ast->asserts) {
+                ss << "assert " << unparse(assert);
+                prefix = ", ";
+            }
+            for (const auto &f : ast->fields) {
+                ss << prefix;
+                const char *colons = nullptr;
+                switch (f.hide) {
+                    case Object::Field::INHERIT: colons = ":"; break;
+                    case Object::Field::HIDDEN: colons = "::"; break;
+                    case Object::Field::VISIBLE: colons = ":::"; break;
+                    default:
+                    std::cerr << "INTERNAL ERROR: Unknown FieldHide: " << f.hide << std::endl;
+                }
+                ss << "[" << unparse(f.name) << "]" << colons << " " << unparse(f.body);
+                prefix = ", ";
+            }
+            ss << "}";
+        }
+
+    } else if (auto *ast = dynamic_cast<const ObjectComposition*>(ast_)) {
+        ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
+        ss << " for " << ast->id->name << " in " << unparse(ast->array);
+        ss << "}";
+
+    } else if (dynamic_cast<const Self*>(ast_)) {
+        ss << "self";
+
+    } else if (dynamic_cast<const Super*>(ast_)) {
+        ss << "super";
+
+    } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
+        ss << uop_string(ast->op) << unparse(ast->expr);
+
+    } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
+        ss << ast->id->name;
+
+    } else {
+        std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
+        std::abort();
+
+    }
+
+    return "(" + ss.str() + ")";
+}
+
+std::string jsonnet_unparse_jsonnet(const AST *ast) 
+{
+    const auto *wrapper = dynamic_cast<const Local*>(ast);
+    if (wrapper == nullptr) {
+        std::cerr << "INTERNAL ERROR: Unparsing an AST that wasn't wrapped in a std local."
+                  << std::endl;
+        std::abort();
+    }
+    return unparse(wrapper->body);
+}
+
 namespace {
 
     // Cache some immutable stuff in global variables.
@@ -288,6 +483,7 @@ namespace {
             std::set<std::string> literal_fields;
             Object::Fields fields;
             std::map<const Identifier*, AST*> let_binds;
+            std::vector<AST*> asserts;
 
             // Hidden variable to allow outer/top binding.
             if (obj_level == 0) {
@@ -311,15 +507,21 @@ namespace {
                 if (next.kind == Token::BRACE_R) {
                     // got_comma can be true or false here.
                     Object::Fields r;
+                    std::vector<AST*> asserts2;
                     if (let_binds.size() == 0) {
                         r = fields;
+                        asserts2 = asserts;
                     } else {
+                        for (auto *assert : asserts) {
+                            asserts2.push_back(
+                                alloc->make<Local>(assert->location, let_binds, assert));
+                        }
                         for (const auto &f : fields) {
                             AST *body = alloc->make<Local>(f.body->location, let_binds, f.body);
                             r.emplace_back(f.name, f.hide, body);
                         }
                     }
-                    obj = alloc->make<Object>(span(tok, next), r);
+                    obj = alloc->make<Object>(span(tok, next), r, asserts2);
                     return next;
                 } else if (next.kind == Token::FOR) {
                     if (fields.size() != 1) {
@@ -430,6 +632,24 @@ namespace {
                     }
                     break;
 
+                    case Token::ASSERT: {
+                        AST *cond = parse(MAX_PRECEDENCE, obj_level + 1);
+                        AST *msg;
+                        if (peek().kind == Token::COLON) {
+                            pop();
+                            msg = parse(MAX_PRECEDENCE, obj_level + 1);
+                        } else {
+                            std::string msg_str = "Assertion failed " + unparse(cond);
+                            msg = alloc->make<LiteralString>(cond->location, msg_str);
+                        }
+                        AST *tru = alloc->make<LiteralBoolean>(gen, true);
+                        // if cond then rest else error msg
+                        AST *branch_false = alloc->make<Error>(msg->location, msg);
+                        asserts.push_back(
+                            alloc->make<Conditional>(span(next, msg), cond, tru, branch_false));
+                    }
+                    break;
+
                     default:
                     throw unexpected(next, "parsing field definition");
                 }
@@ -442,6 +662,7 @@ namespace {
         {
             Token tok = pop();
             switch (tok.kind) {
+                case Token::ASSERT:
                 case Token::BRACE_R:
                 case Token::BRACKET_R:
                 case Token::COLON:
@@ -598,6 +819,25 @@ namespace {
 
                 // These cases have effectively MAX_PRECEDENCE as the first
                 // call to parse will parse them.
+                case Token::ASSERT: {
+                    pop();
+                    AST *cond = parse(MAX_PRECEDENCE, obj_level);
+                    AST *msg;
+                    if (peek().kind == Token::COLON) {
+                        pop();
+                        msg = parse(MAX_PRECEDENCE, obj_level);
+                    } else {
+                        std::string msg_str = "Assertion failed " + unparse(cond);
+                        msg = alloc->make<LiteralString>(begin.location, msg_str);
+                    }
+                    popExpect(Token::SEMICOLON);
+                    AST *rest = parse(MAX_PRECEDENCE, obj_level);
+                    // if cond then rest else error msg
+                    AST *branch_false = alloc->make<Error>(span(begin, rest), msg);
+                    return alloc->make<Conditional>(span(begin, rest),
+                                                    cond, rest, branch_false);
+                }
+
                 case Token::ERROR: {
                     pop();
                     AST *expr = parse(MAX_PRECEDENCE, obj_level);
@@ -841,9 +1081,6 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
     // Now, implement the std library by wrapping in a local construct.
     auto *std_obj = static_cast<Object*>(do_parse(alloc, "std.jsonnet", STD_CODE));
 
-    // For generated ASTs, use a bogus location.
-    const LocationRange l;
-
     // Bind 'std' builtins that are implemented natively.
     Object::Fields &fields = std_obj->fields;
     for (unsigned long c=0 ; c <= max_builtin ; ++c) {
@@ -851,202 +1088,14 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
         std::vector<const Identifier*> params;
         for (const auto &p : decl.params)
             params.push_back(alloc->makeIdentifier(p));
-        fields.emplace_back(alloc->make<LiteralString>(l, decl.name), Object::Field::HIDDEN,
-                            alloc->make<BuiltinFunction>(l, c, params));
+        fields.emplace_back(alloc->make<LiteralString>(gen, decl.name), Object::Field::HIDDEN,
+                            alloc->make<BuiltinFunction>(gen, c, params));
     }
-    fields.emplace_back(alloc->make<LiteralString>(l, "thisFile"), Object::Field::HIDDEN,
-                        alloc->make<LiteralString>(l, file));
+    fields.emplace_back(alloc->make<LiteralString>(gen, "thisFile"), Object::Field::HIDDEN,
+                        alloc->make<LiteralString>(gen, file));
 
     Local::Binds std_binds;
     std_binds[alloc->makeIdentifier("std")] = std_obj;
     AST *wrapped = alloc->make<Local>(expr->location, std_binds, expr);
     return wrapped;
-}
-
-std::string jsonnet_unparse_escape(const std::string &str)
-{
-    std::stringstream ss;
-    ss << '\"';
-    for (std::size_t i=0 ; i<str.length() ; ++i) {
-        char c = str[i];
-        switch (c) {
-            case '"': ss << "\\\""; break;
-            case '\\': ss << "\\\\"; break;
-            case '\b': ss << "\\b"; break;
-            case '\f': ss << "\\f"; break;
-            case '\n': ss << "\\n"; break;
-            case '\r': ss << "\\r"; break;
-            case '\t': ss << "\\t"; break;
-            case '\0': ss << "\\u0000"; break;
-            default: {
-                if (c < 0x20 || c > 0x7e) {
-                    //Unprintable, use \u
-                    ss << "\\u" << std::hex << std::setfill('0') << std::setw(4)
-                       << unsigned((unsigned char)(c));
-                } else {
-                    // Printable, write verbatim
-                    ss << c;
-                }
-            }
-        }
-    }
-    ss << '\"';
-    return ss.str();
-}
-
-std::string jsonnet_unparse_number(double v)
-{
-    std::stringstream ss;
-    if (v == floor(v)) {
-        ss << std::fixed << std::setprecision(0) << v;
-    } else {
-        // See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
-        // Theorem 15
-        // http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
-        ss << std::setprecision(17);
-        ss << v;
-    }
-    return ss.str();
-}
-
-static std::string unparse(const AST *ast_)
-{
-    std::stringstream ss;
-    if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
-        ss << unparse(ast->target);
-        if (ast->arguments.size() == 0) {
-            ss << "()";
-        } else {
-            const char *prefix = "(";
-            for (auto arg : ast->arguments) {
-                ss << prefix << unparse(arg);
-                prefix = ", ";
-            }
-            ss << ")";
-        }
-
-    } else if (auto *ast = dynamic_cast<const Array*>(ast_)) {
-        if (ast->elements.size() == 0) {
-            ss << "[ ]";
-        } else {
-            const char *prefix = "[";
-            for (const auto &element : ast->elements) {
-                ss << prefix;
-                ss << unparse(element);
-                prefix = ", ";
-            }
-            ss << "]";
-        }
-
-    } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
-        ss << unparse(ast->left) << " " << bop_string(ast->op)
-           << " " << unparse(ast->right);
-
-    } else if (dynamic_cast<const BuiltinFunction*>(ast_)) {
-        std::cerr << "INTERNAL ERROR: Unparsing builtin function." << std::endl;
-        std::abort();
-
-    } else if (auto *ast = dynamic_cast<const Conditional*>(ast_)) {
-        ss << "if " << unparse(ast->cond) << " then "
-           << unparse(ast->branchTrue) << " else "
-           << unparse(ast->branchFalse);
-
-    } else if (auto *ast = dynamic_cast<const Error*>(ast_)) {
-        ss << "error " << unparse(ast->expr);
-
-    } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
-        ss << "function ";
-        const char *prefix = "(";
-        for (const Identifier *arg : ast->parameters) {
-            ss << prefix << arg->name;
-            prefix = ", ";
-        }
-        ss << ") " << unparse(ast->body);
-
-    } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
-        ss << "import " << jsonnet_unparse_escape(ast->file);
-
-    } else if (auto *ast = dynamic_cast<const Importstr*>(ast_)) {
-        ss << "importstr " << jsonnet_unparse_escape(ast->file);
-
-    } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
-        ss << unparse(ast->target) << "["
-           << unparse(ast->index) << "]";
-
-    } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
-        const char *prefix = "local ";
-        for (const auto &bind : ast->binds) {
-            ss << prefix << bind.first->name << " = " << unparse(bind.second);
-            prefix = ", ";
-        }
-        ss << "; " << unparse(ast->body);
-
-    } else if (auto *ast = dynamic_cast<const LiteralBoolean*>(ast_)) {
-        ss << (ast->value ? "true" : "false");
-
-    } else if (auto *ast = dynamic_cast<const LiteralNumber*>(ast_)) {
-        ss << ast->value;
-
-    } else if (auto *ast = dynamic_cast<const LiteralString*>(ast_)) {
-        ss << jsonnet_unparse_escape(ast->value);
-
-    } else if (dynamic_cast<const LiteralNull*>(ast_)) {
-        ss << "null";
-
-    } else if (auto *ast = dynamic_cast<const Object*>(ast_)) {
-        if (ast->fields.size() == 0) {
-            ss << "{ }";
-        } else {
-            const char *prefix = "{";
-            for (const auto &f : ast->fields) {
-                ss << prefix;
-                const char *colons = nullptr;
-                switch (f.hide) {
-                    case Object::Field::INHERIT: colons = ":"; break;
-                    case Object::Field::HIDDEN: colons = "::"; break;
-                    case Object::Field::VISIBLE: colons = ":::"; break;
-                    default:
-                    std::cerr << "INTERNAL ERROR: Unknown FieldHide: " << f.hide << std::endl;
-                }
-                ss << "[" << unparse(f.name) << "]" << colons << " " << unparse(f.body);
-                prefix = ", ";
-            }
-            ss << "}";
-        }
-
-    } else if (auto *ast = dynamic_cast<const ObjectComposition*>(ast_)) {
-        ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
-        ss << " for " << ast->id->name << " in " << unparse(ast->array);
-        ss << "}";
-
-    } else if (dynamic_cast<const Self*>(ast_)) {
-        ss << "self";
-
-    } else if (dynamic_cast<const Super*>(ast_)) {
-        ss << "super";
-
-    } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
-        ss << uop_string(ast->op) << unparse(ast->expr);
-
-    } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
-        ss << ast->id->name;
-
-    } else {
-        std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
-        std::abort();
-
-    }
-
-    return "(" + ss.str() + ")";
-}
-
-std::string jsonnet_unparse_jsonnet(const AST *ast) 
-{
-    const auto *wrapper = dynamic_cast<const Local*>(ast);
-    if (wrapper == nullptr) {
-        std::cerr << "INTERNAL ERROR: Unparsing an AST that wasn't wrapped in a std local."
-                  << std::endl;
-        std::abort();
-    }
-    return unparse(wrapper->body);
 }
