@@ -529,7 +529,7 @@ limitations under the License.
                         else
                             code.prec;
                     local val = 
-                        if std.objectHas(obj, f) then
+                        if std.objectHasAll(obj, f) then
                             obj[f]
                         else
                             error "No such field: " + f;
