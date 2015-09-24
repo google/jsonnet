@@ -312,4 +312,10 @@ std.assertEqual(std.toString(std.extVar("var2")), "{\"x\": 1, \"y\": 2}") &&
 std.assertEqual(std.extVar("var2"), {x: 1, y: 2}) &&
 std.assertEqual(std.extVar("var2") { x+: 2}.x, 3) &&
 
+std.assertEqual(std.split("foo/bar", "/"), ["foo", "bar"]) &&
+std.assertEqual(std.split("/foo/", "/"), ["", "foo", ""]) &&
+
+std.assertEqual(std.splitLimit("foo/bar", "/", 1), ["foo", "bar"]) &&
+std.assertEqual(std.splitLimit("/foo/", "/", 1), ["", "foo/"]) &&
+
 true

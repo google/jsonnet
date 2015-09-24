@@ -76,7 +76,7 @@ syn match Keyword "\<[a-zA-Z_][a-z0-9A-Z_]*\s*\(([^)]*)\)\?\s*+\?::\?:\?"
 
 syntax keyword Include import importstr
 syntax keyword Type function self super
-syntax keyword Statement if then else for in
+syntax keyword Statement assert if then else for in
 syntax keyword Special local tailstrict
 syntax keyword Constant true false null
 syntax keyword Underlined error

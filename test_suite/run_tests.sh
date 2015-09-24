@@ -20,11 +20,15 @@ FAILED=0
 for TEST in *.jsonnet ; do
     EXPECTED_EXIT_CODE=0
     GOLDEN="true"
+    GOLDEN_REGEX=""
     if [ $(echo "$TEST" | cut -b 1-5) == "error" ] ; then
         EXPECTED_EXIT_CODE=1
     fi
     if [ -r "$TEST.golden" ] ; then
         GOLDEN=$(cat "$TEST.golden")
+    fi
+    if [ -r "$TEST.golden_regex" ] ; then
+        GOLDEN_REGEX=$(cat "$TEST.golden_regex")
     fi
     OUTPUT="$(../jsonnet --gc-min-objects 1 --gc-growth-trigger 1 --var var1=test --code-var var2='{x:1, y: 2}' "$TEST" 2>&1 )"
     EXIT_CODE=$?
@@ -33,14 +37,28 @@ for TEST in *.jsonnet ; do
         echo "FAIL (exit code): $TEST"
         echo "Output:"
         echo "$OUTPUT"
-    elif [[ ! "$OUTPUT" =~ $GOLDEN ]] ; then
-        FAILED=$((FAILED + 1))
-        echo "FAIL (output): $TEST"
-        echo "Output:"
-        echo "$OUTPUT"
     else
-        true
-        #echo "SUCCESS: $TEST"
+        if [ -n "$GOLDEN_REGEX" ] ; then
+            if [[ ! "$OUTPUT" =~ $GOLDEN_REGEX ]] ; then
+                FAILED=$((FAILED + 1))
+                echo "FAIL (output regex mismatch): $TEST"
+                echo "Output:"
+                echo "$OUTPUT"
+            else
+                true
+                #echo "SUCCESS: $TEST"
+            fi
+        else
+            if [ "$OUTPUT" != "$GOLDEN" ] ; then
+                FAILED=$((FAILED + 1))
+                echo "FAIL (output mismatch): $TEST"
+                echo "Output:"
+                echo "$OUTPUT"
+            else
+                true
+                #echo "SUCCESS: $TEST"
+            fi
+        fi
     fi
     EXECUTED=$((EXECUTED + 1))
 done

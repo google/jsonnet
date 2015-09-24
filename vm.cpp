@@ -39,25 +39,30 @@ namespace {
         return "";
     }
 
+    /** Stack frames.
+     *
+     * Of these, FRAME_CALL is the most special, as it is the only frame the stack
+     * trace (for errors) displays.  
+     */
     enum FrameKind {
-        FRAME_APPLY_TARGET,
-        FRAME_BINARY_LEFT,
-        FRAME_BINARY_RIGHT,
-        FRAME_BUILTIN_EXT_VAR,
-        FRAME_BUILTIN_FILTER,
-        FRAME_BUILTIN_FORCE_THUNKS,
-        FRAME_CALL,
-        FRAME_ERROR,
-        FRAME_EQUALITY_MANIFEST,
-        FRAME_IF,
-        FRAME_INDEX_TARGET,
-        FRAME_INDEX_INDEX,
-        FRAME_LOCAL,
-        FRAME_OBJECT,
-        FRAME_OBJECT_COMP_ARRAY,
-        FRAME_OBJECT_COMP_ELEMENT,
-        FRAME_STRING_CONCAT,
-        FRAME_UNARY
+        FRAME_APPLY_TARGET,  // e in e(...)
+        FRAME_BINARY_LEFT,  // a in a + b 
+        FRAME_BINARY_RIGHT,  // b in a + b
+        FRAME_BUILTIN_FILTER,  // When executing std.filter, used to hold intermediate state.
+        FRAME_BUILTIN_FORCE_THUNKS,  // When forcing builtin args, holds intermediate state. 
+        FRAME_CALL,  // Used any time we have switched location in user code.
+        FRAME_ERROR,  // e in error e
+        FRAME_EQUALITY_MANIFEST,  // Used when recursively checking manifest equality.
+        FRAME_IF,  // e in if e then a else b
+        FRAME_INDEX_TARGET,  // e in e[x]
+        FRAME_INDEX_INDEX,  // e in x[e]
+        FRAME_LOCAL,  // Stores thunk bindings as we execute e in local ...; e
+        FRAME_OBJECT,  // Stores intermediate state as we execute es in { [e]: ..., [e]: ... }
+        FRAME_OBJECT_COMP_ARRAY,  // e in {f:a for x in e]
+        FRAME_OBJECT_COMP_ELEMENT,  // Stores intermediate state when building object
+        FRAME_STRING_CONCAT,  // Stores intermediate state while co-ercing objects
+        FRAME_UNARY,  // e in -e
+        FRAME_INVARIANTS  // Caches the thunks that need to be executed one at a time.
     };
 
     /** A frame on the stack.
@@ -89,7 +94,7 @@ namespace {
 
         /** The location of the code we were executing before.
          *
-         * loc == ast->location when ast != nullptr
+         * location == ast->location when ast != nullptr
          */
         LocationRange location;
 
@@ -378,6 +383,17 @@ namespace {
                 }
             }
         }
+
+        /** Look up the stack to find the self binding. */
+        bool alreadyExecutingInvariants(HeapObject *self)
+        {
+            for (int i=stack.size() - 1 ; i>=0 ; --i) {
+                if (stack[i].kind == FRAME_INVARIANTS) {
+                    if (stack[i].self == self) return true;
+                }
+            }
+            return false;
+        }
     };
 
     /** Typedef to save some typing. */
@@ -412,8 +428,11 @@ namespace {
          */
         Allocator *alloc;
 
-        /** Used to "name" thunks crated on the inside of an array. */
+        /** Used to "name" thunks created on the inside of an array. */
         const Identifier *idArrayElement;
+
+        /** Used to "name" thunks created to execute invariants. */
+        const Identifier *idInvariant;
 
         struct ImportCacheValue {
             std::string foundHere;
@@ -743,7 +762,8 @@ namespace {
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                     JsonnetImportCallback *import_callback, void *import_callback_context)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc->makeIdentifier("array_element")), externalVars(ext_vars),
+            idArrayElement(alloc->makeIdentifier("array_element")),
+            idInvariant(alloc->makeIdentifier("object_assert")), externalVars(ext_vars),
             importCallback(import_callback), importCallbackContext(import_callback_context)
         {
             scratch = makeNull();
@@ -790,7 +810,7 @@ namespace {
                         auto th_a = arr_a->elements[i];
                         if (!th_a->filled) {
                             stack.newCall(loc, th_a, th_a->self, th_a->offset, th_a->upValues);
-                            evaluate(th_a->body);
+                            evaluate(th_a->body, stack.size());
                             stack.pop();
                             th_a->fill(scratch);
                         }
@@ -798,7 +818,7 @@ namespace {
                         auto th_b = arr_b->elements[i];
                         if (!th_b->filled) {
                             stack.newCall(loc, th_b, th_b->self, th_b->offset, th_b->upValues);
-                            evaluate(th_b->body);
+                            evaluate(th_b->body, stack.size());
                             stack.pop();
                             th_b->fill(scratch);
                         }
@@ -824,6 +844,8 @@ namespace {
                 case Value::OBJECT: {
                     auto *obj_a = static_cast<HeapObject*>(a.v.h);
                     auto *obj_b = static_cast<HeapObject*>(b.v.h);
+                    runInvariants(loc, obj_a);
+                    runInvariants(loc, obj_b);
                     std::set<const Identifier *> fields_a = objectFields(obj_a, true);
                     std::set<const Identifier *> fields_b = objectFields(obj_b, true);
                     if (fields_a != fields_b) return false;
@@ -836,12 +858,12 @@ namespace {
 
 
                         const AST *body_a = objectIndex(loc, obj_a, f);
-                        evaluate(body_a);
+                        evaluate(body_a, stack.size());
                         stack.pop();
                         stack.top().val = scratch;
 
                         const AST *body_b = objectIndex(loc, obj_b, f);
-                        evaluate(body_b);
+                        evaluate(body_b, stack.size());
                         stack.pop();
                         stack.top().val2 = scratch;
 
@@ -905,6 +927,35 @@ namespace {
 
 
 
+        /** Recursively collect an object's invariants.
+         *
+         * \param curr
+         * \param self
+         * \param offset
+         * \param thunks
+         */
+        void objectInvariants(HeapObject *curr, HeapObject *self,
+                              unsigned &counter, std::vector<HeapThunk*> &thunks)
+        {
+            if (auto *ext = dynamic_cast<HeapExtendedObject*>(curr)) {
+                objectInvariants(ext->right, self, counter, thunks);
+                objectInvariants(ext->left, self, counter, thunks);
+            } else if (auto *super = dynamic_cast<HeapSuperObject*>(curr)) {
+                unsigned counter2 = 0;
+                objectInvariants(super->root, super->root, counter2, thunks);
+            } else {
+                if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
+                    for (AST *assert : simp->asserts) {
+                        auto *el_th = makeHeap<HeapThunk>(idInvariant,
+                                                          self, counter, assert);
+                        el_th->upValues = simp->upValues;
+                        thunks.push_back(el_th);
+                    }
+                }
+                counter++;
+            }
+        }
+
         /** Index an object's field.
          *
          * \param loc Location where the e.f occured.
@@ -938,6 +989,29 @@ namespace {
             }
         }
 
+        void runInvariants(const LocationRange &loc, HeapObject *self)
+        {
+            HeapObject *self_marker = self;
+            while (auto *super = dynamic_cast<HeapSuperObject*>(self_marker)) {
+                self_marker = super->root;
+            }
+            if (stack.alreadyExecutingInvariants(self_marker)) return;
+
+            unsigned counter = 0;
+            std::vector<HeapThunk*> thunks;
+            objectInvariants(self, self, counter, thunks);
+            if (thunks.size() == 0) return;
+            HeapThunk *thunk = thunks[0];
+            unsigned initial_stack_size = stack.size();
+            stack.newFrame(FRAME_INVARIANTS, loc);
+            stack.top().elementId = 1;
+            stack.top().self = self;
+            stack.top().thunks = thunks;
+            stack.newCall(loc, thunk,
+                          thunk->self, thunk->offset, thunk->upValues);
+            evaluate(thunk->body, initial_stack_size);
+        }
+
         /** Evaluate the given AST to a value.
          *
          * Rather than call itself recursively, this function maintains a separate stack of
@@ -950,10 +1024,8 @@ namespace {
          * function again.  The process terminates when the AST has been processed and the stack is
          * the same size it was at the beginning of the call to evaluate.
          */
-        void evaluate(const AST *ast_)
+        void evaluate(const AST *ast_, unsigned initial_stack_size)
         {
-            unsigned initial_stack_size = stack.size();
-
             recurse:
 
             switch (ast_->type) {
@@ -1081,7 +1153,7 @@ namespace {
                     if (ast.fields.empty()) {
                         BindingFrame env;
                         std::map<const Identifier *, HeapSimpleObject::Field> fields;
-                        scratch = makeObject<HeapSimpleObject>(env, fields);
+                        scratch = makeObject<HeapSimpleObject>(env, fields, ast.asserts);
                     } else {
                         auto env = capture(ast.freeVariables);
                         stack.newFrame(FRAME_OBJECT, ast_);
@@ -1623,7 +1695,8 @@ namespace {
 
                                 case 13: {  // objectHasEx
                                     validateBuiltinArgs(loc, builtin, args,
-                                                        {Value::OBJECT, Value::STRING, Value::BOOLEAN});
+                                                        {Value::OBJECT, Value::STRING,
+                                                         Value::BOOLEAN});
                                     const auto *obj = static_cast<const HeapObject*>(args[0].v.h);
                                     const auto *str = static_cast<const HeapString*>(args[1].v.h);
                                     bool include_hidden = args[2].v.b;
@@ -1672,7 +1745,8 @@ namespace {
                                 } break;
 
                                 case 15: {  // objectFieldsEx
-                                    validateBuiltinArgs(loc, builtin, args, {Value::OBJECT, Value::BOOLEAN});
+                                    validateBuiltinArgs(loc, builtin, args,
+                                                        {Value::OBJECT, Value::BOOLEAN});
                                     const auto *obj = static_cast<HeapObject*>(args[0].v.h);
                                     bool include_hidden = args[1].v.b;
                                     // Stash in a set first to sort them.
@@ -1758,14 +1832,17 @@ namespace {
 
                                 case 23: {  // extVar
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                    const std::string &var = static_cast<HeapString*>(args[0].v.h)->value;
+                                    const std::string &var =
+                                        static_cast<HeapString*>(args[0].v.h)->value;
                                     if (externalVars.find(var) == externalVars.end()) {
-                                        throw makeError(ast.location, "Undefined external variable: " + var);
+                                        throw makeError(ast.location,
+                                                        "Undefined external variable: " + var);
                                     }
                                     const VmExt &ext = externalVars[var];
                                     if (ext.isCode) {
                                         std::string filename = "<extvar:" + var + ">";
-                                        AST *expr = jsonnet_parse(alloc, filename, ext.data.c_str());
+                                        AST *expr =
+                                            jsonnet_parse(alloc, filename, ext.data.c_str());
                                         jsonnet_static_analysis(expr);
                                         ast_ = expr;
                                         stack.pop();
@@ -1837,7 +1914,7 @@ namespace {
                     case FRAME_IF: {
                         const auto &ast = *static_cast<const Conditional*>(f.ast);
                         if (scratch.t != Value::BOOLEAN) {
-                            throw makeError(ast.location, "If condition must be boolean, got " +
+                            throw makeError(ast.location, "Condition must be boolean, got " +
                                                           type_str(scratch) + ".");
                         }
                         ast_ = scratch.v.b ? ast.branchTrue : ast.branchFalse;
@@ -1921,9 +1998,53 @@ namespace {
                                             "Can only index objects, strings, and arrays, got "
                                             + type_str(scratch) + ".");
                         }
-                        ast_ = ast.index;
-                        f.kind = FRAME_INDEX_INDEX;
                         f.val = scratch;
+                        f.kind = FRAME_INDEX_INDEX;
+                        if (scratch.t == Value::OBJECT) {
+                            auto *self = static_cast<HeapObject*>(scratch.v.h);
+                            auto *self_marker = self;
+                            // Strip supers off of self, they are not relevant for invariant
+                            // checking and as they are not interned, they cause 
+                            // stack.alreadyExecutingInvariants to always fail.
+                            while (auto *super = dynamic_cast<HeapSuperObject*>(self_marker)) {
+                                self_marker = super->root;
+                            }
+                            if (!stack.alreadyExecutingInvariants(self_marker)) {
+                                stack.newFrame(FRAME_INVARIANTS, ast.location);
+                                Frame &f2 = stack.top();
+                                f2.self = self_marker;
+                                unsigned counter = 0;
+                                objectInvariants(self, self, counter, f2.thunks);
+                                if (f2.thunks.size() > 0) {
+                                    auto *thunk = f2.thunks[0];
+                                    f2.elementId = 1;
+                                    stack.newCall(ast.location, thunk,
+                                                  thunk->self, thunk->offset, thunk->upValues);
+                                    ast_ = thunk->body;
+                                    goto recurse;
+                                }
+                            }
+                        }
+                        ast_ = ast.index;
+                        goto recurse;
+                    } break;
+
+                    case FRAME_INVARIANTS: {
+                        if (f.elementId >= f.thunks.size()) {
+                            if (stack.size() == initial_stack_size + 1) {
+                                // Just pop, evaluate was invoked by runInvariants.
+                                break;
+                            }
+                            stack.pop();
+                            Frame &f2 = stack.top();
+                            const auto &ast = *static_cast<const Index*>(f2.ast);
+                            ast_ = ast.index;
+                            goto recurse;
+                        }
+                        auto *thunk = f.thunks[f.elementId++];
+                        stack.newCall(f.location, thunk,
+                                      thunk->self, thunk->offset, thunk->upValues);
+                        ast_ = thunk->body;
                         goto recurse;
                     } break;
 
@@ -1952,7 +2073,8 @@ namespace {
                             goto recurse;
                         } else {
                             auto env = capture(ast.freeVariables);
-                            scratch = makeObject<HeapSimpleObject>(env, f.objectFields);
+                            scratch = makeObject<HeapSimpleObject>(env, f.objectFields,
+                                                                   ast.asserts);
                         }
                     } break;
 
@@ -2117,7 +2239,7 @@ namespace {
                                               thunk->self, thunk->offset, thunk->upValues);
                                 // Keep arr alive when scratch is overwritten
                                 stack.top().val = scratch;
-                                evaluate(thunk->body);
+                                evaluate(thunk->body, stack.size());
                             }
                             auto element = manifestJson(tloc, multiline, indent2);
                             // Restore scratch
@@ -2148,6 +2270,7 @@ namespace {
 
                 case Value::OBJECT: {
                     auto *obj = static_cast<HeapObject*>(scratch.v.h);
+                    runInvariants(loc, obj);
                     // Using std::map has the useful side-effect of ordering the fields
                     // alphabetically.
                     std::map<std::string, const Identifier*> fields;
@@ -2163,7 +2286,7 @@ namespace {
                             // pushes FRAME_CALL
                             const AST *body = objectIndex(loc, obj, f.second);
                             stack.top().val = scratch;
-                            evaluate(body);
+                            evaluate(body, stack.size());
                             auto vstr = manifestJson(body->location, multiline, indent2);
                             // Reset scratch so that the object we're manifesting doesn't
                             // get GC'd.
@@ -2208,6 +2331,7 @@ namespace {
                 throw makeError(loc, ss.str());
             }
             auto *obj = static_cast<HeapObject*>(scratch.v.h);
+            runInvariants(loc, obj);
             std::map<std::string, const Identifier*> fields;
             for (const auto &f : objectFields(obj, true)) {
                 fields[f->name] = f;
@@ -2216,7 +2340,7 @@ namespace {
                 // pushes FRAME_CALL
                 const AST *body = objectIndex(loc, obj, f.second);
                 stack.top().val = scratch;
-                evaluate(body);
+                evaluate(body, stack.size());
                 auto vstr = string ? manifestString(body->location)
                                    : manifestJson(body->location, true, "");
                 // Reset scratch so that the object we're manifesting doesn't
@@ -2241,7 +2365,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
                    import_callback, ctx);
-    vm.evaluate(ast);
+    vm.evaluate(ast, 0);
     if (string_output) {
         return vm.manifestString(LocationRange("During manifestation"));
     } else {
@@ -2256,7 +2380,7 @@ StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
                    import_callback, ctx);
-    vm.evaluate(ast);
+    vm.evaluate(ast, 0);
     return vm.manifestMulti(string_output);
 }
 

@@ -120,6 +120,9 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         // Nothing to do.
 
     } else if (auto *ast = dynamic_cast<Object*>(ast_)) {
+        for (auto assert : ast->asserts) {
+            append(r, static_analysis(assert, true, vars));
+        }
         for (auto field : ast->fields) {
             append(r, static_analysis(field.name, in_object, vars));
             append(r, static_analysis(field.body, true, vars));

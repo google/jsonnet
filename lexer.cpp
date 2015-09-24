@@ -474,7 +474,9 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                     id += *c;
                 }
                 --c;
-                if (id == "else") {
+                if (id == "assert") {
+                    kind = Token::ASSERT;
+                } else if (id == "else") {
                     kind = Token::ELSE;
                 } else if (id == "error") {
                     kind = Token::ERROR;
