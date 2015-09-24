@@ -837,4 +837,41 @@ limitations under the License.
 
     objectHasAll(o, f)::
         std.objectHasEx(o, f, true),
+
+    equals(a, b)::
+    local ta = std.type(a);
+    local tb = std.type(b);
+    if !std.primitiveEquals(ta, tb) then
+        false
+    else
+        if std.primitiveEquals(ta, "array") then
+            local la = std.length(a);
+            if !std.primitiveEquals(la, std.length(b)) then
+                false
+            else
+                local aux(a, b, i) =
+                    if i >= la then
+                        true
+                    else if a[i] != b[i] then
+                        false
+                    else
+                        aux(a, b, i + 1) tailstrict;
+                aux(a, b, 0)
+        else if std.primitiveEquals(ta, "object") then
+            local fields = std.objectFields(a);
+            local lfields = std.length(fields);
+            if fields != std.objectFields(b) then
+                false
+            else
+                local aux(a, b, i) =
+                    if i >= lfields then
+                        true
+                    else if local f = fields[i]; a[f] != b[f] then
+                        false
+                    else
+                        aux(a, b, i + 1) tailstrict;
+                aux(a, b, 0)
+        else
+            std.primitiveEquals(a, b),
+
 }
