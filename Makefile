@@ -56,7 +56,7 @@ ALL = \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
 	libjsonnet.js \
-	doc/libjsonnet.js \
+	doc/js/libjsonnet.js \
 	$(LIB_OBJ)
 ALL_HEADERS = \
 	core/ast.h \
@@ -113,7 +113,7 @@ libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
 	$(EMCXX) -s $(JS_EXPORTED_FUNCTIONS) $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
 
 # Copy javascript build to doc directory
-doc/libjsonnet.js: libjsonnet.js
+doc/js/libjsonnet.js: libjsonnet.js
 	$(CP) $^ $@
 
 # Tests for C binding.
