@@ -16,10 +16,9 @@ limitations under the License.
 
 #include <set>
 
-#include "static_analysis.h"
-
-#include "static_error.h"
-#include "ast.h"
+#include "core/static_analysis.h"
+#include "core/static_error.h"
+#include "core/ast.h"
 
 typedef std::set<const Identifier *> IdSet;
 

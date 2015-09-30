@@ -19,8 +19,8 @@ limitations under the License.
 #include <string>
 #include <sstream>
 
-#include "static_error.h"
-#include "lexer.h"
+#include "core/static_error.h"
+#include "core/lexer.h"
 
 static bool is_upper(char c)
 {

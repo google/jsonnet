@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 local old_std = std;
-local std = old_std + import "../std.jsonnet";
+local std = old_std + import "../stdlib/std.jsonnet";
 
 // #
 std.assertEqual(std.format("No format chars\n", []), "No format chars\n") &&

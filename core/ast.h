@@ -24,7 +24,7 @@ limitations under the License.
 #include <map>
 #include <vector>
 
-#include "lexer.h"
+#include "core/lexer.h"
 
 enum ASTType {
     AST_APPLY,
@@ -409,4 +409,4 @@ class Allocator {
     }
 };
 
-#endif
+#endif  // JSONNET_AST_H

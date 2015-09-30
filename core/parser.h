@@ -19,8 +19,8 @@ limitations under the License.
 
 #include <string>
 
-#include "lexer.h"
-#include "ast.h"
+#include "core/lexer.h"
+#include "core/ast.h"
 
 /** Parse a given JSON++ string.
  *
@@ -53,4 +53,4 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin);
  */
 std::string jsonnet_unparse_jsonnet(const AST *ast);
 
-#endif
+#endif  // JSONNET_PARSER_H

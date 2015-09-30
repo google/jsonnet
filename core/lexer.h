@@ -23,7 +23,7 @@ limitations under the License.
 #include <list>
 #include <sstream>
 
-#include "static_error.h"
+#include "core/static_error.h"
 
 struct Token {
     enum Kind {
@@ -153,4 +153,4 @@ static inline std::ostream &operator<<(std::ostream &o, const Token &v)
 
 std::list<Token> jsonnet_lex(const std::string &filename, const char *input);
 
-#endif
+#endif  // JSONNET_LEXER_H
