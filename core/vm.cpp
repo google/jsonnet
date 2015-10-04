@@ -382,7 +382,7 @@ namespace {
             }
         }
 
-        /** Look up the stack to find the self binding. */
+        /** Look up the stack to see if we're running assertions for this object. */
         bool alreadyExecutingInvariants(HeapObject *self)
         {
             for (int i=stack.size() - 1 ; i>=0 ; --i) {

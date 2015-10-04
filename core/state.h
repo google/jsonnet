@@ -167,9 +167,9 @@ namespace {
          */
         const std::map<const Identifier*, Field> fields;
 
-        /** The object invariant.
+        /** The object's invariants.
          *
-         * This is evaluated in the captured environment with self and super bound.
+         * These are evaluated in the captured environment with self and super bound.
          */
         std::vector<AST*> asserts;
 
