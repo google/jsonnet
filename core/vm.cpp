@@ -896,15 +896,17 @@ namespace {
             if (stack.alreadyExecutingInvariants(self_marker)) return;
 
             unsigned counter = 0;
-            std::vector<HeapThunk*> thunks;
+            stack.newFrame(FRAME_INVARIANTS, loc);
+            std::vector<HeapThunk*> &thunks = stack.top().thunks;
             objectInvariants(self, self, counter, thunks);
-            if (thunks.size() == 0) return;
+            if (thunks.size() == 0) {
+                stack.pop();
+                return;
+            }
             HeapThunk *thunk = thunks[0];
             unsigned initial_stack_size = stack.size();
-            stack.newFrame(FRAME_INVARIANTS, loc);
             stack.top().elementId = 1;
             stack.top().self = self;
-            stack.top().thunks = thunks;
             stack.newCall(loc, thunk,
                           thunk->self, thunk->offset, thunk->upValues);
             evaluate(thunk->body, initial_stack_size);
