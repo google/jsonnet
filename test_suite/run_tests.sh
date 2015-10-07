@@ -43,27 +43,27 @@ for TEST in *.jsonnet ; do
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne $EXPECTED_EXIT_CODE ] ; then
         FAILED=$((FAILED + 1))
-        echo "[31;1mFAIL[0m [1m(exit code)[0m: [36m$TEST[0m"
+        echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$TEST\e[0m"
         echo "Output:"
         echo "$OUTPUT"
     else
         if [ -n "$GOLDEN_REGEX" ] ; then
             if [[ ! "$OUTPUT" =~ $GOLDEN_REGEX ]] ; then
                 FAILED=$((FAILED + 1))
-                echo "[31;1mFAIL[0m [1m(regex mismatch)[0m: [36m$TEST[0m"
+                echo -e "\e[31;1mFAIL\e[0m \e[1m(regex mismatch)\e[0m: \e[36m$TEST\e[0m"
                 echo "Output:"
                 echo "$OUTPUT"
             else
-                $($VERBOSE) && echo "[32mSUCCESS[0m: [36m$TEST[0m"
+                $($VERBOSE) && echo -e "\e[32mSUCCESS\e[0m: \e[36m$TEST\e[0m"
             fi
         else
             if [ "$OUTPUT" != "$GOLDEN" ] ; then
                 FAILED=$((FAILED + 1))
-                echo "[31;1mFAIL[0m [1m(output mismatch)[0m: [36m$TEST[0m"
+                echo -e "\e[31;1mFAIL\e[0m \e[1m(output mismatch)\e[0m: \e[36m$TEST\e[0m"
                 echo "Output:"
                 echo "$OUTPUT"
             else
-                $($VERBOSE) && echo "[32mSUCCESS[0m: [36m$TEST[0m"
+                $($VERBOSE) && echo -e "\e[32mSUCCESS\e[0m: \e[36m$TEST\e[0m"
             fi
         fi
     fi
