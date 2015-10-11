@@ -16,28 +16,28 @@ import "fractal.jsonnet" {
 
     zone: self.DnsZone,
 
-    appserv: self.Appserv {
+    appserv: self.AppservTemplate {
         tilegen: "tilegen",
         dnsZone: "zone",
         deployment: {
-            v1: {
+            v3: {
                 deployed: [1],
                 attached: [1],
             },
         }
     },
 
-    tilegen: self.Tilegen {
+    tilegen: self.TilegenTemplate {
         dnsZone: "zone",
         deployment: {
-            v1: {
+            v4: {
                 deployed: [1],
                 attached: [],
             },
         }, 
     },
 
-    db: self.Db {
+    db: self.DbTemplate {
         dnsZone: "zone",
     },
 }
