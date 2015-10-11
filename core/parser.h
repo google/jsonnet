@@ -19,8 +19,9 @@ limitations under the License.
 
 #include <string>
 
-#include "core/lexer.h"
 #include "core/ast.h"
+#include "core/lexer.h"
+#include "core/string.h"
 
 /** Parse a given JSON++ string.
  *
@@ -34,15 +35,15 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
 
 /** Escapes a string for JSON output.
  */
-std::string jsonnet_unparse_escape(const std::string &str);
+String jsonnet_unparse_escape(const String &str);
 
 /** Outputs a number, trying to preserve precision as well as possible.
  */
 std::string jsonnet_unparse_number(double v);
 
 struct BuiltinDecl {
-    std::string name;
-    std::vector<std::string> params;
+    String name;
+    std::vector<String> params;
 };
 
 /** Returns the name of each built-in function. */

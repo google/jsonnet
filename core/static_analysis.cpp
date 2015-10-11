@@ -68,7 +68,8 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         IdSet params;
         for (auto *p : ast->parameters) {
             if (params.find(p) != params.end()) {
-                throw StaticError(ast_->location, "Duplicate function parameter: " + p->name);
+                std::string msg = "Duplicate function parameter: " + encode_utf8(p->name);
+                throw StaticError(ast_->location, msg);
             }
             params.insert(p);
             new_vars.insert(p);
@@ -148,7 +149,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
 
     } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
         if (vars.find(ast->id) == vars.end()) {
-            throw StaticError(ast->location, "Unknown variable: "+ast->id->name);
+            throw StaticError(ast->location, "Unknown variable: "+encode_utf8(ast->id->name));
         }
         r.insert(ast->id);
 

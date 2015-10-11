@@ -23,6 +23,7 @@ limitations under the License.
 #include <list>
 #include <sstream>
 
+#include "core/string.h"
 #include "core/static_error.h"
 
 struct Token {
@@ -70,6 +71,8 @@ struct Token {
     } kind;
 
     std::string data;
+
+    String data32(void) { return decode_utf8(data); }
 
     LocationRange location;
 

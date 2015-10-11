@@ -19,8 +19,9 @@ limitations under the License.
 #include <string>
 #include <sstream>
 
-#include "core/static_error.h"
 #include "core/lexer.h"
+#include "core/static_error.h"
+#include "core/string.h"
 
 static bool is_upper(char c)
 {
@@ -411,23 +412,8 @@ std::list<Token> jsonnet_lex(const std::string &filename, const char *input)
                                     codepoint += digit;
                                 }
 
-                                // Encode in UTF-8.
-                                if (codepoint < 0x0080) {
-                                    data += codepoint;
-                                } else {
-                                    auto msg = "Codepoint out of ascii range.";
-                                    throw StaticError(filename, begin, msg);
-                                }
-/*
-                                } else if (codepoint < 0x0800) {
-                                    data += 0xC0 | (codepoint >> 6);
-                                    data += 0x80 | (codepoint & 0x3F);
-                                } else {
-                                    data += 0xE0 | (codepoint >> 12);
-                                    data += 0x80 | ((codepoint >> 6) & 0x3F);
-                                    data += 0x80 | (codepoint & 0x3F);
-                                }
-*/
+                                encode_utf8(codepoint, data);
+
                                 // Leave us on the last char, ready for the ++c at
                                 // the outer for loop.
                                 c += 3;

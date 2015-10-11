@@ -34,26 +34,28 @@ limitations under the License.
 // For generated ASTs, use a bogus location.
 static const LocationRange gen;
 
-std::string jsonnet_unparse_escape(const std::string &str)
+String jsonnet_unparse_escape(const String &str)
 {
-    std::stringstream ss;
-    ss << '\"';
+    StringStream ss;
+    ss << U'\"';
     for (std::size_t i=0 ; i<str.length() ; ++i) {
-        char c = str[i];
+        char32_t c = str[i];
         switch (c) {
-            case '"': ss << "\\\""; break;
-            case '\\': ss << "\\\\"; break;
-            case '\b': ss << "\\b"; break;
-            case '\f': ss << "\\f"; break;
-            case '\n': ss << "\\n"; break;
-            case '\r': ss << "\\r"; break;
-            case '\t': ss << "\\t"; break;
-            case '\0': ss << "\\u0000"; break;
+            case U'"': ss << U"\\\""; break;
+            case U'\\': ss << U"\\\\"; break;
+            case U'\b': ss << U"\\b"; break;
+            case U'\f': ss << U"\\f"; break;
+            case U'\n': ss << U"\\n"; break;
+            case U'\r': ss << U"\\r"; break;
+            case U'\t': ss << U"\\t"; break;
+            case U'\0': ss << U"\\u0000"; break;
             default: {
-                if (c < 0x20 || c > 0x7e) {
+                if (c < 0x20 || (c >= 0x7f && c <= 0x9f)) {
                     //Unprintable, use \u
-                    ss << "\\u" << std::hex << std::setfill('0') << std::setw(4)
-                       << unsigned((unsigned char)(c));
+                    std::stringstream ss8;
+                    ss8 << "\\u" << std::hex << std::setfill('0') << std::setw(4)
+                       << (unsigned long)(c);
+                    ss << decode_utf8(ss8.str());
                 } else {
                     // Printable, write verbatim
                     ss << c;
@@ -61,7 +63,7 @@ std::string jsonnet_unparse_escape(const std::string &str)
             }
         }
     }
-    ss << '\"';
+    ss << U'\"';
     return ss.str();
 }
 
@@ -129,16 +131,16 @@ static std::string unparse(const AST *ast_)
         ss << "function ";
         const char *prefix = "(";
         for (const Identifier *arg : ast->parameters) {
-            ss << prefix << arg->name;
+            ss << prefix << encode_utf8(arg->name);
             prefix = ", ";
         }
         ss << ") " << unparse(ast->body);
 
     } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
-        ss << "import " << jsonnet_unparse_escape(ast->file);
+        ss << "import " << encode_utf8(jsonnet_unparse_escape(ast->file));
 
     } else if (auto *ast = dynamic_cast<const Importstr*>(ast_)) {
-        ss << "importstr " << jsonnet_unparse_escape(ast->file);
+        ss << "importstr " << encode_utf8(jsonnet_unparse_escape(ast->file));
 
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
         ss << unparse(ast->target) << "["
@@ -147,7 +149,7 @@ static std::string unparse(const AST *ast_)
     } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
         const char *prefix = "local ";
         for (const auto &bind : ast->binds) {
-            ss << prefix << bind.first->name << " = " << unparse(bind.second);
+            ss << prefix << encode_utf8(bind.first->name) << " = " << unparse(bind.second);
             prefix = ", ";
         }
         ss << "; " << unparse(ast->body);
@@ -159,7 +161,7 @@ static std::string unparse(const AST *ast_)
         ss << ast->value;
 
     } else if (auto *ast = dynamic_cast<const LiteralString*>(ast_)) {
-        ss << jsonnet_unparse_escape(ast->value);
+        ss << encode_utf8(jsonnet_unparse_escape(ast->value));
 
     } else if (dynamic_cast<const LiteralNull*>(ast_)) {
         ss << "null";
@@ -191,7 +193,7 @@ static std::string unparse(const AST *ast_)
 
     } else if (auto *ast = dynamic_cast<const ObjectComposition*>(ast_)) {
         ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
-        ss << " for " << ast->id->name << " in " << unparse(ast->array);
+        ss << " for " << encode_utf8(ast->id->name) << " in " << unparse(ast->array);
         ss << "}";
 
     } else if (dynamic_cast<const Self*>(ast_)) {
@@ -204,7 +206,7 @@ static std::string unparse(const AST *ast_)
         ss << uop_string(ast->op) << unparse(ast->expr);
 
     } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
-        ss << ast->id->name;
+        ss << encode_utf8(ast->id->name);
 
     } else {
         std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
@@ -458,7 +460,7 @@ namespace {
         void parseBind(Local::Binds &binds, unsigned obj_level)
         {
             Token var_id = popExpect(Token::IDENTIFIER);
-            auto *id = alloc->makeIdentifier(var_id.data);
+            auto *id = alloc->makeIdentifier(var_id.data32());
             if (binds.find(id) != binds.end()) {
                 throw StaticError(var_id.location,
                                   "Duplicate local var: " + var_id.data);
@@ -487,7 +489,7 @@ namespace {
 
             // Hidden variable to allow outer/top binding.
             if (obj_level == 0) {
-                const Identifier *hidden_var = alloc->makeIdentifier("$");
+                const Identifier *hidden_var = alloc->makeIdentifier(U"$");
                 let_binds[hidden_var] = alloc->make<Self>(LocationRange());
             }
 
@@ -546,7 +548,7 @@ namespace {
                         throw StaticError(next.location, "Unexpected comma before for.");
                     }
                     Token id_tok = popExpect(Token::IDENTIFIER);
-                    const Identifier *id = alloc->makeIdentifier(id_tok.data);
+                    const Identifier *id = alloc->makeIdentifier(id_tok.data32());
                     popExpect(Token::IN);
                     AST *array = parse(MAX_PRECEDENCE, obj_level);
                     Token last = popExpect(Token::BRACE_R);
@@ -592,14 +594,14 @@ namespace {
                         if (!literal_fields.insert(next.data).second) {
                             throw StaticError(next.location, "Duplicate field: "+next.data);
                         }
-                        AST *field_expr = alloc->make<LiteralString>(next.location, next.data);
+                        AST *field_expr = alloc->make<LiteralString>(next.location, next.data32());
 
                         AST *body = parse(MAX_PRECEDENCE, obj_level+1);
                         if (is_method) {
                             body = alloc->make<Function>(body->location, params, body);
                         }
                         if (plus_sugar) {
-                            AST *f = alloc->make<LiteralString>(plus_loc, next.data);
+                            AST *f = alloc->make<LiteralString>(plus_loc, next.data32());
                             AST *super_f = alloc->make<Index>(plus_loc, alloc->make<Super>(LocationRange()), f);
                             body = alloc->make<Binary>(body->location, super_f, BOP_PLUS, body);
                         }
@@ -639,7 +641,7 @@ namespace {
                             pop();
                             msg = parse(MAX_PRECEDENCE, obj_level + 1);
                         } else {
-                            std::string msg_str = "Assertion failed.";
+                            auto msg_str = U"Assertion failed.";
                             msg = alloc->make<LiteralString>(cond->location, msg_str);
                         }
                         AST *tru = alloc->make<LiteralBoolean>(gen, true);
@@ -703,15 +705,15 @@ namespace {
                         LocationRange l;
                         pop();
                         Token id_token = popExpect(Token::IDENTIFIER);
-                        const Identifier *id = alloc->makeIdentifier(id_token.data);
+                        const Identifier *id = alloc->makeIdentifier(id_token.data32());
                         std::vector<const Identifier*> params = {id};
-                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier("std"));
+                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier(U"std"));
                         AST *map_func = alloc->make<Function>(first->location, params, first);
                         popExpect(Token::IN);
                         AST *arr = parse(MAX_PRECEDENCE, obj_level);
                         Token maybe_if = pop();
                         if (maybe_if.kind == Token::BRACKET_R) {
-                            AST *map_str = alloc->make<LiteralString>(l, "map");
+                            AST *map_str = alloc->make<LiteralString>(l, U"map");
                             AST *map = alloc->make<Index>(l, std, map_str);
                             std::vector<AST*> args = {map_func, arr};
                             return alloc->make<Apply>(span(tok, maybe_if), map, args, false);
@@ -719,7 +721,7 @@ namespace {
                             AST *cond = parse(MAX_PRECEDENCE, obj_level);
                             Token last = popExpect(Token::BRACKET_R);
                             AST *filter_func = alloc->make<Function>(cond->location, params, cond);
-                            AST *fmap_str = alloc->make<LiteralString>(l, "filterMap");
+                            AST *fmap_str = alloc->make<LiteralString>(l, U"filterMap");
                             AST *fmap = alloc->make<Index>(l, std, fmap_str);
                             std::vector<AST*> args = {filter_func, map_func, arr};
                             return alloc->make<Apply>(span(tok, last), fmap, args, false);
@@ -766,7 +768,7 @@ namespace {
                 return alloc->make<LiteralNumber>(span(tok), strtod(tok.data.c_str(), nullptr));
 
                 case Token::STRING:
-                return alloc->make<LiteralString>(span(tok), tok.data);
+                return alloc->make<LiteralString>(span(tok), tok.data32());
 
                 case Token::FALSE:
                 return alloc->make<LiteralBoolean>(span(tok), false);
@@ -780,12 +782,12 @@ namespace {
                 // Import
                 case Token::IMPORT: {
                     Token file = popExpect(Token::STRING);
-                    return alloc->make<Import>(span(tok, file), file.data);
+                    return alloc->make<Import>(span(tok, file), file.data32());
                 }
 
                 case Token::IMPORTSTR: {
                     Token file = popExpect(Token::STRING);
-                    return alloc->make<Importstr>(span(tok, file), file.data);
+                    return alloc->make<Importstr>(span(tok, file), file.data32());
                 }
 
 
@@ -794,10 +796,10 @@ namespace {
                 if (obj_level == 0) {
                     throw StaticError(tok.location, "No top-level object found.");
                 }
-                return alloc->make<Var>(span(tok), alloc->makeIdentifier("$"));
+                return alloc->make<Var>(span(tok), alloc->makeIdentifier(U"$"));
 
                 case Token::IDENTIFIER:
-                return alloc->make<Var>(span(tok), alloc->makeIdentifier(tok.data));
+                return alloc->make<Var>(span(tok), alloc->makeIdentifier(tok.data32()));
 
                 case Token::SELF:
                 return alloc->make<Self>(span(tok));
@@ -827,7 +829,7 @@ namespace {
                         pop();
                         msg = parse(MAX_PRECEDENCE, obj_level);
                     } else {
-                        std::string msg_str = "Assertion failed.";
+                        auto msg_str = U"Assertion failed.";
                         msg = alloc->make<LiteralString>(begin.location, msg_str);
                     }
                     popExpect(Token::SEMICOLON);
@@ -968,7 +970,7 @@ namespace {
 
                     } else if (op.kind == Token::DOT) {
                         Token field = popExpect(Token::IDENTIFIER);
-                        AST *index = alloc->make<LiteralString>(span(field), field.data);
+                        AST *index = alloc->make<LiteralString>(span(field), field.data32());
                         lhs = alloc->make<Index>(span(begin, field), lhs, index);
 
                     } else if (op.kind == Token::PAREN_L) {
@@ -989,8 +991,8 @@ namespace {
 
                     } else if (op.data == "%") {
                         AST *rhs = parse(precedence - 1, obj_level);
-                        AST *std = alloc->make<Var>(gen, alloc->makeIdentifier("std"));
-                        AST *mod_str = alloc->make<LiteralString>(gen, "mod");
+                        AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
+                        AST *mod_str = alloc->make<LiteralString>(gen, U"mod");
                         AST *f_mod = alloc->make<Index>(gen, std, mod_str);
                         std::vector<AST*> args = {lhs, rhs};
                         lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args, false);
@@ -1004,8 +1006,8 @@ namespace {
                             invert = true;
                         }
                         if (bop == BOP_MANIFEST_EQUAL) {
-                            AST *std = alloc->make<Var>(gen, alloc->makeIdentifier("std"));
-                            AST *equals_str = alloc->make<LiteralString>(gen, "equals");
+                            AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
+                            AST *equals_str = alloc->make<LiteralString>(gen, U"equals");
                             AST *f_equals = alloc->make<Index>(gen, std, equals_str);
                             std::vector<AST*> args = {lhs, rhs};
                             lhs = alloc->make<Apply>(span(begin, rhs), f_equals, args, false);
@@ -1027,31 +1029,31 @@ static unsigned long max_builtin = 24;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
-        case 0: return {"makeArray", {"sz", "func"}};
-        case 1: return {"pow", {"x", "n"}};
-        case 2: return {"floor", {"x"}};
-        case 3: return {"ceil", {"x"}};
-        case 4: return {"sqrt", {"x"}};
-        case 5: return {"sin", {"x"}};
-        case 6: return {"cos", {"x"}};
-        case 7: return {"tan", {"x"}};
-        case 8: return {"asin", {"x"}};
-        case 9: return {"acos", {"x"}};
-        case 10: return {"atan", {"x"}};
-        case 11: return {"type", {"x"}};
-        case 12: return {"filter", {"func", "arr"}};
-        case 13: return {"objectHasEx", {"obj", "f", "inc_hidden"}};
-        case 14: return {"length", {"x"}};
-        case 15: return {"objectFieldsEx", {"obj", "inc_hidden"}};
-        case 16: return {"codepoint", {"str"}};
-        case 17: return {"char", {"n"}};
-        case 18: return {"log", {"n"}};
-        case 19: return {"exp", {"n"}};
-        case 20: return {"mantissa", {"n"}};
-        case 21: return {"exponent", {"n"}};
-        case 22: return {"modulo", {"a", "b"}};
-        case 23: return {"extVar", {"x"}};
-        case 24: return {"primitiveEquals", {"a", "b"}};
+        case 0: return {U"makeArray", {U"sz", U"func"}};
+        case 1: return {U"pow", {U"x", U"n"}};
+        case 2: return {U"floor", {U"x"}};
+        case 3: return {U"ceil", {U"x"}};
+        case 4: return {U"sqrt", {U"x"}};
+        case 5: return {U"sin", {U"x"}};
+        case 6: return {U"cos", {U"x"}};
+        case 7: return {U"tan", {U"x"}};
+        case 8: return {U"asin", {U"x"}};
+        case 9: return {U"acos", {U"x"}};
+        case 10: return {U"atan", {U"x"}};
+        case 11: return {U"type", {U"x"}};
+        case 12: return {U"filter", {U"func", U"arr"}};
+        case 13: return {U"objectHasEx", {U"obj", U"f", U"inc_hidden"}};
+        case 14: return {U"length", {U"x"}};
+        case 15: return {U"objectFieldsEx", {U"obj", U"inc_hidden"}};
+        case 16: return {U"codepoint", {U"str"}};
+        case 17: return {U"char", {U"n"}};
+        case 18: return {U"log", {U"n"}};
+        case 19: return {U"exp", {U"n"}};
+        case 20: return {U"mantissa", {U"n"}};
+        case 21: return {U"exponent", {U"n"}};
+        case 22: return {U"modulo", {U"a", U"b"}};
+        case 23: return {U"extVar", {U"x"}};
+        case 24: return {U"primitiveEquals", {U"a", U"b"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
@@ -1103,11 +1105,11 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
         fields.emplace_back(alloc->make<LiteralString>(gen, decl.name), Object::Field::HIDDEN,
                             alloc->make<BuiltinFunction>(gen, c, params));
     }
-    fields.emplace_back(alloc->make<LiteralString>(gen, "thisFile"), Object::Field::HIDDEN,
-                        alloc->make<LiteralString>(gen, file));
+    fields.emplace_back(alloc->make<LiteralString>(gen, U"thisFile"), Object::Field::HIDDEN,
+                        alloc->make<LiteralString>(gen, decode_utf8(file)));
 
     Local::Binds std_binds;
-    std_binds[alloc->makeIdentifier("std")] = std_obj;
+    std_binds[alloc->makeIdentifier(U"std")] = std_obj;
     AST *wrapped = alloc->make<Local>(expr->location, std_binds, expr);
     return wrapped;
 }

@@ -25,6 +25,7 @@ limitations under the License.
 #include <vector>
 
 #include "core/lexer.h"
+#include "core/string.h"
 
 enum ASTType {
     AST_APPLY,
@@ -51,18 +52,17 @@ enum ASTType {
     AST_VAR
 };
 
-
 /** Represents a variable / parameter / field name. */
 struct Identifier {
-    std::string name;
-    Identifier(const std::string &name)
+    String name;
+    Identifier(const String &name)
       : name(name)
     { }
 };
 
 static inline std::ostream &operator<<(std::ostream &o, const Identifier *id)
 {
-    o << id->name;
+    o << encode_utf8(id->name);
     return o;
 }
 
@@ -213,16 +213,16 @@ struct Function : public AST {
 
 /** Represents import "file". */
 struct Import : public AST {
-    std::string file;
-    Import(const LocationRange &lr, const std::string &file)
+    String file;
+    Import(const LocationRange &lr, const String &file)
       : AST(lr, AST_IMPORT), file(file)
     { }
 };
 
 /** Represents importstr "file". */
 struct Importstr : public AST {
-    std::string file;
-    Importstr(const LocationRange &lr, const std::string &file)
+    String file;
+    Importstr(const LocationRange &lr, const String &file)
       : AST(lr, AST_IMPORTSTR), file(file)
     { }
 };
@@ -271,8 +271,8 @@ struct LiteralNumber : public AST {
 
 /** Represents JSON strings. */
 struct LiteralString : public AST {
-    std::string value;
-    LiteralString(const LocationRange &lr, const std::string &value)
+    String value;
+    LiteralString(const LocationRange &lr, const String &value)
       : AST(lr, AST_LITERAL_STRING), value(value)
     { }
 };
@@ -373,7 +373,7 @@ struct Var : public AST {
 /** Allocates ASTs on demand, frees them in its destructor.
  */
 class Allocator {
-    std::map<std::string, const Identifier*> internedIdentifiers;
+    std::map<String, const Identifier*> internedIdentifiers;
     std::vector<AST*> allocated;
     public:
     template <class T, class... Args> T* make(Args&&... args)
@@ -386,7 +386,7 @@ class Allocator {
      *
      * The location used in the Identifier AST is that of the first one parsed.
      */
-    const Identifier *makeIdentifier(const std::string &name)
+    const Identifier *makeIdentifier(const String &name)
     {
         auto it = internedIdentifiers.find(name);
         if (it != internedIdentifiers.end()) {

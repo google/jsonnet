@@ -262,7 +262,7 @@ namespace {
                     if (!thunk->filled) continue;
                     if (!thunk->content.isHeap()) continue;
                     if (e != thunk->content.v.h) continue;
-                    name = pair.first->name;
+                    name = encode_utf8(pair.first->name);
                 }
                 // Do not go into the next call frame, keep local reasoning.
                 if (f.isCall()) break;
@@ -272,11 +272,11 @@ namespace {
             if (dynamic_cast<const HeapObject*>(e)) {
                 return "object <" + name + ">";
             } else if (auto *thunk = dynamic_cast<const HeapThunk*>(e)) {
-                return "thunk <" + thunk->name->name + ">";
+                return "thunk <" + encode_utf8(thunk->name->name) + ">";
             } else {
                 const auto *func = static_cast<const HeapClosure *>(e);
                 if (func->body == nullptr) {
-                    name = jsonnet_builtin_decl(func->builtin).name;
+                    name = encode_utf8(jsonnet_builtin_decl(func->builtin).name);
                     return "builtin function <" + name + ">";
                 }
                 return "function <" + name + ">";
@@ -438,7 +438,7 @@ namespace {
         };
 
         /** Cache for imported Jsonnet files. */
-        std::map<std::pair<std::string, std::string>,
+        std::map<std::pair<std::string, String>,
                  const ImportCacheValue *> cachedImports;
 
         /** External variables for std.extVar. */
@@ -550,7 +550,7 @@ namespace {
             return r;
         }
 
-        Value makeString(const std::string &v)
+        Value makeString(const String &v)
         {
             Value r;
             r.t = Value::STRING;
@@ -669,7 +669,7 @@ namespace {
          * \param loc Location of the import statement.
          * \param file Path to the filename.
          */
-        AST *import(const LocationRange &loc, const std::string &file)
+        AST *import(const LocationRange &loc, const String &file)
         {
             const ImportCacheValue *input = importString(loc, file);
             AST *expr = jsonnet_parse(alloc, input->foundHere, input->content.c_str());
@@ -686,11 +686,11 @@ namespace {
          * \param file Path to the filename.
          * \param found_here If non-null, used to store the actual path of the file
          */
-        const ImportCacheValue *importString(const LocationRange &loc, const std::string &file)
+        const ImportCacheValue *importString(const LocationRange &loc, const String &file)
         {
             std::string dir = dir_name(loc.file);
 
-            std::pair<std::string, std::string> key(dir, file);
+            std::pair<std::string, String> key(dir, file);
             const ImportCacheValue *cached_value = cachedImports[key];
             if (cached_value != nullptr)
                 return cached_value;
@@ -699,16 +699,14 @@ namespace {
             int success = 0;
             char *found_here_cptr;
             char *content =
-                importCallback(importCallbackContext, dir.c_str(), file.c_str(),
+                importCallback(importCallbackContext, dir.c_str(), encode_utf8(file).c_str(),
                                &found_here_cptr, &success);
 
             std::string input(content);
-
-            input.assign(content);
             ::free(content);
 
             if (!success) {
-                    std::string msg = "Couldn't open import \"" + file + "\": ";
+                    std::string msg = "Couldn't open import \"" + encode_utf8(file) + "\": ";
                     msg += input;
                     throw makeError(loc, msg);
             }
@@ -760,8 +758,8 @@ namespace {
                     unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                     JsonnetImportCallback *import_callback, void *import_callback_context)
           : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
-            idArrayElement(alloc->makeIdentifier("array_element")),
-            idInvariant(alloc->makeIdentifier("object_assert")), externalVars(ext_vars),
+            idArrayElement(alloc->makeIdentifier(U"array_element")),
+            idInvariant(alloc->makeIdentifier(U"object_assert")), externalVars(ext_vars),
             importCallback(import_callback), importCallbackContext(import_callback_context)
         {
             scratch = makeNull();
@@ -799,9 +797,9 @@ namespace {
                 return;
             }
             bad:;
-            const std::string &name = jsonnet_builtin_decl(builtin).name;
+            const String &name = jsonnet_builtin_decl(builtin).name;
             std::stringstream ss;
-            ss << "Builtin function " + name + " expected (";
+            ss << "Builtin function " + encode_utf8(name) + " expected (";
             const char *prefix = "";
             for (auto p : params) {
                 ss << prefix << type_str(p);
@@ -818,9 +816,9 @@ namespace {
         }
 
 
-        std::string toString(const LocationRange &loc)
+        String toString(const LocationRange &loc)
         {
-            return manifestJson(loc, false, "");
+            return manifestJson(loc, false, U"");
         }
 
 
@@ -867,7 +865,7 @@ namespace {
             HeapObject *self = nullptr;
             HeapLeafObject *found = findObject(f, obj, obj, 0, found_at, self);
             if (found == nullptr) {
-                throw makeError(loc, "Field does not exist: " + f->name);
+                throw makeError(loc, "Field does not exist: " + encode_utf8(f->name));
             }
             if (auto *simp = dynamic_cast<HeapSimpleObject*>(found)) {
                 auto it = simp->fields.find(f);
@@ -996,7 +994,7 @@ namespace {
                 case AST_IMPORTSTR: {
                     const auto &ast = *static_cast<const Importstr*>(ast_);
                     const ImportCacheValue *value = importString(ast.location, ast.file);
-                    scratch = makeString(value->content);
+                    scratch = makeString(decode_utf8(value->content));
                 } break;
 
                 case AST_INDEX: {
@@ -1102,8 +1100,8 @@ namespace {
                     const auto &ast = *static_cast<const Var*>(ast_);
                     auto *thunk = stack.lookUpVar(ast.id);
                     if (thunk == nullptr) {
-                        std::cerr << "INTERNAL ERROR: Could not bind variable: " << ast.id->name
-                                  << std::endl;
+                        std::cerr << "INTERNAL ERROR: Could not bind variable: "
+                                  << encode_utf8(ast.id->name) << std::endl;
                         std::abort();
                     }
                     if (thunk->filled) {
@@ -1374,9 +1372,9 @@ namespace {
                             break;
 
                             case Value::STRING: {
-                                const std::string &lhs_str =
+                                const String &lhs_str =
                                     static_cast<HeapString*>(lhs.v.h)->value;
-                                const std::string &rhs_str =
+                                const String &rhs_str =
                                     static_cast<HeapString*>(rhs.v.h)->value;
                                 switch (ast.op) {
                                     case BOP_PLUS:
@@ -1534,31 +1532,31 @@ namespace {
                                 case 11: {  // type
                                     switch (args[0].t) {
                                         case Value::NULL_TYPE:
-                                        scratch = makeString("null");
+                                        scratch = makeString(U"null");
                                         break;
 
                                         case Value::BOOLEAN:
-                                        scratch = makeString("boolean");
+                                        scratch = makeString(U"boolean");
                                         break;
 
                                         case Value::DOUBLE:
-                                        scratch = makeString("number");
+                                        scratch = makeString(U"number");
                                         break;
 
                                         case Value::ARRAY:
-                                        scratch = makeString("array");
+                                        scratch = makeString(U"array");
                                         break;
 
                                         case Value::FUNCTION:
-                                        scratch = makeString("function");
+                                        scratch = makeString(U"function");
                                         break;
 
                                         case Value::OBJECT:
-                                        scratch = makeString("object");
+                                        scratch = makeString(U"object");
                                         break;
 
                                         case Value::STRING:
-                                        scratch = makeString("string");
+                                        scratch = makeString(U"string");
                                         break;
 
                                     }
@@ -1649,7 +1647,7 @@ namespace {
                                     const auto *obj = static_cast<HeapObject*>(args[0].v.h);
                                     bool include_hidden = args[1].v.b;
                                     // Stash in a set first to sort them.
-                                    std::set<std::string> fields;
+                                    std::set<String> fields;
                                     for (const auto &field : objectFields(obj, !include_hidden)) {
                                         fields.insert(field->name);
                                     }
@@ -1665,7 +1663,7 @@ namespace {
 
                                 case 16: { // codepoint
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                    const std::string &str =
+                                    const String &str =
                                         static_cast<HeapString*>(args[0].v.h)->value;
                                     if (str.length() != 1) {
                                         std::stringstream ss;
@@ -1673,26 +1671,25 @@ namespace {
                                            << str.length();
                                         throw makeError(loc, ss.str());
                                     }
-                                    char c = static_cast<HeapString*>(args[0].v.h)->value[0];
-                                    scratch = makeDouble((unsigned char)(c));
+                                    char32_t c = static_cast<HeapString*>(args[0].v.h)->value[0];
+                                    scratch = makeDouble((unsigned long)(c));
                                 } break;
 
                                 case 17: { // char
                                     validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                    long l = (unsigned long)(args[0].v.d);
+                                    long l = long(args[0].v.d);
                                     if (l < 0) {
                                         std::stringstream ss;
                                         ss << "Codepoints must be >= 0, got " << l;
                                         throw makeError(ast.location, ss.str());
                                     }
-                                    if (l >= 128) {
+                                    if (l >= JSONNET_CODEPOINT_MAX) {
                                         std::stringstream ss;
-                                        ss << "Sorry, only ASCII supported right now.  ";
-                                        ss << "Codepoints must be < 128, got " << l;
+                                        ss << "Invalid unicode codepoint, got " << l;
                                         throw makeError(ast.location, ss.str());
                                     }
-                                    char c = l;
-                                    scratch = makeString(std::string(&c, 1));
+                                    char32_t c = l;
+                                    scratch = makeString(String(&c, 1));
                                 } break;
 
                                 case 18: {  // log
@@ -1731,15 +1728,17 @@ namespace {
 
                                 case 23: {  // extVar
                                     validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                    const std::string &var =
+                                    const String &var =
                                         static_cast<HeapString*>(args[0].v.h)->value;
-                                    if (externalVars.find(var) == externalVars.end()) {
-                                        throw makeError(ast.location,
-                                                        "Undefined external variable: " + var);
+                                    std::string var8 = encode_utf8(var);
+                                    auto it = externalVars.find(var8);
+                                    if (it == externalVars.end()) {
+                                        std::string msg = "Undefined external variable: " + var8;
+                                        throw makeError(ast.location, msg);
                                     }
-                                    const VmExt &ext = externalVars[var];
+                                    const VmExt &ext = it->second;
                                     if (ext.isCode) {
-                                        std::string filename = "<extvar:" + var + ">";
+                                        std::string filename = "<extvar:" + var8 + ">";
                                         AST *expr =
                                             jsonnet_parse(alloc, filename, ext.data.c_str());
                                         jsonnet_static_analysis(expr);
@@ -1747,7 +1746,7 @@ namespace {
                                         stack.pop();
                                         goto recurse;
                                     } else {
-                                        scratch = makeString(ext.data);
+                                        scratch = makeString(decode_utf8(ext.data));
                                     }
                                 } break;
 
@@ -1834,7 +1833,8 @@ namespace {
                         if (scratch.t != Value::STRING)
                             throw makeError(ast.location, "Error message must be string, got " +
                                                           type_str(scratch) + ".");
-                        throw makeError(ast.location, static_cast<HeapString*>(scratch.v.h)->value);
+                        std::string msg = encode_utf8(static_cast<HeapString*>(scratch.v.h)->value);
+                        throw makeError(ast.location, msg);
                     } break;
 
                     case FRAME_IF: {
@@ -1883,7 +1883,7 @@ namespace {
                                                 "Object index must be string, got "
                                                 + type_str(scratch) + ".");
                             }
-                            const std::string &index_name =
+                            const String &index_name =
                                 static_cast<HeapString*>(scratch.v.h)->value;
                             auto *fid = alloc->makeIdentifier(index_name);
                             stack.pop();
@@ -1897,7 +1897,6 @@ namespace {
                                                 "String index must be a number, got "
                                                 + type_str(scratch) + ".");
                             }
-                            // TODO(dcunnin):  UTF-8 support goes here.
                             long sz = obj->value.length();
                             long i = (long)scratch.v.d;
                             if (i < 0 || i >= sz) {
@@ -1906,7 +1905,7 @@ namespace {
                                    << " not within [0, " << sz << ")";
                                 throw makeError(ast.location, ss.str());
                             }
-                            char ch[] = {obj->value[i], '\0'};
+                            char32_t ch[] = {obj->value[i], U'\0'};
                             scratch = makeString(ch);
                         } else {
                             std::cerr << "INTERNAL ERROR: Not object / array / string."
@@ -1987,8 +1986,9 @@ namespace {
                             const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
                             const Identifier *fid = alloc->makeIdentifier(fname);
                             if (f.objectFields.find(fid) != f.objectFields.end()) {
-                                throw makeError(ast.location,
-                                                "Duplicate field name: \"" + fname + "\"");
+                                std::string msg = "Duplicate field name: \""
+                                                  + encode_utf8(fname) + "\"";
+                                throw makeError(ast.location, msg);
                             }
                             f.objectFields[fid].hide = f.fit->hide;
                             f.objectFields[fid].body = f.fit->body;
@@ -2039,7 +2039,7 @@ namespace {
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.elements.find(fid) != f.elements.end()) {
                             throw makeError(ast.location,
-                                            "Duplicate field name: \"" + fname + "\"");
+                                            "Duplicate field name: \"" + encode_utf8(fname) + "\"");
                         }
                         f.elements[fid] = arr->elements[f.elementId];
                         f.elementId++;
@@ -2059,20 +2059,20 @@ namespace {
                         const auto &ast = *static_cast<const Binary*>(f.ast);
                         const Value &lhs = stack.top().val;
                         const Value &rhs = stack.top().val2;
-                        std::stringstream ss;
+                        String output;
                         if (lhs.t == Value::STRING) {
-                            ss << static_cast<const HeapString*>(lhs.v.h)->value;
+                            output.append(static_cast<const HeapString*>(lhs.v.h)->value);
                         } else {
                             scratch = lhs;
-                            ss << toString(ast.left->location);
+                            output.append(toString(ast.left->location));
                         }
                         if (rhs.t == Value::STRING) {
-                            ss << static_cast<const HeapString*>(rhs.v.h)->value;
+                            output.append(static_cast<const HeapString*>(rhs.v.h)->value);
                         } else {
                             scratch = rhs;
-                            ss << toString(ast.right->location);
+                            output.append(toString(ast.right->location));
                         }
-                        scratch = makeString(ss.str());
+                        scratch = makeString(output);
                     } break;
 
                     case FRAME_UNARY: {
@@ -2136,21 +2136,20 @@ namespace {
          *
          * \param multiline If true, will print objects and arrays in an indented fashion.
          */
-        std::string manifestJson(const LocationRange &loc, bool multiline,
-                                 const std::string &indent)
+        String manifestJson(const LocationRange &loc, bool multiline, const String &indent)
         {
             // Printing fields means evaluating and binding them, which can trigger
             // garbage collection.
 
-            std::stringstream ss;
+            StringStream ss;
             switch (scratch.t) {
                 case Value::ARRAY: {
                     HeapArray *arr = static_cast<HeapArray*>(scratch.v.h);
                     if (arr->elements.size() == 0) {
-                        ss << "[ ]";
+                        ss << U"[ ]";
                     } else {
-                        const char *prefix = multiline ? "[\n" : "[";
-                        std::string indent2 = multiline ? indent + "   " : indent;
+                        const char32_t *prefix = multiline ? U"[\n" : U"[";
+                        String indent2 = multiline ? indent + U"   " : indent;
                         for (auto *thunk : arr->elements) {
                             LocationRange tloc = thunk->body == nullptr
                                                ? loc
@@ -2172,26 +2171,26 @@ namespace {
                             scratch = stack.top().val;
                             stack.pop();
                             ss << prefix << indent2 << element;
-                            prefix = multiline ? ",\n" : ", ";
+                            prefix = multiline ? U",\n" : U", ";
                         }
-                        ss << (multiline ? "\n" : "") << indent << "]";
+                        ss << (multiline ? U"\n" : U"") << indent << U"]";
                     }
                 }
                 break;
 
                 case Value::BOOLEAN:
-                ss << (scratch.v.b ? "true" : "false");
+                ss << (scratch.v.b ? U"true" : U"false");
                 break;
 
                 case Value::DOUBLE:
-                ss << jsonnet_unparse_number(scratch.v.d);
+                ss << decode_utf8(jsonnet_unparse_number(scratch.v.d));
                 break;
 
                 case Value::FUNCTION:
                 throw makeError(loc, "Couldn't manifest function in JSON output.");
 
                 case Value::NULL_TYPE:
-                ss << "null";
+                ss << U"null";
                 break;
 
                 case Value::OBJECT: {
@@ -2199,15 +2198,15 @@ namespace {
                     runInvariants(loc, obj);
                     // Using std::map has the useful side-effect of ordering the fields
                     // alphabetically.
-                    std::map<std::string, const Identifier*> fields;
+                    std::map<String, const Identifier*> fields;
                     for (const auto &f : objectFields(obj, true)) {
                         fields[f->name] = f;
                     }
                     if (fields.size() == 0) {
-                        ss << "{ }";
+                        ss << U"{ }";
                     } else {
-                        std::string indent2 = multiline ? indent + "   " : indent;
-                        const char *prefix = multiline ? "{\n" : "{";
+                        String indent2 = multiline ? indent + U"   " : indent;
+                        const char32_t *prefix = multiline ? U"{\n" : U"{";
                         for (const auto &f : fields) {
                             // pushes FRAME_CALL
                             const AST *body = objectIndex(loc, obj, f.second);
@@ -2218,16 +2217,16 @@ namespace {
                             // get GC'd.
                             scratch = stack.top().val;
                             stack.pop();
-                            ss << prefix << indent2 << "\"" << f.first << "\": " << vstr;
-                            prefix = multiline ? ",\n" : ", ";
+                            ss << prefix << indent2 << U"\"" << f.first << U"\": " << vstr;
+                            prefix = multiline ? U",\n" : U", ";
                         }
-                        ss << (multiline ? "\n" : "") << indent << "}";
+                        ss << (multiline ? U"\n" : U"") << indent << U"}";
                     }
                 }
                 break;
 
                 case Value::STRING: {
-                    const std::string &str = static_cast<HeapString*>(scratch.v.h)->value;
+                    const String &str = static_cast<HeapString*>(scratch.v.h)->value;
                     ss << jsonnet_unparse_escape(str);
                 }
                 break;
@@ -2235,7 +2234,7 @@ namespace {
             return ss.str();
         }
 
-        std::string manifestString(const LocationRange &loc)
+        String manifestString(const LocationRange &loc)
         {
             if (scratch.t != Value::STRING) {
                 std::stringstream ss;
@@ -2258,7 +2257,7 @@ namespace {
             }
             auto *obj = static_cast<HeapObject*>(scratch.v.h);
             runInvariants(loc, obj);
-            std::map<std::string, const Identifier*> fields;
+            std::map<String, const Identifier*> fields;
             for (const auto &f : objectFields(obj, true)) {
                 fields[f->name] = f;
             }
@@ -2268,12 +2267,12 @@ namespace {
                 stack.top().val = scratch;
                 evaluate(body, stack.size());
                 auto vstr = string ? manifestString(body->location)
-                                   : manifestJson(body->location, true, "");
+                                   : manifestJson(body->location, true, U"");
                 // Reset scratch so that the object we're manifesting doesn't
                 // get GC'd.
                 scratch = stack.top().val;
                 stack.pop();
-                r[f.first] = vstr;
+                r[encode_utf8(f.first)] = encode_utf8(vstr);
             }
             return r;
         }
@@ -2293,9 +2292,9 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
                    import_callback, ctx);
     vm.evaluate(ast, 0);
     if (string_output) {
-        return vm.manifestString(LocationRange("During manifestation"));
+        return encode_utf8(vm.manifestString(LocationRange("During manifestation")));
     } else {
-        return vm.manifestJson(LocationRange("During manifestation"), true, "");
+        return encode_utf8(vm.manifestJson(LocationRange("During manifestation"), true, U""));
     }
 }
 

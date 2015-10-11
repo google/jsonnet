@@ -260,8 +260,8 @@ namespace {
 
     /** Stores a simple string on the heap. */
     struct HeapString : public HeapEntity {
-        const std::string value;
-        HeapString(const std::string &value)
+        const String value;
+        HeapString(const String &value)
           : value(value)
         { }
     };
