@@ -39,6 +39,18 @@ limitations under the License.
         else
             std.join("", std.makeArray(len, function(i) str[i + from])),
 
+    startsWith(a, b):
+        if std.length(a) < std.length(b) then
+            false
+        else
+            std.substr(a, 0, std.length(b)) == b,
+
+    endsWith(a, b):
+        if std.length(a) < std.length(b) then
+            false
+        else
+            std.substr(a, std.length(a) - std.length(b), std.length(b)) == b,
+
     stringChars(str)::
         std.makeArray(std.length(str), function(i) str[i]),
 
@@ -75,6 +87,8 @@ limitations under the License.
 
     range(from, to)::
         std.makeArray(to - from + 1, function(i) i + from),
+
+    count(arr, x):: std.length(std.filter(function(v) v==x, arr)),
 
     mod(a, b)::
         if std.type(a) == "number" && std.type(b) == "number" then

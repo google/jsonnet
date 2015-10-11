@@ -94,6 +94,9 @@ std.assertEqual(std.type({}), "object") &&
 std.assertEqual(std.type("fail"), "string") &&
 std.assertEqual(std.type(""+{}), "string") &&
 
+std.assertEqual(std.count([true, false, false, true, true, true, false], true), 4) &&
+std.assertEqual(std.count([true, false, false, true, true, true, false], false), 3) &&
+
 std.assertEqual(std.filter(function(x)x%2==0, [1,2,3,4]), [2,4]) &&
 std.assertEqual(std.filter(function(x)false, [1,2,3,4]), []) &&
 std.assertEqual(std.filter(function(x)x, []), []) &&
@@ -139,6 +142,16 @@ std.assertEqual(std.toString([1,2,"foo"]), "[1, 2, \"foo\"]") &&
 
 std.assertEqual(std.substr("cookie", 1, 3), "ook") &&
 std.assertEqual(std.substr("cookie", 1, 0), "") &&
+
+std.assertEqual(std.startsWith("food", "foo"), true) &&
+std.assertEqual(std.startsWith("food", "food"), true) &&
+std.assertEqual(std.startsWith("food", "foody"), false) &&
+std.assertEqual(std.startsWith("food", "wat"), false) &&
+
+std.assertEqual(std.endsWith("food", "ood"), true) &&
+std.assertEqual(std.endsWith("food", "food"), true) &&
+std.assertEqual(std.endsWith("food", "omgfood"), false) &&
+std.assertEqual(std.endsWith("food", "wat"), false) &&
 
 std.assertEqual(std.codepoint("a"), 97) &&
 std.assertEqual(std.char(97), "a") &&
