@@ -28,7 +28,8 @@ local libservice = import "lib/libservice.jsonnet";
     },
 
     // Simple case -- one machine serving this Python script.
-    helloworld: libhttp.GcpStandardFlask + libservice.UniCluster("us-central1-f") {
+    helloworld: libhttp.GcpStandardFlask {
+        zones: ["us-central1-f"],
         uwsgiModuleContent: |||
             import flask
             import socket
@@ -45,7 +46,7 @@ local libservice = import "lib/libservice.jsonnet";
         httpPort: 8080,
         zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
         versions: {
-            v1: service.StandardVersion {
+            v1: service.BaseVersion {
                 uwsgiModuleContent: |||
                     import flask
                     import socket
@@ -55,7 +56,7 @@ local libservice = import "lib/libservice.jsonnet";
                         return 'Hello from %s!' % socket.gethostname()
                 |||,
             },
-            v2: service.StandardVersion {
+            v2: service.BaseVersion {
                 uwsgiModuleContent: |||
                     import flask
                     import socket

@@ -1,3 +1,4 @@
+
 # Copyright 2015 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{
-    google: {
-        kind: "Google",
-        project: "readable-name-123",  // Change this.
-        region: "us-central1",  // Maybe change this.
-        // Download this file from the developers console.
-        serviceAccount: import "service_account.json",
-        sshUser: "yourusername"  // Change this.
-    },
-    amazon: {
-        kind: "Amazon",
-        region: "us-west-1",  // Maybe change this.
-        sshUser: "yourusername"  // Change this.
-    },
-}
+import datetime
+import json
+
+def jsonstr(v):
+    return json.dumps(v, sort_keys=True, indent=4, separators=(',', ': '))
+
+def utc_now():
+    class UTC(datetime.tzinfo):
+      def utcoffset(self, dt):
+        return datetime.timedelta(0)
+      def tzname(self, dt):
+        return "UTC"
+      def dst(self, dt):
+        return datetime.timedelta(0)
+    now = datetime.datetime.now(UTC())
+
+
+# Merge b into a, prefering b on conflicts
+def merge_into(a, b):
+    for k, v in b.iteritems():
+        a[k] = v
+
+

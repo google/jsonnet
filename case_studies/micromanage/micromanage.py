@@ -16,7 +16,6 @@ import collections
 import copy
 import datetime
 import json
-import jsonschema
 import re
 import sys
 import shutil
@@ -24,69 +23,81 @@ import signal
 import subprocess
 import sys
 import tempfile
+import traceback
 
 import _jsonnet
 
 from service import *
 from service_google import *
+from service_amazon import *
+from util import *
 
-from util_google import *
+import validate
 
-
-service_kinds = {
+service_compilers = {
     'Google': GoogleService(),
+    'Amazon': AmazonService(),
 }
     
-blueprint_schema = {
-    '$schema': 'http://json-schema.org/schema#',
-    'type': 'object',
-    'properties' : {
-        'environments': {
-            'type': 'object',
-            'additionalProperties': GoogleService().environmentSchema,
-            #'additionalProperties': {
-            #    'oneOf': [
-            #        GoogleService().environmentSchema,
-            #    ],
-            #}
-        },
-    },
-    'required': ['environments'],
-    #'additionalProperties': {
-    #    'id': 'service',
-    #    'oneOf': [
-    #        GoogleService().serviceSchema,
-    #    ],
-    #},
-    'additionalProperties': GoogleService().serviceSchema,
-}
+def get_compiler(config, service):
+    environments = config['environments']
+    environment = environments[service.get('environment', 'default')]
+    return service_compilers[environment['kind']], environment
+    
 
-class ConfigError (Exception):
-    pass
-
-
-def path_to_string(path):
-    arr = []
-    for x in path:
-        if isinstance(x, int):
-            arr += '[%d]' % x
-        else:
-            arr += '.%s' % x
-    return ''.join(arr)
-
+def config_check_service(environments, ctx, service_name, service):
+    try:
+        ctx = ctx + [service_name] 
+        validate.value(ctx, service, 'object')
+        env_name = validate.obj_field_opt(ctx, service, 'environment', 'string')
+        default = env_name is None
+        if default:
+            env_name = 'default'
+        env = environments.get(env_name)
+        if env is None:
+            if default:
+                raise validate.ConfigError(('The service at %s has no environment field, and no ' +
+                                            'environment called "default" exists.')
+                                            % validate.render_path(ctx))
+            else:
+                raise validate.ConfigError('In %s, unrecognized environment %s'
+                                  % (validate.render_path(ctx), env_name))
+        compiler = service_compilers.get(env['kind'])
+        compiler.validateService(ctx, service_name, service)
+        for child_name, child in compiler.children(service):
+            config_check_service(environments, ctx, child_name, child)
+    except validate.ConfigError as e:
+        if e.note is None:
+            e.note = ('Did you mean for %s to be a visible field (: instead of ::)?'
+                      % validate.render_path(ctx))
+        raise
+    
+def services(config):
+    for service_name, service in config.iteritems():
+        if service_name == 'environments':
+            continue
+        yield service_name, service
 
 def config_check(config):
-    try:        
-        jsonschema.validate(config, blueprint_schema)
-    except jsonschema.ValidationError as e:
-        raise ConfigError('Config error: %s in $%s' % (e.message, path_to_string(e.absolute_path)))
+    validate.value('top level', config, 'object')
+    environments = validate.obj_field('top level', config, 'environments', 'object')
 
-    # Check that service environments all exist
-    for service_name, service in config.iteritems():
-        if service_name != 'environments':
-            environment_name = service.get('environment', 'default')
-            if not config['environments'].get(environment_name):
-                raise ConfigError('Config error: No such environment %s in service %s' % (environment_name, service_name))
+    # Check environments
+    environments = config.get('environments')
+    if not isinstance(environments, dict):
+        raise validate.ConfigError('Must have an object in $.environments.')
+    for env_name, env in environments.iteritems():
+        kind_name = validate.obj_field('environment %s' % env_name, env, 'kind', 'string')
+        compiler = service_compilers.get(kind_name)
+        if not compiler:
+            raise validate.ConfigError('Unrecognized kind "%s" in environment %s' % (kind_name, env_name))
+        
+        compiler.validateEnvironment(env_name, env)
+
+    # Check services
+    for service_name, service in services(config):
+        config_check_service(environments, [], service_name, service)
+
             
 ext_vars = {}  # For Jsonnet evaluation
 search_paths = [  # Where we look for imported jsonnet files
@@ -137,41 +148,84 @@ def config_load(filename, ext_vars):
     config = json.loads(text)
     try:
         config_check(config)
-    except ConfigError as e:
-        sys.stderr.write(e.message)
-        sys.stderr.write('\n')
+    except validate.ConfigError as e:
+        traceback.print_exc()
+        sys.stderr.write('Config error: %s\n' % e.message)
+        if e.note:
+            sys.stderr.write('%s\n' % e.note)
         sys.exit(1)
     return config
 
 
-# Merge b into a, prefering b on conflicts
-def merge_into(a, b):
-    for k, v in b.iteritems():
-        a[k] = v
+def preprocess(config):
+    """Return a copy of the config with ${-} handled."""
+
+    def aux(ctx, service_name, service):
+        compiler, _ = get_compiler(config, service)
+        r2 = compiler.preprocess(ctx, service_name, service)
+        ctx = ctx + [service_name]
+        for child_name, child in compiler.children(service):
+            r2[child_name] = aux(ctx, child_name, child)
+        return r2
+
+    r = {
+        'environments': config['environments'],
+    }
+
+    for service_name, service in services(config):
+        r[service_name] = aux([], service_name, service)
+
+    return r
+
+def get_build_artefacts(config):
+    """Create all required build artefacts, modify config to refer to them."""
+
+    def aux(ctx, service_name, service):
+        compiler, environment = get_compiler(config, service)
+        new_service, service_barts = compiler.getBuildArtefacts(environment, ctx, service)
+        ctx = ctx + [service_name]
+        for child_name, child in compiler.children(service):
+            new_child, child_barts = aux(ctx, child_name, child)
+            merge_into(service_barts, child_barts)
+            new_service[child_name] = new_child
+        return new_service, service_barts
+
+    barts = {}
+    new_config = {
+        'environments': config['environments'],
+    }
+    for service_name, service in services(config):
+        new_service, service_barts = aux([], service_name, service)
+        new_config[service_name] = new_service
+        merge_into(barts, service_barts)
+    return new_config, barts
 
 
-# Build a Terraform and packer config for all services
-def compile(config):
-    extras, packers, tfs = {}, {}, {}
-    environments = config['environments']
-    for environment_name, environment in environments.iteritems():
-        artefacts = service_kinds[environment['kind']].compileProvider(config, environment_name)
-        merge_into(extras, artefacts['extras'])
-        merge_into(tfs, artefacts['tfs'])
+def compile(config, barts):
+    def aux(ctx, service_name, service):
+        compiler, _ = get_compiler(config, service)
+        service_tfs = compiler.compile(ctx, service_name, service, barts)
+        ctx = ctx + [service_name]
+        for child_name, child in compiler.children(service):
+            merge_into(service_tfs, aux(ctx, child_name, child))
+        return service_tfs
 
-    for service_name, service in config.iteritems():
-        if service_name != 'environments':
-            artefact_collections = service_kinds[service['kind']].compile(environments, '', service_name, service)
-            for artefacts in artefact_collections:
-                merge_into(extras, artefacts['extras'])
-                merge_into(packers, artefacts['packers'])
-                merge_into(tfs, artefacts['tfs'])
+    tfs = {}
 
-    return extras, packers, tfs
+    for service_name, service in services(config):
+        merge_into(tfs, aux([], service_name, service))
 
+    for environment_name, environment in config['environments'].iteritems():
+        compiler = service_compilers[environment['kind']]
+        tf_dict = compiler.compileProvider(environment_name, environment)
+        merge_into(tfs, tf_dict)
 
-def jsonstr(v):
-    return json.dumps(v, sort_keys=True, indent=4, separators=(',', ': '))
+    # Avoid a warning from Terraform that there are no tf files
+    if not len(tfs):
+        tfs['empty.tf'] = {}
+
+    return tfs
+
 
 
 def confirmation_dialog(msg):
@@ -186,61 +240,6 @@ def confirmation_dialog(msg):
     return choice
 
 
-def output_generate(config, check_environment):
-    extras, packers, tfs = compile(config)
-    dirpath = tempfile.mkdtemp()
-    print 'Generated files are in %s' % dirpath
-
-    buildables = []
-    extra_files = []
-    packer_files = []
-    tf_files = []
-
-    # Output extras
-    for filename, string in extras.iteritems():
-        dirfilename = '%s/%s' % (dirpath, filename)
-        extra_files.append(dirfilename)
-        with open(dirfilename, 'w') as f:
-            f.write(string)
-
-    image_cache = {}  # Map project name to images
-
-    # Output packer configs
-    for filename, image in packers.iteritems():
-        dirfilename = '%s/%s' % (dirpath, filename)
-        packer_files.append(dirfilename)
-        with open(dirfilename, 'w') as f:
-            f.write(jsonstr(image))
-
-        if check_environment:
-            # TODO(dcunnin): Handle AWS
-            assert image['builders'][0]['type'] == 'googlecompute'
-            project = image['builders'][0]['project_id']
-            image_name = image['builders'][0]['image_name']
-            print 'Checking if image exists: %s/%s' % (project, image_name)
-            service_account_key_file = '%s/%s' % (dirpath, image['builders'][0]['account_file'])
-            if project in image_cache:
-                imgs = image_cache[project]
-            else:
-                imgs = [img[0] for img in google_get_images(project, service_account_key_file)]
-                image_cache[project] = imgs
-            if image_name not in imgs:
-                buildables.append(dirfilename)
-
-    # Avoid a warning from Terraform that there are no tf files
-    if not len(tfs):
-        tfs['empty.tf'] = {}
-
-    # Output Terraform configs
-    for filename, tf in tfs.iteritems():
-        dirfilename = '%s/%s' % (dirpath, filename)
-        tf_files.append(dirfilename)
-        with open(dirfilename, 'w') as f:
-            f.write(jsonstr(tf))
-
-    return buildables, dirpath, extra_files, packer_files, tf_files
-
-
 def output_delete(dirpath):
     shutil.rmtree(dirpath)
 
@@ -252,21 +251,55 @@ def action_blueprint(config_file, config, args):
     print(jsonstr(config))
         
 
-def action_schema(config_file, config, args):
-    if args:
-        sys.stderr.write('Action "schema" accepts no arguments, but got:  %s\n' % ' '.join(args))
-        sys.exit(1)
-    print(jsonstr(blueprint_schema))
-        
+def generate(dirpath, config, do_build):
+    files = []
+
+    config = preprocess(config)
+    config, barts = get_build_artefacts(config)
+
+    for bart_name, bart in barts.iteritems():
+        bart.outputFiles(dirpath)
+        files += bart.getOutputFiles(dirpath)
+
+    if not do_build:
+        barts = {}
+
+    barts_to_build = {}
+    # Output build artefact files
+    for bart_name, bart in barts.iteritems():
+        if bart.needsBuild():
+            barts_to_build[bart_name] = bart
+
+    for bart_name, bart in barts_to_build.iteritems():
+        bart.doBuild(dirpath)
+
+    for bart_name, bart in barts_to_build.iteritems():
+        bart.wait()
+
+    for bart_name, bart in barts.iteritems():
+        bart.postBuild()
+
+    tfs = compile(config, barts)
+
+    # Output Terraform configs
+    for filename, tf in tfs.iteritems():
+        dirfilename = '%s/%s' % (dirpath, filename)
+        files += [dirfilename]
+        with open(dirfilename, 'w') as f:
+            f.write(jsonstr(tf))
+
+    return files
+
 
 def action_generate_to_editor(config_file, config, args):
     if args:
         sys.stderr.write('Action "generate-to-editor" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
-    buildables, dirpath, extra_files, packer_files, tf_files = output_generate(config, False)
-    command = [os.getenv('EDITOR')] + extra_files + packer_files + tf_files
-    tf_process = subprocess.Popen(command)
-    tf_process.wait()
+    dirpath = tempfile.mkdtemp()
+    files = generate(dirpath, config, False)
+    command = [os.getenv('EDITOR')] + files
+    process = subprocess.Popen(command)
+    process.wait()
     output_delete(dirpath)
 
 
@@ -275,27 +308,8 @@ def action_apply(config_file, config, args):
         sys.stderr.write('Action "apply" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
-    buildables, dirpath, extra_files, packer_files, tf_files = output_generate(config, True)
-
-    # Run packer
-    # TODO(dcunnin): Do we need to handle ctrl+C better?
-    #def signal_handler(signal, frame):
-    #    print('You pressed Ctrl+C!')
-    #    sys.exit(0)
-    #signal.signal(signal.SIGINT, signal_handler)
-    packer_processes = []
-    for packer_file in buildables:
-        command = ['packer', 'build', packer_file]
-        logfilename = '%s.log' % packer_file
-        print '%s > %s' % (' '.join(command), logfilename)
-        with open(logfilename, 'w') as logfile:
-            p = subprocess.Popen(command, stdout=logfile, cwd=dirpath)
-            packer_processes.append(p)
-    for p in packer_processes:
-        exitcode = p.wait()
-        if exitcode != 0:
-            sys.stderr.write('Error from packer, aborting.\n')
-            sys.exit(1)
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, True)
 
     state_file = config_file + '.tfstate'
 
@@ -331,7 +345,8 @@ def action_destroy(config_file, config, args):
         sys.stderr.write('Action "apply" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
-    buildables, dirpath, extra_files, packer_files, tf_files = output_generate(config, False)
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, False)
     command = ['terraform', 'destroy', '-force', '-state', '%s/%s.tfstate' % (os.getcwd(), config_file)]
     tf_process = subprocess.Popen(command, cwd=dirpath)
     exitcode = tf_process.wait()
@@ -343,50 +358,66 @@ def action_destroy(config_file, config, args):
 
 
 def action_image_gc(config_file, config, args):
-    extras, packers, tfs = compile(config)
+    config = preprocess(config)
+    config, barts = get_build_artefacts(config)
+
     used_images = collections.defaultdict(lambda: [])
-    all_images = {}
+    google_images = {}
+    amazon_amis = {}
 
-    class UTC(datetime.tzinfo):
-      def utcoffset(self, dt):
-        return datetime.timedelta(0)
-      def tzname(self, dt):
-        return "UTC"
-      def dst(self, dt):
-        return datetime.timedelta(0)
-    now = datetime.datetime.now(UTC())
 
-    # Output packer configs
-    for filename, image in packers.iteritems():
-        # TODO(dcunnin): Handle AWS 
-        assert image['builders'][0]['type'] == 'googlecompute'
-        project = image['builders'][0]['project_id']
-        image_name = image['builders'][0]['image_name']
-        used_images[project].append(image_name)
+    for bart_name, bart in barts.iteritems():
+        environment = bart.environment
+        if environment['kind'] == 'Google':
+            project = environment['project']
+            used_images[project].append(bart.name())
+            if project not in google_images:
+                image_tuples = google_get_images_json_key(project, environment['serviceAccount'])
+                google_images[project] = image_tuples
+        elif environment['kind'] == 'Amazon':
+            access_key = environment['accessKey']
+            used_images[access_key].append(bart.name())
+            if access_key not in amazon_amis:
+                image_tuples = amazon_get_images(environment['region'], access_key, environment['secretKey'])
+                amazon_amis[access_key] = [image_tuple + (environment,) for image_tuple in image_tuples]
+        else:
+            raise RuntimeError('Got invalid enviroment kind: "%s"' % iamge_type)
 
-        service_account_key_json = extras[image['builders'][0]['account_file']]
-        service_account_key_json = json.loads(service_account_key_json)
-        if project not in all_images:
-            imgs = google_get_images_json_key(project, service_account_key_json)
-            all_images[project] = imgs
 
-    got_any = False
     # Delete all images older than X which are not currently in a version / module
-    for project, imgs in all_images.iteritems():
+    got_any_google = False
+    for project, imgs in google_images.iteritems():
         mmimgs = [img for img in imgs if img[0].startswith('micromanage-') and not img[0] in used_images[project]]
         for img in mmimgs:
             if (now - img[1]).days > 7:
-                if not got_any:
-                    got_any = True
-                    print 'Execute the following commands to clean up images:'
+                if not got_any_google:
+                    got_any_google = True
+                    print 'Execute the following commands to clean up Google images:'
                 print 'gcloud --project=%s compute images delete -q %s  # %s days old' % (project, img[0],  (now - img[1]).days)
-    if not got_any:
-        print 'There were no images to clean up.'
+    if not got_any_google:
+        print 'There were no Google images to clean up.'
+
+    got_any_amazon = False
+    for access_key, imgs in google_images.iteritems():
+        mmimgs = [img for img in imgs if img[0].startswith('micromanage-') and not img[0] in used_images[access_key]]
+        for img in mmimgs:
+            img_name, img_creation_timestamp, env = img
+            days_old = (now - img_creation_timestamp).days 
+            if days_old > 7:
+                if not got_any_amazon:
+                    got_any_amazon = True
+                    print 'Execute the following commands to clean up Amazon AMIs:'
+                region = img[2]['region']
+                secret_key = img[2]['secretKey']
+                print 'ec2-deregister --region %s --aws-access-key %s --aws-secret-key %s %s  # %s days old' % (region, access_key, secret_key, img_name,  days_old)
+                #TODO(dcunnin): need to delete by snapshot-id, not by ami id
+                print 'ec2-delete-snapshot --region %s --aws-access-key %s --aws-secret-key %s %s  # %s days old' % (region, access_key, secret_key, img_name, days_old)
+    if not got_any_amazon:
+        print 'There were no Amazon AMIs to clean up.'
 
 
 actions = {
     'blueprint': action_blueprint,
-    'schema': action_schema,
     'generate-to-editor': action_generate_to_editor,
     'apply': action_apply,
     'destroy': action_destroy,

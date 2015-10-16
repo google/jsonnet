@@ -1,7 +1,12 @@
 local libimgcmd = import "lib/libimgcmd.jsonnet";
 local libservice = import "lib/libservice.jsonnet";
-local libcassandra = import "lib/libcassandra.jsonnet";
+local libcassandra = import "lib/libcassandra-v2.jsonnet";
 local libhttp = import "lib/libhttp.jsonnet";
+
+// TODO(dcunnin):  Add to stdlib.
+local resolve_path(f, r) =
+    local arr = std.split(f, "/");
+    std.join("/", std.makeArray(std.length(arr)-1, function(i)arr[i]) + [r]);
 
 
 {
@@ -12,7 +17,7 @@ local libhttp = import "lib/libhttp.jsonnet";
     cassandraUserPass:: error "Must override cassandraUserPass",
     cassandraRootPass:: error "Must override cassandraRootPass",
     cassandraKeyspace:: "fractal",
-    cassandraNodes:: ["db-n1", "db-n2", "db-n3", "db-n4", "db-n5"],
+    cassandraNodes:: ["fractal-db-n1", "fractal-db-n2", "fractal-db-n3", "fractal-db-n4", "fractal-db-n5"],
     tilegenPort:: 8080,
 
     // Configuration shared by the application server and tile generation nodes.
@@ -21,7 +26,6 @@ local libhttp = import "lib/libhttp.jsonnet";
         height: 256,
         thumb_width: 64,
         thumb_height: 64,
-        db_endpoints: app.cassandraNodes,
     },
 
     ImageMixin:: {
@@ -29,69 +33,74 @@ local libhttp = import "lib/libhttp.jsonnet";
         aptPackages +: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
     },
 
-    AppservTemplate:: libhttp.GcpStandardFlask {
-        local service = self,
-        dnsSuffix: app.dnsSuffix,
-        tilegen:: error "Appserv needs tilegen field",
 
-        versions: {
-            latest: self.v3,
-            v3: service.StandardVersion {
-                StandardRootImage+: app.ImageMixin {
-                    pipPackages +: ["httplib2", "cassandra-driver", "blist"],
-                },
-                local version = self,
-                conf:: app.ApplicationConf {
-                    database: app.cassandraKeyspace,
-                    database_name: app.cassandraKeyspace,
-                    database_user: app.cassandraUser,
-                    database_pass: app.cassandraUserPass,
-                    tilegen_port: app.tilegenPort,
-                },
-                module: "main",  // Entrypoint in the Python code.
-                uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
-                // Copy website content and code.
-                httpContentCmds+: [
-                    "echo '${google_compute_address.%s.address} tilegen' >> /etc/hosts" % service.tilegen,
-                    libimgcmd.CopyFile { from: "appserv/*", to: "/var/www" },
-                    libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
-                ],
-                zones: ["us-central1-c", "us-central1-b", "us-central1-f"],
+    zone: libservice.GcpZone {
+        dnsName: app.dnsSuffix,
+    },
+
+    www: libservice.GcpRecordWww {
+        zone: app.zone,
+        zoneName: "fractal-zone",
+        target: "fractal-appserv",
+    },
+
+    appserv: libhttp.GcpStandardFlask {
+        local service = self,
+        dnsZone: app.zone,
+        dnsZoneName: "fractal-zone",
+
+        BaseVersion+: {
+            StandardRootImage+: app.ImageMixin {
+                pipPackages +: ["httplib2", "cassandra-driver", "blist"],
             },
+            local version = self,
+            conf:: app.ApplicationConf {
+                database: app.cassandraKeyspace,
+                db_endpoints: app.cassandraNodes,
+                database_name: app.cassandraKeyspace,
+                database_user: app.cassandraUser,
+                database_pass: app.cassandraUserPass,
+                tilegen_port: app.tilegenPort,
+            },
+            module: "main",  // Entrypoint in the Python code.
+            uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
+            // Copy website content and code.
+            httpContentCmds+: [
+                "echo '%s tilegen' >> /etc/hosts" % app.tilegen.refAddress("fractal-tilegen"),
+                libimgcmd.CopyFile { from: resolve_path(std.thisFile, "appserv/*"), to: "/var/www" },
+                libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
+            ],
         },
     },
 
-    TilegenTemplate:: libhttp.GcpStandardFlask {
+    tilegen: libhttp.GcpStandardFlask {
         local service = self,
-        dnsSuffix: app.dnsSuffix,
+        dnsZone: app.zone,
+        dnsZoneName: "fractal-zone",
+
         httpPort: app.tilegenPort,
-        versions: {
-            latest: self.v4,
-            v4: service.StandardVersion {
-                StandardRootImage+: app.ImageMixin {
-                    aptPackages +: ["g++", "libpng-dev"],
-                },
-                local version = self,
-                srcDir:: "tilegen3",
-                conf:: app.ApplicationConf {
-                    iters: 200,
-                },
-                module: "mandelbrot_service",
-                httpContentCmds+: [
-                    libimgcmd.CopyFile { from: version.srcDir + "/*", to: "/var/www" },
-                    "g++ -Wall -Wextra -ansi -pedantic -O3 -ffast-math -g /var/www/mandelbrot.cpp -lpng -o /var/www/mandelbrot",
-                    libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
-                ],
-                zones: ["us-central1-c", "us-central1-b", "us-central1-f"],
+        BaseVersion+: {
+            StandardRootImage+: app.ImageMixin {
+                aptPackages +: ["g++", "libpng-dev"],
             },
+            local version = self,
+            srcDir:: "tilegen3",
+            conf:: app.ApplicationConf {
+                iters: 200,
+            },
+            module: "mandelbrot_service",
+            httpContentCmds+: [
+                libimgcmd.CopyFile { from: resolve_path(std.thisFile, "tilegen/*"), to: "/var/www" },
+                "g++ -Wall -Wextra -ansi -pedantic -O3 -ffast-math -g /var/www/mandelbrot.cpp -lpng -o /var/www/mandelbrot",
+                libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
+            ],
         },
-
     },
 
-    DbTemplate:: libcassandra.GcpDebianCassandra {
+    db: libcassandra.GcpDebianCassandra {
         local db = self,
-
-        dnsSuffix: app.dnsSuffix,
+        dnsZone: app.zone,
+        dnsZoneName: "fractal-zone",
 
         clusterName: "fractal-cluster",
         rootPassword: app.cassandraRootPass,
@@ -112,10 +121,9 @@ local libhttp = import "lib/libhttp.jsonnet";
                 ],
             },
         },
-        StarterNode+: {
+
+        StarterNode(rep): super.StarterNode(rep) + {
             local starter = self,
-            initReplication: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
-            initAuthReplication: self.initReplication,
 
             local cql_insert(uuid, x, y, l, n) =
                 "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
@@ -145,27 +153,9 @@ local libhttp = import "lib/libhttp.jsonnet";
         },
 
         nodes: {
-            n1: db.StarterNode {
-                zone: "us-central1-c",
+            n1: db.StarterNode(1) {
             },
         },
-
-    },
-
-    DnsZoneTemplate:: libservice.GcpZone {
-        local service = self,
-        dnsName: app.dnsSuffix,
-        infrastructure+: {
-            google_dns_record_set+: {
-                www: {
-                    managed_zone: "${google_dns_managed_zone.${-}.name}",
-                    name: "www." + service.dnsName,
-                    type: "CNAME",
-                    ttl: 300,
-                    rrdatas: ["appserv." + service.dnsName],
-                },
-            }
-        }
     },
 
 }

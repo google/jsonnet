@@ -12,37 +12,88 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import json
+import dateutil.parser
 import re
 
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import GoogleCredentials
+from oauth2client.client import SignedJwtAssertionCredentials
+from googleapiclient.discovery import build
+
+from packer import *
 from service import *
+from util import *
+import validate
+
+IMAGE_CACHE = {}
+
+def google_get_images_json_key(project, key_json):
+    credentials = SignedJwtAssertionCredentials(
+        key_json['client_email'],
+        key_json['private_key'],
+        scope='https://www.googleapis.com/auth/compute')
+        
+    compute = build('compute', 'v1', credentials=credentials)
+    images = compute.images().list(project=project).execute()
+    items = images.get('items', [])
+    return [(i['name'], dateutil.parser.parse(i['creationTimestamp'])) for i in items]
+
+
+class GooglePackerBuildArtefact(PackerBuildArtefact):
+    def __init__(self, image, environment):
+        super(GooglePackerBuildArtefact, self).__init__(image['cmds'])
+
+        self.machineType = image['machine_type']
+        self.source = image['source']
+        self.zone = image['zone']
+        self.project = environment['project']
+        self.sshUser = environment['sshUser']
+        self.serviceAccount = environment['serviceAccount']
+
+    def builderHashCode(self):
+        builder_hash = 0;
+        builder_hash ^= hash_string(self.machineType)
+        builder_hash ^= hash_string(self.source)
+        builder_hash ^= hash_string(self.zone)
+        return builder_hash
+
+    def builder(self):
+        return {
+            'name': self.name(),
+            'image_name': self.name(),
+            'instance_name': self.name(),
+
+            'type': 'googlecompute',
+            'image_description': 'Image built by micromanage',
+            'project_id': self.project,
+            'account_file': json.dumps(self.serviceAccount),
+            'machine_type': self.machineType,
+            'source_image': self.source,
+            'zone': self.zone,
+            'ssh_username': self.sshUser,
+        }
+
+    def needsBuild(self):
+        print 'Checking if image exists: %s/%s' % (self.project, self.name())
+        if self.project in IMAGE_CACHE:
+            existing_image_names = IMAGE_CACHE[self.project]
+        else:
+            existing_image_names = [img[0] for img in google_get_images_json_key(self.project, self.serviceAccount)]
+            IMAGE_CACHE[self.project] = existing_image_names
+        return self.name() not in existing_image_names
+
+    def doBuild(self, dirpath):
+        super(GooglePackerBuildArtefact, self).doBuild(dirpath)
+        if self.project not in IMAGE_CACHE:
+            IMAGE_CACHE[self.project] = []
+        IMAGE_CACHE[self.project] += [self.name()]
+
+    def postBuild(self):
+        pass
 
 class GoogleService(Service):
-
-    environmentSchema = {
-        'type': 'object',
-        'properties': {
-            'kind': {'enum': ['Google']},
-            'project': {'type': 'string'},
-            'region': {'type': 'string'},
-            'serviceAccount': {
-                'type': 'object',
-                'properties': {
-                    'private_key_id': {'type': 'string'},
-                    'private_key': {'type': 'string'},
-                    'client_email': {'type': 'string'},
-                    'client_id': {'type': 'string'},
-                    'type': {'enum': ['service_account']},
-
-                },
-                'required': ['private_key', 'client_email'],
-                'additionalProperties': False,
-            },
-            'sshUser': {'type': 'string'},
-        },
-        'required': ['kind', 'project', 'region', 'serviceAccount', 'sshUser'],
-        'additionalProperties': False,
-    }
 
     imageSchema = {
         'type': 'object',
@@ -59,7 +110,6 @@ class GoogleService(Service):
         'type': 'object',
         'properties' : {
             'environment' : {'type' : 'string'},
-            'kind' : {'type' : 'string'},
             'children': {
                 'type': 'object',
                 'additionalProperties': {'$ref': '#/additionalProperties'},
@@ -139,7 +189,7 @@ class GoogleService(Service):
             },
         },
         'required': [
-            'kind', 
+            'environment', 
             'infrastructure', 
             'outputs',
             'children',
@@ -147,116 +197,72 @@ class GoogleService(Service):
         'additionalProperties': False,
     }
 
-    def compilePackerImage(self, environment_name, environment, service_name, service, image):
-        image_hash = 0;
-        image_hash ^= self.hashString(image['machine_type'])
-        image_hash ^= self.hashString(image['source'])
-        image_hash ^= self.hashString(image['zone'])
-        image_hash ^= self.hashProvisioners(image['cmds'])
+    def validateEnvironment(self, env_name, env):
+        ctx = 'Environment "%s"' % env_name
+        fields = ['kind', 'project', 'region', 'sshUser', 'serviceAccount']
+        validate.obj_only(ctx, env, fields)
+        validate.obj_field(ctx, env, 'project', 'string')
+        validate.obj_field(ctx, env, 'region', 'string')
+        validate.obj_field(ctx, env, 'sshUser', 'string')
 
-        image_name = 'micromanage-%s' % self.encodeImageHash(image_hash)
-        provisioners = self.compileProvisioners(image['cmds'])
-        return {
-            'builders': [
-                {
-                    'type': 'googlecompute',
-                    'name': image_name,
-                    'image_name': image_name,
-                    'image_description': 'Image built by micromanage',
-                    'project_id': environment['project'],
-                    'account_file': environment_name + '-service-account-key.json',
-                    'machine_type': image['machine_type'],
-                    'source_image': image['source'],
-                    'instance_name': image_name,
-                    'zone': image['zone'],
-                    'ssh_username': environment['sshUser'],
-                }
-            ],
-            'provisioners': provisioners
-        }, image_name
+        acc = validate.obj_field(ctx, env, 'serviceAccount', validate.is_type('object'))
+        validate.obj_field(ctx + ' serviceAccount', acc, 'client_email', 'string')
+        validate.obj_field(ctx + ' serviceAccount', acc, 'private_key', 'string')
+        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'type', validate.is_value('service_account'))
+        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'client_id', 'string')
+        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'private_key_id', 'string')
+        fields = ['client_email', 'private_key', 'type', 'client_id', 'private_key_id']
+        validate.obj_only(ctx + ' serviceAccount', acc, fields)
 
-    def compileProvider(self, config, environment_name):
-        environment = config['environments'][environment_name]
-        terraform_file = 'environment.%s.tf' % environment_name
-        service_account_key_file = environment_name + '-service-account-key.json'
+    def compileProvider(self, environment_name, environment):
         return {
-            'tfs': {
-                terraform_file: {
-                    'provider': {
-                        'google': {
-                            'alias': environment_name,
-                            'account_file': json.dumps(environment['serviceAccount']),
-                            'project': environment['project'],
-                            'region' : environment['region'],
-                        },
+            'environment.%s.tf' % environment_name: {
+                'provider': {
+                    'google': {
+                        'alias': environment_name,
+                        'account_file': json.dumps(environment['serviceAccount']),
+                        'project': environment['project'],
+                        'region' : environment['region'],
                     },
                 },
             },
-            'extras': {
-                service_account_key_file: json.dumps(environment['serviceAccount'])
-            },
         }
 
-    def compile(self, environments, prefix, service_name, service):
-        service_name = prefix + service_name
-        environment_name = service.get('environment', 'default')
-        environment = environments[environment_name]
-        environment_name_tf = 'google.%s' % environment_name
+    def getBuildArtefacts(self, environment, ctx, service):
+        service = copy.deepcopy(service)
+        barts = {}  # Build artefacts.
+
         infra = service['infrastructure']
-        packers = {}
-        outputs = service['outputs']
-        children = service['children']
-
-
-        #def all_resources(sname, s):
-        #    other_infra = s['infrastructure']
-        #    r = []
-        #    for res_kind_name, resources in other_infra.iteritems():
-        #        for res_name in resources:
-        #            expanded_name = self.translateSelfName(sname, res_name)
-        #            r.append('%s.%s' % (res_kind_name, expanded_name))
-        #    return r
-        
-        # Translate ${-} to service name
-        def recursive_update(c):
-            if isinstance(c, dict):
-                return {
-                    recursive_update(k): recursive_update(v)
-                    for k, v in c.iteritems()
-                }
-            elif isinstance(c, list):
-                return [recursive_update(v) for v in c]
-            elif isinstance(c, basestring):
-                return self.translateSelfName(service_name, c)
-            else:
-                return c
-        infra = recursive_update(infra)
-        outputs = recursive_update(outputs)
-
-
-        # Add provider attributes
-        for res_kind_name, res_kind_obj in infra.iteritems():
-            for res_name, res in res_kind_obj.iteritems():
-                res['provider'] = environment_name_tf
-            
-        instances = infra.get('google_compute_instance') or {}
-        disks = infra.get('google_compute_disk') or {}
+        instances = infra.get('google_compute_instance', {})
+        disks = infra.get('google_compute_disk', {})
 
         # Process image configs
         for inst_name, inst in instances.iteritems():
             image = inst['disk'][0].get('image')
             if isinstance(image, dict):
-                packer, image_name = self.compilePackerImage(environment_name, environment, service_name, service, image)
-                inst['disk'][0]['image'] = image_name
-                packers[image_name + '.packer.json'] = packer
+                bart = GooglePackerBuildArtefact(image, environment)
+                barts[bart.name()] = bart
+                inst['disk'][0]['image'] = bart.name()
         for disk_name, disk in disks.iteritems():
             image = disk['image']
             if isinstance(image, dict):
-                packer, image_name = self.compilePackerImage(environment_name, environment, service_name, service, image)
-                disk['image'] = image_name
-                packers[image_name + '.packer.json'] = packer
+                bart = GooglePackerBuildArtefact(image, environment)
+                barts[bart.name()] = bart
+                disk['image'] = bart.name()
 
-        # Process commands
+        return service, barts
+
+
+    def compile(self, ctx, service_name, service, barts):
+        infra = service['infrastructure']
+
+        # Add provider attributes
+        for res_kind_name, res_kind_obj in infra.iteritems():
+            for res_name, res in res_kind_obj.iteritems():
+                res['provider'] = 'google.%s' % service['environment']
+            
+        # Process instance commands
+        instances = infra.get('google_compute_instance', {})
         for inst_name, inst in instances.iteritems():
             cmds = inst['cmds']
             boot_cmds = inst['bootCmds']
@@ -274,24 +280,13 @@ class GoogleService(Service):
             inst.pop('cmds', None)
             inst.pop('bootCmds', None)
 
-        terraform_file = 'service.%s.tf' % service_name
-
-        return [
-            {
-                'packers': packers,
-                'tfs': {
-                    terraform_file: {
-                        'resource': infra,
-                        'output': {
-                            k: { 'value': outputs[k] }
-                            for k in outputs
-                        }
-                    },
-                },
-                'extras': { },
+        return {
+            'service.%s.tf' % self.fullName(ctx, service_name): {
+                'resource': infra,
+                'output': {
+                    k: { 'value': v }
+                    for k, v in service['outputs'].iteritems()
+                }
             }
-        ] + [
-            artefacts
-            for child_name, child in children.iteritems()
-            for artefacts in self.compile(environments, '%s%s-' % (prefix, service_name), child_name, child)
-        ]
+        }
+

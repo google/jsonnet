@@ -118,7 +118,7 @@ local libos = import "libos.jsonnet";
                 authenticator: "PasswordAuthenticator",
                 cluster_name: service.clusterName,
             },
-            machine_type: "g1-small",
+            machine_type: "n1-standard-1",
             tags+: [service.clusterName],
 
             enableMonitoring: true,

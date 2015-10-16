@@ -1,10 +1,9 @@
 {
-    environments: import "testenv.jsonnet",
+    environments: import "../testenv.jsonnet",
 
     local SingleInstance = {
         local service = self,
 
-        kind: "Google",
         environment: "google",
 
         zone:: error "Must override zone.",
@@ -33,7 +32,6 @@
                 }
             }
         },
-        children: {},
         outputs: {
             [if service.externalIp then "address"]:
                 "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}"
@@ -41,24 +39,20 @@
     },
 
     instances: {
-        kind: "Google",
         environment: "google",
         infrastructure: {},
-        outputs: {},
-        children: {
-            wheezy: SingleInstance {
-                image: "debian-7-wheezy-v20140814",
-                zone: "us-central1-b",
-            },
-            ubuntu: SingleInstance {
-                image: "ubuntu-1410-utopic-v20150625",
-                zone: "us-central1-c",
-            },
-            "core-os": SingleInstance {
-                image: "coreos-stable-717-3-0-v20150710",
-                zone: "us-central1-f",
-                externalIp: true,
-            },
-        }
+        wheezy: SingleInstance {
+            image: "debian-7-wheezy-v20140814",
+            zone: "us-central1-b",
+        },
+        ubuntu: SingleInstance {
+            image: "ubuntu-1504-vivid-v20150911",
+            zone: "us-central1-c",
+        },
+        "core-os": SingleInstance {
+            image: "coreos-stable-717-3-0-v20150710",
+            zone: "us-central1-f",
+            externalIp: true,
+        },
     }
 }
