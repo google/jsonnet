@@ -115,12 +115,12 @@ static std::string unparse(const AST *ast_)
     } else if (auto *ast = dynamic_cast<const ArrayComprehension*>(ast_)) {
         ss << "[";
         ss << unparse(ast->body);
-        for (const ArrayComprehension::Spec &spec : ast->specs) {
+        for (const ComprehensionSpec &spec : ast->specs) {
             switch (spec.kind) {
-                case ArrayComprehension::SPEC_IF:
+                case ComprehensionSpec::IF:
                 ss << " if " << unparse(spec.expr);
                 break;
-                case ArrayComprehension::SPEC_FOR:
+                case ComprehensionSpec::FOR:
                 ss << " for " << encode_utf8(spec.var->name);
                 ss << " in " << unparse(spec.expr);
                 break;
@@ -208,7 +208,7 @@ static std::string unparse(const AST *ast_)
             ss << "}";
         }
 
-    } else if (auto *ast = dynamic_cast<const ObjectComprehension*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple*>(ast_)) {
         ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
         ss << " for " << encode_utf8(ast->id->name) << " in " << unparse(ast->array);
         ss << "}";
@@ -543,6 +543,7 @@ namespace {
                     obj = alloc->make<Object>(span(tok, next), r, asserts2);
                     return next;
                 } else if (next.kind == Token::FOR) {
+                    // It's a comprehension
                     if (fields.size() != 1) {
                         auto msg = "Object comprehension can only have one field/value pair.";
                         throw StaticError(next.location, msg);
@@ -561,15 +562,11 @@ namespace {
                         auto msg = "Object comprehensions cannot have hidden fields.";
                         throw StaticError(next.location, msg);
                     }
-                    if (got_comma) {
-                        throw StaticError(next.location, "Unexpected comma before for.");
-                    }
-                    Token id_tok = popExpect(Token::IDENTIFIER);
-                    const Identifier *id = alloc->makeIdentifier(id_tok.data32());
-                    popExpect(Token::IN);
-                    AST *array = parse(MAX_PRECEDENCE, obj_level);
-                    Token last = popExpect(Token::BRACE_R);
-                    obj = alloc->make<ObjectComprehension>(span(tok, last), field, value, id, array);
+
+                    std::vector<ComprehensionSpec> specs;
+                    Token last = parseComprehensionSpecs(Token::BRACE_R, specs, obj_level);
+                    obj = alloc->make<ObjectComprehension>(span(tok, last), field, value, specs);
+
                     return last;
                 }
                 if (!got_comma)
@@ -677,6 +674,35 @@ namespace {
             } while (true);
         }
 
+        /** parses for x in expr for y in expr if expr for z in expr ... */
+        Token parseComprehensionSpecs(Token::Kind end,
+                                      std::vector<ComprehensionSpec> &specs,
+                                      unsigned obj_level)
+        {
+            while (true) {
+                LocationRange l;
+                Token id_token = popExpect(Token::IDENTIFIER);
+                const Identifier *id = alloc->makeIdentifier(id_token.data32());
+                popExpect(Token::IN);
+                AST *arr = parse(MAX_PRECEDENCE, obj_level);
+                specs.emplace_back(ComprehensionSpec::FOR, id, arr);
+
+                Token maybe_if = pop();
+                for (; maybe_if == Token::IF; maybe_if = pop()) {
+                    AST *cond = parse(MAX_PRECEDENCE, obj_level);
+                    specs.emplace_back(ComprehensionSpec::IF, nullptr, cond);
+                }
+                if (maybe_if.kind == end) {
+                    return maybe_if;
+                }
+                if (maybe_if.kind != Token::FOR) {
+                    std::stringstream ss;
+                    ss << "Expected for, if or " << end << " after for clause, got: " << maybe_if;
+                    throw StaticError(maybe_if.location, ss.str());
+                }
+            } 
+        }
+
         AST *parseTerminal(unsigned obj_level)
         {
             Token tok = pop();
@@ -727,30 +753,10 @@ namespace {
  
                     if (next.kind == Token::FOR) {
                         // It's a comprehension
-                        std::vector<ArrayComprehension::Spec> specs;
                         pop();
-                        while (true) {
-                            LocationRange l;
-                            Token id_token = popExpect(Token::IDENTIFIER);
-                            const Identifier *id = alloc->makeIdentifier(id_token.data32());
-                            popExpect(Token::IN);
-                            AST *arr = parse(MAX_PRECEDENCE, obj_level);
-                            specs.emplace_back(ArrayComprehension::SPEC_FOR, id, arr);
-
-                            Token maybe_if = pop();
-                            for (; maybe_if == Token::IF; maybe_if = pop()) {
-                                AST *cond = parse(MAX_PRECEDENCE, obj_level);
-                                specs.emplace_back(ArrayComprehension::SPEC_IF, nullptr, cond);
-                            }
-                            if (maybe_if.kind == Token::BRACKET_R) {
-                                return alloc->make<ArrayComprehension>(span(tok, maybe_if), first, specs);
-                            }
-                            if (maybe_if.kind != Token::FOR) {
-                                std::stringstream ss;
-                                ss << "Expected for, if or ] after for clause, got: " << maybe_if;
-                                throw StaticError(maybe_if.location, ss.str());
-                            }
-                        } 
+                        std::vector<ComprehensionSpec> specs;
+                        Token last = parseComprehensionSpecs(Token::BRACKET_R, specs, obj_level);
+                        return alloc->make<ArrayComprehension>(span(tok, last), first, specs);
                     }
 
                     // Not a comprehension: It can have more elements.

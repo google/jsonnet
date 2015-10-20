@@ -19,28 +19,40 @@ limitations under the License.
 #include "core/ast.h"
 
 LocationRange E;  // Empty.
-
+    
+/** Desugar Jsonnet expressions to reduce the number of constructs the rest of the implementation
+ * needs to understand.
+ *
+ * Desugaring should happen immediately after parsing, i.e. before static analysis and execution.
+ * Temporary variables introduced here should be prefixed with $ to ensure they do not clash with
+ * variables used in user code.
+ */
 class Desugarer {
 
     Allocator *alloc;
+
+    template <class T, class... Args> T* make(Args&&... args)
+    {
+        return alloc->make<T>(std::forward<Args>(args)...);
+    }
 
     const Identifier *id(const String &s)
     { return alloc->makeIdentifier(s); }
 
     Var *var(const Identifier *ident)
-    { return alloc->make<Var>(E, ident); }
+    { return make<Var>(E, ident); }
 
     Array *singleton(AST *body)
-    { return alloc->make<Array>(body->location, std::vector<AST*>{body}); }
+    { return make<Array>(body->location, std::vector<AST*>{body}); }
 
     Apply *length(AST *v)
     {
-        return alloc->make<Apply>(
+        return make<Apply>(
             v->location, 
-            alloc->make<Index>(
+            make<Index>(
                 E,
                 var(id(U"std")),
-                alloc->make<LiteralString>(E, U"length")),
+                make<LiteralString>(E, U"length")),
             std::vector<AST*>{v},
             true  // tailstrict
         );
@@ -64,13 +76,13 @@ class Desugarer {
                 desugar(el);
 
         } else if (auto *ast = dynamic_cast<ArrayComprehension*>(ast_)) {
-            for (ArrayComprehension::Spec &spec : ast->specs)
+            for (ComprehensionSpec &spec : ast->specs)
                 desugar(spec.expr);
             desugar(ast->body);
 
             int n = ast->specs.size();
-            AST *zero = alloc->make<LiteralNumber>(E, 0.0);
-            AST *one = alloc->make<LiteralNumber>(E, 1.0);
+            AST *zero = make<LiteralNumber>(E, 0.0);
+            AST *one = make<LiteralNumber>(E, 1.0);
             auto *_r = id(U"$r");
             auto *_l = id(U"$l");
             std::vector<const Identifier*> _i(n);
@@ -87,54 +99,55 @@ class Desugarer {
             }
 
             // Build it from the inside out.  We keep wrapping 'in' with more ASTs.
-            assert(ast->specs[0].kind == ArrayComprehension::SPEC_FOR);
+            assert(ast->specs[0].kind == ComprehensionSpec::FOR);
 
             int last_for = n - 1;
-            while (ast->specs[last_for].kind != ArrayComprehension::SPEC_FOR)
+            while (ast->specs[last_for].kind != ComprehensionSpec::FOR)
                 last_for--;
             // $aux_{last_for}($i_{last_for} + 1, $r + [body])
-            AST *in = alloc->make<Apply>(
+            AST *in = make<Apply>(
                 ast->body->location,
                 var(_aux[last_for]),
                 std::vector<AST*> {
-                    alloc->make<Binary>(E, var(_i[last_for]), BOP_PLUS, one),
-                    alloc->make<Binary>(E, var(_r), BOP_PLUS, singleton(ast->body))
+                    make<Binary>(E, var(_i[last_for]), BOP_PLUS, one),
+                    make<Binary>(E, var(_r), BOP_PLUS, singleton(ast->body))
                 },
                 true  // tailstrict
             );
             for (int i = n - 1; i >= 0 ; --i) {
-                const ArrayComprehension::Spec &spec = ast->specs[i];
+                const ComprehensionSpec &spec = ast->specs[i];
                 AST *out;
                 if (i > 0) {
                     int prev_for = i - 1;
-                    while (ast->specs[prev_for].kind != ArrayComprehension::SPEC_FOR)
+                    while (ast->specs[prev_for].kind != ComprehensionSpec::FOR)
                         prev_for--;
 
                     // aux_{prev_for}($i_{prev_for} + 1, $r)
-                    out = alloc->make<Apply>(  // False branch.
+                    out = make<Apply>(  // False branch.
                         E,
                         var(_aux[prev_for]), 
-                        std::vector<AST*> { alloc->make<Binary>(E, var(_i[prev_for]), BOP_PLUS, one), var(_r) },
+                        std::vector<AST*> {
+                            make<Binary>(E, var(_i[prev_for]), BOP_PLUS, one), var(_r)},
                         true  // tailstrict
                     );
                 } else {
                     out = var(_r);
                 }
                 switch (spec.kind) {
-                    case ArrayComprehension::SPEC_IF: {
+                    case ComprehensionSpec::IF: {
                         /*
                             if [[[...cond...]]] then
                                 [[[...in...]]]
                             else
                                 [[[...out...]]]
                         */
-                        in = alloc->make<Conditional>(
+                        in = make<Conditional>(
                             ast->location,
                             spec.expr,
                             in,  // True branch.
                             out);  // False branch.
                     } break;
-                    case ArrayComprehension::SPEC_FOR: {
+                    case ComprehensionSpec::FOR: {
                         /*
                             local $l = [[[...array...]]];
                             local aux_{i}(i_{i}, r) =
@@ -145,39 +158,40 @@ class Desugarer {
                                     [[[...in...]]]
                             aux_{i}(0, r) tailstrict;
                         */
-                        in = alloc->make<Local>(
+                        in = make<Local>(
                             ast->location,
                             Local::Binds {
                                 {_l, spec.expr},
-                                {_aux[i], alloc->make<Function>(
+                                {_aux[i], make<Function>(
                                     ast->location,
                                     std::vector<const Identifier*>{_i[i], _r},
-                                    alloc->make<Conditional>(
+                                    make<Conditional>(
                                         ast->location, 
-                                        alloc->make<Binary>(E, var(_i[i]), BOP_GREATER_EQ, length(var(_l))),
+                                        make<Binary>(
+                                            E, var(_i[i]), BOP_GREATER_EQ, length(var(_l))),
                                         out,
-                                        alloc->make<Local>(
+                                        make<Local>(
                                             ast->location,
                                             Local::Binds {{
                                                 spec.var,
-                                                alloc->make<Index>(E, var(_l), var(_i[i]))
+                                                make<Index>(E, var(_l), var(_i[i]))
                                             }},
                                             in)
                                     )
                                 )}},
-                                alloc->make<Apply>(
+                                make<Apply>(
                                     E,
                                     var(_aux[i]),
                                     std::vector<AST*> {
                                         zero,
-                                        i == 0 ? alloc->make<Array>(E, std::vector<AST*>{}) : static_cast<AST*>(var(_r))
+                                        i == 0 ? make<Array>(E, std::vector<AST*>{})
+                                               : static_cast<AST*>(var(_r))
                                     },
                                     true));  // tailstrict
                     } break;
                 }
             }
                     
-
             ast_ = in;
 
         } else if (auto *ast = dynamic_cast<Binary*>(ast_)) {
@@ -235,6 +249,44 @@ class Desugarer {
             }
 
         } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
+            for (ComprehensionSpec &spec : ast->specs)
+                desugar(spec.expr);
+            desugar(ast->field);
+            desugar(ast->value);
+
+            /*  {
+                    [arr[0]]: local x = arr[1], y = arr[2], z = arr[3]; val_expr
+                    for arr in [ [key_expr, x, y, z] for ...  ]
+                }
+            */
+            auto *_arr = id(U"$arr");
+            AST *zero = make<LiteralNumber>(E, 0.0);
+            int counter = 1;
+            Local::Binds binds;
+            auto arr_e = std::vector<AST*> {ast->field};
+            for (ComprehensionSpec &spec : ast->specs) {
+                if (spec.kind == ComprehensionSpec::FOR) {
+                    binds[spec.var] =
+                        make<Index>(E, var(_arr), make<LiteralNumber>(E, double(counter++)));
+                    arr_e.push_back(var(spec.var));
+                }
+            }
+            AST *arr = make<ArrayComprehension>(
+                ast->location,
+                make<Array>(ast->location, arr_e),
+                ast->specs);
+            desugar(arr);
+            ast_ = make<ObjectComprehensionSimple>(
+                ast->location,
+                make<Index>(E, var(_arr), zero),
+                make<Local>(
+                    ast->location,
+                    binds,
+                    ast->value),
+                _arr,
+                arr);
+
+        } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple*>(ast_)) {
             desugar(ast->field);
             desugar(ast->value);
             desugar(ast->array);

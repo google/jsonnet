@@ -31,6 +31,7 @@ enum ASTType {
     AST_APPLY,
     AST_ARRAY,
     AST_ARRAY_COMPREHENSION,
+    AST_ARRAY_COMPREHENSION_SIMPLE,
     AST_ASSERT,
     AST_BINARY,
     AST_BUILTIN_FUNCTION,
@@ -47,6 +48,7 @@ enum ASTType {
     AST_LITERAL_STRING,
     AST_OBJECT,
     AST_OBJECT_COMPREHENSION,
+    AST_OBJECT_COMPREHENSION_SIMPLE,
     AST_SELF,
     AST_SUPER,
     AST_UNARY,
@@ -83,6 +85,20 @@ struct AST {
     }
 };
 
+/** Used in Object & Array Comprehensions. */
+struct ComprehensionSpec {
+    enum Kind {
+        FOR,
+        IF
+    };
+    Kind kind;
+    const Identifier *var;  // Null when kind != SPEC_FOR.
+    AST *expr;
+    ComprehensionSpec(Kind kind, const Identifier *var, AST *expr)
+      : kind(kind), var(var), expr(expr)
+    { }
+};
+
 
 /** Represents function calls. */
 struct Apply : public AST {
@@ -105,20 +121,9 @@ struct Array : public AST {
 /** Represents array constructors [1, 2, 3]. */
 struct ArrayComprehension : public AST {
     AST* body;
-    enum SpecKind {
-        SPEC_FOR,
-        SPEC_IF
-    };
-    struct Spec {
-        SpecKind kind;
-        const Identifier *var;  // Null when kind != SPEC_FOR.
-        AST *expr;
-        Spec(SpecKind kind, const Identifier *var, AST *expr)
-          : kind(kind), var(var), expr(expr)
-        { }
-    };
-    std::vector<Spec> specs;
-    ArrayComprehension(const LocationRange &lr, AST *body, const std::vector<Spec> &specs)
+    std::vector<ComprehensionSpec> specs;
+    ArrayComprehension(const LocationRange &lr, AST *body,
+                       const std::vector<ComprehensionSpec> &specs)
       : AST(lr, AST_ARRAY_COMPREHENSION), body(body), specs(specs)
     { }
 };
@@ -323,15 +328,27 @@ struct Object : public AST {
     { }
 };
 
-/** Represents object comprehension { [e]: e for x in e }. */
+/** Represents object comprehension { [e]: e for x in e for.. if... }. */
 struct ObjectComprehension : public AST {
+    AST *field;
+    AST *value;
+    std::vector<ComprehensionSpec> specs;
+    ObjectComprehension(const LocationRange &lr, AST *field, AST *value,
+                        const std::vector<ComprehensionSpec> &specs)
+                        
+      : AST(lr, AST_OBJECT_COMPREHENSION), field(field), value(value), specs(specs)
+    { }
+};
+
+/** Represents post-desugaring object comprehension { [e]: e for x in e }. */
+struct ObjectComprehensionSimple : public AST {
     AST *field;
     AST *value;
     const Identifier *id;
     AST *array;
-    ObjectComprehension(const LocationRange &lr, AST *field, AST *value,
-                      const Identifier *id, AST *array)
-      : AST(lr, AST_OBJECT_COMPREHENSION), field(field), value(value), id(id), array(array)
+    ObjectComprehensionSimple(const LocationRange &lr, AST *field, AST *value,
+                              const Identifier *id, AST *array)
+      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE), field(field), value(value), id(id), array(array)
     { }
 };
 

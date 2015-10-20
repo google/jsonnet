@@ -1064,8 +1064,8 @@ namespace {
                     }
                 } break;
 
-                case AST_OBJECT_COMPREHENSION: {
-                    const auto &ast = *static_cast<const ObjectComprehension*>(ast_);
+                case AST_OBJECT_COMPREHENSION_SIMPLE: {
+                    const auto &ast = *static_cast<const ObjectComprehensionSimple*>(ast_);
                     stack.newFrame(FRAME_OBJECT_COMP_ARRAY, ast_);
                     ast_ = ast.array;
                     goto recurse;
@@ -2008,7 +2008,7 @@ namespace {
                     } break;
 
                     case FRAME_OBJECT_COMP_ARRAY: {
-                        const auto &ast = *static_cast<const ObjectComprehension*>(f.ast);
+                        const auto &ast = *static_cast<const ObjectComprehensionSimple*>(f.ast);
                         const Value &arr_v = scratch;
                         if (scratch.t != Value::ARRAY) {
                             throw makeError(ast.location,
@@ -2031,7 +2031,7 @@ namespace {
                     } break;
 
                     case FRAME_OBJECT_COMP_ELEMENT: {
-                        const auto &ast = *static_cast<const ObjectComprehension*>(f.ast);
+                        const auto &ast = *static_cast<const ObjectComprehensionSimple*>(f.ast);
                         const auto *arr = static_cast<const HeapArray*>(f.val.v.h);
                         if (scratch.t != Value::STRING) {
                             std::stringstream ss;

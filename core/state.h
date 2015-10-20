@@ -205,6 +205,7 @@ namespace {
         { }
     };
 
+    /** Objects created by the ObjectComprehensionSimple construct. */
     struct HeapComprehensionObject : public HeapLeafObject {
 
         /** The captured environment. */
