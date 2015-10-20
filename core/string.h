@@ -96,7 +96,7 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
             return JSONNET_CODEPOINT_ERROR;
         }
         return ((c0 & 0xF) << 12ul) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
-    } else if ((c0 & 0xF8) == 0xF) { //11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
+    } else if ((c0 & 0xF8) == 0xF0) { //11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
         if (i+3 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
         }
