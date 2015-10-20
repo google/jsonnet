@@ -152,6 +152,14 @@ class StringStream {
     StringStream &operator << (const String &s) { buf.append(s); return *this; }
     StringStream &operator << (const char32_t *s) { buf.append(s); return *this; }
     StringStream &operator << (char32_t c) { buf.push_back(c); return *this; }
+    template<class T> StringStream &operator << (T c)
+    {
+        std::stringstream ss;
+        ss << c;
+        for (char c : ss.str())
+            buf.push_back(char32_t(c));
+        return *this;
+    }
     String str() { return buf; }
 };
 

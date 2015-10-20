@@ -30,6 +30,7 @@ limitations under the License.
 enum ASTType {
     AST_APPLY,
     AST_ARRAY,
+    AST_ARRAY_COMPREHENSION,
     AST_ASSERT,
     AST_BINARY,
     AST_BUILTIN_FUNCTION,
@@ -45,7 +46,7 @@ enum ASTType {
     AST_LITERAL_NUMBER,
     AST_LITERAL_STRING,
     AST_OBJECT,
-    AST_OBJECT_COMPOSITION,
+    AST_OBJECT_COMPREHENSION,
     AST_SELF,
     AST_SUPER,
     AST_UNARY,
@@ -98,6 +99,27 @@ struct Array : public AST {
     std::vector<AST*> elements;
     Array(const LocationRange &lr, const std::vector<AST*> &elements)
       : AST(lr, AST_ARRAY), elements(elements)
+    { }
+};
+
+/** Represents array constructors [1, 2, 3]. */
+struct ArrayComprehension : public AST {
+    AST* body;
+    enum SpecKind {
+        SPEC_FOR,
+        SPEC_IF
+    };
+    struct Spec {
+        SpecKind kind;
+        const Identifier *var;  // Null when kind != SPEC_FOR.
+        AST *expr;
+        Spec(SpecKind kind, const Identifier *var, AST *expr)
+          : kind(kind), var(var), expr(expr)
+        { }
+    };
+    std::vector<Spec> specs;
+    ArrayComprehension(const LocationRange &lr, AST *body, const std::vector<Spec> &specs)
+      : AST(lr, AST_ARRAY_COMPREHENSION), body(body), specs(specs)
     { }
 };
 
@@ -301,15 +323,15 @@ struct Object : public AST {
     { }
 };
 
-/** Represents object composition { [e]: e for x in e }. */
-struct ObjectComposition : public AST {
+/** Represents object comprehension { [e]: e for x in e }. */
+struct ObjectComprehension : public AST {
     AST *field;
     AST *value;
     const Identifier *id;
     AST *array;
-    ObjectComposition(const LocationRange &lr, AST *field, AST *value,
+    ObjectComprehension(const LocationRange &lr, AST *field, AST *value,
                       const Identifier *id, AST *array)
-      : AST(lr, AST_OBJECT_COMPOSITION), field(field), value(value), id(id), array(array)
+      : AST(lr, AST_OBJECT_COMPREHENSION), field(field), value(value), id(id), array(array)
     { }
 };
 

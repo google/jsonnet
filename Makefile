@@ -42,11 +42,12 @@ SHARED_LDFLAGS ?= -shared
 ################################################################################
 
 LIB_SRC = \
+	core/desugaring.cpp \
 	core/lexer.cpp \
+	core/libjsonnet.cpp \
 	core/parser.cpp \
 	core/static_analysis.cpp \
-	core/vm.cpp \
-	core/libjsonnet.cpp
+	core/vm.cpp
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
 ALL = \
@@ -58,14 +59,15 @@ ALL = \
 	doc/libjsonnet.js \
 	$(LIB_OBJ)
 ALL_HEADERS = \
-	core/libjsonnet.h \
-	core/vm.h \
-	core/static_analysis.h \
-	core/parser.h \
-	core/lexer.h \
 	core/ast.h \
-	core/static_error.h \
+	core/desugaring.h \
+	core/lexer.h \
+	core/libjsonnet.h \
+	core/parser.h \
 	core/state.h \
+	core/static_analysis.h \
+	core/static_error.h \
+	core/vm.h \
 	stdlib/std.jsonnet.h
 
 default: jsonnet

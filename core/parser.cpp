@@ -25,10 +25,11 @@ limitations under the License.
 #include <iomanip>
 
 
-#include "core/static_error.h"
 #include "core/ast.h"
-#include "core/parser.h"
+#include "core/desugaring.h"
 #include "core/lexer.h"
+#include "core/parser.h"
+#include "core/static_error.h"
 
 
 // For generated ASTs, use a bogus location.
@@ -86,7 +87,7 @@ static std::string unparse(const AST *ast_)
 {
     std::stringstream ss;
     if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
-        ss << unparse(ast->target);
+        ss << "(" << unparse(ast->target) << ")";
         if (ast->arguments.size() == 0) {
             ss << "()";
         } else {
@@ -111,9 +112,25 @@ static std::string unparse(const AST *ast_)
             ss << "]";
         }
 
+    } else if (auto *ast = dynamic_cast<const ArrayComprehension*>(ast_)) {
+        ss << "[";
+        ss << unparse(ast->body);
+        for (const ArrayComprehension::Spec &spec : ast->specs) {
+            switch (spec.kind) {
+                case ArrayComprehension::SPEC_IF:
+                ss << " if " << unparse(spec.expr);
+                break;
+                case ArrayComprehension::SPEC_FOR:
+                ss << " for " << encode_utf8(spec.var->name);
+                ss << " in " << unparse(spec.expr);
+                break;
+            }
+        }
+        ss << "]";
+
     } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
-        ss << unparse(ast->left) << " " << bop_string(ast->op)
-           << " " << unparse(ast->right);
+        ss << "(" << unparse(ast->left) << ") " << bop_string(ast->op)
+           << " (" << unparse(ast->right) << ")";
 
     } else if (dynamic_cast<const BuiltinFunction*>(ast_)) {
         std::cerr << "INTERNAL ERROR: Unparsing builtin function." << std::endl;
@@ -143,7 +160,7 @@ static std::string unparse(const AST *ast_)
         ss << "importstr " << encode_utf8(jsonnet_unparse_escape(ast->file));
 
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
-        ss << unparse(ast->target) << "["
+        ss << "(" << unparse(ast->target) << ")["
            << unparse(ast->index) << "]";
 
     } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
@@ -191,7 +208,7 @@ static std::string unparse(const AST *ast_)
             ss << "}";
         }
 
-    } else if (auto *ast = dynamic_cast<const ObjectComposition*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const ObjectComprehension*>(ast_)) {
         ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
         ss << " for " << encode_utf8(ast->id->name) << " in " << unparse(ast->array);
         ss << "}";
@@ -203,7 +220,7 @@ static std::string unparse(const AST *ast_)
         ss << "super";
 
     } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
-        ss << uop_string(ast->op) << unparse(ast->expr);
+        ss << uop_string(ast->op) << "(" << unparse(ast->expr) << ")";
 
     } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
         ss << encode_utf8(ast->id->name);
@@ -214,7 +231,7 @@ static std::string unparse(const AST *ast_)
 
     }
 
-    return "(" + ss.str() + ")";
+    return ss.str();
 }
 
 std::string jsonnet_unparse_jsonnet(const AST *ast) 
@@ -527,7 +544,7 @@ namespace {
                     return next;
                 } else if (next.kind == Token::FOR) {
                     if (fields.size() != 1) {
-                        auto msg = "Object composition can only have one field/value pair.";
+                        auto msg = "Object comprehension can only have one field/value pair.";
                         throw StaticError(next.location, msg);
                     }
                     if (last_was_local) {
@@ -552,7 +569,7 @@ namespace {
                     popExpect(Token::IN);
                     AST *array = parse(MAX_PRECEDENCE, obj_level);
                     Token last = popExpect(Token::BRACE_R);
-                    obj = alloc->make<ObjectComposition>(span(tok, last), field, value, id, array);
+                    obj = alloc->make<ObjectComprehension>(span(tok, last), field, value, id, array);
                     return last;
                 }
                 if (!got_comma)
@@ -700,60 +717,65 @@ namespace {
                         return alloc->make<Array>(span(tok, next), std::vector<AST*>{});
                     }
                     AST *first = parse(MAX_PRECEDENCE, obj_level);
+                    bool got_comma = false;
                     next = peek();
-                    if (next.kind == Token::FOR) {
-                        LocationRange l;
+                    if (!got_comma && next.kind == Token::COMMA) {
                         pop();
-                        Token id_token = popExpect(Token::IDENTIFIER);
-                        const Identifier *id = alloc->makeIdentifier(id_token.data32());
-                        std::vector<const Identifier*> params = {id};
-                        AST *std = alloc->make<Var>(l, alloc->makeIdentifier(U"std"));
-                        AST *map_func = alloc->make<Function>(first->location, params, first);
-                        popExpect(Token::IN);
-                        AST *arr = parse(MAX_PRECEDENCE, obj_level);
-                        Token maybe_if = pop();
-                        if (maybe_if.kind == Token::BRACKET_R) {
-                            AST *map_str = alloc->make<LiteralString>(l, U"map");
-                            AST *map = alloc->make<Index>(l, std, map_str);
-                            std::vector<AST*> args = {map_func, arr};
-                            return alloc->make<Apply>(span(tok, maybe_if), map, args, false);
-                        } else if (maybe_if.kind == Token::IF) {
-                            AST *cond = parse(MAX_PRECEDENCE, obj_level);
-                            Token last = popExpect(Token::BRACKET_R);
-                            AST *filter_func = alloc->make<Function>(cond->location, params, cond);
-                            AST *fmap_str = alloc->make<LiteralString>(l, U"filterMap");
-                            AST *fmap = alloc->make<Index>(l, std, fmap_str);
-                            std::vector<AST*> args = {filter_func, map_func, arr};
-                            return alloc->make<Apply>(span(tok, last), fmap, args, false);
-                        } else {
+                        next = peek();
+                        got_comma = true;
+                    }
+ 
+                    if (next.kind == Token::FOR) {
+                        // It's a comprehension
+                        std::vector<ArrayComprehension::Spec> specs;
+                        pop();
+                        while (true) {
+                            LocationRange l;
+                            Token id_token = popExpect(Token::IDENTIFIER);
+                            const Identifier *id = alloc->makeIdentifier(id_token.data32());
+                            popExpect(Token::IN);
+                            AST *arr = parse(MAX_PRECEDENCE, obj_level);
+                            specs.emplace_back(ArrayComprehension::SPEC_FOR, id, arr);
+
+                            Token maybe_if = pop();
+                            for (; maybe_if == Token::IF; maybe_if = pop()) {
+                                AST *cond = parse(MAX_PRECEDENCE, obj_level);
+                                specs.emplace_back(ArrayComprehension::SPEC_IF, nullptr, cond);
+                            }
+                            if (maybe_if.kind == Token::BRACKET_R) {
+                                return alloc->make<ArrayComprehension>(span(tok, maybe_if), first, specs);
+                            }
+                            if (maybe_if.kind != Token::FOR) {
+                                std::stringstream ss;
+                                ss << "Expected for, if or ] after for clause, got: " << maybe_if;
+                                throw StaticError(maybe_if.location, ss.str());
+                            }
+                        } 
+                    }
+
+                    // Not a comprehension: It can have more elements.
+                    std::vector<AST*> elements;
+                    elements.push_back(first);
+                    do {
+                        if (next.kind == Token::BRACKET_R) {
+                            pop();
+                            break;
+                        }
+                        if (!got_comma) {
                             std::stringstream ss;
-                            ss << "Expected if or ] after for clause, got: " << maybe_if;
+                            ss << "Expected a comma before next array element.";
                             throw StaticError(next.location, ss.str());
                         }
-                    } else {
-                        std::vector<AST*> elements;
-                        elements.push_back(first);
-                        do {
+                        elements.push_back(parse(MAX_PRECEDENCE, obj_level));
+                        next = peek();
+                        if (next.kind == Token::COMMA) {
+                            pop();
                             next = peek();
-                            bool got_comma = false;
-                            if (next.kind == Token::COMMA) {
-                                pop();
-                                next = peek();
-                                got_comma = true;
-                            }
-                            if (next.kind == Token::BRACKET_R) {
-                                pop();
-                                break;
-                            }
-                            if (!got_comma) {
-                                std::stringstream ss;
-                                ss << "Expected a comma before next array element.";
-                                throw StaticError(next.location, ss.str());
-                            }
-                            elements.push_back(parse(MAX_PRECEDENCE, obj_level));
-                        } while (true);
-                        return alloc->make<Array>(span(tok, next), elements);
-                    }
+                            got_comma = true;
+                        }
+                    } while (true);
+                    return alloc->make<Array>(span(tok, next), elements);
+                    
                 }
 
                 case Token::PAREN_L: {
@@ -1089,7 +1111,8 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
     AST *expr = do_parse(alloc, file, input);
 
     // Now, implement the std library by wrapping in a local construct.
-    auto *std_obj = dynamic_cast<Object*>(do_parse(alloc, "std.jsonnet", STD_CODE));
+    AST *std_ast = do_parse(alloc, "std.jsonnet", STD_CODE);
+    auto *std_obj = dynamic_cast<Object*>(std_ast);
     if (std_obj == nullptr) {
         std::cerr << "INTERNAL ERROR: std.jsonnet not an object." << std::endl;
         std::abort();

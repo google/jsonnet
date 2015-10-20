@@ -128,7 +128,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
             append(r, static_analysis(field.body, true, vars));
         }
 
-    } else if (auto *ast = dynamic_cast<ObjectComposition*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
         auto new_vars = vars;
         new_vars.insert(ast->id);
         append(r, static_analysis(ast->field, false, new_vars));

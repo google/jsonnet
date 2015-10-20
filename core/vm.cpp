@@ -21,6 +21,7 @@ limitations under the License.
 #include <set>
 #include <string>
 
+#include "core/desugaring.h"
 #include "core/parser.h"
 #include "core/state.h"
 #include "core/static_analysis.h"
@@ -673,6 +674,7 @@ namespace {
         {
             const ImportCacheValue *input = importString(loc, file);
             AST *expr = jsonnet_parse(alloc, input->foundHere, input->content.c_str());
+            jsonnet_desugar(alloc, expr);
             jsonnet_static_analysis(expr);
             return expr;
         }
@@ -1062,8 +1064,8 @@ namespace {
                     }
                 } break;
 
-                case AST_OBJECT_COMPOSITION: {
-                    const auto &ast = *static_cast<const ObjectComposition*>(ast_);
+                case AST_OBJECT_COMPREHENSION: {
+                    const auto &ast = *static_cast<const ObjectComprehension*>(ast_);
                     stack.newFrame(FRAME_OBJECT_COMP_ARRAY, ast_);
                     ast_ = ast.array;
                     goto recurse;
@@ -1741,6 +1743,7 @@ namespace {
                                         std::string filename = "<extvar:" + var8 + ">";
                                         AST *expr =
                                             jsonnet_parse(alloc, filename, ext.data.c_str());
+                                        jsonnet_desugar(alloc, expr);
                                         jsonnet_static_analysis(expr);
                                         ast_ = expr;
                                         stack.pop();
@@ -2005,7 +2008,7 @@ namespace {
                     } break;
 
                     case FRAME_OBJECT_COMP_ARRAY: {
-                        const auto &ast = *static_cast<const ObjectComposition*>(f.ast);
+                        const auto &ast = *static_cast<const ObjectComprehension*>(f.ast);
                         const Value &arr_v = scratch;
                         if (scratch.t != Value::ARRAY) {
                             throw makeError(ast.location,
@@ -2028,7 +2031,7 @@ namespace {
                     } break;
 
                     case FRAME_OBJECT_COMP_ELEMENT: {
-                        const auto &ast = *static_cast<const ObjectComposition*>(f.ast);
+                        const auto &ast = *static_cast<const ObjectComprehension*>(f.ast);
                         const auto *arr = static_cast<const HeapArray*>(f.val.v.h);
                         if (scratch.t != Value::STRING) {
                             std::stringstream ss;

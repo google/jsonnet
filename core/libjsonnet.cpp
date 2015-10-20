@@ -27,6 +27,7 @@ extern "C" {
 #include "core/libjsonnet.h"
 }
 
+#include "core/desugaring.h"
 #include "core/parser.h"
 #include "core/static_analysis.h"
 #include "core/vm.h"
@@ -187,6 +188,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
         AST *expr = jsonnet_parse(&alloc, filename, snippet);
         std::string json_str;
         std::map<std::string, std::string> files;
+        jsonnet_desugar(&alloc, expr);
         if (vm->debugAst) {
             json_str = jsonnet_unparse_jsonnet(expr);
         } else {
