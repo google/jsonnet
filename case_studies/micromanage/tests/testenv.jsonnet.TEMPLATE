@@ -21,4 +21,9 @@
         serviceAccount: import "service_account.json",
         sshUser: "yourusername"  // Change this.
     },
+    amazon: {
+        kind: "Amazon",
+        region: "us-west-1",  // Maybe change this.
+        sshUser: "yourusername"  // Change this.
+    },
 }

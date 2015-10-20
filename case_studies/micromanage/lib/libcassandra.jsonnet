@@ -248,11 +248,12 @@ local libos = import "libos.jsonnet";
             },
         },
 
-        StarterNode:: service.StandardNode {
+        StarterNode(rep):: service.StandardNode {
             local node = self,
             initCql:: [],
-            initReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : 1 }",
+            initReplication:: "{ 'class' : 'SimpleStrategy', 'replication_factor' : %d }" % rep,
             initAuthReplication:: self.initReplication,
+
             cmds+: [
                 // Wait for the misconfigured cassandra to start up.
                 wait_for_cqlsh("cassandra", service.rootPassword, "localhost"),

@@ -14,19 +14,16 @@
 
 import glob
 import hashlib
+import json
 import os
 import re
+import subprocess
 
-# E.g. replace Simon's cat with 'Simon'\''s cat'.
-def escape(s):
-    return "'%s'" % s.replace("'", "'\"'\"'")
+from cmds import *
+from util import *
+import validate
 
-
-NAME_CHARS = ([chr(i) for i in range(ord('0'), ord('9'))]
-              + [chr(i) for i in range(ord('a'), ord('z'))])
-
-
-class Service:
+class Service(object):
 
     schama = {
         'additionalProperties': False,
@@ -82,130 +79,61 @@ class Service:
         },
     }
 
-    def encodeImageHash(self, n):
-        n = n % (2**63)
-        if n < 0:
-            n += 2**63
-        radix = len(NAME_CHARS)
-        s = ""
-        for i in range(12):
-            d = n % radix
-            s = NAME_CHARS[d] + s
-            n /= radix
-        return s
+    def children(self, service):
+        for child_name, child in service.iteritems():
+            if child_name in {'environment', 'infrastructure', 'outputs'}:
+                continue
+            yield child_name, child
 
-    def hashString(self, s):
-        r = long(hashlib.sha1(s).hexdigest(), 16)
-        if r < 0:
-            r += 2**63
-        return r
+    def validateService(self, ctx, service_name, service):
+        ctx = ctx + [service_name]
+        validate.obj_field_opt(ctx, service, 'outputs', validate.is_string_map)
+        validate.obj_field_opt(ctx, service, 'infrastructure', 'object')
 
-    def fileGlob(self, given_glob, to, prefix):
-        dirs = []
-        files = []
-        lp = len(prefix)
-        for f in glob.glob(given_glob):
-            if os.path.isdir(f):
-                more_files = self.fileGlob('%s/*' % f, to, prefix)
-                files += more_files
+    def fullName(self, ctx, service_name):
+        return '-'.join(ctx + [service_name])
+
+    def preprocess(self, ctx, service_name, service):
+        def recursive_update(c):
+            if isinstance(c, dict):
+                return {
+                    recursive_update(k): recursive_update(v)
+                    for k, v in c.iteritems()
+                }
+            elif isinstance(c, list):
+                return [recursive_update(v) for v in c]
+            elif isinstance(c, basestring):
+                return self.translateSelfName(self.fullName(ctx, service_name), c)
             else:
-                files.append((f, to + f[lp:]))
-        return files        
-
-    def hashProvisioners(self, cmds):
-        hash_code = 0l
-        for cmd in cmds:
-            if isinstance(cmd, basestring):
-                hash_code ^= self.hashString(cmd)
-            elif cmd['kind'] == 'LiteralFile':
-                hash_code ^= self.hashString(cmd['content'])
-                hash_code ^= self.hashString(cmd['to'])
-                hash_code ^= self.hashString(cmd['filePermissions'])
-                hash_code ^= self.hashString(cmd['owner'])
-                hash_code ^= self.hashString(cmd['group'])
-            elif cmd['kind'] == 'CopyFile':
-                # TODO(dcunnin): Scan these files, compute hash
-                hash_code ^= self.hashString(cmd['from'])
-                hash_code ^= self.hashString(cmd['to'])
-                hash_code ^= self.hashString(cmd['dirPermissions'])
-                hash_code ^= self.hashString(cmd['filePermissions'])
-                hash_code ^= self.hashString(cmd['owner'])
-                hash_code ^= self.hashString(cmd['group'])
-                raise RuntimeError('CopyFile not supported in image')
-            elif cmd['kind'] == 'EnsureDir':
-                hash_code ^= self.hashString(cmd['dir'])
-                hash_code ^= self.hashString(cmd['dirPermissions'])
-                hash_code ^= self.hashString(cmd['owner'])
-                hash_code ^= self.hashString(cmd['group'])
-            else:
-                raise RuntimeError('Did not recognize image command kind: ' + cmd['kind'])
-        return hash_code
-
-    def compileCommandToBash(self, cmd):
-        if isinstance(cmd, basestring):
-            return [cmd]
-        elif cmd['kind'] == 'LiteralFile':
-            return [
-                'echo -n %s > %s' % (escape(cmd['content']), escape(cmd['to'])),
-                'chmod -v %s %s' % (cmd['filePermissions'], escape(cmd['to'])),
-                'chown -v %s.%s %s' % (cmd['owner'], cmd['group'], escape(cmd['to'])),
-            ]
-        elif cmd['kind'] == 'CopyFile':
-            files = self.fileGlob(cmd['from'], cmd['to'], os.path.dirname(cmd['from']))
-            dirs = set([os.path.dirname(f[1]) for f in files]) - {cmd['to']}
-            lines = []
-            for d in dirs:
-                lines += [
-                    'mkdir -v -p %s' % escape(d),
-                    'chmod -v %s %s' % (cmd['dirPermissions'], escape(d)),
-                    'chown -v %s.%s %s' % (cmd['owner'], cmd['group'], escape(d)),
-                ]
-            for f in files:
-                with open (f[0], "r") as stream:
-                    content = stream.read()
-                lines += [
-                    'echo -n %s > %s' % (escape(content), escape(f[1])),
-                    'chmod -v %s %s' % (cmd['filePermissions'], escape(f[1])),
-                    'chown -v %s.%s %s' % (cmd['owner'], cmd['group'], escape(f[1])),
-                ]
-            return lines
-        elif cmd['kind'] == 'EnsureDir':
-            return [
-                'mkdir -v -p %s' % escape(cmd['dir']),
-                'chmod -v %s %s' % (cmd['dirPermissions'], escape(cmd['dir'])),
-                'chown -v %s.%s %s' % (cmd['owner'], cmd['group'], escape(cmd['dir'])),
-            ]
-        else:
-            raise RuntimeError('Did not recognize image command kind: ' + cmd['kind'])
+                return c
+        return {
+            'environment': service.get('environment', 'default'),
+            'infrastructure': recursive_update(service.get('infrastructure',{})),
+            'outputs': recursive_update(service.get('outputs', {})),
+        }
 
     def compileStartupScript(self, cmds, bootCmds):
         lines = []
         lines.append('if [ ! -r /micromanage_instance_initialized ] ; then')
         for cmd in cmds:
-            lines += self.compileCommandToBash(cmd)
+            lines += compile_command_to_bash(cmd)
         lines.append('touch /micromanage_instance_initialized')
         lines.append('fi')
         for cmd in bootCmds:
-            lines += self.compileCommandToBash(cmd)
+            lines += compile_command_to_bash(cmd)
         return '\n'.join(lines)
-
-    def compileProvisioners(self, cmds):
-        def shell_provisioner(lines):
-            return {
-                'type': 'shell',
-                'execute_command': "{{ .Vars }} sudo -E /bin/bash '{{ .Path }}'",
-                'inline': lines,
-            }
-        provs = []
-        for cmd in cmds:
-            provs.append(shell_provisioner(self.compileCommandToBash(cmd)))
-        return provs
 
     _selfNameRegex = re.compile(r'\$\{-\}')
 
     # Convert ${-} to the name of the service
-    def translateSelfName(self, service_name, v):
-        return self._selfNameRegex.sub(service_name, v)
+    def translateSelfName(self, full_name, v):
+        return self._selfNameRegex.sub(full_name, v)
     
-    def compile(self, environments, prefix, service_name, service):
+    def compileProvider(self, environment_name, environment):
+        raise NotImplementedError("%s has no override" % self.__class__.__name__)
+    
+    def getBuildArtefacts(self, environment, ctx, service):
+        raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
+    def compile(self, ctx, service_name, service, barts):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)

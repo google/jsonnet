@@ -18,21 +18,25 @@ from setuptools import Extension
 from setuptools.command.build_ext import build_ext as BuildExt
 from subprocess import Popen
 
-
 DIR = os.path.abspath(os.path.dirname(__file__))
-LIB_OBJECTS = ['libjsonnet.o', 'lexer.o', 'parser.o', 'static_analysis.o', 'vm.o']
-MODULE_SOURCES = ['_jsonnet.c']
+LIB_OBJECTS = [
+    'core/libjsonnet.o',
+    'core/lexer.o',
+    'core/parser.o',
+    'core/static_analysis.o',
+    'core/vm.o'
+]
 
+MODULE_SOURCES = ['python/_jsonnet.c']
 
 def get_version():
     """
     Parses the version out of libjsonnet.h
     """
-    with open(os.path.join(DIR, 'libjsonnet.h')) as f:
+    with open(os.path.join(DIR, 'core/libjsonnet.h')) as f:
         for line in f:
             if '#define' in line and 'LIB_JSONNET_VERSION' in line:
                 return line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
-
 
 class BuildJsonnetExt(BuildExt):
     def run(self):
@@ -42,14 +46,12 @@ class BuildJsonnetExt(BuildExt):
             raise Exception('Could not build %s' % (', '.join(LIB_OBJECTS)))
         BuildExt.run(self)
 
-
 jsonnet_ext = Extension(
     '_jsonnet',
     sources=MODULE_SOURCES,
     extra_objects=LIB_OBJECTS,
     language='c++'
 )
-
 
 setup(name='jsonnet',
       url='https://google.github.io/jsonnet/doc/',

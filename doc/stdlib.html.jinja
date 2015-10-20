@@ -112,6 +112,22 @@ single-character string.  This function is the inverse of <code>std.char(n)</cod
 is <code>len</code> codepoints long.</p>
 
 
+<h4>std.startsWith(a, b)</h4>
+
+<p>Returns whether the string a is prefixed by the string b.</p>
+
+
+<h4>std.endsWith(a, b)</h4>
+
+<p>Returns whether the string a is suffixed by the string b.</p>
+
+
+<h4>std.substr(s, from, len)</h4>
+
+<p>Returns a string that is the part of <code>s</code> that starts at offset <code>from</code> and
+is <code>len</code> codepoints long.</p>
+
+
 <h4>std.split(str, c)</h4>
 
 <p>Split the string <code>str</code> into an array of strings, divided by the single character
@@ -273,6 +289,11 @@ element.  Func is expected to be a function that takes a single parameter, the i
 it should initialize.</p>
 
 <p>Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.  </p>
+
+
+<h4>std.count(arr, x)</h4>
+
+<p>Return the number of times that x occurs in arr.</p>
 
 
 <h4>std.map(func, arr)</h4>

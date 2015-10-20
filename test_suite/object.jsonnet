@@ -57,4 +57,11 @@ std.assertEqual({[null]: "test"}, {}) &&
 std.assertEqual({[""+k]:k  for k in [1,2,3]}, {"1": 1, "2": 2, "3": 3}) &&
 std.assertEqual({[""+(k+1)]:(k+1)  for k in [0,1,2]}, {[""+k]:k  for k in [1,2,3]}) &&
 std.assertEqual({[""+k]:k  for k in [1,2,3]}, {"1": 1, "2": 2, "3": 3}) &&
+
+local obj = {
+    f14true: {x: 1, y: 4, z: true}, f14false: {x: 1, y: 4, z: false}, f16true: {x: 1, y: 6, z: true}, f16false: {x: 1, y: 6, z: false},
+    f26true: {x: 2, y: 6, z: true}, f26false: {x: 2, y: 6, z: false}, f36true: {x: 3, y: 6, z: true}, f36false: {x: 3, y: 6, z: false},
+};
+
+std.assertEqual(obj, {["f"+x+y+z]: {x:x, y:y, z:z} for x in [1, 2, 3] for y in [1,4, 6] if x + 2 < y for z in [true, false]}) &&
 true
