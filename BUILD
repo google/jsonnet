@@ -19,6 +19,7 @@ genrule(
 cc_library(
     name = "jsonnet-common",
     srcs = [
+        "core/desugaring.cpp",
         "core/lexer.cpp",
         "core/parser.cpp",
         "core/static_analysis.cpp",
@@ -26,6 +27,7 @@ cc_library(
         "stdlib/std.jsonnet.h",
     ],
     hdrs = [
+        "core/desugaring.h",
         "core/lexer.h",
         "core/parser.h",
         "core/static_analysis.h",
