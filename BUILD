@@ -8,7 +8,7 @@ filegroup(
 genrule(
     name = "gen-std-jsonnet-h",
     srcs = ["stdlib/std.jsonnet"],
-    outs = ["core/std.jsonnet.h"],
+    outs = ["std.jsonnet.h"],
     cmd = "((od -v -Anone -t u1 $< | tr \" \" \"\n\" | grep -v \"^$$\" " +
           "| tr \"\n\" \",\" ) && echo \"0\") > $@; " +
           "echo >> $@",
@@ -19,12 +19,13 @@ cc_library(
     srcs = [
         "core/desugarer.cpp",
         "core/formatter.cpp",
+        "core/libjsonnet.cpp",
         "core/lexer.cpp",
         "core/parser.cpp",
         "core/static_analysis.cpp",
         "core/string_utils.cpp",
         "core/vm.cpp",
-        "core/std.jsonnet.h",
+        "std.jsonnet.h",
     ],
     hdrs = [
         "core/ast.h",
@@ -38,17 +39,24 @@ cc_library(
         "core/string_utils.h",
         "core/unicode.h",
         "core/vm.h",
-        "include/libjsonnet.h",
+    ],
+    deps = [
+        "//include:libjsonnet",
     ],
     linkopts = ["-lm"],
-    includes = ["core", "include"],
+    includes = [
+        "core",
+        "include",
+    ],
 )
 
 cc_library(
     name = "libjsonnet",
     srcs = ["core/libjsonnet.cpp"],
-    hdrs = ["include/libjsonnet.h"],
-    deps = [":jsonnet-common"],
+    deps = [
+        ":jsonnet-common",
+        "//include:libjsonnet",
+    ],
     includes = ["include"],
 )
 

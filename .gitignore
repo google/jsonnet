@@ -10,6 +10,7 @@
 jsonnet
 _jsonnet.so
 libjsonnet.so
+libjsonnet++.so
 libjsonnet.js
 libjsonnet_test_file
 libjsonnet_test_snippet
