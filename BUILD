@@ -32,36 +32,36 @@ cc_library(
         "core/static_error.h",
         "core/vm.h",
     ],
-    includes = ["core"],
+    includes = ["core", "include"],
 )
 
 cc_library(
     name = "libjsonnet",
     srcs = ["core/libjsonnet.cpp"],
-    hdrs = ["core/libjsonnet.h"],
+    hdrs = ["include/libjsonnet.h"],
     deps = [":jsonnet-common"],
-    includes = ["core"],
+    includes = ["include"],
 )
 
 cc_binary(
     name = "jsonnet",
     srcs = ["cmd/jsonnet.cpp"],
     deps = [":libjsonnet"],
-    includes = ["core"],
+    includes = ["include"],
 )
 
 cc_binary(
     name = "libjsonnet_test_snippet",
     srcs = ["core/libjsonnet_test_snippet.c"],
     deps = [":libjsonnet"],
-    includes = ["core"],
+    includes = ["includes"],
 )
 
 cc_binary(
     name = "libjsonnet_test_file",
     srcs = ["core/libjsonnet_test_file.c"],
     deps = [":libjsonnet"],
-    includes = ["core"],
+    includes = ["includes"],
 )
 
 filegroup(
