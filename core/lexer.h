@@ -23,8 +23,8 @@ limitations under the License.
 #include <list>
 #include <sstream>
 
-#include "core/string.h"
-#include "core/static_error.h"
+#include "unicode.h"
+#include "static_error.h"
 
 struct Token {
     enum Kind {

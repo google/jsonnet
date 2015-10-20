@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef JSONNET_STRING_H
-#define JSONNET_STRING_H
+#ifndef JSONNET_UNICODE_H
+#define JSONNET_UNICODE_H
 
 /** Substituted when a unicode translation format encoding error is encountered. */
 #define JSONNET_CODEPOINT_ERROR 0xfffd
@@ -163,4 +163,4 @@ class StringStream {
     String str() { return buf; }
 };
 
-#endif  // JSONNET_STRING_H
+#endif  // JSONNET_UNICODE_H

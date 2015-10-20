@@ -14,17 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "core/vm.h"
-
 #include <cassert>
 #include <cmath>
 #include <set>
 #include <string>
 
-#include "core/desugaring.h"
-#include "core/parser.h"
-#include "core/state.h"
-#include "core/static_analysis.h"
+#include "desugaring.h"
+#include "parser.h"
+#include "state.h"
+#include "static_analysis.h"
+#include "vm.h"
 
 namespace {
 

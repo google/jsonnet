@@ -17,7 +17,7 @@ limitations under the License.
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "core/libjsonnet.h"
+#include <libjsonnet.h>
 
 int main(int argc, const char **argv)
 {

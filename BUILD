@@ -8,14 +8,12 @@ filegroup(
 genrule(
     name = "gen-std-jsonnet-h",
     srcs = ["stdlib/std.jsonnet"],
-    outs = ["stdlib/std.jsonnet.h"],
+    outs = ["core/std.jsonnet.h"],
     cmd = "((od -v -Anone -t u1 $< | tr \" \" \"\n\" | grep -v \"^$$\" " +
           "| tr \"\n\" \",\" ) && echo \"0\") > $@; " +
           "echo >> $@",
 )
 
-# TODO(dzc): Remove the includes = ["."] lines from all cc_* targets once
-# bazelbuild/bazel#445 is fixed.
 cc_library(
     name = "jsonnet-common",
     srcs = [
@@ -24,7 +22,7 @@ cc_library(
         "core/parser.cpp",
         "core/static_analysis.cpp",
         "core/vm.cpp",
-        "stdlib/std.jsonnet.h",
+        "core/std.jsonnet.h",
     ],
     hdrs = [
         "core/desugaring.h",
@@ -34,7 +32,7 @@ cc_library(
         "core/static_error.h",
         "core/vm.h",
     ],
-    includes = ["."],
+    includes = ["core"],
 )
 
 cc_library(
@@ -42,28 +40,28 @@ cc_library(
     srcs = ["core/libjsonnet.cpp"],
     hdrs = ["core/libjsonnet.h"],
     deps = [":jsonnet-common"],
-    includes = ["."],
+    includes = ["core"],
 )
 
 cc_binary(
     name = "jsonnet",
     srcs = ["cmd/jsonnet.cpp"],
     deps = [":libjsonnet"],
-    includes = ["."],
+    includes = ["core"],
 )
 
 cc_binary(
     name = "libjsonnet_test_snippet",
     srcs = ["core/libjsonnet_test_snippet.c"],
     deps = [":libjsonnet"],
-    includes = ["."],
+    includes = ["core"],
 )
 
 cc_binary(
     name = "libjsonnet_test_file",
     srcs = ["core/libjsonnet_test_file.c"],
     deps = [":libjsonnet"],
-    includes = ["."],
+    includes = ["core"],
 )
 
 filegroup(

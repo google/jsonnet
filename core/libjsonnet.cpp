@@ -24,13 +24,13 @@ limitations under the License.
 #include <string>
 
 extern "C" {
-#include "core/libjsonnet.h"
+#include "libjsonnet.h"
 }
 
-#include "core/desugaring.h"
-#include "core/parser.h"
-#include "core/static_analysis.h"
-#include "core/vm.h"
+#include "desugaring.h"
+#include "parser.h"
+#include "static_analysis.h"
+#include "vm.h"
 
 static void memory_panic(void)
 {

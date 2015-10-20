@@ -16,7 +16,7 @@ limitations under the License.
 
 #include <cassert>
 
-#include "core/ast.h"
+#include "ast.h"
 
 LocationRange E;  // Empty.
     

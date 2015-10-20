@@ -33,7 +33,7 @@ def get_version():
     """
     Parses the version out of libjsonnet.h
     """
-    with open(os.path.join(DIR, 'core/libjsonnet.h')) as f:
+    with open(os.path.join(DIR, 'include/libjsonnet.h')) as f:
         for line in f:
             if '#define' in line and 'LIB_JSONNET_VERSION' in line:
                 return line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
@@ -50,6 +50,7 @@ jsonnet_ext = Extension(
     '_jsonnet',
     sources=MODULE_SOURCES,
     extra_objects=LIB_OBJECTS,
+    include_dirs = ['include'],
     language='c++'
 )
 

@@ -16,7 +16,7 @@ libjsonnet_test_snippet
 **/core.*
 **/vgcore
 **/vgcore.*
-stdlib/*.jsonnet.h
+core/std.jsonnet.h
 Makefile.depend
 Makefile.depend.bak
 bazel-*

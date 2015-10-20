@@ -19,9 +19,9 @@ limitations under the License.
 
 #include <string>
 
-#include "core/ast.h"
-#include "core/lexer.h"
-#include "core/string.h"
+#include "ast.h"
+#include "lexer.h"
+#include "unicode.h"
 
 /** Parse a given JSON++ string.
  *

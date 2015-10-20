@@ -17,8 +17,8 @@ limitations under the License.
 #ifndef JSONNET_VM_H
 #define JSONNET_VM_H
 
-#include "core/ast.h"
-#include "core/libjsonnet.h"
+#include "ast.h"
+#include "libjsonnet.h"
 
 /** A single line of a stack trace from a runtime error.
  */

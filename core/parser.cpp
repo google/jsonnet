@@ -25,11 +25,11 @@ limitations under the License.
 #include <iomanip>
 
 
-#include "core/ast.h"
-#include "core/desugaring.h"
-#include "core/lexer.h"
-#include "core/parser.h"
-#include "core/static_error.h"
+#include "ast.h"
+#include "desugaring.h"
+#include "lexer.h"
+#include "parser.h"
+#include "static_error.h"
 
 
 // For generated ASTs, use a bogus location.
@@ -1108,7 +1108,7 @@ static AST *do_parse(Allocator *alloc, const std::string &file, const char *inpu
 }
 
 static constexpr char STD_CODE[] = {
-    #include "stdlib/std.jsonnet.h"
+    #include "std.jsonnet.h"
 };
 
 AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)

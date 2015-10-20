@@ -26,7 +26,7 @@ limitations under the License.
 #include <vector>
 
 extern "C" {
-    #include "core/libjsonnet.h"
+    #include <libjsonnet.h>
 }
 
 struct ImportCallbackContext {

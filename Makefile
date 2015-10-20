@@ -29,8 +29,8 @@ OD ?= od
 
 OPT ?= -O3
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c++0x -fPIC -I.
-CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -I.
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c++0x -fPIC -Iinclude
+CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
@@ -62,13 +62,13 @@ ALL_HEADERS = \
 	core/ast.h \
 	core/desugaring.h \
 	core/lexer.h \
-	core/libjsonnet.h \
 	core/parser.h \
 	core/state.h \
 	core/static_analysis.h \
 	core/static_error.h \
 	core/vm.h \
-	stdlib/std.jsonnet.h
+	core/std.jsonnet.h \
+	include/libjsonnet.h
 
 default: jsonnet
 
@@ -91,7 +91,7 @@ MAKEDEPEND_SRCS = \
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
 
-core/parser.cpp: stdlib/std.jsonnet.h
+core/parser.cpp: core/std.jsonnet.h
 
 # Object files
 %.o: %.cpp
@@ -119,7 +119,7 @@ doc/libjsonnet.js: libjsonnet.js
 LIBJSONNET_TEST_SNIPPET_SRCS = \
 	core/libjsonnet_test_snippet.c \
 	libjsonnet.so \
-	core/libjsonnet.h
+	include/libjsonnet.h
 
 libjsonnet_test_snippet: $(LIBJSONNET_TEST_SNIPPET_SRCS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
@@ -127,13 +127,13 @@ libjsonnet_test_snippet: $(LIBJSONNET_TEST_SNIPPET_SRCS)
 LIBJSONNET_TEST_FILE_SRCS = \
 	core/libjsonnet_test_file.c \
 	libjsonnet.so \
-	core/libjsonnet.h
+	include/libjsonnet.h
 
 libjsonnet_test_file: $(LIBJSONNET_TEST_FILE_SRCS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
 
 # Encode standard library for embedding in C
-stdlib/%.jsonnet.h: stdlib/%.jsonnet
+core/%.jsonnet.h: stdlib/%.jsonnet
 	(($(OD) -v -Anone -t u1 $< \
 		| tr " " "\n" \
 		| grep -v "^$$" \
