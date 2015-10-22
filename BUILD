@@ -32,6 +32,7 @@ cc_library(
         "core/static_error.h",
         "core/vm.h",
     ],
+    linkopts = ["-lm"],
     includes = ["core", "include"],
 )
 
