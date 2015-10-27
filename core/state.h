@@ -192,19 +192,6 @@ namespace {
         { }
     };
 
-    /** Objects created by the super construct. */
-    struct HeapSuperObject : public HeapObject {
-        /** The object to bind self when evaluating field bodies when indexing me. */
-        HeapObject *root;
-
-        /** The object whose field definitions are used when indexing me. */
-        unsigned offset;
-
-        HeapSuperObject(HeapObject *root, unsigned offset)
-          : root(root), offset(offset)
-        { }
-    };
-
     /** Objects created by the ObjectComprehensionSimple construct. */
     struct HeapComprehensionObject : public HeapLeafObject {
 
@@ -364,9 +351,6 @@ namespace {
                         for (auto upv : obj->compValues)
                             addIfHeapEntity(upv.second, s.children);
 
-
-                    } else if (auto *obj = dynamic_cast<HeapSuperObject*>(curr)) {
-                        addIfHeapEntity(obj->root, s.children);
 
                     } else if (auto *arr = dynamic_cast<HeapArray*>(curr)) {
                         for (auto el : arr->elements)

@@ -140,9 +140,10 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         if (!in_object)
             throw StaticError(ast_->location, "Can't use self outside of an object.");
 
-    } else if (dynamic_cast<const Super*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const SuperIndex*>(ast_)) {
         if (!in_object)
             throw StaticError(ast_->location, "Can't use super outside of an object.");
+        append(r, static_analysis(ast->index, in_object, vars));
 
     } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
         append(r, static_analysis(ast->expr, in_object, vars));

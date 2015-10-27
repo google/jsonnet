@@ -17,25 +17,6 @@ limitations under the License.
 // Simple super
 std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : super.y }).y, 1) &&
 
-// returning super
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : super}).y.y, 1) &&
-
-// extending super on the right
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + {}).y }).y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : super + {} }).y.y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + { x : 2 }).y }).y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : super + { x : 2 } }).y.y, 1) &&
-
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + { x : super.y }).x }).y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + { x : super.y }) }).y.x, 1) &&
-
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + { x : self.y }).x }).y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : (super + { x : self.y }) }).y.x, 1) &&
-
-// extending super on the left
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : ({} + super).y }).y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : {} + super }).y.y, 1) &&
-
 // returning self
 std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : self }).z.y, 1) &&
 
@@ -43,7 +24,7 @@ std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : self }).z.y, 1) &&
 std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : (self + {}).y }).z, 1) &&
 std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : (self + {}) }).z.y, 1) &&
 
-// extending self on the right has more dynamic binding than extending super on the right
+// extending self on the right has dynamic binding
 std.assertEqual(({ x : 0, y : self.x } + { x : 2, z : (self + { x : 1 }).y }).z, 1) &&
 std.assertEqual(({ x : 0, y : self.x } + { x : 2, z : (self + { x : 1 }) }).z.y, 1) &&
 

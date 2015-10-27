@@ -50,7 +50,7 @@ enum ASTType {
     AST_OBJECT_COMPREHENSION,
     AST_OBJECT_COMPREHENSION_SIMPLE,
     AST_SELF,
-    AST_SUPER,
+    AST_SUPER_INDEX,
     AST_UNARY,
     AST_VAR
 };
@@ -360,9 +360,10 @@ struct Self : public AST {
 };
 
 /** Represents the super keyword. */
-struct Super : public AST {
-    Super(const LocationRange &lr)
-      : AST(lr, AST_SUPER)
+struct SuperIndex : public AST {
+    AST *index;
+    SuperIndex(const LocationRange &lr, AST *index)
+      : AST(lr, AST_SUPER_INDEX), index(index)
     { }
 };
 

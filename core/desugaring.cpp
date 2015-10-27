@@ -294,8 +294,8 @@ class Desugarer {
         } else if (dynamic_cast<const Self*>(ast_)) {
             // Nothing to do.
 
-        } else if (dynamic_cast<const Super*>(ast_)) {
-            // Nothing to do.
+        } else if (auto * ast = dynamic_cast<SuperIndex*>(ast_)) {
+            desugar(ast->index);
 
         } else if (auto *ast = dynamic_cast<Unary*>(ast_)) {
             desugar(ast->expr);
