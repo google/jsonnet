@@ -32,6 +32,28 @@ limitations under the License.
 #include "static_error.h"
 
 
+// TODO(dcunnin): The following syntax sugars should be removed in the desugarer:
+// * f(...):[:[:]] e => f: function(...) e
+// * local f(...) = e => local f = function(...) e
+// * object-level locals
+// * f:[:[:]] e => ["f"]: e
+// "f": e => ["f"]: e
+// f+: e => f: super.f + e
+// order of fields / locals / asserts
+// order of mutually recursive let binds
+// trailing commas in function calls, function definitions, arrays, and objects
+// actual representation of number
+// assert e => assert e : "Assertion failed"
+// if e then e' => if e then e' else null
+// $
+// e.f => e["f"]
+// super.f => super["f"]
+// e { ... } => e + { ... }
+// % operator
+// == and !=
+// Adding std
+
+
 // For generated ASTs, use a bogus location.
 static const LocationRange gen;
 
@@ -484,6 +506,7 @@ namespace {
             }
             AST *init;
             if (peek().kind == Token::PAREN_L) {
+                // TODO(dcunnin): SYNTAX SUGAR HERE
                 pop();
                 auto params = parseIdentifierList("function parameter", obj_level);
                 popExpect(Token::OPERATOR, "=");
@@ -556,6 +579,7 @@ namespace {
                     Object::Field::Hide field_hide = fields.front().hide;
                     AST *value = fields.front().body;
                     if (let_binds.size() > 0) {
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         value = alloc->make<Local>(value->location, let_binds, value);
                     }
                     if (field_hide != Object::Field::INHERIT) {
@@ -573,11 +597,13 @@ namespace {
                     throw StaticError(next.location, "Expected a comma before next field.");
 
                 switch (next.kind) {
+                    // TODO(dcunnin): SYNTAX SUGAR HERE
                     case Token::IDENTIFIER: case Token::STRING: {
                         last_was_local = false;
                         bool is_method = false;
                         std::vector<const Identifier *> params;
                         if (peek().kind == Token::PAREN_L) {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             pop();
                             params = parseIdentifierList("method parameter", obj_level);
                             is_method = true;
@@ -608,6 +634,7 @@ namespace {
                         if (!literal_fields.insert(next.data).second) {
                             throw StaticError(next.location, "Duplicate field: "+next.data);
                         }
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         AST *field_expr = alloc->make<LiteralString>(next.location, next.data32());
 
                         AST *body = parse(MAX_PRECEDENCE, obj_level+1);
@@ -615,6 +642,7 @@ namespace {
                             body = alloc->make<Function>(body->location, params, body);
                         }
                         if (plus_sugar) {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             AST *f = alloc->make<LiteralString>(plus_loc, next.data32());
                             AST *super_f = alloc->make<SuperIndex>(plus_loc, f);
                             body = alloc->make<Binary>(body->location, super_f, BOP_PLUS, body);
@@ -821,6 +849,7 @@ namespace {
 
                 // Variables
                 case Token::DOLLAR:
+                // TODO(dcunnin): SYNTAX SUGAR HERE
                 if (obj_level == 0) {
                     throw StaticError(tok.location, "No top-level object found.");
                 }
@@ -837,6 +866,7 @@ namespace {
                     AST *index;
                     switch (next.kind) {
                         case Token::DOT: {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             Token field_id = popExpect(Token::IDENTIFIER);
                             index = alloc->make<LiteralString>(span(field_id), field_id.data32());
                         } break;
@@ -872,6 +902,7 @@ namespace {
                         pop();
                         msg = parse(MAX_PRECEDENCE, obj_level);
                     } else {
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         auto msg_str = U"Assertion failed.";
                         msg = alloc->make<LiteralString>(begin.location, msg_str);
                     }
@@ -899,6 +930,7 @@ namespace {
                         pop();
                         branch_false = parse(MAX_PRECEDENCE, obj_level);
                     } else {
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         branch_false = alloc->make<LiteralNull>(span(begin, branch_true));
                     }
                     return alloc->make<Conditional>(span(begin, branch_false),
@@ -1013,6 +1045,7 @@ namespace {
 
                     } else if (op.kind == Token::DOT) {
                         Token field = popExpect(Token::IDENTIFIER);
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         AST *index = alloc->make<LiteralString>(span(field), field.data32());
                         lhs = alloc->make<Index>(span(begin, field), lhs, index);
 
@@ -1028,11 +1061,13 @@ namespace {
                         lhs = alloc->make<Apply>(span(begin, end), lhs, args, tailstrict);
 
                     } else if (op.kind == Token::BRACE_L) {
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         AST *obj;
                         Token end = parseObjectRemainder(obj, op, obj_level);
                         lhs = alloc->make<Binary>(span(begin, end), lhs, BOP_PLUS, obj);
 
                     } else if (op.data == "%") {
+                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         AST *rhs = parse(precedence - 1, obj_level);
                         AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
                         AST *mod_str = alloc->make<LiteralString>(gen, U"mod");
@@ -1045,10 +1080,12 @@ namespace {
                         AST *rhs = parse(precedence - 1, obj_level);
                         bool invert = false;
                         if (bop == BOP_MANIFEST_UNEQUAL) {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             bop = BOP_MANIFEST_EQUAL;
                             invert = true;
                         }
                         if (bop == BOP_MANIFEST_EQUAL) {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
                             AST *equals_str = alloc->make<LiteralString>(gen, U"equals");
                             AST *f_equals = alloc->make<Index>(gen, std, equals_str);
@@ -1154,6 +1191,7 @@ AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
 
     Local::Binds std_binds;
     std_binds[alloc->makeIdentifier(U"std")] = std_obj;
+    // TODO(dcunnin): SYNTAX SUGAR HERE
     AST *wrapped = alloc->make<Local>(expr->location, std_binds, expr);
     return wrapped;
 }
