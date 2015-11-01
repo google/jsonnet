@@ -92,7 +92,7 @@ MAKEDEPEND_SRCS = \
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
 
-core/desugarer.cpp: core/std.jsonnet.h
+core/desugaring.cpp: core/std.jsonnet.h
 
 # Object files
 %.o: %.cpp
