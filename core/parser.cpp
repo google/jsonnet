@@ -37,10 +37,6 @@ limitations under the License.
 // whitespace
 // comments
 
-
-// For generated ASTs, use a bogus location.
-static const LocationRange gen;
-
 String jsonnet_unparse_escape(const String &str)
 {
     StringStream ss;
