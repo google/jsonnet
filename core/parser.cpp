@@ -42,7 +42,8 @@ namespace {
     // Cache some immutable stuff in global variables.
     const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
     const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
-    const int MAX_PRECEDENCE = 15; // Local, If, Import, Function, Error
+    const int BEFORE_ELSE_PRECEDENCE = 15; // True branch of an if.
+    const int MAX_PRECEDENCE = 16; // Local, If, Import, Function, Error
 
     /** These are the binary operator precedences, unary precedence is given by
      * UNARY_PRECEDENCE.
@@ -182,7 +183,7 @@ static std::string unparse(const Identifier *id)
     return encode_utf8(id->name);
 }
 
-static std::string unparse(const AST *ast_);
+static std::string unparse(const AST *ast_, int precedence);
 
 static std::string unparse(const std::vector<ComprehensionSpec> &specs)
 {
@@ -190,10 +191,10 @@ static std::string unparse(const std::vector<ComprehensionSpec> &specs)
     for (const auto &spec : specs) {
         switch (spec.kind) {
             case ComprehensionSpec::FOR:
-            ss << " for " << unparse(spec.var) << " in " << unparse(spec.expr);
+            ss << " for " << unparse(spec.var) << " in " << unparse(spec.expr, MAX_PRECEDENCE);
             break;
             case ComprehensionSpec::IF:
-            ss << " if " << unparse(spec.expr);
+            ss << " if " << unparse(spec.expr, MAX_PRECEDENCE);
             break;
         }
     }
@@ -225,7 +226,7 @@ static std::string unparse(const ObjectFields &fields)
             case ObjectField::LOCAL: {
                 ss << "local " << unparse(field.id);
                 ss << meth;
-                ss << " = " << unparse(field.expr2);
+                ss << " = " << unparse(field.expr2, MAX_PRECEDENCE);
             } break;
 
             case ObjectField::FIELD_ID:
@@ -235,9 +236,9 @@ static std::string unparse(const ObjectFields &fields)
                 if (field.kind == ObjectField::FIELD_ID) {
                     ss << unparse(field.id);
                 } else if (field.kind == ObjectField::FIELD_STR) {
-                    ss << unparse(field.expr1);
+                    ss << unparse(field.expr1, MAX_PRECEDENCE);
                 } else if (field.kind == ObjectField::FIELD_EXPR) {
-                    ss << "[" << unparse(field.expr1) << "]";
+                    ss << "[" << unparse(field.expr1, MAX_PRECEDENCE) << "]";
                 }
                 ss << meth;
 
@@ -247,14 +248,14 @@ static std::string unparse(const ObjectFields &fields)
                     case ObjectField::HIDDEN: ss << ":: "; break;
                     case ObjectField::VISIBLE: ss << "::: "; break;
                 }
-                ss << unparse(field.expr2);
+                ss << unparse(field.expr2, MAX_PRECEDENCE);
 
             } break;
 
             case ObjectField::ASSERT: {
-                ss << "assert " << unparse(field.expr2);
+                ss << "assert " << unparse(field.expr2, MAX_PRECEDENCE);
                 if (field.expr3 != nullptr) {
-                    ss << " : " << unparse(field.expr3);
+                    ss << " : " << unparse(field.expr3, MAX_PRECEDENCE);
                 }
             } break;
         }
@@ -263,15 +264,25 @@ static std::string unparse(const ObjectFields &fields)
     return ss.str();
 }
 
-static std::string unparse(const AST *ast_)
+/** Unparse the given AST.
+ *
+ * \param precedence The precedence of the enclosing AST.  If this is greater than the current
+ * precedence, parens are not needed.
+ *
+ * \returns The unparsed string.
+ */
+static std::string unparse(const AST *ast_, int precedence)
 {
     std::stringstream ss;
+    int current_precedence = 0;  // Default is for atoms.
+
     if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
-        ss << "(" << unparse(ast->target) << ")";
+        current_precedence = APPLY_PRECEDENCE;
+        ss << unparse(ast->target, APPLY_PRECEDENCE);
         ss << "(";
         const char *prefix = "";
         for (auto arg : ast->arguments) {
-            ss << prefix << unparse(arg);
+            ss << prefix << unparse(arg, MAX_PRECEDENCE);
             prefix = ", ";
         }
         if (ast->trailingComma) ss << ",";
@@ -279,13 +290,14 @@ static std::string unparse(const AST *ast_)
         if (ast->tailstrict) ss << " tailstrict";
 
     } else if (auto *ast = dynamic_cast<const ApplyBrace*>(ast_)) {
-        ss << "(" << unparse(ast->left) << ") " << " " << unparse(ast->right);
+        current_precedence = APPLY_PRECEDENCE;
+        ss << unparse(ast->left, APPLY_PRECEDENCE) << unparse(ast->right, precedence);
 
     } else if (auto *ast = dynamic_cast<const Array*>(ast_)) {
         ss << "[";
         const char *prefix = "";
         for (const auto &element : ast->elements) {
-            ss << prefix << unparse(element);
+            ss << prefix << unparse(element, MAX_PRECEDENCE);
             prefix = ", ";
         }
         if (ast->trailingComma) ss << ",";
@@ -293,37 +305,45 @@ static std::string unparse(const AST *ast_)
 
     } else if (auto *ast = dynamic_cast<const ArrayComprehension*>(ast_)) {
         ss << "[";
-        ss << unparse(ast->body);
+        ss << unparse(ast->body, MAX_PRECEDENCE);
         if (ast->trailingComma) ss << ",";
         ss << unparse(ast->specs);
         ss << "]";
 
     } else if (auto *ast = dynamic_cast<const Assert*>(ast_)) {
-        ss << "assert " << unparse(ast->cond);
+        current_precedence = MAX_PRECEDENCE;
+        ss << "assert " << unparse(ast->cond, MAX_PRECEDENCE);
         if (ast->message != nullptr)
-            ss << " : " << unparse(ast->message);
-        ss << "; " << unparse(ast->rest);
+            ss << " : " << unparse(ast->message, MAX_PRECEDENCE);
+        ss << "; " << unparse(ast->rest, precedence);
 
     } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
-        ss << "(" << unparse(ast->left) << ") " << bop_string(ast->op)
-           << " (" << unparse(ast->right) << ")";
+        current_precedence = precedence_map[ast->op];
+        ss << unparse(ast->left, current_precedence) << " " << bop_string(ast->op) << " "
+           << unparse(ast->right, current_precedence - 1);  // The - 1 is for left associativity.
 
     } else if (auto *ast = dynamic_cast<const BuiltinFunction*>(ast_)) {
         ss << "/* builtin " << ast->id << " */ null";
 
     } else if (auto *ast = dynamic_cast<const Conditional*>(ast_)) {
-        ss << "if " << unparse(ast->cond) << " then " << unparse(ast->branchTrue);
-        if (ast->branchFalse) {
-            ss << " else " << unparse(ast->branchFalse);
+        current_precedence = MAX_PRECEDENCE;
+        ss << "if " << unparse(ast->cond, MAX_PRECEDENCE) << " then ";
+        if (ast->branchFalse != nullptr) {
+            ss << unparse(ast->branchTrue, BEFORE_ELSE_PRECEDENCE)
+               << " else " << unparse(ast->branchFalse, precedence);
+        } else {
+            ss << unparse(ast->branchTrue, precedence);
         }
 
     } else if (dynamic_cast<const Dollar*>(ast_)) {
         ss << "$";
 
     } else if (auto *ast = dynamic_cast<const Error*>(ast_)) {
-        ss << "error " << unparse(ast->expr);
+        current_precedence = MAX_PRECEDENCE;
+        ss << "error " << unparse(ast->expr, precedence);
 
     } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
+        current_precedence = MAX_PRECEDENCE;
         ss << "function (";
         const char *prefix = "";
         for (const Identifier *arg : ast->parameters) {
@@ -331,7 +351,7 @@ static std::string unparse(const AST *ast_)
             prefix = ", ";
         }
         if (ast->trailingComma) ss << ",";
-        ss << ") " << unparse(ast->body);
+        ss << ") " << unparse(ast->body, precedence);
 
     } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
         ss << "import " << encode_utf8(jsonnet_unparse_escape(ast->file));
@@ -340,14 +360,16 @@ static std::string unparse(const AST *ast_)
         ss << "importstr " << encode_utf8(jsonnet_unparse_escape(ast->file));
 
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
-        ss << "(" << unparse(ast->target) << ")";
+        current_precedence = APPLY_PRECEDENCE;
+        ss << unparse(ast->target, current_precedence);
         if (ast->id != nullptr) {
             ss << "." << unparse(ast->id);
         } else {
-            ss << "[" << unparse(ast->index) << "]";
+            ss << "[" << unparse(ast->index, MAX_PRECEDENCE) << "]";
         }
 
     } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
+        current_precedence = MAX_PRECEDENCE;
         const char *prefix = "local ";
         assert(ast->binds.size() > 0);
         for (const auto &bind : ast->binds) {
@@ -362,10 +384,10 @@ static std::string unparse(const AST *ast_)
                 if (bind.trailingComma) ss << ",";
                 ss << ")";
             }
-            ss << " = " << unparse(bind.body);
+            ss << " = " << unparse(bind.body, MAX_PRECEDENCE);
             prefix = ", ";
         }
-        ss << "; " << unparse(ast->body);
+        ss << "; " << unparse(ast->body, precedence);
 
     } else if (auto *ast = dynamic_cast<const LiteralBoolean*>(ast_)) {
         ss << (ast->value ? "true" : "false");
@@ -388,16 +410,16 @@ static std::string unparse(const AST *ast_)
     } else if (auto *ast = dynamic_cast<const DesugaredObject*>(ast_)) {
         ss << "{";
         for (AST *assert : ast->asserts) {
-            ss << "assert " << unparse(assert) << ",";
+            ss << "assert " << unparse(assert, MAX_PRECEDENCE) << ",";
         }
         for (auto &field : ast->fields) {
-            ss << "[" << unparse(field.name) << "]";
+            ss << "[" << unparse(field.name, MAX_PRECEDENCE) << "]";
             switch (field.hide) {
                 case ObjectField::INHERIT: ss << ": "; break;
                 case ObjectField::HIDDEN: ss << ":: "; break;
                 case ObjectField::VISIBLE: ss << "::: "; break;
             }
-            ss << unparse(field.body) << ",";
+            ss << unparse(field.body, MAX_PRECEDENCE) << ",";
         }
         ss << "}";
 
@@ -409,22 +431,25 @@ static std::string unparse(const AST *ast_)
         ss << "}";
 
     } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple*>(ast_)) {
-        ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
-        ss << " for " << unparse(ast->id) << " in " << unparse(ast->array);
-        ss << "}";
+        ss << "{[" << unparse(ast->field, MAX_PRECEDENCE) << "]: "
+           << unparse(ast->value, MAX_PRECEDENCE)
+           << " for " << unparse(ast->id) << " in " << unparse(ast->array, MAX_PRECEDENCE)
+           << "}";
 
     } else if (dynamic_cast<const Self*>(ast_)) {
         ss << "self";
 
     } else if (auto *ast = dynamic_cast<const SuperIndex*>(ast_)) {
+        current_precedence = APPLY_PRECEDENCE;
         if (ast->id != nullptr) {
             ss << "super." << unparse(ast->id);
         } else {
-            ss << "super[" << unparse(ast->index) << "]";
+            ss << "super[" << unparse(ast->index, MAX_PRECEDENCE) << "]";
         }
 
     } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
-        ss << uop_string(ast->op) << "(" << unparse(ast->expr) << ")";
+        current_precedence = APPLY_PRECEDENCE;
+        ss << uop_string(ast->op) << unparse(ast->expr, current_precedence);
 
     } else if (auto *ast = dynamic_cast<const Var*>(ast_)) {
         ss << encode_utf8(ast->id->name);
@@ -435,12 +460,15 @@ static std::string unparse(const AST *ast_)
 
     }
 
+    if (precedence < current_precedence)
+        return "(" + ss.str() + ")";
+
     return ss.str();
 }
 
 std::string jsonnet_unparse_jsonnet(const AST *ast) 
 {
-    return unparse(ast);
+    return unparse(ast, MAX_PRECEDENCE);
 }
 
 

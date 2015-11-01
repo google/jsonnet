@@ -34,4 +34,11 @@ std.assertEqual(f(100), "huge") &&
 std.assertEqual(if 1 > 0 then 1, 1) &&
 std.assertEqual(if 1 > 2 then 1, null) &&
 
+std.assertEqual(if true then if false then "f" else "y", "y") &&
+std.assertEqual(if true then (if false then "f") else "y", null) &&
+
+std.assertEqual(if true then if true then "f" + "y", "fy") &&
+std.assertEqual(if false then (if true then "f") + "y", null) &&
+std.assertEqual((if false then (if true then "f")) + "y", "nully") &&
+
 true
