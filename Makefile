@@ -142,6 +142,6 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o stdlib/*.jsonnet.h Make.depend
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Make.depend
 
 -include Makefile.depend
