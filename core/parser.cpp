@@ -32,26 +32,10 @@ limitations under the License.
 #include "static_error.h"
 
 
-// TODO(dcunnin): The following syntax sugars should be removed in the desugarer:
-// * f(...):[:[:]] e => f: function(...) e
-// * local f(...) = e => local f = function(...) e
-// * object-level locals
-// * f:[:[:]] e => ["f"]: e
-// "f": e => ["f"]: e
-// f+: e => f: super.f + e
-// order of fields / locals / asserts
-// order of mutually recursive let binds
-// trailing commas in function calls, function definitions, arrays, and objects
-// actual representation of number
-// assert e => assert e : "Assertion failed"
-// if e then e' => if e then e' else null
-// $
-// e.f => e["f"]
-// super.f => super["f"]
-// e { ... } => e + { ... }
-// % operator
-// == and !=
-// Adding std
+// TODO(dcunnin): Preserve:
+// additional parens
+// whitespace
+// comments
 
 
 // For generated ASTs, use a bogus location.
@@ -105,74 +89,160 @@ std::string jsonnet_unparse_number(double v)
     return ss.str();
 }
 
+static std::string unparse(const Identifier *id)
+{
+    return encode_utf8(id->name);
+}
+
+static std::string unparse(const AST *ast_);
+
+static std::string unparse(const std::vector<ComprehensionSpec> &specs)
+{
+    std::stringstream ss;
+    for (const auto &spec : specs) {
+        switch (spec.kind) {
+            case ComprehensionSpec::FOR:
+            ss << " for " << unparse(spec.var) << " in " << unparse(spec.expr);
+            break;
+            case ComprehensionSpec::IF:
+            ss << " if " << unparse(spec.expr);
+            break;
+        }
+    }
+    return ss.str();
+}
+
+static std::string unparse(const ObjectFields &fields)
+{
+    const char *prefix = "";
+    std::stringstream ss;
+    for (const auto &field : fields) {
+
+        std::string meth;
+        if (field.methodSugar) {
+            std::stringstream ss2;
+            ss2 << "(";
+            const char *prefix = "";
+            for (const Identifier *param : field.ids) {
+                ss2 << prefix << unparse(param);
+                prefix = ", ";
+            }
+            ss2 << ")";
+            meth = ss2.str();
+        }
+
+        ss << prefix;
+
+        switch (field.kind) {
+            case ObjectField::LOCAL: {
+                ss << "local " << unparse(field.id);
+                ss << meth;
+                ss << " = " << unparse(field.expr2);
+            } break;
+
+            case ObjectField::FIELD_ID:
+            case ObjectField::FIELD_STR:
+            case ObjectField::FIELD_EXPR: {
+
+                if (field.kind == ObjectField::FIELD_ID) {
+                    ss << unparse(field.id);
+                } else if (field.kind == ObjectField::FIELD_STR) {
+                    ss << unparse(field.expr1);
+                } else if (field.kind == ObjectField::FIELD_EXPR) {
+                    ss << "[" << unparse(field.expr1) << "]";
+                }
+                ss << meth;
+
+                if (field.superSugar) ss << "+";
+                switch (field.hide) {
+                    case ObjectField::INHERIT: ss << ": "; break;
+                    case ObjectField::HIDDEN: ss << ":: "; break;
+                    case ObjectField::VISIBLE: ss << "::: "; break;
+                }
+                ss << unparse(field.expr2);
+
+            } break;
+
+            case ObjectField::ASSERT: {
+                ss << "assert " << unparse(field.expr2);
+                if (field.expr3 != nullptr) {
+                    ss << " : " << unparse(field.expr3);
+                }
+            } break;
+        }
+        prefix = ", ";
+    }
+    return ss.str();
+}
+
 static std::string unparse(const AST *ast_)
 {
     std::stringstream ss;
     if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
         ss << "(" << unparse(ast->target) << ")";
-        if (ast->arguments.size() == 0) {
-            ss << "()";
-        } else {
-            const char *prefix = "(";
-            for (auto arg : ast->arguments) {
-                ss << prefix << unparse(arg);
-                prefix = ", ";
-            }
-            ss << ")";
+        ss << "(";
+        const char *prefix = "";
+        for (auto arg : ast->arguments) {
+            ss << prefix << unparse(arg);
+            prefix = ", ";
         }
+        if (ast->trailingComma) ss << ",";
+        ss << ")";
+        if (ast->tailstrict) ss << " tailstrict";
+
+    } else if (auto *ast = dynamic_cast<const ApplyBrace*>(ast_)) {
+        ss << "(" << unparse(ast->left) << ") " << " " << unparse(ast->right);
 
     } else if (auto *ast = dynamic_cast<const Array*>(ast_)) {
-        if (ast->elements.size() == 0) {
-            ss << "[ ]";
-        } else {
-            const char *prefix = "[";
-            for (const auto &element : ast->elements) {
-                ss << prefix;
-                ss << unparse(element);
-                prefix = ", ";
-            }
-            ss << "]";
+        ss << "[";
+        const char *prefix = "";
+        for (const auto &element : ast->elements) {
+            ss << prefix << unparse(element);
+            prefix = ", ";
         }
+        if (ast->trailingComma) ss << ",";
+        ss << "]";
 
     } else if (auto *ast = dynamic_cast<const ArrayComprehension*>(ast_)) {
         ss << "[";
         ss << unparse(ast->body);
-        for (const ComprehensionSpec &spec : ast->specs) {
-            switch (spec.kind) {
-                case ComprehensionSpec::IF:
-                ss << " if " << unparse(spec.expr);
-                break;
-                case ComprehensionSpec::FOR:
-                ss << " for " << encode_utf8(spec.var->name);
-                ss << " in " << unparse(spec.expr);
-                break;
-            }
-        }
+        if (ast->trailingComma) ss << ",";
+        ss << unparse(ast->specs);
         ss << "]";
+
+    } else if (auto *ast = dynamic_cast<const Assert*>(ast_)) {
+        ss << "assert " << unparse(ast->cond);
+        if (ast->message != nullptr)
+            ss << " : " << unparse(ast->message);
+        ss << "; " << unparse(ast->rest);
 
     } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
         ss << "(" << unparse(ast->left) << ") " << bop_string(ast->op)
            << " (" << unparse(ast->right) << ")";
 
-    } else if (dynamic_cast<const BuiltinFunction*>(ast_)) {
-        std::cerr << "INTERNAL ERROR: Unparsing builtin function." << std::endl;
-        std::abort();
+    } else if (auto *ast = dynamic_cast<const BuiltinFunction*>(ast_)) {
+        ss << "/* builtin " << ast->id << " */ null";
 
     } else if (auto *ast = dynamic_cast<const Conditional*>(ast_)) {
-        ss << "if " << unparse(ast->cond) << " then "
-           << unparse(ast->branchTrue) << " else "
-           << unparse(ast->branchFalse);
+        ss << "if " << unparse(ast->cond) << " then " << unparse(ast->branchTrue);
+        if (ast->branchFalse) {
+            ss << " else " << unparse(ast->branchFalse);
+        }
+
+    } else if (dynamic_cast<const Dollar*>(ast_)) {
+        ss << "$";
 
     } else if (auto *ast = dynamic_cast<const Error*>(ast_)) {
         ss << "error " << unparse(ast->expr);
 
     } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
-        ss << "function ";
-        const char *prefix = "(";
+        ss << "function (";
+        const char *prefix = "";
         for (const Identifier *arg : ast->parameters) {
-            ss << prefix << encode_utf8(arg->name);
+            ss << prefix << unparse(arg);
             prefix = ", ";
         }
+        if (ast->trailingComma) ss << ",";
         ss << ") " << unparse(ast->body);
 
     } else if (auto *ast = dynamic_cast<const Import*>(ast_)) {
@@ -182,13 +252,29 @@ static std::string unparse(const AST *ast_)
         ss << "importstr " << encode_utf8(jsonnet_unparse_escape(ast->file));
 
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
-        ss << "(" << unparse(ast->target) << ")["
-           << unparse(ast->index) << "]";
+        ss << "(" << unparse(ast->target) << ")";
+        if (ast->id != nullptr) {
+            ss << "." << unparse(ast->id);
+        } else {
+            ss << "[" << unparse(ast->index) << "]";
+        }
 
     } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
         const char *prefix = "local ";
+        assert(ast->binds.size() > 0);
         for (const auto &bind : ast->binds) {
-            ss << prefix << encode_utf8(bind.first->name) << " = " << unparse(bind.second);
+            ss << prefix << unparse(bind.var);
+            if (bind.functionSugar) {
+                ss << "(";
+                const char *prefix = "";
+                for (const Identifier *id : bind.params) {
+                    ss << prefix << unparse(id);
+                    prefix = ", ";
+                }
+                if (bind.trailingComma) ss << ",";
+                ss << ")";
+            }
+            ss << " = " << unparse(bind.body);
             prefix = ", ";
         }
         ss << "; " << unparse(ast->body);
@@ -197,7 +283,7 @@ static std::string unparse(const AST *ast_)
         ss << (ast->value ? "true" : "false");
 
     } else if (auto *ast = dynamic_cast<const LiteralNumber*>(ast_)) {
-        ss << ast->value;
+        ss << ast->originalString;
 
     } else if (auto *ast = dynamic_cast<const LiteralString*>(ast_)) {
         ss << encode_utf8(jsonnet_unparse_escape(ast->value));
@@ -206,40 +292,48 @@ static std::string unparse(const AST *ast_)
         ss << "null";
 
     } else if (auto *ast = dynamic_cast<const Object*>(ast_)) {
-        if (ast->fields.size() == 0 && ast->asserts.size() == 0) {
-            ss << "{ }";
-        } else {
-            const char *prefix = "{";
-            for (auto *assert : ast->asserts) {
-                ss << prefix << "assert " << unparse(assert);
-                prefix = ", ";
-            }
-            for (const auto &f : ast->fields) {
-                ss << prefix;
-                const char *colons = nullptr;
-                switch (f.hide) {
-                    case Object::Field::INHERIT: colons = ":"; break;
-                    case Object::Field::HIDDEN: colons = "::"; break;
-                    case Object::Field::VISIBLE: colons = ":::"; break;
-                    default:
-                    std::cerr << "INTERNAL ERROR: Unknown FieldHide: " << f.hide << std::endl;
-                }
-                ss << "[" << unparse(f.name) << "]" << colons << " " << unparse(f.body);
-                prefix = ", ";
-            }
-            ss << "}";
+        ss << "{";
+        ss << unparse(ast->fields);
+        if (ast->trailingComma) ss << ",";
+        ss << "}";
+
+    } else if (auto *ast = dynamic_cast<const DesugaredObject*>(ast_)) {
+        ss << "{";
+        for (AST *assert : ast->asserts) {
+            ss << "assert " << unparse(assert) << ",";
         }
+        for (auto &field : ast->fields) {
+            ss << "[" << unparse(field.name) << "]";
+            switch (field.hide) {
+                case ObjectField::INHERIT: ss << ": "; break;
+                case ObjectField::HIDDEN: ss << ":: "; break;
+                case ObjectField::VISIBLE: ss << "::: "; break;
+            }
+            ss << unparse(field.body) << ",";
+        }
+        ss << "}";
+
+    } else if (auto *ast = dynamic_cast<const ObjectComprehension*>(ast_)) {
+        ss << "{";
+        ss << unparse(ast->fields);
+        if (ast->trailingComma) ss << ",";
+        ss << unparse(ast->specs);
+        ss << "}";
 
     } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple*>(ast_)) {
         ss << "{[" << unparse(ast->field) << "]: " << unparse(ast->value);
-        ss << " for " << encode_utf8(ast->id->name) << " in " << unparse(ast->array);
+        ss << " for " << unparse(ast->id) << " in " << unparse(ast->array);
         ss << "}";
 
     } else if (dynamic_cast<const Self*>(ast_)) {
         ss << "self";
 
     } else if (auto *ast = dynamic_cast<const SuperIndex*>(ast_)) {
-        ss << "super[" << unparse(ast->index) << "]";
+        if (ast->id != nullptr) {
+            ss << "super." << unparse(ast->id);
+        } else {
+            ss << "super[" << unparse(ast->index) << "]";
+        }
 
     } else if (auto *ast = dynamic_cast<const Unary*>(ast_)) {
         ss << uop_string(ast->op) << "(" << unparse(ast->expr) << ")";
@@ -258,13 +352,7 @@ static std::string unparse(const AST *ast_)
 
 std::string jsonnet_unparse_jsonnet(const AST *ast) 
 {
-    const auto *wrapper = dynamic_cast<const Local*>(ast);
-    if (wrapper == nullptr) {
-        std::cerr << "INTERNAL ERROR: Unparsing an AST that wasn't wrapped in a std local."
-                  << std::endl;
-        std::abort();
-    }
-    return unparse(wrapper->body);
+    return unparse(ast);
 }
 
 namespace {
@@ -272,7 +360,6 @@ namespace {
     // Cache some immutable stuff in global variables.
     const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
     const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
-    const int PERCENT_PRECEDENCE = 5; // Modulo and string formatting
     const int MAX_PRECEDENCE = 15; // Local, If, Import, Function, Error
 
     /** These are the binary operator precedences, unary precedence is given by
@@ -284,6 +371,7 @@ namespace {
 
         r[BOP_MULT] = 5;
         r[BOP_DIV] = 5;
+        r[BOP_PERCENT] = 5;
 
         r[BOP_PLUS] = 6;
         r[BOP_MINUS] = 6;
@@ -328,6 +416,7 @@ namespace {
 
         r["*"] = BOP_MULT;
         r["/"] = BOP_DIV;
+        r["%"] = BOP_PERCENT;
 
         r["+"] = BOP_PLUS;
         r["-"] = BOP_MINUS;
@@ -449,9 +538,10 @@ namespace {
         Token parseCommaList(std::vector<AST*> &exprs,
                              Token::Kind end,
                              const std::string &element_kind,
-                             unsigned obj_level)
+                             bool &got_comma)
         {
-            bool got_comma = true;
+            got_comma = false;
+            bool first = true;
             do {
                 Token next = peek();
                 if (!got_comma) {
@@ -465,24 +555,24 @@ namespace {
                     // got_comma can be true or false here.
                     return pop();
                 }
-                if (!got_comma) {
+                if (!first && !got_comma) {
                     std::stringstream ss;
                     ss << "Expected a comma before next " << element_kind <<  ".";
                     throw StaticError(next.location, ss.str());
                 }
-                exprs.push_back(parse(MAX_PRECEDENCE, obj_level));
+                exprs.push_back(parse(MAX_PRECEDENCE));
                 got_comma = false;
+                first = false;
             } while (true);
         }
 
-        std::vector<const Identifier*> parseIdentifierList(const std::string &element_kind,
-                                                           unsigned obj_level)
+        Identifiers parseIdentifierList(const std::string &element_kind, bool &got_comma)
         {
             std::vector<AST*> exprs;
-            parseCommaList(exprs, Token::PAREN_R, element_kind, obj_level);
+            parseCommaList(exprs, Token::PAREN_R, element_kind, got_comma);
 
             // Check they're all identifiers
-            std::vector<const Identifier*> ret;
+            Identifiers ret;
             for (AST *p_ast : exprs) {
                 auto *p = dynamic_cast<Var*>(p_ast);
                 if (p == nullptr) {
@@ -496,116 +586,121 @@ namespace {
             return ret;
         }
 
-        void parseBind(Local::Binds &binds, unsigned obj_level)
+        void parseBind(Local::Binds &binds)
         {
             Token var_id = popExpect(Token::IDENTIFIER);
             auto *id = alloc->makeIdentifier(var_id.data32());
-            if (binds.find(id) != binds.end()) {
-                throw StaticError(var_id.location,
-                                  "Duplicate local var: " + var_id.data);
+            for (const auto &bind : binds) {
+                if (bind.var == id)
+                    throw StaticError(var_id.location,
+                                      "Duplicate local var: " + var_id.data);
             }
-            AST *init;
             if (peek().kind == Token::PAREN_L) {
-                // TODO(dcunnin): SYNTAX SUGAR HERE
                 pop();
-                auto params = parseIdentifierList("function parameter", obj_level);
+                bool got_comma;
+                auto params = parseIdentifierList("function parameter", got_comma);
                 popExpect(Token::OPERATOR, "=");
-                AST *body = parse(MAX_PRECEDENCE, obj_level);
-                init = alloc->make<Function>(span(var_id, body), params, body);
+                AST *body = parse(MAX_PRECEDENCE);
+                binds.emplace_back(id, body, true, params, got_comma);
             } else {
                 popExpect(Token::OPERATOR, "=");
-                init = parse(MAX_PRECEDENCE, obj_level);
+                binds.emplace_back(id, parse(MAX_PRECEDENCE));
             }
-            binds[id] = init;
         }
 
 
-        Token parseObjectRemainder(AST *&obj, const Token &tok, unsigned obj_level)
+        Token parseObjectRemainder(AST *&obj, const Token &tok)
         {
-            std::set<std::string> literal_fields;
-            Object::Fields fields;
-            std::map<const Identifier*, AST*> let_binds;
-            std::vector<AST*> asserts;
+            ObjectFields fields;
+            std::set<std::string> literal_fields;  // For duplicate fields detection.
+            std::set<const Identifier *> binds;  // For duplicate locals detection.
 
-            // Hidden variable to allow outer/top binding.
-            if (obj_level == 0) {
-                const Identifier *hidden_var = alloc->makeIdentifier(U"$");
-                let_binds[hidden_var] = alloc->make<Self>(LocationRange());
-            }
+            bool got_comma = false;
+            bool first = true;
 
-            bool got_comma = true;
-
-            // This is used to prevent { [x]: x, local foo = 3 for x in [1,2,3] }
-            bool last_was_local = false;
             do {
 
                 Token next = pop();
-                if (!got_comma) {
+                if (!got_comma && !first) {
                     if (next.kind == Token::COMMA) {
                         next = pop();
                         got_comma = true;
                     }
                 }
                 if (next.kind == Token::BRACE_R) {
-                    // got_comma can be true or false here.
-                    Object::Fields r;
-                    std::vector<AST*> asserts2;
-                    if (let_binds.size() == 0) {
-                        r = fields;
-                        asserts2 = asserts;
-                    } else {
-                        for (auto *assert : asserts) {
-                            asserts2.push_back(
-                                alloc->make<Local>(assert->location, let_binds, assert));
-                        }
-                        for (const auto &f : fields) {
-                            AST *body = alloc->make<Local>(f.body->location, let_binds, f.body);
-                            r.emplace_back(f.name, f.hide, body);
-                        }
-                    }
-                    obj = alloc->make<Object>(span(tok, next), r, asserts2);
+                    obj = alloc->make<Object>(span(tok, next), fields, got_comma);
                     return next;
+
                 } else if (next.kind == Token::FOR) {
                     // It's a comprehension
-                    if (fields.size() != 1) {
-                        auto msg = "Object comprehension can only have one field/value pair.";
+                    unsigned num_fields = 0;
+                    unsigned num_asserts = 0;
+                    const ObjectField *field_ptr = nullptr;
+                    for (const auto &field : fields) {
+                        if (field.kind == ObjectField::LOCAL) continue;
+                        if (field.kind == ObjectField::ASSERT) {
+                            num_asserts++;
+                            continue;
+                        }
+                        field_ptr = &field;
+                        num_fields++;
+                    }
+                    if (num_asserts > 0) {
+                        auto msg = "Object comprehension cannot have asserts.";
                         throw StaticError(next.location, msg);
                     }
-                    if (last_was_local) {
-                        auto msg = "Locals must appear first in an object comprehension.";
+                    if (num_fields != 1) {
+                        auto msg = "Object comprehension can only have one field.";
                         throw StaticError(next.location, msg);
                     }
-                    AST *field = fields.front().name;
-                    Object::Field::Hide field_hide = fields.front().hide;
-                    AST *value = fields.front().body;
-                    if (let_binds.size() > 0) {
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        value = alloc->make<Local>(value->location, let_binds, value);
-                    }
-                    if (field_hide != Object::Field::INHERIT) {
+                    const ObjectField &field = *field_ptr;
+
+                    if (field.hide != ObjectField::INHERIT) {
                         auto msg = "Object comprehensions cannot have hidden fields.";
                         throw StaticError(next.location, msg);
                     }
 
+                    if (field.kind != ObjectField::FIELD_EXPR) {
+                        auto msg = "Object comprehensions can only have [e] fields.";
+                        throw StaticError(next.location, msg);
+                    }
+
                     std::vector<ComprehensionSpec> specs;
-                    Token last = parseComprehensionSpecs(Token::BRACE_R, specs, obj_level);
-                    obj = alloc->make<ObjectComprehension>(span(tok, last), field, value, specs);
+                    Token last = parseComprehensionSpecs(Token::BRACE_R, specs);
+                    obj = alloc->make<ObjectComprehension>(
+                        span(tok, last), fields, got_comma, specs);
 
                     return last;
                 }
-                if (!got_comma)
+
+                if (!got_comma && !first)
                     throw StaticError(next.location, "Expected a comma before next field.");
 
+                first = false;
+
                 switch (next.kind) {
-                    // TODO(dcunnin): SYNTAX SUGAR HERE
-                    case Token::IDENTIFIER: case Token::STRING: {
-                        last_was_local = false;
+                    case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING: {
+                        ObjectField::Kind kind;
+                        AST *expr1 = nullptr;
+                        const Identifier *id = nullptr;
+                        if (next.kind == Token::IDENTIFIER) {
+                            kind = ObjectField::FIELD_ID;
+                            id = alloc->makeIdentifier(next.data32());
+                        } else if (next.kind == Token::STRING) {
+                            kind = ObjectField::FIELD_STR;
+                            expr1 = alloc->make<LiteralString>(next.location, next.data32());
+                        } else {
+                            kind = ObjectField::FIELD_EXPR;
+                            expr1 = parse(MAX_PRECEDENCE);
+                            popExpect(Token::BRACKET_R);
+                        }
+
                         bool is_method = false;
-                        std::vector<const Identifier *> params;
+                        bool meth_comma = false;
+                        Identifiers params;
                         if (peek().kind == Token::PAREN_L) {
-                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             pop();
-                            params = parseIdentifierList("method parameter", obj_level);
+                            params = parseIdentifierList("method parameter", meth_comma);
                             is_method = true;
                         }
 
@@ -618,79 +713,70 @@ namespace {
                         }
 
                         if (is_method && plus_sugar) {
-                            throw StaticError(next.location, "Cannot use +: syntax sugar in a method: "+next.data);
+                            throw StaticError(
+                                next.location,
+                                "Cannot use +: syntax sugar in a method: " + next.data);
                         }
 
                         popExpect(Token::COLON);
-                        Object::Field::Hide field_hide = Object::Field::INHERIT;
+                        ObjectField::Hide field_hide = ObjectField::INHERIT;
                         if (peek().kind == Token::COLON) {
                             pop();
-                            field_hide = Object::Field::HIDDEN;
+                            field_hide = ObjectField::HIDDEN;
                             if (peek().kind == Token::COLON) {
                                 pop();
-                                field_hide = Object::Field::VISIBLE;
+                                field_hide = ObjectField::VISIBLE;
                             }
                         }
-                        if (!literal_fields.insert(next.data).second) {
-                            throw StaticError(next.location, "Duplicate field: "+next.data);
+                        if (kind != ObjectField::FIELD_EXPR) {
+                            if (!literal_fields.insert(next.data).second) {
+                                throw StaticError(next.location, "Duplicate field: "+next.data);
+                            }
                         }
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        AST *field_expr = alloc->make<LiteralString>(next.location, next.data32());
 
-                        AST *body = parse(MAX_PRECEDENCE, obj_level+1);
-                        if (is_method) {
-                            body = alloc->make<Function>(body->location, params, body);
-                        }
-                        if (plus_sugar) {
-                            // TODO(dcunnin): SYNTAX SUGAR HERE
-                            AST *f = alloc->make<LiteralString>(plus_loc, next.data32());
-                            AST *super_f = alloc->make<SuperIndex>(plus_loc, f);
-                            body = alloc->make<Binary>(body->location, super_f, BOP_PLUS, body);
-                        }
-                        fields.emplace_back(field_expr, field_hide, body);
+
+                        AST *body = parse(MAX_PRECEDENCE);
+
+                        fields.emplace_back(kind, field_hide, plus_sugar, is_method,
+                                            expr1, id, params, meth_comma, body, nullptr);
+
                     }
                     break;
 
                     case Token::LOCAL: {
-                        last_was_local = true;
-                        parseBind(let_binds, obj_level);
-                    }
-                    break;
+                        Token var_id = popExpect(Token::IDENTIFIER);
+                        auto *id = alloc->makeIdentifier(var_id.data32());
 
-                    case Token::BRACKET_L: {
-                        last_was_local = false;
-                        AST *field_expr = parse(MAX_PRECEDENCE, obj_level);
-                        popExpect(Token::BRACKET_R);
-                        popExpect(Token::COLON);
-                        Object::Field::Hide field_hide = Object::Field::INHERIT;
-                        if (peek().kind == Token::COLON) {
-                            pop();
-                            field_hide = Object::Field::HIDDEN;
-                            if (peek().kind == Token::COLON) {
-                                pop();
-                                field_hide = Object::Field::VISIBLE;
-                            }
+                        if (binds.find(id) != binds.end()) {
+                            throw StaticError(var_id.location,
+                                              "Duplicate local var: " + var_id.data);
                         }
-                        fields.emplace_back(field_expr, field_hide,
-                                            parse(MAX_PRECEDENCE, obj_level+1));
+                        bool is_method = false;
+                        bool func_comma = false;
+                        Identifiers params;
+                        if (peek().kind == Token::PAREN_L) {
+                            pop();
+                            is_method = true;
+                            params = parseIdentifierList("function parameter", func_comma);
+                        }
+                        popExpect(Token::OPERATOR, "=");
+                        AST *body = parse(MAX_PRECEDENCE);
+                        binds.insert(id);
+
+                        fields.emplace_back(
+                            ObjectField::Local(is_method, id, params, func_comma, body));
+
                     }
                     break;
 
                     case Token::ASSERT: {
-                        AST *cond = parse(MAX_PRECEDENCE, obj_level + 1);
-                        AST *msg;
+                        AST *cond = parse(MAX_PRECEDENCE);
+                        AST *msg = nullptr;
                         if (peek().kind == Token::COLON) {
                             pop();
-                            msg = parse(MAX_PRECEDENCE, obj_level + 1);
-                        } else {
-                            auto msg_str = U"Assertion failed.";
-                            msg = alloc->make<LiteralString>(cond->location, msg_str);
+                            msg = parse(MAX_PRECEDENCE);
                         }
-                        AST *tru = alloc->make<LiteralBoolean>(gen, true);
-                        // if cond then rest else error msg
-                        AST *branch_false = alloc->make<Error>(msg->location, msg);
-                        asserts.push_back(
-                            alloc->make<Conditional>(span(next, msg), cond, tru, branch_false));
+                        fields.push_back(ObjectField::Assert(cond, msg));
                     }
                     break;
 
@@ -704,20 +790,19 @@ namespace {
 
         /** parses for x in expr for y in expr if expr for z in expr ... */
         Token parseComprehensionSpecs(Token::Kind end,
-                                      std::vector<ComprehensionSpec> &specs,
-                                      unsigned obj_level)
+                                      std::vector<ComprehensionSpec> &specs)
         {
             while (true) {
                 LocationRange l;
                 Token id_token = popExpect(Token::IDENTIFIER);
                 const Identifier *id = alloc->makeIdentifier(id_token.data32());
                 popExpect(Token::IN);
-                AST *arr = parse(MAX_PRECEDENCE, obj_level);
+                AST *arr = parse(MAX_PRECEDENCE);
                 specs.emplace_back(ComprehensionSpec::FOR, id, arr);
 
                 Token maybe_if = pop();
                 for (; maybe_if == Token::IF; maybe_if = pop()) {
-                    AST *cond = parse(MAX_PRECEDENCE, obj_level);
+                    AST *cond = parse(MAX_PRECEDENCE);
                     specs.emplace_back(ComprehensionSpec::IF, nullptr, cond);
                 }
                 if (maybe_if.kind == end) {
@@ -731,7 +816,7 @@ namespace {
             } 
         }
 
-        AST *parseTerminal(unsigned obj_level)
+        AST *parseTerminal(void)
         {
             Token tok = pop();
             switch (tok.kind) {
@@ -760,7 +845,7 @@ namespace {
 
                 case Token::BRACE_L: {
                     AST *obj;
-                    parseObjectRemainder(obj, tok, obj_level);
+                    parseObjectRemainder(obj, tok);
                     return obj;
                 }
 
@@ -768,9 +853,9 @@ namespace {
                     Token next = peek();
                     if (next.kind == Token::BRACKET_R) {
                         pop();
-                        return alloc->make<Array>(span(tok, next), std::vector<AST*>{});
+                        return alloc->make<Array>(span(tok, next), std::vector<AST*>{}, false);
                     }
-                    AST *first = parse(MAX_PRECEDENCE, obj_level);
+                    AST *first = parse(MAX_PRECEDENCE);
                     bool got_comma = false;
                     next = peek();
                     if (!got_comma && next.kind == Token::COMMA) {
@@ -783,8 +868,9 @@ namespace {
                         // It's a comprehension
                         pop();
                         std::vector<ComprehensionSpec> specs;
-                        Token last = parseComprehensionSpecs(Token::BRACKET_R, specs, obj_level);
-                        return alloc->make<ArrayComprehension>(span(tok, last), first, specs);
+                        Token last = parseComprehensionSpecs(Token::BRACKET_R, specs);
+                        return alloc->make<ArrayComprehension>(
+                            span(tok, last), first, got_comma, specs);
                     }
 
                     // Not a comprehension: It can have more elements.
@@ -792,6 +878,7 @@ namespace {
                     elements.push_back(first);
                     do {
                         if (next.kind == Token::BRACKET_R) {
+                            // TODO(dcunnin): SYNTAX SUGAR HERE (preserve comma)
                             pop();
                             break;
                         }
@@ -800,7 +887,7 @@ namespace {
                             ss << "Expected a comma before next array element.";
                             throw StaticError(next.location, ss.str());
                         }
-                        elements.push_back(parse(MAX_PRECEDENCE, obj_level));
+                        elements.push_back(parse(MAX_PRECEDENCE));
                         next = peek();
                         if (next.kind == Token::COMMA) {
                             pop();
@@ -808,12 +895,12 @@ namespace {
                             got_comma = true;
                         }
                     } while (true);
-                    return alloc->make<Array>(span(tok, next), elements);
+                    return alloc->make<Array>(span(tok, next), elements, got_comma);
                     
                 }
 
                 case Token::PAREN_L: {
-                    auto *inner = parse(MAX_PRECEDENCE, obj_level);
+                    auto *inner = parse(MAX_PRECEDENCE);
                     popExpect(Token::PAREN_R);
                     return inner;
                 }
@@ -821,7 +908,7 @@ namespace {
 
                 // Literals
                 case Token::NUMBER:
-                return alloc->make<LiteralNumber>(span(tok), strtod(tok.data.c_str(), nullptr));
+                return alloc->make<LiteralNumber>(span(tok), tok.data);
 
                 case Token::STRING:
                 return alloc->make<LiteralString>(span(tok), tok.data32());
@@ -849,11 +936,7 @@ namespace {
 
                 // Variables
                 case Token::DOLLAR:
-                // TODO(dcunnin): SYNTAX SUGAR HERE
-                if (obj_level == 0) {
-                    throw StaticError(tok.location, "No top-level object found.");
-                }
-                return alloc->make<Var>(span(tok), alloc->makeIdentifier(U"$"));
+                return alloc->make<Dollar>(span(tok));
 
                 case Token::IDENTIFIER:
                 return alloc->make<Var>(span(tok), alloc->makeIdentifier(tok.data32()));
@@ -863,21 +946,21 @@ namespace {
 
                 case Token::SUPER: {
                     Token next = pop();
-                    AST *index;
+                    AST *index = nullptr;
+                    const Identifier *id = nullptr;
                     switch (next.kind) {
                         case Token::DOT: {
-                            // TODO(dcunnin): SYNTAX SUGAR HERE
                             Token field_id = popExpect(Token::IDENTIFIER);
-                            index = alloc->make<LiteralString>(span(field_id), field_id.data32());
+                            id = alloc->makeIdentifier(field_id.data32());
                         } break;
                         case Token::BRACKET_L: {
-                            index = parse(MAX_PRECEDENCE, obj_level);
+                            index = parse(MAX_PRECEDENCE);
                             popExpect(Token::BRACKET_R);
                         } break;
                         default:
                         throw StaticError(tok.location, "Expected . or [ after super.");
                     }
-                    return alloc->make<SuperIndex>(span(tok), index);
+                    return alloc->make<SuperIndex>(span(tok), index, id);
                 }
             }
 
@@ -886,7 +969,7 @@ namespace {
             return nullptr;  // Quiet, compiler.
         }
 
-        AST *parse(int precedence, unsigned obj_level)
+        AST *parse(int precedence)
         {
             Token begin = peek();
 
@@ -896,45 +979,36 @@ namespace {
                 // call to parse will parse them.
                 case Token::ASSERT: {
                     pop();
-                    AST *cond = parse(MAX_PRECEDENCE, obj_level);
-                    AST *msg;
+                    AST *cond = parse(MAX_PRECEDENCE);
+                    AST *msg = nullptr;
                     if (peek().kind == Token::COLON) {
                         pop();
-                        msg = parse(MAX_PRECEDENCE, obj_level);
-                    } else {
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        auto msg_str = U"Assertion failed.";
-                        msg = alloc->make<LiteralString>(begin.location, msg_str);
+                        msg = parse(MAX_PRECEDENCE);
                     }
                     popExpect(Token::SEMICOLON);
-                    AST *rest = parse(MAX_PRECEDENCE, obj_level);
-                    // if cond then rest else error msg
-                    AST *branch_false = alloc->make<Error>(span(begin, rest), msg);
-                    return alloc->make<Conditional>(span(begin, rest),
-                                                    cond, rest, branch_false);
+                    AST *rest = parse(MAX_PRECEDENCE);
+                    return alloc->make<Assert>(span(begin, rest), cond, msg, rest);
                 }
 
                 case Token::ERROR: {
                     pop();
-                    AST *expr = parse(MAX_PRECEDENCE, obj_level);
+                    AST *expr = parse(MAX_PRECEDENCE);
                     return alloc->make<Error>(span(begin, expr), expr);
                 }
 
                 case Token::IF: {
                     pop();
-                    AST *cond = parse(MAX_PRECEDENCE, obj_level);
+                    AST *cond = parse(MAX_PRECEDENCE);
                     popExpect(Token::THEN);
-                    AST *branch_true = parse(MAX_PRECEDENCE, obj_level);
-                    AST *branch_false;
+                    AST *branch_true = parse(MAX_PRECEDENCE);
+                    AST *branch_false = nullptr;
+                    LocationRange lr = span(begin, branch_true);
                     if (peek().kind == Token::ELSE) {
                         pop();
-                        branch_false = parse(MAX_PRECEDENCE, obj_level);
-                    } else {
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        branch_false = alloc->make<LiteralNull>(span(begin, branch_true));
+                        branch_false = parse(MAX_PRECEDENCE);
+                        lr = span(begin, branch_false);
                     }
-                    return alloc->make<Conditional>(span(begin, branch_false),
-                                                   cond, branch_true, branch_false);
+                    return alloc->make<Conditional>(lr, cond, branch_true, branch_false);
                 }
 
                 case Token::FUNCTION: {
@@ -942,20 +1016,11 @@ namespace {
                     Token next = pop();
                     if (next.kind == Token::PAREN_L) {
                         std::vector<AST*> params_asts;
-                        parseCommaList(params_asts, Token::PAREN_R,
-                                       "function parameter", obj_level);
-                        AST *body = parse(MAX_PRECEDENCE, obj_level);
-                        std::vector<const Identifier*> params;
-                        for (AST *p_ast : params_asts) {
-                            auto *p = dynamic_cast<Var*>(p_ast);
-                            if (p == nullptr) {
-                                std::stringstream ss;
-                                ss << "Not an identifier: " << p_ast;
-                                throw StaticError(p_ast->location, ss.str());
-                            }
-                            params.push_back(p->id);
-                        }
-                        return alloc->make<Function>(span(begin, body), params, body);
+                        bool got_comma;
+                        Identifiers params = parseIdentifierList(
+                            "function parameter", got_comma);
+                        AST *body = parse(MAX_PRECEDENCE);
+                        return alloc->make<Function>(span(begin, body), params, got_comma, body);
                     } else {
                         std::stringstream ss;
                         ss << "Expected ( but got " << next;
@@ -967,7 +1032,7 @@ namespace {
                     pop();
                     Local::Binds binds;
                     do {
-                        parseBind(binds, obj_level);
+                        parseBind(binds);
                         Token delim = pop();
                         if (delim.kind != Token::SEMICOLON && delim.kind != Token::COMMA) {
                             std::stringstream ss;
@@ -976,7 +1041,7 @@ namespace {
                         }
                         if (delim.kind == Token::SEMICOLON) break;
                     } while (true);
-                    AST *body = parse(MAX_PRECEDENCE, obj_level);
+                    AST *body = parse(MAX_PRECEDENCE);
                     return alloc->make<Local>(span(begin, body), binds, body);
                 }
 
@@ -992,15 +1057,15 @@ namespace {
                     }
                     if (UNARY_PRECEDENCE == precedence) {
                         Token op = pop();
-                        AST *expr = parse(precedence, obj_level);
+                        AST *expr = parse(precedence);
                         return alloc->make<Unary>(span(op, expr), uop, expr);
                     }
                 }
 
                 // Base case
-                if (precedence == 0) return parseTerminal(obj_level);
+                if (precedence == 0) return parseTerminal();
 
-                AST *lhs = parse(precedence - 1, obj_level);
+                AST *lhs = parse(precedence - 1);
 
                 while (true) {
 
@@ -1015,16 +1080,12 @@ namespace {
                     switch (peek().kind) {
                         // Logical / arithmetic binary operator.
                         case Token::OPERATOR:
-                        if (peek().data == "%") {
-                            if (PERCENT_PRECEDENCE != precedence) return lhs;
-                        } else {
-                            if (!op_is_binary(peek().data, bop)) {
-                                std::stringstream ss;
-                                ss << "Not a binary operator: " << peek().data;
-                                throw StaticError(peek().location, ss.str());
-                            }
-                            if (precedence_map[bop] != precedence) return lhs;
+                        if (!op_is_binary(peek().data, bop)) {
+                            std::stringstream ss;
+                            ss << "Not a binary operator: " << peek().data;
+                            throw StaticError(peek().location, ss.str());
                         }
+                        if (precedence_map[bop] != precedence) return lhs;
                         break;
 
                         // Index, Apply
@@ -1039,64 +1100,37 @@ namespace {
 
                     Token op = pop();
                     if (op.kind == Token::BRACKET_L) {
-                        AST *index = parse(MAX_PRECEDENCE, obj_level);
+                        AST *index = parse(MAX_PRECEDENCE);
                         Token end = popExpect(Token::BRACKET_R);
-                        lhs = alloc->make<Index>(span(begin, end), lhs, index);
+                        lhs = alloc->make<Index>(span(begin, end), lhs, index, nullptr);
 
                     } else if (op.kind == Token::DOT) {
-                        Token field = popExpect(Token::IDENTIFIER);
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        AST *index = alloc->make<LiteralString>(span(field), field.data32());
-                        lhs = alloc->make<Index>(span(begin, field), lhs, index);
+                        Token field_id = popExpect(Token::IDENTIFIER);
+                        const Identifier *id = alloc->makeIdentifier(field_id.data32());
+                        lhs = alloc->make<Index>(span(begin, field_id), lhs, nullptr, id);
 
                     } else if (op.kind == Token::PAREN_L) {
                         std::vector<AST*> args;
+                        bool got_comma;
                         Token end = parseCommaList(args, Token::PAREN_R,
-                                                   "function argument", obj_level);
+                                                   "function argument", got_comma);
                         bool tailstrict = false;
                         if (peek().kind == Token::TAILSTRICT) {
                             pop();
                             tailstrict = true;
                         }
-                        lhs = alloc->make<Apply>(span(begin, end), lhs, args, tailstrict);
+                        lhs = alloc->make<Apply>(span(begin, end), lhs, args, got_comma,
+                                                 tailstrict);
 
                     } else if (op.kind == Token::BRACE_L) {
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
                         AST *obj;
-                        Token end = parseObjectRemainder(obj, op, obj_level);
-                        lhs = alloc->make<Binary>(span(begin, end), lhs, BOP_PLUS, obj);
-
-                    } else if (op.data == "%") {
-                        // TODO(dcunnin): SYNTAX SUGAR HERE
-                        AST *rhs = parse(precedence - 1, obj_level);
-                        AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
-                        AST *mod_str = alloc->make<LiteralString>(gen, U"mod");
-                        AST *f_mod = alloc->make<Index>(gen, std, mod_str);
-                        std::vector<AST*> args = {lhs, rhs};
-                        lhs = alloc->make<Apply>(span(begin, rhs), f_mod, args, false);
+                        Token end = parseObjectRemainder(obj, op);
+                        lhs = alloc->make<ApplyBrace>(span(begin, end), lhs, obj);
 
                     } else {
                         // Logical / arithmetic binary operator.
-                        AST *rhs = parse(precedence - 1, obj_level);
-                        bool invert = false;
-                        if (bop == BOP_MANIFEST_UNEQUAL) {
-                            // TODO(dcunnin): SYNTAX SUGAR HERE
-                            bop = BOP_MANIFEST_EQUAL;
-                            invert = true;
-                        }
-                        if (bop == BOP_MANIFEST_EQUAL) {
-                            // TODO(dcunnin): SYNTAX SUGAR HERE
-                            AST *std = alloc->make<Var>(gen, alloc->makeIdentifier(U"std"));
-                            AST *equals_str = alloc->make<LiteralString>(gen, U"equals");
-                            AST *f_equals = alloc->make<Index>(gen, std, equals_str);
-                            std::vector<AST*> args = {lhs, rhs};
-                            lhs = alloc->make<Apply>(span(begin, rhs), f_equals, args, false);
-                        } else {
-                            lhs = alloc->make<Binary>(span(begin, rhs), lhs, bop, rhs);
-                        }
-                        if (invert) {
-                            lhs = alloc->make<Unary>(lhs->location, UOP_NOT, lhs);
-                        }
+                        AST *rhs = parse(precedence - 1);
+                        lhs = alloc->make<Binary>(span(begin, rhs), lhs, bop, rhs);
                     }
                 }
             }
@@ -1105,51 +1139,14 @@ namespace {
     };
 }
 
-static unsigned long max_builtin = 24;
-BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
-{
-    switch (builtin) {
-        case 0: return {U"makeArray", {U"sz", U"func"}};
-        case 1: return {U"pow", {U"x", U"n"}};
-        case 2: return {U"floor", {U"x"}};
-        case 3: return {U"ceil", {U"x"}};
-        case 4: return {U"sqrt", {U"x"}};
-        case 5: return {U"sin", {U"x"}};
-        case 6: return {U"cos", {U"x"}};
-        case 7: return {U"tan", {U"x"}};
-        case 8: return {U"asin", {U"x"}};
-        case 9: return {U"acos", {U"x"}};
-        case 10: return {U"atan", {U"x"}};
-        case 11: return {U"type", {U"x"}};
-        case 12: return {U"filter", {U"func", U"arr"}};
-        case 13: return {U"objectHasEx", {U"obj", U"f", U"inc_hidden"}};
-        case 14: return {U"length", {U"x"}};
-        case 15: return {U"objectFieldsEx", {U"obj", U"inc_hidden"}};
-        case 16: return {U"codepoint", {U"str"}};
-        case 17: return {U"char", {U"n"}};
-        case 18: return {U"log", {U"n"}};
-        case 19: return {U"exp", {U"n"}};
-        case 20: return {U"mantissa", {U"n"}};
-        case 21: return {U"exponent", {U"n"}};
-        case 22: return {U"modulo", {U"a", U"b"}};
-        case 23: return {U"extVar", {U"x"}};
-        case 24: return {U"primitiveEquals", {U"a", U"b"}};
-        default:
-        std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
-        std::abort();
-    }
-    // Quiet, compiler.
-    return BuiltinDecl();
-}
-
-static AST *do_parse(Allocator *alloc, const std::string &file, const char *input)
+AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
 {
     // Lex the input.
     auto token_list = jsonnet_lex(file, input);
 
     // Parse the input.
     Parser parser(&token_list, alloc);
-    AST *expr = parser.parse(MAX_PRECEDENCE, 0);
+    AST *expr = parser.parse(MAX_PRECEDENCE);
     if (token_list.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
         ss << "Did not expect: " << token_list.front();
@@ -1157,41 +1154,4 @@ static AST *do_parse(Allocator *alloc, const std::string &file, const char *inpu
     }
 
     return expr;
-}
-
-static constexpr char STD_CODE[] = {
-    #include "std.jsonnet.h"
-};
-
-AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
-{
-    // Parse the actual file.
-    AST *expr = do_parse(alloc, file, input);
-
-    // Now, implement the std library by wrapping in a local construct.
-    AST *std_ast = do_parse(alloc, "std.jsonnet", STD_CODE);
-    auto *std_obj = dynamic_cast<Object*>(std_ast);
-    if (std_obj == nullptr) {
-        std::cerr << "INTERNAL ERROR: std.jsonnet not an object." << std::endl;
-        std::abort();
-    }
-
-    // Bind 'std' builtins that are implemented natively.
-    Object::Fields &fields = std_obj->fields;
-    for (unsigned long c=0 ; c <= max_builtin ; ++c) {
-        const auto &decl = jsonnet_builtin_decl(c);
-        std::vector<const Identifier*> params;
-        for (const auto &p : decl.params)
-            params.push_back(alloc->makeIdentifier(p));
-        fields.emplace_back(alloc->make<LiteralString>(gen, decl.name), Object::Field::HIDDEN,
-                            alloc->make<BuiltinFunction>(gen, c, params));
-    }
-    fields.emplace_back(alloc->make<LiteralString>(gen, U"thisFile"), Object::Field::HIDDEN,
-                        alloc->make<LiteralString>(gen, decode_utf8(file)));
-
-    Local::Binds std_binds;
-    std_binds[alloc->makeIdentifier(U"std")] = std_obj;
-    // TODO(dcunnin): SYNTAX SUGAR HERE
-    AST *wrapped = alloc->make<Local>(expr->location, std_binds, expr);
-    return wrapped;
 }

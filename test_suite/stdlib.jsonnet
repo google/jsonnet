@@ -314,7 +314,14 @@ std.assertEqual(std.setMember("a", ["a", "b", "c"]), true) &&
 std.assertEqual(std.setMember("a", []), false) &&
 std.assertEqual(std.setMember("a", ["b", "c"]), false) &&
 
-std.assertEqual(std.thisFile, "stdlib.jsonnet") &&
+(
+    if std.thisFile == "<stdin>" then
+        # This happens when testing the unparser.
+        true
+    else
+        std.assertEqual(std.thisFile, "stdlib.jsonnet")
+) &&
+
 std.assertEqual(import "this_file/a.jsonnet", "this_file/a.jsonnet") &&
 std.assertEqual(import "this_file/b.jsonnet", "this_file/a.jsonnet") &&
 

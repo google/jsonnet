@@ -92,18 +92,18 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     } else if (auto *ast = dynamic_cast<const Local*>(ast_)) {
         IdSet ast_vars;
         for (const auto &bind: ast->binds) {
-            ast_vars.insert(bind.first);
+            ast_vars.insert(bind.var);
         }
         auto new_vars = vars;
         append(new_vars, ast_vars);
         IdSet fvs;
         for (const auto &bind: ast->binds)
-            append(fvs, static_analysis(bind.second, in_object, new_vars));
+            append(fvs, static_analysis(bind.body, in_object, new_vars));
 
         append(fvs, static_analysis(ast->body, in_object, new_vars));
 
         for (const auto &bind: ast->binds)
-            fvs.erase(bind.first);
+            fvs.erase(bind.var);
 
         append(r, fvs);
 
@@ -119,13 +119,13 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     } else if (dynamic_cast<const LiteralNull*>(ast_)) {
         // Nothing to do.
 
-    } else if (auto *ast = dynamic_cast<Object*>(ast_)) {
-        for (auto assert : ast->asserts) {
-            append(r, static_analysis(assert, true, vars));
-        }
-        for (auto field : ast->fields) {
+    } else if (auto *ast = dynamic_cast<DesugaredObject*>(ast_)) {
+        for (auto &field : ast->fields) {
             append(r, static_analysis(field.name, in_object, vars));
             append(r, static_analysis(field.body, true, vars));
+        }
+        for (AST *assert : ast->asserts) {
+            append(r, static_analysis(assert, true, vars));
         }
 
     } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple*>(ast_)) {

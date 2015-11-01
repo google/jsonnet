@@ -1,4 +1,4 @@
-RUNTIME ERROR: Assertion failed.
+RUNTIME ERROR: Object assertion failed.
 	error.invariant.equality.jsonnet:17:10-14	thunk <object_assert>
 	std.jsonnet:883:50-53	thunk <a>
 	std.jsonnet:856:25	thunk <x>

@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+std.assertEqual([], []) &&
+std.assertEqual([1], [1]) &&
+std.assertEqual([1,], [1]) &&
 std.assertEqual([1,4,9,16][2], 9) &&
 std.assertEqual([1,4,9,16] == [1, 4, 9, 16], true) &&
 std.assertEqual([1,4,9,16] != [1, 4, 9, 15], true) &&

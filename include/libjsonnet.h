@@ -91,8 +91,11 @@ void jsonnet_ext_var(struct JsonnetVm *vm, const char *key, const char *val);
  */
 void jsonnet_ext_code(struct JsonnetVm *vm, const char *key, const char *val);
 
-/** If set to 1, will emit the Jsonnet input after parsing / desugaring. */
+/** If set to 1, will emit the Jsonnet input after parsing. */
 void jsonnet_debug_ast(struct JsonnetVm *vm, int v);
+
+/** If set to 1, will emit the Jsonnet input after desugaring. */
+void jsonnet_debug_desugaring(struct JsonnetVm *vm, int v);
 
 /** Set the number of lines of stack trace to display (0 for all of them). */
 void jsonnet_max_trace(struct JsonnetVm *vm, unsigned v);

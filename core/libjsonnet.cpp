@@ -92,15 +92,16 @@ struct JsonnetVm {
     unsigned maxStack;
     unsigned gcMinObjects;
     bool debugAst;
+    bool debugDesugaring;
     unsigned maxTrace;
     std::map<std::string, VmExt> ext;
     JsonnetImportCallback *importCallback;
     void *importCallbackContext;
     bool stringOutput;
     JsonnetVm(void)
-      : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false), maxTrace(20),
-        importCallback(default_import_callback), importCallbackContext(this),
-        stringOutput(false)
+      : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugAst(false),
+        debugDesugaring(false), maxTrace(20), importCallback(default_import_callback),
+        importCallbackContext(this), stringOutput(false)
     { }
 };
 
@@ -175,6 +176,11 @@ void jsonnet_debug_ast(JsonnetVm *vm, int v)
     vm->debugAst = v;
 }
 
+void jsonnet_debug_desugaring(JsonnetVm *vm, int v)
+{
+    vm->debugDesugaring = v;
+}
+
 void jsonnet_max_trace(JsonnetVm *vm, unsigned v)
 {
     vm->maxTrace = v;
@@ -188,21 +194,25 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
         AST *expr = jsonnet_parse(&alloc, filename, snippet);
         std::string json_str;
         std::map<std::string, std::string> files;
-        jsonnet_desugar(&alloc, expr);
         if (vm->debugAst) {
             json_str = jsonnet_unparse_jsonnet(expr);
         } else {
-            jsonnet_static_analysis(expr);
-            if (multi) {
-                files = jsonnet_vm_execute_multi(&alloc, expr, vm->ext, vm->maxStack,
-                                                 vm->gcMinObjects, vm->gcGrowthTrigger,
-                                                 vm->importCallback, vm->importCallbackContext,
-                                                 vm->stringOutput);
+            jsonnet_desugar(&alloc, expr);
+            if (vm->debugDesugaring) {
+                json_str = jsonnet_unparse_jsonnet(expr);
             } else {
-                json_str = jsonnet_vm_execute(&alloc, expr, vm->ext, vm->maxStack,
-                                              vm->gcMinObjects, vm->gcGrowthTrigger,
-                                              vm->importCallback, vm->importCallbackContext,
-                                              vm->stringOutput);
+                jsonnet_static_analysis(expr);
+                if (multi) {
+                    files = jsonnet_vm_execute_multi(&alloc, expr, vm->ext, vm->maxStack,
+                                                     vm->gcMinObjects, vm->gcGrowthTrigger,
+                                                     vm->importCallback, vm->importCallbackContext,
+                                                     vm->stringOutput);
+                } else {
+                    json_str = jsonnet_vm_execute(&alloc, expr, vm->ext, vm->maxStack,
+                                                  vm->gcMinObjects, vm->gcGrowthTrigger,
+                                                  vm->importCallback, vm->importCallbackContext,
+                                                  vm->stringOutput);
+                }
             }
         }
         if (multi) {

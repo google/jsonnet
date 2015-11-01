@@ -107,7 +107,7 @@ namespace {
         Value val2;
 
         /** Used for a variety of purposes. */
-        Object::Fields::const_iterator fit;
+        DesugaredObject::Fields::const_iterator fit;
 
         /** Used for a variety of purposes. */
         std::map<const Identifier *, HeapSimpleObject::Field> objectFields;
@@ -601,7 +601,7 @@ namespace {
             return nullptr;
         }
 
-        typedef std::map<const Identifier*, Object::Field::Hide> IdHideMap;
+        typedef std::map<const Identifier*, ObjectField::Hide> IdHideMap;
 
         /** Auxiliary function.
          */
@@ -614,7 +614,7 @@ namespace {
                 counter++;
                 if (counter <= skip) return r;
                 for (const auto &f : obj->fields) {
-                    r[f.first] = !manifesting ? Object::Field::VISIBLE : f.second.hide;
+                    r[f.first] = !manifesting ? ObjectField::VISIBLE : f.second.hide;
                 }
 
             } else if (auto *obj = dynamic_cast<const HeapExtendedObject*>(obj_)) {
@@ -624,7 +624,7 @@ namespace {
                     if (it == r.end()) {
                         // First time it is seen
                         r[pair.first] = pair.second;
-                    } else if (it->second == Object::Field::INHERIT) {
+                    } else if (it->second == ObjectField::INHERIT) {
                         // Seen before, but with inherited visibility so use new visibility
                         r[pair.first] = pair.second;
                     }
@@ -634,7 +634,7 @@ namespace {
                 counter++;
                 if (counter <= skip) return r;
                 for (const auto &f : obj->compValues)
-                    r[f.first] = Object::Field::VISIBLE;
+                    r[f.first] = ObjectField::VISIBLE;
             }
             return r;
         }
@@ -646,7 +646,7 @@ namespace {
             unsigned counter = 0;
             std::set<const Identifier*> r;
             for (const auto &pair : objectFields(obj_, counter, 0, manifesting)) {
-                if (pair.second != Object::Field::HIDDEN) r.insert(pair.first);
+                if (pair.second != ObjectField::HIDDEN) r.insert(pair.first);
             }
             return r;
         }
@@ -997,13 +997,13 @@ namespace {
                     for (const auto &bind : ast.binds) {
                         // Note that these 2 lines must remain separate to avoid the GC running
                         // when bindings has a nullptr for key bind.first.
-                        auto *th = makeHeap<HeapThunk>(bind.first, self, offset, bind.second);
-                        f.bindings[bind.first] = th;
+                        auto *th = makeHeap<HeapThunk>(bind.var, self, offset, bind.body);
+                        f.bindings[bind.var] = th;
                     }
                     // Now capture the environment (including the new thunks, to make cycles).
                     for (const auto &bind : ast.binds) {
-                        auto *thunk = f.bindings[bind.first];
-                        thunk->upValues = capture(bind.second->freeVariables);
+                        auto *thunk = f.bindings[bind.var];
+                        thunk->upValues = capture(bind.body->freeVariables);
                     }
                     ast_ = ast.body;
                     goto recurse;
@@ -1028,8 +1028,8 @@ namespace {
                     scratch = makeNull();
                 } break;
 
-                case AST_OBJECT: {
-                    const auto &ast = *static_cast<const Object*>(ast_);
+                case AST_DESUGARED_OBJECT: {
+                    const auto &ast = *static_cast<const DesugaredObject*>(ast_);
                     if (ast.fields.empty()) {
                         auto env = capture(ast.freeVariables);
                         std::map<const Identifier *, HeapSimpleObject::Field> fields;
@@ -1973,7 +1973,7 @@ namespace {
                     } break;
 
                     case FRAME_OBJECT: {
-                        const auto &ast = *static_cast<const Object*>(f.ast);
+                        const auto &ast = *static_cast<const DesugaredObject*>(f.ast);
                         if (scratch.t != Value::NULL_TYPE) {
                             if (scratch.t != Value::STRING) {
                                 throw makeError(ast.location, "Field name was not a string.");

@@ -28,7 +28,7 @@ std.assertEqual({x: 1, y: 2} != {x: 1, y: 2}, false) &&
 std.assertEqual({x: 1, y: 2} != {x: 1, y: 2, z: 3}, true) &&
 
 std.assertEqual({f(x,y,z): x, y: self.f(1,2,3)}.y, 1) &&
-std.assertEqual({f(x,y,z): x, y(x): self.f(x,2,3), z:self.y(4)}.z, 4) &&
+std.assertEqual({["f"](x,y,z):: x, "y"(x): self.f(x,2,3), z:self.y(4)}.z, 4) &&
 
 // Object Local
 
@@ -57,6 +57,8 @@ std.assertEqual({[null]: "test"}, {}) &&
 std.assertEqual({[""+k]:k  for k in [1,2,3]}, {"1": 1, "2": 2, "3": 3}) &&
 std.assertEqual({[""+(k+1)]:(k+1)  for k in [0,1,2]}, {[""+k]:k  for k in [1,2,3]}) &&
 std.assertEqual({[""+k]:k  for k in [1,2,3]}, {"1": 1, "2": 2, "3": 3}) &&
+std.assertEqual({[x+""]: x+foo, local foo=3 for x in [1,2,3]}, {"1": 4, "2": 5, "3": 6}) &&
+
 
 local obj = {
     f14true: {x: 1, y: 4, z: true}, f14false: {x: 1, y: 4, z: false}, f16true: {x: 1, y: 6, z: true}, f16false: {x: 1, y: 6, z: false},

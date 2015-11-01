@@ -17,4 +17,6 @@ limitations under the License.
 assert true;
 assert 10 > 5;
 
+std.assertEqual(assert 10 > 5; 32, 32) &&
+
 true

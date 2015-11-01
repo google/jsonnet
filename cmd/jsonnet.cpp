@@ -184,6 +184,7 @@ void usage(std::ostream &o)
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
     o << "  --gc-growth-trigger <n> Run garbage collector after this amount of object growth\n";
     o << "  --debug-ast             Unparse the parsed AST without executing it\n\n";
+    o << "  --debug-desugaring      Unparse the desugared AST without executing it\n\n";
     o << "  --version               Print version\n";
     o << "Multichar options are expanded e.g. -abc becomes -a -b -c.\n";
     o << "The -- option suppresses option processing for subsequent arguments.\n";
@@ -416,6 +417,8 @@ static bool process_args(int argc,
             jsonnet_string_output(vm, 1);
         } else if (arg == "--debug-ast") {
             jsonnet_debug_ast(vm, true);
+        } else if (arg == "--debug-desugaring") {
+            jsonnet_debug_desugaring(vm, true);
         } else if (arg == "--") {
             // All subsequent args are not options.
             while ((++i) < args.size())
