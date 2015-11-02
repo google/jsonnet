@@ -573,7 +573,7 @@ namespace {
             bool first = true;
             do {
                 Token next = peek();
-                if (!got_comma) {
+                if (!first && !got_comma) {
                     if (next.kind == Token::COMMA) {
                         pop();
                         next = peek();
