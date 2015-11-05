@@ -368,8 +368,12 @@ struct LiteralNumber : public AST {
 /** Represents JSON strings. */
 struct LiteralString : public AST {
     String value;
-    LiteralString(const LocationRange &lr, const String &value)
-      : AST(lr, AST_LITERAL_STRING), value(value)
+    enum TokenKind { SINGLE, DOUBLE, BLOCK };
+    TokenKind tokenKind;
+    std::string blockIndent;
+    LiteralString(const LocationRange &lr, const String &value, TokenKind token_kind,
+                  const std::string &block_indent)
+      : AST(lr, AST_LITERAL_STRING), value(value), tokenKind(token_kind), blockIndent(block_indent)
     { }
 };
 

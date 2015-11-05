@@ -91,6 +91,9 @@ void jsonnet_ext_var(struct JsonnetVm *vm, const char *key, const char *val);
  */
 void jsonnet_ext_code(struct JsonnetVm *vm, const char *key, const char *val);
 
+/** If set to 1, will emit the Jsonnet input after lexing. */
+void jsonnet_debug_lexer(struct JsonnetVm *vm, int v);
+
 /** If set to 1, will emit the Jsonnet input after parsing. */
 void jsonnet_debug_ast(struct JsonnetVm *vm, int v);
 

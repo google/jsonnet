@@ -183,6 +183,7 @@ void usage(std::ostream &o)
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
     o << "  --gc-growth-trigger <n> Run garbage collector after this amount of object growth\n";
+    o << "  --debug-lexer           Unlex the tokens after lexing\n\n";
     o << "  --debug-ast             Unparse the parsed AST without executing it\n\n";
     o << "  --debug-desugaring      Unparse the desugared AST without executing it\n\n";
     o << "  --version               Print version\n";
@@ -415,6 +416,8 @@ static bool process_args(int argc,
             config->set_output_file(output_file);
         } else if (arg == "-S" || arg == "--string") {
             jsonnet_string_output(vm, 1);
+        } else if (arg == "--debug-lexer") {
+            jsonnet_debug_lexer(vm, true);
         } else if (arg == "--debug-ast") {
             jsonnet_debug_ast(vm, true);
         } else if (arg == "--debug-desugaring") {

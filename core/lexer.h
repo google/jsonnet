@@ -18,13 +18,33 @@ limitations under the License.
 #define JSONNET_LEXER_H
 
 #include <cstdlib>
+
 #include <iostream>
 #include <string>
 #include <list>
 #include <sstream>
+#include <vector>
 
 #include "unicode.h"
 #include "static_error.h"
+
+/** Represents stuff that lexers usually strip, but we must keep if we want to output the code
+ * unchanged.
+ */
+struct FodderElement {
+    enum Kind {
+        WHITESPACE,
+        COMMENT_C,
+        COMMENT_CPP,
+        COMMENT_HASH,
+    };
+    Kind kind;
+    std::string data;
+    FodderElement(Kind kind, const std::string &data)
+      : kind(kind), data(data)
+    { }
+};
+typedef std::vector<FodderElement> Fodder;
 
 struct Token {
     enum Kind {
@@ -45,7 +65,9 @@ struct Token {
         IDENTIFIER,
         NUMBER,
         OPERATOR,
-        STRING,
+        STRING_DOUBLE,
+        STRING_SINGLE,
+        STRING_BLOCK,
 
         // Keywords
         ASSERT,
@@ -70,17 +92,34 @@ struct Token {
         END_OF_FILE
     } kind;
 
+    /** Fodder before this token. */
+    Fodder fodder;
+
+    /** Content of the token if it wasn't a keyword. */
     std::string data;
+
+    /** If kind == STRING_BLOCK then stores the sequence of whitespace that indented the block. */
+    std::string stringBlockIndent;
+
+    /** If kind == STRING_BLOCK then stores the sequence of whitespace that indented the end of
+     * the block. 
+     *
+     * This is always fewer whitespace characters than in stringBlockIndent.
+     */
+    std::string stringBlockTermIndent;
 
     String data32(void) { return decode_utf8(data); }
 
     LocationRange location;
 
-    Token(Kind kind, const std::string &data, const LocationRange &location)
-      : kind(kind), data(data), location(location)
+    Token(Kind kind, const Fodder &fodder, const std::string &data,
+          const std::string &string_block_indent, const std::string &string_block_term_indent,
+          const LocationRange &location)
+      : kind(kind), fodder(fodder), data(data), stringBlockIndent(string_block_indent),
+        stringBlockTermIndent(string_block_term_indent), location(location)
     { }
 
-    Token(Kind kind, const std::string &data="") : kind(kind), data(data) { }
+    //Token(Kind kind, const std::string &data="") : kind(kind), data(data) { }
 
     static const char *toString(Kind v)
     {
@@ -101,7 +140,9 @@ struct Token {
             case IDENTIFIER: return "IDENTIFIER";
             case NUMBER: return "NUMBER";
             case OPERATOR: return "OPERATOR";
-            case STRING: return "STRING";
+            case STRING_SINGLE: return "STRING_SINGLE";
+            case STRING_DOUBLE: return "STRING_DOUBLE";
+            case STRING_BLOCK: return "STRING_BLOCK";
 
             case ASSERT: return "assert";
             case ELSE: return "else";
@@ -129,6 +170,13 @@ struct Token {
     }
 };
 
+/** The result of lexing.
+ * 
+ * Because of the EOF token, this will always contain at least one token.  So element 0 can be used
+ * to get the filename.
+ */
+typedef std::list<Token> Tokens;
+
 static inline bool operator==(const Token &a, const Token &b)
 {
     if (a.kind != b.kind) return false;
@@ -154,6 +202,8 @@ static inline std::ostream &operator<<(std::ostream &o, const Token &v)
     return o;
 }
 
-std::list<Token> jsonnet_lex(const std::string &filename, const char *input);
+Tokens jsonnet_lex(const std::string &filename, const char *input);
+
+std::string jsonnet_unlex(const Tokens &tokens);
 
 #endif  // JSONNET_LEXER_H

@@ -17,6 +17,7 @@ limitations under the License.
 #include <cassert>
 
 #include "ast.h"
+#include "lexer.h"
 #include "parser.h"
 
 static LocationRange E;  // Empty.
@@ -62,6 +63,104 @@ static constexpr char STD_CODE[] = {
     #include "std.jsonnet.h"
 };
 
+static String desugar_string(const LocationRange &loc, const String &s)
+{
+    String r;
+    const char32_t *s_ptr = s.c_str();
+    for (const char32_t *c = s_ptr; *c != U'\0' ; ++c) {
+        switch (*c) {
+            case '\\':
+            switch (*(++c)) {
+                case '"':
+                r += *c;
+                break;
+
+                case '\\':
+                r += *c;
+                break;
+
+                case '/':
+                r += *c;
+                break;
+
+                case 'b':
+                r += '\b';
+                break;
+
+                case 'f':
+                r += '\f';
+                break;
+
+                case 'n':
+                r += '\n';
+                break;
+
+                case 'r':
+                r += '\r';
+                break;
+
+                case 't':
+                r += '\t';
+                break;
+
+                case 'u': {
+                    ++c;  // Consume the 'u'.
+                    unsigned long codepoint = 0;
+                    // Expect 4 hex digits.
+                    for (unsigned i=0 ; i<4 ; ++i) {
+                        auto x = (unsigned char)(c[i]);
+                        unsigned digit;
+                        if (x == '\0') {
+                            auto msg = "Truncated unicode escape sequence in string literal.";
+                            throw StaticError(loc, msg);
+                        } else if (x >= '0' && x <= '9') {
+                            digit = x - '0';
+                        } else if (x >= 'a' && x <= 'f') {
+                            digit = x - 'a' + 10;
+                        } else if (x >= 'A' && x <= 'F') {
+                            digit = x - 'A' + 10;
+                        } else {
+                            std::stringstream ss;
+                            ss << "Malformed unicode escape character, "
+                               << "should be hex: '" << x << "'";
+                            throw StaticError(loc, ss.str());
+                        }
+                        codepoint *= 16;
+                        codepoint += digit;
+                    }
+
+                    r += codepoint;
+
+                    // Leave us on the last char, ready for the ++c at
+                    // the outer for loop.
+                    c += 3;
+                }
+                break;
+
+                case '\0': {
+                    auto msg = "Truncated escape sequence in string literal.";
+                    throw StaticError(loc, msg);
+                }
+
+                default: {
+                    std::stringstream ss;
+                    std::string utf8;
+                    encode_utf8(*c, utf8);
+                    ss << "Unknown escape sequence in string literal: '" << utf8 << "'";
+                    throw StaticError(loc, ss.str());
+                }
+            }
+            break;
+
+            default:
+            // Just a regular letter.
+            r += *c;
+        }
+    }
+    return r;
+}
+
+
 /** Desugar Jsonnet expressions to reduce the number of constructs the rest of the implementation
  * needs to understand.
  *
@@ -82,7 +181,7 @@ class Desugarer {
     { return alloc->makeIdentifier(s); }
 
     LiteralString *str(const String &s)
-    { return make<LiteralString>(E, s); }
+    { return make<LiteralString>(E, s, LiteralString::DOUBLE, ""); }
 
     Var *var(const Identifier *ident)
     { return make<Var>(E, ident); }
@@ -129,7 +228,8 @@ class Desugarer {
             field.expr3 = nullptr;
             if (msg == nullptr) {
                 auto msg_str = U"Object assertion failed.";
-                msg = alloc->make<LiteralString>(field.expr2->location, msg_str);
+                msg = alloc->make<LiteralString>(field.expr2->location, msg_str,
+                                                 LiteralString::DOUBLE, "");
             }
 
             // if expr2 then true else error msg
@@ -437,8 +537,10 @@ class Desugarer {
         } else if (dynamic_cast<const LiteralNumber*>(ast_)) {
             // Nothing to do.
 
-        } else if (dynamic_cast<const LiteralString*>(ast_)) {
-            // Nothing to do.
+        } else if (auto *ast = dynamic_cast<LiteralString*>(ast_)) {
+            ast->value = desugar_string(ast->location, ast->value);
+            ast->tokenKind = LiteralString::DOUBLE;
+            ast->blockIndent.clear();
 
         } else if (dynamic_cast<const LiteralNull*>(ast_)) {
             // Nothing to do.
@@ -562,7 +664,8 @@ class Desugarer {
         desugar(ast, 0);
 
         // Now, implement the std library by wrapping in a local construct.
-        AST *std_ast = jsonnet_parse(alloc, "std.jsonnet", STD_CODE);
+        Tokens tokens = jsonnet_lex("std.jsonnet", STD_CODE);
+        AST *std_ast = jsonnet_parse(alloc, tokens);
         desugar(std_ast, 0);
         auto *std_obj = dynamic_cast<DesugaredObject*>(std_ast);
         if (std_obj == nullptr) {

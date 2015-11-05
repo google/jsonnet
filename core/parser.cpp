@@ -396,6 +396,7 @@ static std::string unparse(const AST *ast_, int precedence)
         ss << ast->originalString;
 
     } else if (auto *ast = dynamic_cast<const LiteralString*>(ast_)) {
+        // TODO(dcunnin): Unparse string using ast->tokenKind etc
         ss << encode_utf8(jsonnet_unparse_escape(ast->value));
 
     } else if (dynamic_cast<const LiteralNull*>(ast_)) {
@@ -521,13 +522,13 @@ namespace {
         Token pop(void)
         {
             Token tok = peek();
-            tokens->pop_front();
+            tokens.pop_front();
             return tok;
         }
 
         Token peek(void)
         {
-            Token tok = tokens->front();
+            Token tok = tokens.front();
             return tok;
         }
 
@@ -547,12 +548,12 @@ namespace {
             return tok;
         }
 
-        std::list<Token> *tokens;
+        std::list<Token> &tokens;
         Allocator *alloc;
 
         public:
 
-        Parser(std::list<Token> *tokens, Allocator *alloc)
+        Parser(Tokens &tokens, Allocator *alloc)
           : tokens(tokens), alloc(alloc)
         { }
 
@@ -708,16 +709,17 @@ namespace {
                 first = false;
 
                 switch (next.kind) {
-                    case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING: {
+                    case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING_DOUBLE: {
                         ObjectField::Kind kind;
                         AST *expr1 = nullptr;
                         const Identifier *id = nullptr;
                         if (next.kind == Token::IDENTIFIER) {
                             kind = ObjectField::FIELD_ID;
                             id = alloc->makeIdentifier(next.data32());
-                        } else if (next.kind == Token::STRING) {
+                        } else if (next.kind == Token::STRING_DOUBLE) {
                             kind = ObjectField::FIELD_STR;
-                            expr1 = alloc->make<LiteralString>(next.location, next.data32());
+                            expr1 = alloc->make<LiteralString>(
+                                next.location, next.data32(), LiteralString::DOUBLE, "");
                         } else {
                             kind = ObjectField::FIELD_EXPR;
                             expr1 = parse(MAX_PRECEDENCE);
@@ -830,7 +832,7 @@ namespace {
                 specs.emplace_back(ComprehensionSpec::FOR, id, arr);
 
                 Token maybe_if = pop();
-                for (; maybe_if == Token::IF; maybe_if = pop()) {
+                for (; maybe_if.kind == Token::IF; maybe_if = pop()) {
                     AST *cond = parse(MAX_PRECEDENCE);
                     specs.emplace_back(ComprehensionSpec::IF, nullptr, cond);
                 }
@@ -939,8 +941,15 @@ namespace {
                 case Token::NUMBER:
                 return alloc->make<LiteralNumber>(span(tok), tok.data);
 
-                case Token::STRING:
-                return alloc->make<LiteralString>(span(tok), tok.data32());
+                case Token::STRING_SINGLE:
+                return alloc->make<LiteralString>(
+                    span(tok), tok.data32(), LiteralString::SINGLE, "");
+                case Token::STRING_DOUBLE:
+                return alloc->make<LiteralString>(
+                    span(tok), tok.data32(), LiteralString::DOUBLE, "");
+                case Token::STRING_BLOCK:
+                return alloc->make<LiteralString>(
+                    span(tok), tok.data32(), LiteralString::BLOCK, tok.stringBlockIndent);
 
                 case Token::FALSE:
                 return alloc->make<LiteralBoolean>(span(tok), false);
@@ -953,12 +962,12 @@ namespace {
 
                 // Import
                 case Token::IMPORT: {
-                    Token file = popExpect(Token::STRING);
+                    Token file = popExpect(Token::STRING_DOUBLE);
                     return alloc->make<Import>(span(tok, file), file.data32());
                 }
 
                 case Token::IMPORTSTR: {
-                    Token file = popExpect(Token::STRING);
+                    Token file = popExpect(Token::STRING_DOUBLE);
                     return alloc->make<Importstr>(span(tok, file), file.data32());
                 }
 
@@ -1168,18 +1177,14 @@ namespace {
     };
 }
 
-AST *jsonnet_parse(Allocator *alloc, const std::string &file, const char *input)
+AST *jsonnet_parse(Allocator *alloc, Tokens &tokens)
 {
-    // Lex the input.
-    auto token_list = jsonnet_lex(file, input);
-
-    // Parse the input.
-    Parser parser(&token_list, alloc);
+    Parser parser(tokens, alloc);
     AST *expr = parser.parse(MAX_PRECEDENCE);
-    if (token_list.front().kind != Token::END_OF_FILE) {
+    if (tokens.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
-        ss << "Did not expect: " << token_list.front();
-        throw StaticError(token_list.front().location, ss.str());
+        ss << "Did not expect: " << tokens.front();
+        throw StaticError(tokens.front().location, ss.str());
     }
 
     return expr;

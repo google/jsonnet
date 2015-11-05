@@ -662,7 +662,8 @@ namespace {
         AST *import(const LocationRange &loc, const String &file)
         {
             const ImportCacheValue *input = importString(loc, file);
-            AST *expr = jsonnet_parse(alloc, input->foundHere, input->content.c_str());
+            Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
+            AST *expr = jsonnet_parse(alloc, tokens);
             jsonnet_desugar(alloc, expr);
             jsonnet_static_analysis(expr);
             return expr;
@@ -1716,8 +1717,8 @@ namespace {
                                     const VmExt &ext = it->second;
                                     if (ext.isCode) {
                                         std::string filename = "<extvar:" + var8 + ">";
-                                        AST *expr =
-                                            jsonnet_parse(alloc, filename, ext.data.c_str());
+                                        Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
+                                        AST *expr = jsonnet_parse(alloc, tokens);
                                         jsonnet_desugar(alloc, expr);
                                         jsonnet_static_analysis(expr);
                                         ast_ = expr;

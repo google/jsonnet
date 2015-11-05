@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXECUTED=0
-FAILED=0
+source "tests.source"
 
 # Enable next line to test the garbage collector
 #PARAMS="--gc-min-objects 1 --gc-growth-trigger 1"
@@ -23,51 +22,28 @@ FAILED=0
 # Enable next line for a slow and thorough test
 #VALGRIND="valgrind -q"
 
-# Display successful as well as failed tests (useful if they are slow).
-VERBOSE=false
+#VERBOSE=true
 
 for TEST in *.jsonnet ; do
+
+    GOLDEN_OUTPUT="true"
+    GOLDEN_KIND="PLAIN"
+
+
     EXPECTED_EXIT_CODE=0
-    GOLDEN="true"
-    GOLDEN_REGEX=""
-    if [ $(echo "$TEST" | cut -b 1-5) == "error" ] ; then
+    if [ $(echo "$TEST" | cut -b 1-6) == "error." ] ; then
         EXPECTED_EXIT_CODE=1
     fi
     if [ -r "$TEST.golden" ] ; then
-        GOLDEN=$(cat "$TEST.golden")
+        GOLDEN_OUTPUT=$(cat "$TEST.golden")
     fi
     if [ -r "$TEST.golden_regex" ] ; then
-        GOLDEN_REGEX=$(cat "$TEST.golden_regex")
+        GOLDEN_KIND="REGEX"
+        GOLDEN_OUTPUT=$(cat "$TEST.golden_regex")
     fi
-    OUTPUT="$($VALGRIND ../jsonnet $PARAMS --var var1=test --code-var var2='{x:1, y: 2}' "$TEST" 2>&1 )"
-    EXIT_CODE=$?
-    if [ $EXIT_CODE -ne $EXPECTED_EXIT_CODE ] ; then
-        FAILED=$((FAILED + 1))
-        echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$TEST\e[0m"
-        echo "Output:"
-        echo "$OUTPUT"
-    else
-        if [ -n "$GOLDEN_REGEX" ] ; then
-            if [[ ! "$OUTPUT" =~ $GOLDEN_REGEX ]] ; then
-                FAILED=$((FAILED + 1))
-                echo -e "\e[31;1mFAIL\e[0m \e[1m(regex mismatch)\e[0m: \e[36m$TEST\e[0m"
-                echo "Output:"
-                echo "$OUTPUT"
-            else
-                $($VERBOSE) && echo -e "\e[32mSUCCESS\e[0m: \e[36m$TEST\e[0m"
-            fi
-        else
-            if [ "$OUTPUT" != "$GOLDEN" ] ; then
-                FAILED=$((FAILED + 1))
-                echo -e "\e[31;1mFAIL\e[0m \e[1m(output mismatch)\e[0m: \e[36m$TEST\e[0m"
-                echo "Output:"
-                echo "$OUTPUT"
-            else
-                $($VERBOSE) && echo -e "\e[32mSUCCESS\e[0m: \e[36m$TEST\e[0m"
-            fi
-        fi
-    fi
-    EXECUTED=$((EXECUTED + 1))
+
+    JSONNET_CMD="$VALGRIND ../jsonnet $PARAMS --var var1=test --code-var var2={x:1,y:2}"
+    test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 
 if [ $FAILED -eq 0 ] ; then
