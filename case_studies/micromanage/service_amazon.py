@@ -56,8 +56,8 @@ class AmazonPackerBuildArtefact(packer.PackerBuildArtefact):
 
     def builderHashCode(self):
         builder_hash = 0;
-        builder_hash ^= hash_string(self.sourceAmi)
-        builder_hash ^= hash_string(self.instanceType)
+        builder_hash ^= packer.hash_string(self.sourceAmi)
+        builder_hash ^= packer.hash_string(self.instanceType)
         return builder_hash
 
     def builder(self):

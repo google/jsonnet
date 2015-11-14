@@ -13,31 +13,35 @@
 # limitations under the License.
 
 import hashlib
+import subprocess
 
 import build_artefact
 import cmds
 import util
 
-NAME_CHARS = ([chr(i) for i in range(ord('0'), ord('9'))]
+_NAME_CHARS = ([chr(i) for i in range(ord('0'), ord('9'))]
               + [chr(i) for i in range(ord('a'), ord('z'))])
+
 
 def hash_code_as_domain_name(n):
     n = n % (2**63)
     if n < 0:
         n += 2**63
-    radix = len(NAME_CHARS)
+    radix = len(_NAME_CHARS)
     s = ""
     for i in range(12):
         d = n % radix
-        s = NAME_CHARS[d] + s
+        s = _NAME_CHARS[d] + s
         n /= radix
     return s
+
 
 def hash_string(s):
     r = long(hashlib.sha1(s).hexdigest(), 16)
     if r < 0:
         r += 2**63
     return r
+
 
 def hash_cmds(cmds):
     hash_code = 0l
@@ -68,6 +72,7 @@ def hash_cmds(cmds):
             raise RuntimeError('Did not recognize image command kind: ' + cmd['kind'])
     return hash_code
 
+
 class PackerBuildArtefact(build_artefact.BuildArtefact):
     def __init__(self, cmds):
         self.cmds = cmds
@@ -82,34 +87,34 @@ class PackerBuildArtefact(build_artefact.BuildArtefact):
             self.cachedHashCode = self.builderHashCode() ^ hash_cmds(self.cmds)
         return self.cachedHashCode
 
-    def config(self):
-        def shell_provisioner(lines):
-            return {
+    def _configFileName(self):
+        return self.name() + '.packer.json'
+
+    def _config(self):
+        provs = [
+            {
                 'type': 'shell',
                 'execute_command': "{{ .Vars }} sudo -E /bin/bash '{{ .Path }}'",
-                'inline': lines,
+                'inline': cmds.compile_command_to_bash(cmd),
             }
-        provs = []
-        for cmd in self.cmds:
-            provs.append(shell_provisioner(cmds.compile_command_to_bash(cmd)))
-        packer_config = {'builders': [self.builder()], 'provisioners': provs}
-        return self.name() + '.packer.json', util.jsonstr(packer_config)
+            for cmd in self.cmds
+        ]
+        return util.jsonstr({'builders': [self.builder()], 'provisioners': provs})
 
     def name(self):
         return 'micromanage-%s' % hash_code_as_domain_name(self.hashCode())
 
     def getOutputFiles(self, dirpath):
-        filename, config = self.config()
-        return ['%s/%s' % (dirpath, filename)]
+        return ['%s/%s' % (dirpath, self._configFileName())]
 
     def outputFiles(self, dirpath):
-        filename, config = self.config()
-        dirfilename = '%s/%s' % (dirpath, filename)
+        config = self._config()
+        dirfilename = '%s/%s' % (dirpath, self._configFileName())
         with open(dirfilename, 'w') as f:
             f.write(config)
 
     def doBuild(self, dirpath):
-        filename, config = self.config()
+        filename = self._configFileName()
         if self.packerProcess is not None:
             raise RuntimeError('Packer build already in progress.')
 
@@ -119,12 +124,16 @@ class PackerBuildArtefact(build_artefact.BuildArtefact):
         with open(logfilename, 'w') as logfile:
             self.packerProcess = subprocess.Popen(command, stdout=logfile, cwd=dirpath)
 
-    def wait(self):
+    def wait(self, dirpath):
         if self.packerProcess is None:
             raise RuntimeError('No Packer build in progress.')
         exitcode = self.packerProcess.wait()
-        print 'exit code was %d' % exitcode
         if exitcode != 0:
+            print 'Packer error:  Exit code was %d' % exitcode
+            filename = self._configFileName()
+            logfilename = '%s/%s.log' % (dirpath, filename)
+            with open(logfilename, 'r') as logfile:
+                print logfile.read()
             raise RuntimeError('Error from packer.')
 
 

@@ -268,7 +268,7 @@ def generate(dirpath, config, do_build):
         bart.doBuild(dirpath)
 
     for bart_name, bart in barts_to_build.iteritems():
-        bart.wait()
+        bart.wait(dirpath)
 
     for bart_name, bart in barts.iteritems():
         bart.postBuild()
