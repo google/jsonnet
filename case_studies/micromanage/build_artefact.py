@@ -16,16 +16,22 @@
 class BuildArtefact(object):
     def name(self):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def needsBuild(self):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def getOutputFiles(self, dirpath):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def outputFiles(self, dirpath):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def doBuild(self, dirpath):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def wait(self):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
+
     def postBuild(self):
         raise NotImplementedError("%s has no override" % self.__class__.__name__)
         
