@@ -32,7 +32,6 @@
                 }
             }
         },
-        children: {},
         outputs: {
             [if service.externalIp then "${-}-address"]:
                 "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}"
@@ -49,6 +48,34 @@
     },
     "core-os": SingleGoogleInstance {
         image: "coreos-stable-717-3-0-v20150710",
+        zone: "us-central1-f",
+        externalIp: true,
+        cmds: [
+            "echo hi > /hi.txt",
+            libimgcmd.LiteralFile {
+                to: "/var/log/bye.txt",
+                content: |||
+                    bye
+                |||,
+                filePermissions: "700",
+            },
+        ],
+    },
+    custom: SingleGoogleInstance {
+        image: {
+            source: "ubuntu-1410-utopic-v20150625",
+            zone: "us-central1-f",
+            cmds: [
+                "echo hi > /hi.txt",
+                libimgcmd.LiteralFile {
+                    to: "/var/log/bye.txt",
+                    content: |||
+                        bye
+                    |||,
+                    filePermissions: "700",
+                },
+            ],
+        },
         zone: "us-central1-f",
         externalIp: true,
     },

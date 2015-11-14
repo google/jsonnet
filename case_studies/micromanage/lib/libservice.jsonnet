@@ -118,7 +118,7 @@ local libos = import "libos.jsonnet";
 
     GcpImage:: {
         source: error "GcpImage must have 'source'",
-        machine_type: "n1-standard-1",
+        machineType: "n1-standard-1",
         zone: "us-central1-f",
         cmds: [],
     },

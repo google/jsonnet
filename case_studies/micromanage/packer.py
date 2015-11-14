@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from build_artefact import *
-from cmds import *
-from service import *
+import hashlib
 
+import build_artefact
+import cmds
+import util
 
 NAME_CHARS = ([chr(i) for i in range(ord('0'), ord('9'))]
               + [chr(i) for i in range(ord('a'), ord('z'))])
@@ -67,7 +68,7 @@ def hash_cmds(cmds):
             raise RuntimeError('Did not recognize image command kind: ' + cmd['kind'])
     return hash_code
 
-class PackerBuildArtefact(BuildArtefact):
+class PackerBuildArtefact(build_artefact.BuildArtefact):
     def __init__(self, cmds):
         self.cmds = cmds
         self.cachedHashCode = None
@@ -90,9 +91,9 @@ class PackerBuildArtefact(BuildArtefact):
             }
         provs = []
         for cmd in self.cmds:
-            provs.append(shell_provisioner(compile_command_to_bash(cmd)))
+            provs.append(shell_provisioner(cmds.compile_command_to_bash(cmd)))
         packer_config = {'builders': [self.builder()], 'provisioners': provs}
-        return self.name() + '.packer.json', jsonstr(packer_config)
+        return self.name() + '.packer.json', util.jsonstr(packer_config)
 
     def name(self):
         return 'micromanage-%s' % hash_code_as_domain_name(self.hashCode())

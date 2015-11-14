@@ -22,9 +22,8 @@ from oauth2client.client import GoogleCredentials
 from oauth2client.client import SignedJwtAssertionCredentials
 from googleapiclient.discovery import build
 
-from packer import *
-from service import *
-from util import *
+import packer
+import service
 import validate
 
 IMAGE_CACHE = {}
@@ -41,11 +40,11 @@ def google_get_images_json_key(project, key_json):
     return [(i['name'], dateutil.parser.parse(i['creationTimestamp'])) for i in items]
 
 
-class GooglePackerBuildArtefact(PackerBuildArtefact):
+class GooglePackerBuildArtefact(packer.PackerBuildArtefact):
     def __init__(self, image, environment):
         super(GooglePackerBuildArtefact, self).__init__(image['cmds'])
 
-        self.machineType = image['machine_type']
+        self.machineType = image['machineType']
         self.source = image['source']
         self.zone = image['zone']
         self.project = environment['project']
@@ -54,9 +53,9 @@ class GooglePackerBuildArtefact(PackerBuildArtefact):
 
     def builderHashCode(self):
         builder_hash = 0;
-        builder_hash ^= hash_string(self.machineType)
-        builder_hash ^= hash_string(self.source)
-        builder_hash ^= hash_string(self.zone)
+        builder_hash ^= packer.hash_string(self.machineType)
+        builder_hash ^= packer.hash_string(self.source)
+        builder_hash ^= packer.hash_string(self.zone)
         return builder_hash
 
     def builder(self):
@@ -93,126 +92,54 @@ class GooglePackerBuildArtefact(PackerBuildArtefact):
     def postBuild(self):
         pass
 
-class GoogleService(Service):
 
-    imageSchema = {
-        'type': 'object',
-        'properties': {
-            'source': {'type': 'string'},
-            'machine_type': {'type': 'string'},
-            'zone': {'type': 'string'},
-            'cmds': Service.cmdsSchema,
-        },
-        'additionalProperties': False,
-    }
+class GoogleService(service.Service):
 
-    serviceSchema = {
-        'type': 'object',
-        'properties' : {
-            'environment' : {'type' : 'string'},
-            'children': {
-                'type': 'object',
-                'additionalProperties': {'$ref': '#/additionalProperties'},
-            },
-            'infrastructure' : {
-                'type': 'object',
-                'properties': {
-                    'google_compute_disk': {
-                        'type': 'object',
-                        'additionalProperties': {
-                            'type': 'object',
-                            'properties': {
-                                'image': {
-                                    'oneOf': [
-                                        {'type': 'string'},
-                                        imageSchema,
-                                    ],
-                                },
-                            },
-                            'additionalProperties': True,
-                        },
-                    },
-                    'google_compute_instance': {
-                        'type': 'object',
-                        'additionalProperties': {
-                            'type': 'object',
-                            'properties': {
-                                'metadata': {
-                                    'type': 'object',
-                                    'additionalProperties': {'type': 'string'},
-                                },
-                                'disk': {
-                                    'type': 'array',
-                                    'items': [
-                                        {
-                                            'oneOf': [
-                                                {
-                                                    'type': 'object',
-                                                    'properties': {
-                                                        'image': {
-                                                            'oneOf': [
-                                                                {'type': 'string'},
-                                                                imageSchema,
-                                                            ],
-                                                        }
-                                                    },
-                                                    'required': ['image'],
-                                                    'additionalItems': True,
-                                                },
-                                                {
-                                                    'type': 'object',
-                                                    'properties': {
-                                                        'disk': {'type': 'string'},
-                                                    },
-                                                    'required': ['disk'],
-                                                    'additionalItems': True,
-                                                },
-                                            ]
-                                        },
-                                    ],
-                                    'additionalItems': True,
-                                    'minItems': 1,
-                                },
-                                'cmds': Service.cmdsSchema,
-                                'bootCmds': Service.cmdsSchema,
-                            },
-                            'required': ['metadata', 'disk', 'cmds', 'bootCmds'],
-                            'additionalProperties': True,
-                        },
-                    }
-                },
-                'additionalProperties': True,
-            },
-            'outputs': {
-                'type': 'object',
-                'additionalProperties': {'type': 'string'},
-            },
-        },
-        'required': [
-            'environment', 
-            'infrastructure', 
-            'outputs',
-            'children',
-        ],
-        'additionalProperties': False,
-    }
+    def validateEnvironment(self, root, path):
+        fields = {'kind', 'project', 'region', 'sshUser', 'serviceAccount'}
+        validate.obj_only(root, path, fields)
+        validate.path_val(root, path + ['project'], 'string')
+        validate.path_val(root, path + ['region'], 'string')
+        validate.path_val(root, path + ['sshUser'], 'string')
 
-    def validateEnvironment(self, env_name, env):
-        ctx = 'Environment "%s"' % env_name
-        fields = ['kind', 'project', 'region', 'sshUser', 'serviceAccount']
-        validate.obj_only(ctx, env, fields)
-        validate.obj_field(ctx, env, 'project', 'string')
-        validate.obj_field(ctx, env, 'region', 'string')
-        validate.obj_field(ctx, env, 'sshUser', 'string')
+        acc = validate.path_val(root, path + ['serviceAccount'], 'object')
+        validate.path_val(root, path + ['serviceAccount', 'client_email'], 'string')
+        validate.path_val(root, path + ['serviceAccount', 'private_key'], 'string')
+        validate.path_val(root, path + ['serviceAccount', 'type'], validate.is_value('service_account'), 'service_account')
+        validate.path_val(root, path + ['serviceAccount', 'client_id'], 'string', '')
+        validate.path_val(root, path + ['serviceAccount', 'private_key_id'], 'string', '')
+        fields = {'client_email', 'private_key', 'type', 'client_id', 'private_key_id'}
+        validate.obj_only(root, path + ['serviceAccount'], fields)
 
-        acc = validate.obj_field(ctx, env, 'serviceAccount', validate.is_type('object'))
-        validate.obj_field(ctx + ' serviceAccount', acc, 'client_email', 'string')
-        validate.obj_field(ctx + ' serviceAccount', acc, 'private_key', 'string')
-        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'type', validate.is_value('service_account'))
-        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'client_id', 'string')
-        validate.obj_field_opt(ctx + ' serviceAccount', acc, 'private_key_id', 'string')
-        fields = ['client_email', 'private_key', 'type', 'client_id', 'private_key_id']
-        validate.obj_only(ctx + ' serviceAccount', acc, fields)
+    def validateService(self, root, path):
+        super(GoogleService, self).validateService(root, path)
+        infra_path = path + ['infrastructure']
+        validate.path_val(root, infra_path, 'object', {})
+        inst_path = infra_path + ['google_compute_instance']
+        instances = validate.path_val(root, inst_path, 'object', {})
+        disk_path = infra_path + ['google_compute_disk']
+        disks = validate.path_val(root, disk_path, 'object', {})
+
+        # Validate image configs
+        for inst_name, inst in instances.iteritems():
+            # Assume instances have a root disk.
+            validate.path_val(root, inst_path + [inst_name, 'disk'], 'array')
+            inst_disk_path = inst_path + [inst_name, 'disk', 0]
+            disk = validate.path_val(root, inst_disk_path, 'object')
+            image = disk.get('image')
+            if isinstance(image, dict):
+                self.validateImage(root, inst_disk_path + ['image'])
+        for disk_name, disk in disks.iteritems():
+            image = disk.get('image')
+            if isinstance(image, dict):
+                self.validateImage(root, disk_path + [disk_name, 'image'])
+
+    def validateImage(self, root, path):
+        super(GoogleService, self).validateImage(root, path)
+        validate.path_val(root, path + ['machineType'], 'string', 'n1-standard-1')
+        validate.path_val(root, path + ['source'], 'string')
+        validate.path_val(root, path + ['zone'], 'string')
+        validate.obj_only(root, path, {'cmds', 'machineType', 'source', 'zone'})
 
     def compileProvider(self, environment_name, environment):
         return {
@@ -232,9 +159,8 @@ class GoogleService(Service):
         service = copy.deepcopy(service)
         barts = {}  # Build artefacts.
 
-        infra = service['infrastructure']
-        instances = infra.get('google_compute_instance', {})
-        disks = infra.get('google_compute_disk', {})
+        instances = service['infrastructure']['google_compute_instance']
+        disks = service['infrastructure']['google_compute_disk']
 
         # Process image configs
         for inst_name, inst in instances.iteritems():
@@ -244,7 +170,7 @@ class GoogleService(Service):
                 barts[bart.name()] = bart
                 inst['disk'][0]['image'] = bart.name()
         for disk_name, disk in disks.iteritems():
-            image = disk['image']
+            image = disk.get('image')
             if isinstance(image, dict):
                 bart = GooglePackerBuildArtefact(image, environment)
                 barts[bart.name()] = bart

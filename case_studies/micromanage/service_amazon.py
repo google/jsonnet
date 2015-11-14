@@ -19,9 +19,9 @@ import re
 
 import boto3
 
-from packer import *
-from service import *
-from util import *
+import packer
+import service
+import validate
 
 AMI_CACHE = {}
 
@@ -42,7 +42,7 @@ def amazon_get_ami_by_name(region_name, aws_access_key_id, aws_secret_access_key
     return image['ImageId']
 
 
-class AmazonPackerBuildArtefact(PackerBuildArtefact):
+class AmazonPackerBuildArtefact(packer.PackerBuildArtefact):
     def __init__(self, image, environment):
         super(AmazonPackerBuildArtefact, self).__init__(image['cmds'])
 
@@ -78,7 +78,9 @@ class AmazonPackerBuildArtefact(PackerBuildArtefact):
         if (self.region, self.accessKey) in AMI_CACHE:
             existing_image_names = AMI_CACHE[self.region, self.accessKey]
         else:
-            existing_image_names = [img[0] for img in amazon_get_amis(self.region, self.accessKey, self.secretKey)]
+            existing_image_names = [
+                img[0]
+                for img in amazon_get_amis(self.region, self.accessKey, self.secretKey)]
             AMI_CACHE[self.region, self.accessKey] = existing_image_names
         return self.name() not in existing_image_names
 
@@ -91,50 +93,25 @@ class AmazonPackerBuildArtefact(PackerBuildArtefact):
     def postBuild(self):
         self.id = amazon_get_ami_by_name(self.region, self.accessKey, self.secretKey, self.name())
 
-        
 
-class AmazonService(Service):
+class AmazonService(service.Service):
 
-    imageSchema = {
-        'type': 'object',
-        'properties': {
-            'source': {'type': 'string'},
-            'machine_type': {'type': 'string'},
-            'zone': {'type': 'string'},
-            'cmds': Service.cmdsSchema,
-        },
-        'additionalProperties': False,
-    }
+    def validateEnvironment(self, root, path):
+        fields = {'kind', 'accessKey', 'secretKey', 'region'}
+        validate.obj_only(root, path, fields)
+        validate.path_val(root, path + ['region'], 'string')
+        validate.path_val(root, path + ['accessKey'], 'string')
+        validate.path_val(root, path + ['secretKey'], 'string')
 
-    serviceSchema = {
-        'type': 'object',
-        'properties' : {
-            'environment' : {'type' : 'string'},
-            'kind' : {'type' : 'string'},
-            'infrastructure' : {
-                'type': 'object',
-                'additionalProperties': True,
-            },
-            'outputs': {
-                'type': 'object',
-                'additionalProperties': {'type': 'string'},
-            },
-        },
-        'required': [
-            'environment', 
-            'infrastructure', 
-            'outputs',
-        ],
-        'additionalProperties': {'$ref': '#/additionalProperties'},
-    }
+    def validateService(self, root, path):
+        super(AmazonService, self).validateService(root, path)
 
-    def validateEnvironment(self, env_name, env):
-        ctx = 'Environment "%s"' % env_name
-        fields = ['kind', 'accessKey', 'secretKey', 'region']
-        validate.obj_only(ctx, env, fields)
-        validate.obj_field(ctx, env, 'region', 'string')
-        validate.obj_field(ctx, env, 'accessKey', 'string')
-        validate.obj_field(ctx, env, 'secretKey', 'string')
+    def validateImage(self, root, path):
+        super(AmazonService, self).validateImage(root, path)
+        validate.path_val(root, path + ['instanceType'], 'string', 'n1-standard-1')
+        validate.path_val(root, path + ['sourceAmi'], 'string')
+        validate.path_val(root, path + ['sshUser'], 'string')
+        validate.obj_only(root, path, {'cmds', 'instanceType', 'sourceAmi', 'sshUser'})
 
     def compileProvider(self, environment_name, environment):
         return {

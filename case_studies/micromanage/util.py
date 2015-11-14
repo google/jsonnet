@@ -34,5 +34,3 @@ def utc_now():
 def merge_into(a, b):
     for k, v in b.iteritems():
         a[k] = v
-
-

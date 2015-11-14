@@ -20,6 +20,21 @@ class ConfigError (Exception):
     note = None
     pass
 
+def render_path(path):
+    if isinstance(path, basestring):
+        return path
+    def aux(p):
+        if not isinstance(p, basestring):
+            return '[%d]' % p
+        return ('.%s' if _isidentifier(p) else '["%s"]') % p
+    return '$' + ''.join([aux(p) for p in path])
+
+
+# Utilities
+
+def _err(path, msg):
+    raise ConfigError('%s: %s' % (render_path(path), msg))
+
 _KEYWORDS = {
     'import', 'importstr', 'function', 'self', 'super', 'assert', 'if', 'then',
     'else', 'for', 'in', 'local', 'tailstrict', 'true', 'false', 'null', 'error',
@@ -37,16 +52,16 @@ _TYPE_FROM_STR = {
     'string': basestring,
 }
 
-def _typeerr(v):
+def _type_err(v):
     if isinstance(v, basestring):
         return '"%s"' % v
     if isinstance(v, numbers.Number):
         return '%s' % v
     if isinstance(v, bool):
         return '%s' % v
-    return _typestr(v)
+    return _type_str(v)
 
-def _typestr(v):
+def _type_str(v):
     if v is None:
         return 'null'
     if isinstance(v, basestring):
@@ -60,21 +75,22 @@ def _typestr(v):
     if isinstance(v, bool):
         return 'bool'
 
+class _Empty:
+    pass
 
-def render_path(path):
-    if isinstance(path, basestring):
-        return path
-    def aux(p):
-        if isinstance(p, long):
-            return '[%d]' % p
-        return ('.%s' if _isidentifier(p) else '["%s"]') % p
-    return '$' + ''.join([aux(p) for p in path])
+_NO_DEFAULT = _Empty()
 
-def is_type(t):
-    def aux(v):
-        if _typestr(v) != t:
-            return ' to have type %s (found %s)' % (t, _typeerr(v))
-    return aux
+# Return the value obtained by resolving the path from root.  If the value does not exist in the
+# last object, create it using the default and return that instead.
+def _resolve_path(root, path, default=_NO_DEFAULT):
+    for i, v in enumerate(path):
+        if isinstance(root, dict) and i == len(path) - 1:
+            if v not in root and default != _NO_DEFAULT:
+                root[v] = default
+        root = root[v]
+    return root
+
+# Validators
 
 def is_string_map(v):
     msg = is_type('object')(v)
@@ -82,45 +98,63 @@ def is_string_map(v):
         return msg
     for k, v2 in v.iteritems():
         if not isinstance(v2, basestring):
-            return ' to be a string map'
+            return 'Expected field %s type to be string but got %s' % (k, _type_err(v2))
 
-def is_value(y):
-    def check(x):
-        if x != y:
-            return 'to have value %s' % y
+# Validator generating functions.
+
+# Pretty-print a small set of strings.
+def _set_str(s):
+    return '{%s}' % ', '.join(sorted(s))
+
+def is_any_type(types):
+    def check(v):
+        if _type_str(v) not in types:
+            return 'Expected type to be one of %s but found %s' % (_set_str(types), _type_err(v))
     return check
 
+def is_type(t):
+    def check(v):
+        if _type_str(v) != t:
+            return 'Expected type %s but found %s' % (t, _type_err(v))
+    return check
+
+def is_value(expected):
+    def check(v):
+        if v != expected:
+            return 'Expected value %s, got s' % (expected, v)
+    return check
+
+
+# User-friendly validation routines:
+
+# You can just give a type name in place of a function.
 def _sanitize_func(func):
     if isinstance(func, basestring):
         return is_type(func)
     return func
 
-def obj_field(path, obj, field, func):
+# Ensure path validates by func.  If not proesent, inserts default.
+def path_val(root, path, func, default=None):
     func = _sanitize_func(func)
-    msg = ''
-    if field in obj:
-        msg = func(obj[field])
+    v = _resolve_path(root, path, default)
+    msg = func(v)
     if msg is not None:
-        raise ConfigError('At %s, expected field "%s"%s' % (render_path(path), field, msg))
-    return obj[field]
+        _err(path, msg)
+    return v
 
-def obj_field_opt(path, obj, field, func, default=None):
-    func = _sanitize_func(func)
-    if field not in obj:
-        return default
-    msg = func(obj[field])
-    if msg is not None:
-        raise ConfigError('At %s, expected optional field "%s"%s' % (render_path(path), field, msg))
-    return obj[field]
+# Ensure path is an array and all elements validate by element_func.
+def array(root, path, element_func, default):
+    v = path_val(root, path, 'array', default)
+    element_func = _sanitize_func(element_func)
+    for i, el in enumerate(v):
+        path_val(root, path + [i], element_func)
+    return v
 
-def obj_only(path, obj, fields):
-    for f in obj:
-        if f not in fields:
-            raise ConfigError('At %s, didn\'t expect field%s' % (render_path(path), f))
-
-def value(path, val, func):
-    func = _sanitize_func(func)
-    msg = func(val)
-    if msg is not None:
-        raise ConfigError('At %s, but expected it %s' % (render_path(path), msg))
-
+# Ensure path is an object and only has the given fields.  If not present, inserts
+# default.
+def obj_only(root, path, fields, default=None):
+    v = path_val(root, path, 'object', default)
+    for field in v:
+        if field not in fields:
+            _err(path, 'Unexpected field: %s' % field)
+    return v

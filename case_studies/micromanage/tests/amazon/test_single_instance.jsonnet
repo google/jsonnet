@@ -24,8 +24,6 @@
                     availability_zone: service.zone,
                     ami: if service.ami != null then service.ami else service.amiMap[region_from_zone(service.zone)],
                     associate_public_ip_address: service.externalIp,
-                    cmds: [],
-                    bootCmds: [],
                 }
             }
         },
@@ -53,6 +51,16 @@
         keyName: "kp",
         amiMap: ubuntu_ami_map,
         zone: "us-west-1b",
+        cmds: [
+            "echo hi > /hi.txt",
+            libimgcmd.LiteralFile {
+                to: "/var/log/bye.txt",
+                content: |||
+                    bye
+                |||,
+                filePermissions: "700",
+            },
+        ],
     },
 
 
@@ -63,7 +71,16 @@
             sourceAmi: "ami-6988752d",
             instanceType: "t2.small",
             sshUser: "ubuntu",
-            cmds: [ ],
+            cmds: [
+                "echo hi > /hi.txt",
+                libimgcmd.LiteralFile {
+                    to: "/var/log/bye.txt",
+                    content: |||
+                        bye
+                    |||,
+                    filePermissions: "700",
+                },
+            ],
         },
         zone: "us-west-1b",
     },

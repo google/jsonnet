@@ -12,72 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-import hashlib
-import json
-import os
 import re
-import subprocess
 
-from cmds import *
-from util import *
+import util
 import validate
 
 class Service(object):
 
-    schama = {
-        'additionalProperties': False,
-    },
-
-    cmdsSchema = {
-        'type': 'array',
-        'items': {
-            'oneOf': [
-                {
-                    'type': 'string',
-                },
-                {
-                    'type': 'object',
-                    'properties': {
-                        'kind': {'enum': ['CopyFile']},
-                        'owner': {'type': 'string' },
-                        'group': {'type': 'string' },
-                        'dirPermissions': {'type': 'string' },
-                        'filePermissions': {'type': 'string' },
-                        'from': {'type': 'string' },
-                        'to': {'type': 'string' },
-                    },
-                    'required': ['kind', 'owner', 'group', 'dirPermissions', 'filePermissions', 'from', 'to'],
-                    'additionalProperties': False,
-                },
-                {
-                    'type': 'object',
-                    'properties': {
-                        'kind': {'enum': ['LiteralFile']},
-                        'owner': {'type': 'string' },
-                        'group': {'type': 'string' },
-                        'filePermissions': {'type': 'string' },
-                        'content': {'type': 'string' },
-                        'to': {'type': 'string' },
-                    },
-                    'required': ['kind', 'owner', 'group', 'filePermissions', 'content', 'to'],
-                    'additionalProperties': False,
-                },
-                {
-                    'type': 'object',
-                    'properties': {
-                        'kind': {'enum': ['EnsureDir']},
-                        'owner': {'type': 'string' },
-                        'group': {'type': 'string' },
-                        'dirPermissions': {'type': 'string' },
-                        'dir': {'type': 'string' },
-                    },
-                    'required': ['kind', 'owner', 'group', 'dirPermissions', 'dir'],
-                    'additionalProperties': False,
-                },
-            ],
-        },
-    }
+    def validateImage(self, root, path):
+        # Superclasses override this method and validate specific image attributes.
+        # Byt here we can do the cmds.
+        path = path + ['cmds']
+        cmds = validate.array(root, path, validate.is_any_type({'string', 'object'}), [])
+        for i, cmd in enumerate(cmds):
+            cmd_path = path + [i]
+            if isinstance(cmd, basestring):
+                # Any string will do for validation purposes.
+                pass
+            elif isinstance(cmd, dict):
+                kind = validate.path_val(root, cmd_path + ['kind'], 'string')
+                if kind == 'CopyFile':
+                    fields = {'owner', 'group', 'dirPermissions', 'filePermissions', 'from', 'to'}
+                    for f in fields:
+                        validate.path_val(root, cmd_path + [f], 'string')
+                    validate.obj_only(root, cmd_path, fields | {'kind'})
+                elif kind == 'LiteralFile':
+                    fields = {'owner', 'group', 'filePermissions', 'content', 'to'}
+                    for f in fields:
+                        validate.path_val(root, cmd_path + [f], 'string')
+                    validate.obj_only(root, cmd_path, fields | {'kind'})
+                elif cmd['kind'] == 'EnsureDir':
+                    fields = {'owner', 'group', 'dirPermissions', 'dir'}
+                    for f in fields:
+                        validate.path_val(root, cmd_path + [f], 'string')
+                    validate.obj_only(root, cmd_path, fields | {'kind'})
+                else:
+                    return ' to have kind be one of CopyFile, LiteralFile or EnsureDir'
+            else:
+                return ' to be an object or string'
 
     def children(self, service):
         for child_name, child in service.iteritems():
@@ -85,10 +57,9 @@ class Service(object):
                 continue
             yield child_name, child
 
-    def validateService(self, ctx, service_name, service):
-        ctx = ctx + [service_name]
-        validate.obj_field_opt(ctx, service, 'outputs', validate.is_string_map)
-        validate.obj_field_opt(ctx, service, 'infrastructure', 'object')
+    def validateService(self, root, path):
+        validate.path_val(root, path + ['outputs'], validate.is_string_map, {})
+        validate.path_val(root, path + ['infrastructure'], 'object', {})
 
     def fullName(self, ctx, service_name):
         return '-'.join(ctx + [service_name])
@@ -129,11 +100,3 @@ class Service(object):
     def translateSelfName(self, full_name, v):
         return self._selfNameRegex.sub(full_name, v)
     
-    def compileProvider(self, environment_name, environment):
-        raise NotImplementedError("%s has no override" % self.__class__.__name__)
-    
-    def getBuildArtefacts(self, environment, ctx, service):
-        raise NotImplementedError("%s has no override" % self.__class__.__name__)
-
-    def compile(self, ctx, service_name, service, barts):
-        raise NotImplementedError("%s has no override" % self.__class__.__name__)

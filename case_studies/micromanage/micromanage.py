@@ -13,13 +13,9 @@
 # limitations under the License.
 
 import collections
-import copy
-import datetime
 import json
-import re
-import sys
+import os
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
@@ -27,16 +23,14 @@ import traceback
 
 import _jsonnet
 
-from service import *
-from service_google import *
-from service_amazon import *
-from util import *
-
+import service_google
+import service_amazon
+import util
 import validate
 
 service_compilers = {
-    'Google': GoogleService(),
-    'Amazon': AmazonService(),
+    'Google': service_google.GoogleService(),
+    'Amazon': service_amazon.AmazonService(),
 }
     
 def get_compiler(config, service):
@@ -45,11 +39,10 @@ def get_compiler(config, service):
     return service_compilers[environment['kind']], environment
     
 
-def config_check_service(environments, ctx, service_name, service):
+def config_check_service(environments, root, path):
     try:
-        ctx = ctx + [service_name] 
-        validate.value(ctx, service, 'object')
-        env_name = validate.obj_field_opt(ctx, service, 'environment', 'string')
+        service = validate.path_val(root, path, 'object')
+        env_name = validate.path_val(root, path + ['environment'], 'string', None)
         default = env_name is None
         if default:
             env_name = 'default'
@@ -58,18 +51,18 @@ def config_check_service(environments, ctx, service_name, service):
             if default:
                 raise validate.ConfigError(('The service at %s has no environment field, and no ' +
                                             'environment called "default" exists.')
-                                            % validate.render_path(ctx))
+                                           % validate.render_path(path))
             else:
                 raise validate.ConfigError('In %s, unrecognized environment %s'
-                                  % (validate.render_path(ctx), env_name))
+                                           % (validate.render_path(path), env_name))
         compiler = service_compilers.get(env['kind'])
-        compiler.validateService(ctx, service_name, service)
+        compiler.validateService(root, path)
         for child_name, child in compiler.children(service):
-            config_check_service(environments, ctx, child_name, child)
+            config_check_service(environments, root, path + [child_name])
     except validate.ConfigError as e:
         if e.note is None:
             e.note = ('Did you mean for %s to be a visible field (: instead of ::)?'
-                      % validate.render_path(ctx))
+                      % validate.render_path(path))
         raise
     
 def services(config):
@@ -79,30 +72,29 @@ def services(config):
         yield service_name, service
 
 def config_check(config):
-    validate.value('top level', config, 'object')
-    environments = validate.obj_field('top level', config, 'environments', 'object')
+    validate.path_val(config, [], 'object')
+    environments = validate.path_val(config, ['environments'], 'object', {})
 
     # Check environments
-    environments = config.get('environments')
-    if not isinstance(environments, dict):
-        raise validate.ConfigError('Must have an object in $.environments.')
+    environments = config['environments']
     for env_name, env in environments.iteritems():
-        kind_name = validate.obj_field('environment %s' % env_name, env, 'kind', 'string')
+        kind_name = validate.path_val(config, ['environments', env_name, 'kind'], 'string')
         compiler = service_compilers.get(kind_name)
         if not compiler:
-            raise validate.ConfigError('Unrecognized kind "%s" in environment %s' % (kind_name, env_name))
-        
-        compiler.validateEnvironment(env_name, env)
+            raise validate.ConfigError(
+                'Unrecognized kind "%s" in environment %s' % (kind_name, env_name))
+        compiler.validateEnvironment(config, ['environments', env_name])
 
     # Check services
     for service_name, service in services(config):
-        config_check_service(environments, [], service_name, service)
+        config_check_service(environments, config, [service_name])
 
             
 ext_vars = {}  # For Jsonnet evaluation
 search_paths = [  # Where we look for imported jsonnet files
     os.path.dirname(os.path.realpath(__file__)) + '/'
 ]
+debug = False
 
 #  Returns content if worked, None if file not found, or throws an exception
 def jsonnet_try_path(dir, rel):
@@ -149,8 +141,10 @@ def config_load(filename, ext_vars):
     try:
         config_check(config)
     except validate.ConfigError as e:
-        traceback.print_exc()
-        sys.stderr.write('Config error: %s\n' % e.message)
+        if debug:
+            traceback.print_exc()
+        else:
+            sys.stderr.write('Config error: %s\n' % e.message)
         if e.note:
             sys.stderr.write('%s\n' % e.note)
         sys.exit(1)
@@ -186,7 +180,7 @@ def get_build_artefacts(config):
         ctx = ctx + [service_name]
         for child_name, child in compiler.children(service):
             new_child, child_barts = aux(ctx, child_name, child)
-            merge_into(service_barts, child_barts)
+            util.merge_into(service_barts, child_barts)
             new_service[child_name] = new_child
         return new_service, service_barts
 
@@ -197,7 +191,7 @@ def get_build_artefacts(config):
     for service_name, service in services(config):
         new_service, service_barts = aux([], service_name, service)
         new_config[service_name] = new_service
-        merge_into(barts, service_barts)
+        util.merge_into(barts, service_barts)
     return new_config, barts
 
 
@@ -207,18 +201,18 @@ def compile(config, barts):
         service_tfs = compiler.compile(ctx, service_name, service, barts)
         ctx = ctx + [service_name]
         for child_name, child in compiler.children(service):
-            merge_into(service_tfs, aux(ctx, child_name, child))
+            util.merge_into(service_tfs, aux(ctx, child_name, child))
         return service_tfs
 
     tfs = {}
 
     for service_name, service in services(config):
-        merge_into(tfs, aux([], service_name, service))
+        util.merge_into(tfs, aux([], service_name, service))
 
     for environment_name, environment in config['environments'].iteritems():
         compiler = service_compilers[environment['kind']]
         tf_dict = compiler.compileProvider(environment_name, environment)
-        merge_into(tfs, tf_dict)
+        util.merge_into(tfs, tf_dict)
 
     # Avoid a warning from Terraform that there are no tf files
     if not len(tfs):
@@ -248,7 +242,7 @@ def action_blueprint(config_file, config, args):
     if args:
         sys.stderr.write('Action "blueprint" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
-    print(jsonstr(config))
+    print(util.jsonstr(config))
         
 
 def generate(dirpath, config, do_build):
@@ -286,7 +280,7 @@ def generate(dirpath, config, do_build):
         dirfilename = '%s/%s' % (dirpath, filename)
         files += [dirfilename]
         with open(dirfilename, 'w') as f:
-            f.write(jsonstr(tf))
+            f.write(util.jsonstr(tf))
 
     return files
 
@@ -358,6 +352,7 @@ def action_destroy(config_file, config, args):
 
 
 def action_image_gc(config_file, config, args):
+    raise RuntimeError('Sorry, this code is currently in a state of ill-repair.')
     config = preprocess(config)
     config, barts = get_build_artefacts(config)
 
@@ -458,6 +453,8 @@ while i < len(sys.argv):
     elif arg == '-J' or arg == '--jpath':
         i, val = next_arg(i)
         search_paths = [val] + search_paths
+    elif arg == '-d' or arg == '--debug':
+        debug = True
     elif arg == '-f' or arg == '--force':
         force = True
     else:
