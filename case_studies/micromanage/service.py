@@ -14,7 +14,7 @@
 
 import re
 
-import util
+import cmds as cmds_lib
 import validate
 
 class Service(object):
@@ -87,7 +87,7 @@ class Service(object):
         lines = []
         lines.append('if [ ! -r /micromanage_instance_initialized ] ; then')
         for cmd in cmds:
-            lines += compile_command_to_bash(cmd)
+            lines += cmds_lib.compile_command_to_bash(cmd)
         lines.append('touch /micromanage_instance_initialized')
         lines.append('fi')
         for cmd in bootCmds:
