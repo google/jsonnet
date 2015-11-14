@@ -19,10 +19,7 @@ import validate
 
 class Service(object):
 
-    def validateImage(self, root, path):
-        # Superclasses override this method and validate specific image attributes.
-        # Byt here we can do the cmds.
-        path = path + ['cmds']
+    def validateCmds(self, root, path):
         cmds = validate.array(root, path, validate.is_any_type({'string', 'object'}), [])
         for i, cmd in enumerate(cmds):
             cmd_path = path + [i]
@@ -30,7 +27,8 @@ class Service(object):
                 # Any string will do for validation purposes.
                 pass
             elif isinstance(cmd, dict):
-                kind = validate.path_val(root, cmd_path + ['kind'], 'string')
+                kinds = {'CopyFile', 'LiteralFile', 'EnsureDir'}
+                kind = validate.path_val(root, cmd_path + ['kind'], validate.is_any_value(kinds))
                 if kind == 'CopyFile':
                     fields = {'owner', 'group', 'dirPermissions', 'filePermissions', 'from', 'to'}
                     for f in fields:
@@ -47,9 +45,14 @@ class Service(object):
                         validate.path_val(root, cmd_path + [f], 'string')
                     validate.obj_only(root, cmd_path, fields | {'kind'})
                 else:
-                    return ' to have kind be one of CopyFile, LiteralFile or EnsureDir'
+                    raise RuntimeError('Internal error: %s' % kind)
             else:
-                return ' to be an object or string'
+                raise RuntimeError('Internal error: %s' % type(cmd))
+
+    def validateImage(self, root, path):
+        # Superclasses override this method and validate specific image attributes.
+        # Byt here we can do the cmds.
+        self.validateCmds(root, path + ['cmds'])
 
     def children(self, service):
         for child_name, child in service.iteritems():
@@ -85,6 +88,7 @@ class Service(object):
 
     def compileStartupScript(self, cmds, bootCmds):
         lines = []
+        lines.append('#!/bin/bash')
         lines.append('if [ ! -r /micromanage_instance_initialized ] ; then')
         for cmd in cmds:
             lines += cmds_lib.compile_command_to_bash(cmd)

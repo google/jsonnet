@@ -122,6 +122,8 @@ class GoogleService(service.Service):
 
         # Validate image configs
         for inst_name, inst in instances.iteritems():
+            self.validateCmds(root, inst_path + [inst_name, 'cmds'])
+            self.validateCmds(root, inst_path + [inst_name, 'bootCmds'])
             # Assume instances have a root disk.
             validate.path_val(root, inst_path + [inst_name, 'disk'], 'array')
             inst_disk_path = inst_path + [inst_name, 'disk', 0]

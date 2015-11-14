@@ -18,7 +18,7 @@ import re
 
 class ConfigError (Exception):
     note = None
-    pass
+
 
 def render_path(path):
     if isinstance(path, basestring):
@@ -32,7 +32,7 @@ def render_path(path):
 
 # Utilities
 
-def _err(path, msg):
+def err(path, msg):
     raise ConfigError('%s: %s' % (render_path(path), msg))
 
 _KEYWORDS = {
@@ -121,7 +121,13 @@ def is_type(t):
 def is_value(expected):
     def check(v):
         if v != expected:
-            return 'Expected value %s, got s' % (expected, v)
+            return 'Expected value %s, got %s' % (expected, v)
+    return check
+
+def is_any_value(expected):
+    def check(v):
+        if v not in expected:
+            return 'Expected value to be one of %s, got %s' % (_set_str(expected), v)
     return check
 
 
@@ -139,7 +145,7 @@ def path_val(root, path, func, default=None):
     v = _resolve_path(root, path, default)
     msg = func(v)
     if msg is not None:
-        _err(path, msg)
+        err(path, msg)
     return v
 
 # Ensure path is an array and all elements validate by element_func.
@@ -156,5 +162,5 @@ def obj_only(root, path, fields, default=None):
     v = path_val(root, path, 'object', default)
     for field in v:
         if field not in fields:
-            _err(path, 'Unexpected field: %s' % field)
+            err(path, 'Unexpected field: %s' % field)
     return v

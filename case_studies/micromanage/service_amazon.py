@@ -105,6 +105,18 @@ class AmazonService(service.Service):
 
     def validateService(self, root, path):
         super(AmazonService, self).validateService(root, path)
+        infra_path = path + ['infrastructure']
+        validate.path_val(root, infra_path, 'object', {})
+        inst_path = infra_path + ['aws_instance']
+        instances = validate.path_val(root, inst_path, 'object', {})
+
+        # Validate image configs
+        for inst_name, inst in instances.iteritems():
+            self.validateCmds(root, inst_path + [inst_name, 'cmds'])
+            self.validateCmds(root, inst_path + [inst_name, 'bootCmds'])
+            image = inst.get('ami')
+            if isinstance(image, dict):
+                self.validateImage(root, inst_path + [inst_name, 'ami'])
 
     def validateImage(self, root, path):
         super(AmazonService, self).validateImage(root, path)

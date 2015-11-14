@@ -32,7 +32,8 @@ local libimgcmd = import "lib/libimgcmd.jsonnet";
             }
         },
         outputs: {
-            "${-}-address": "${aws_instance.${-}.public_ip}"
+            "${-}-address": "${aws_instance.${-}.public_ip}",
+            "${-}-id": "${aws_instance.${-}.id}",
         },
     },
 
