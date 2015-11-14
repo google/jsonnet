@@ -1,3 +1,5 @@
+local libimgcmd = import "lib/libimgcmd.jsonnet";
+
 {
     environments: import "../testenv.jsonnet",
 
@@ -9,6 +11,7 @@
         zone:: error "Must override zone.",
         image:: error "Must override zone.",
         machineType:: "g1-small",
+        cmds:: [],
 
         externalIp:: false,
         infrastructure: {
@@ -27,7 +30,7 @@
                     },
                     metadata: {
                     },
-                    cmds: [],
+                    cmds: service.cmds,
                     bootCmds: [],
                 }
             }
@@ -43,7 +46,7 @@
         zone: "us-central1-b",
     },
     ubuntu: SingleGoogleInstance {
-        image: "ubuntu-1410-utopic-v20150625",
+        image: "ubuntu-1504-vivid-v20150911",
         zone: "us-central1-c",
     },
     "core-os": SingleGoogleInstance {
@@ -63,7 +66,7 @@
     },
     custom: SingleGoogleInstance {
         image: {
-            source: "ubuntu-1410-utopic-v20150625",
+            source: "ubuntu-1504-vivid-v20150911",
             zone: "us-central1-f",
             cmds: [
                 "echo hi > /hi.txt",

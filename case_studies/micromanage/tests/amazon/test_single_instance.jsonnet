@@ -1,3 +1,5 @@
+local libimgcmd = import "lib/libimgcmd.jsonnet";
+
 {
     environments: import "../testenv.jsonnet",
 
@@ -14,6 +16,7 @@
         ami:: null,
         machineType:: "t2.small",
         keyName:: null,
+        cmds:: [],
 
         externalIp:: false,
         infrastructure: {
@@ -24,6 +27,7 @@
                     availability_zone: service.zone,
                     ami: if service.ami != null then service.ami else service.amiMap[region_from_zone(service.zone)],
                     associate_public_ip_address: service.externalIp,
+                    cmds: service.cmds,
                 }
             }
         },
