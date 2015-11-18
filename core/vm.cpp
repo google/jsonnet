@@ -1148,10 +1148,17 @@ namespace {
                                 bindings[func->params[i]] = args[i];
                             stack.newCall(ast.location, func, func->self, func->offset, bindings);
                             if (ast.tailstrict) {
-                                stack.top().thunks = args;
-                                stack.top().val = scratch;
                                 stack.top().tailCall = true;
-                                goto replaceframe;
+                                if (args.size() == 0) {
+                                    // No need to force thunks, proceed straight to body.
+                                    ast_ = func->body;
+                                    goto recurse;
+                                } else {
+                                    // The check for args.size() > 0 
+                                    stack.top().thunks = args;
+                                    stack.top().val = scratch;
+                                    goto replaceframe;
+                                }
                             } else {
                                 ast_ = func->body;
                                 goto recurse;

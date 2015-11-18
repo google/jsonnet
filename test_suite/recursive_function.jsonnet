@@ -32,5 +32,7 @@ local sum(x, v) =
 local sz = 10000;
 std.assertEqual(sum(sz, 0), sz * (sz+1)/2) &&
 
+std.assertEqual(local x() = 3; x() tailstrict, 3) &&
+
 true
 
