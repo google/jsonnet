@@ -1,4 +1,4 @@
-local libimgcmd = import "lib/libimgcmd.jsonnet";
+local cmd = import "mmlib/v0.1.0/cmd/cmd.jsonnet";
 
 {
     environments: import "../testenv.jsonnet",
@@ -55,7 +55,7 @@ local libimgcmd = import "lib/libimgcmd.jsonnet";
         externalIp: true,
         cmds: [
             "echo hi > /hi.txt",
-            libimgcmd.LiteralFile {
+            cmd.LiteralFile {
                 to: "/var/log/bye.txt",
                 content: |||
                     bye
@@ -70,7 +70,7 @@ local libimgcmd = import "lib/libimgcmd.jsonnet";
             zone: "us-central1-f",
             cmds: [
                 "echo hi > /hi.txt",
-                libimgcmd.LiteralFile {
+                cmd.LiteralFile {
                     to: "/var/log/bye.txt",
                     content: |||
                         bye

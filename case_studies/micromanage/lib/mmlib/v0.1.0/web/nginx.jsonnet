@@ -1,33 +1,11 @@
-local libimgcmd = import "libimgcmd.jsonnet";
-local libservice = import "libservice.jsonnet";
-local libos = import "libos.jsonnet";
+local cmd = import "../cmd/cmd.jsonnet";
 
 {
-    GcpHttpService3: libservice.GcpCluster3 {
-        local service = self,
-        httpPort:: 80,
-        lbTcpPorts+: [self.httpPort],
-        fwTcpPorts+: [self.httpPort],
-        httpHealthCheckPort: self.httpPort,
-        outputs: {
-            "${-}": "http://%s:%d" % [service.refAddress("${-}"), service.httpPort],
-        },
-    },
-
-    GcpHttpSingleInstance: libservice.GcpSingleInstance {
-        local service = self,
-        httpPort:: 80,
-        fwTcpPorts+: [self.httpPort],
-        outputs: {
-            "${-}": "http://%s:%d" % [service.refAddress("${-}"), service.httpPort],
-        },
-    },
-
-    GcpDebianNginx:: {
+    DebianNginxMixin:: {
 
         local version = self,
 
-        httpPort:: error "GcpDebianNginx requires port",
+        httpPort:: error "DebianNginxMixin requires port",
 
         enableMonitoring: true,
         enableLogging: true,
@@ -62,11 +40,11 @@ local libos = import "libos.jsonnet";
 
 
             cmds+: (if version.enableMonitoring then [
-                libimgcmd.LiteralFile {
+                cmd.LiteralFile {
                     to: "/etc/nginx/conf.d/monitoring.conf",
                     content: image.nginxMonitoringConf,
                 },
-                libimgcmd.LiteralFile {
+                cmd.LiteralFile {
                     to: "/opt/stackdriver/collectd/etc/collectd.d/nginx.conf",
                     content: image.nginxCollectdConf,
                 },
@@ -78,7 +56,7 @@ local libos = import "libos.jsonnet";
 
         // Filse that must exist on top before any handling daemons are started.
         httpContentCmds:: [
-            libimgcmd.EnsureDir { dir: "/var/www", owner: "www-data" },
+            cmd.EnsureDir { dir: "/var/www", owner: "www-data" },
         ],
 
         // Running handling daemons.
@@ -102,7 +80,7 @@ local libos = import "libos.jsonnet";
             aptPackages+: ["python-dev"],
             pipPackages+: ["flask", "uwsgi"],
             cmds+: [
-                libimgcmd.LiteralFile {
+                cmd.LiteralFile {
                     to: "/etc/cron.d/emperor",
                     content: "@reboot root /usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
                              + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
@@ -131,7 +109,7 @@ local libos = import "libos.jsonnet";
         uwsgiModuleContent:: null,
 
         httpContentCmds+: if version.uwsgiModuleContent == null then [ ] else [
-            libimgcmd.LiteralFile {
+            cmd.LiteralFile {
                 content: version.uwsgiModuleContent,
                 to: "/var/www/%s.py" % version.module,
             },
@@ -139,8 +117,8 @@ local libos = import "libos.jsonnet";
 
 
         httpHandlerCmds+: [
-            libimgcmd.EnsureDir { dir: "/etc/uwsgi/vassals" },
-            libimgcmd.LiteralFile {
+            cmd.EnsureDir { dir: "/etc/uwsgi/vassals" },
+            cmd.LiteralFile {
                 to: "/etc/uwsgi/vassals/uwsgi.ini",
                 content: std.manifestIni({
                     sections: {
@@ -148,7 +126,7 @@ local libos = import "libos.jsonnet";
                     }
                 })
             },
-            libimgcmd.EnsureDir { dir: "/var/log/uwsgi", owner: "www-data" },
+            cmd.EnsureDir { dir: "/var/log/uwsgi", owner: "www-data" },
             "/usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
                      + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
                      + "--die-on-term --uid www-data --gid www-data\n",
@@ -173,14 +151,14 @@ local libos = import "libos.jsonnet";
         ||| % {port: version.httpPort, socket: version.uwsgiSocket},
 
         nginxAdditionalCmds+: [
-            libimgcmd.LiteralFile {
+            cmd.LiteralFile {
                 to: "/etc/nginx/conf.d/frontend_nginx.conf",
                 content: version.nginxUwsgiConf,
             },
         ],
     },
 
-    GcpStandardFlask: $.GcpHttpService3 {
+    DebianFlaskHttpService: {
         local service = self,
         uwsgiModuleContent:: |||
             import flask
@@ -189,24 +167,7 @@ local libos = import "libos.jsonnet";
             def hello_world():
                 return 'No content is configured for this web service.'
         |||,
-        BaseVersion+: $.GcpDebianNginx + $.DebianUwsgiFlask + $.NginxUwsgiGlue {
-            httpPort: service.httpPort,
-            uwsgiModuleContent: service.uwsgiModuleContent
-        },
-        versions: {uni: service.BaseVersion},
-        deployment: {uni: { deployed: [1], attached: [1]}},
-    },
-
-    GcpSingleInstanceFlask: $.GcpHttpSingleInstance {
-        local service = self,
-        uwsgiModuleContent:: |||
-            import flask
-            app = flask.Flask(__name__) 
-            @app.route('/') 
-            def hello_world():
-                return 'No content is configured for this web service.'
-        |||,
-        instance+: $.GcpDebianNginx + $.DebianUwsgiFlask + $.NginxUwsgiGlue {
+        Instance+: $.DebianNginxMixin + $.DebianUwsgiFlask + $.NginxUwsgiGlue {
             httpPort: service.httpPort,
             uwsgiModuleContent: service.uwsgiModuleContent
         },

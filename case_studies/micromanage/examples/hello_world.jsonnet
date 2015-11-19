@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-local libhttp = import "lib/libhttp.jsonnet";
-local libservice = import "lib/libservice.jsonnet";
+local nginx = import "mmlib/v0.1.0/web/nginx.jsonnet";
+local service_google = import "mmlib/v0.1.0/service/google.jsonnet";
+local web = import "mmlib/v0.1.0/web/web.jsonnet";
 
 {
     environments: {
@@ -28,8 +29,9 @@ local libservice = import "lib/libservice.jsonnet";
     },
 
     // Simple case -- one machine serving this Python script.
-    helloworld: libhttp.GcpStandardFlask {
-        zones: ["us-central1-f"],
+    helloworld: service_google.SingleInstance + web.HttpSingleInstance
+                + nginx.DebianFlaskHttpService {
+        zone: "us-central1-f",
         uwsgiModuleContent: |||
             import flask
             import socket
@@ -41,12 +43,13 @@ local libservice = import "lib/libservice.jsonnet";
     },
 
     // For production -- allows canarying changes, also use a dns zone
-    helloworld2: libhttp.GcpStandardFlask {
+    helloworld2: service_google.Cluster3 + web.HttpService3
+                 + nginx.DebianFlaskHttpService {
         local service = self,
         httpPort: 8080,
         zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
         versions: {
-            v1: service.BaseVersion {
+            v1: service.Instance {
                 uwsgiModuleContent: |||
                     import flask
                     import socket
@@ -56,7 +59,7 @@ local libservice = import "lib/libservice.jsonnet";
                         return 'Hello from %s!' % socket.gethostname()
                 |||,
             },
-            v2: service.BaseVersion {
+            v2: service.Instance {
                 uwsgiModuleContent: |||
                     import flask
                     import socket
@@ -78,28 +81,23 @@ local libservice = import "lib/libservice.jsonnet";
             },
         },
 
-        // If you own a domain, enable this and the zone service below, then create an NS record to
-        // the allocated nameserver.
-        // dnsZone: "dns",
-        // dnsSuffix: $.dns.dnsName,
-        // infrastructure+: {
-        //     google_dns_record_set+: {
-        //         www: {
-        //             managed_zone: "${google_dns_managed_zone.%s.name}" % service.dnsZone,
-        //             name: "www." + service.dnsSuffix,
-        //             type: "CNAME",
-        //             ttl: 300,
-        //             rrdatas: ["${-}." + service.dnsSuffix],
-        //         },
-        //     }
-        // }
+        // dnsZone: $.dns,
+        // dnsZoneName: "dns",
     },
 
-    /*
-    dns: libservice.GcpZone {
+/*
+    dns: service_google.DnsZone {
         local service = self,
         dnsName: "hw.example.com.",
     },
-    */
+
+    // If you own a domain, enable this and the zone service below, then create an NS record to
+    // the allocated nameserver.
+    www: service_google.DnsRecordWww {
+        zone: $.dns,
+        zoneName: "dns",
+        target: "helloworld2",
+    },
+*/
 
 }

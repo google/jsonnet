@@ -42,10 +42,8 @@ def get_compiler(config, service):
 def config_check_service(environments, root, path):
     try:
         service = validate.path_val(root, path, 'object')
-        env_name = validate.path_val(root, path + ['environment'], 'string', None)
-        default = env_name is None
-        if default:
-            env_name = 'default'
+        env_name = validate.path_val(root, path + ['environment'], 'string', 'default')
+        default = env_name == 'default'
         env = environments.get(env_name)
         if env is None:
             if default:
@@ -92,7 +90,7 @@ def config_check(config):
             
 ext_vars = {}  # For Jsonnet evaluation
 search_paths = [  # Where we look for imported jsonnet files
-    os.path.dirname(os.path.realpath(__file__)) + '/'
+    os.path.dirname(os.path.realpath(__file__)) + '/lib/'
 ]
 debug = False
 

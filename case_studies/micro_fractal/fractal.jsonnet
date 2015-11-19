@@ -1,7 +1,8 @@
-local libimgcmd = import "lib/libimgcmd.jsonnet";
-local libservice = import "lib/libservice.jsonnet";
-local libcassandra = import "lib/libcassandra-v2.jsonnet";
-local libhttp = import "lib/libhttp.jsonnet";
+local cmd = import "mmlib/v0.1.0/cmd/cmd.jsonnet";
+local service_google = import "mmlib/v0.1.0/service/google.jsonnet";
+local cassandra = import "mmlib/v0.1.0/db/cassandra.jsonnet";
+local web = import "mmlib/v0.1.0/web/web.jsonnet";
+local nginx = import "mmlib/v0.1.0/web/nginx.jsonnet";
 
 // TODO(dcunnin):  Add to stdlib.
 local resolve_path(f, r) =
@@ -34,22 +35,23 @@ local resolve_path(f, r) =
     },
 
 
-    zone: libservice.GcpZone {
+    zone: service_google.DnsZone {
         dnsName: app.dnsSuffix,
     },
 
-    www: libservice.GcpRecordWww {
+    www: service_google.DnsRecordWww {
         zone: app.zone,
         zoneName: "fractal-zone",
         target: "fractal-appserv",
     },
 
-    appserv: libhttp.GcpStandardFlask {
+    appserv: service_google.Cluster3 + web.HttpService3 + nginx.DebianFlaskHttpService {
+
         local service = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
 
-        BaseVersion+: {
+        Instance+: {
             StandardRootImage+: app.ImageMixin {
                 pipPackages +: ["httplib2", "cassandra-driver", "blist"],
             },
@@ -67,19 +69,19 @@ local resolve_path(f, r) =
             // Copy website content and code.
             httpContentCmds+: [
                 "echo '%s tilegen' >> /etc/hosts" % app.tilegen.refAddress("fractal-tilegen"),
-                libimgcmd.CopyFile { from: resolve_path(std.thisFile, "appserv/*"), to: "/var/www" },
-                libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
+                cmd.CopyFile { from: resolve_path(std.thisFile, "appserv/*"), to: "/var/www" },
+                cmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
             ],
         },
     },
 
-    tilegen: libhttp.GcpStandardFlask {
+    tilegen: service_google.Cluster3 + web.HttpService3 + nginx.DebianFlaskHttpService {
         local service = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
 
         httpPort: app.tilegenPort,
-        BaseVersion+: {
+        Instance+: {
             StandardRootImage+: app.ImageMixin {
                 aptPackages +: ["g++", "libpng-dev"],
             },
@@ -90,14 +92,14 @@ local resolve_path(f, r) =
             },
             module: "mandelbrot_service",
             httpContentCmds+: [
-                libimgcmd.CopyFile { from: resolve_path(std.thisFile, "tilegen/*"), to: "/var/www" },
+                cmd.CopyFile { from: resolve_path(std.thisFile, "tilegen/*"), to: "/var/www" },
                 "g++ -Wall -Wextra -ansi -pedantic -O3 -ffast-math -g /var/www/mandelbrot.cpp -lpng -o /var/www/mandelbrot",
-                libimgcmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
+                cmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
             ],
         },
     },
 
-    db: libcassandra.GcpDebianCassandra {
+    db: cassandra.GcpDebianCassandra {
         local db = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
