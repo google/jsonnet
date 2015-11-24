@@ -1,8 +1,8 @@
-local cmd = import "mmlib/v0.1.0/cmd/cmd.jsonnet";
-local service_google = import "mmlib/v0.1.0/service/google.jsonnet";
-local cassandra = import "mmlib/v0.1.0/db/cassandra.jsonnet";
-local web = import "mmlib/v0.1.0/web/web.jsonnet";
-local nginx = import "mmlib/v0.1.0/web/nginx.jsonnet";
+local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
+local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
+local cassandra = import "mmlib/v0.1.1/db/cassandra.jsonnet";
+local web = import "mmlib/v0.1.1/web/web.jsonnet";
+local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 
 // TODO(dcunnin):  Add to stdlib.
 local resolve_path(f, r) =
@@ -45,7 +45,7 @@ local resolve_path(f, r) =
         target: "fractal-appserv",
     },
 
-    appserv: service_google.Cluster3 + web.HttpService3 + nginx.DebianFlaskHttpService {
+    appserv: service_google.Cluster3 + web.HttpService3 + web_solutions.DebianFlaskHttpService {
 
         local service = self,
         dnsZone: app.zone,
@@ -75,7 +75,7 @@ local resolve_path(f, r) =
         },
     },
 
-    tilegen: service_google.Cluster3 + web.HttpService3 + nginx.DebianFlaskHttpService {
+    tilegen: service_google.Cluster3 + web.HttpService3 + web_solutions.DebianFlaskHttpService {
         local service = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",

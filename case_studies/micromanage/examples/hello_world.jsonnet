@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-local nginx = import "mmlib/v0.1.0/web/nginx.jsonnet";
-local service_google = import "mmlib/v0.1.0/service/google.jsonnet";
-local web = import "mmlib/v0.1.0/web/web.jsonnet";
+local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
+local web = import "mmlib/v0.1.1/web/web.jsonnet";
+local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 
 {
     environments: {
@@ -30,7 +30,7 @@ local web = import "mmlib/v0.1.0/web/web.jsonnet";
 
     // Simple case -- one machine serving this Python script.
     helloworld: service_google.SingleInstance + web.HttpSingleInstance
-                + nginx.DebianFlaskHttpService {
+                + web_solutions.DebianFlaskHttpService {
         zone: "us-central1-f",
         uwsgiModuleContent: |||
             import flask
@@ -44,7 +44,7 @@ local web = import "mmlib/v0.1.0/web/web.jsonnet";
 
     // For production -- allows canarying changes, also use a dns zone
     helloworld2: service_google.Cluster3 + web.HttpService3
-                 + nginx.DebianFlaskHttpService {
+                 + web_solutions.DebianFlaskHttpService {
         local service = self,
         httpPort: 8080,
         zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
