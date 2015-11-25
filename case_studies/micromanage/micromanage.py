@@ -348,6 +348,35 @@ def action_destroy(config_file, config, args):
     output_delete(dirpath)
 
 
+def action_graph(config_file, config, args):
+    if args:
+        sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.exit(1)
+
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, False)
+    dotfilename = '%s/graph.dot' % dirpath
+    with open(dotfilename, 'w') as dotfile:
+        tf_process = subprocess.Popen(['terraform', 'graph'], stdout=dotfile, cwd=dirpath)
+        exitcode = tf_process.wait()
+        if exitcode != 0:
+            sys.stderr.write('Error from terraform, aborting.\n')
+            sys.exit(1)
+    pngfilename = '%s/graph.png' % dirpath
+    with open(pngfilename, 'w') as pngfile:
+        dot_process = subprocess.Popen(['dot', '-Tpng', dotfilename], stdout=pngfile, cwd=dirpath)
+        exitcode = dot_process.wait()
+        if exitcode != 0:
+            sys.stderr.write('Error from dot, aborting.\n')
+            sys.exit(1)
+    geeqie_process = subprocess.Popen(['geeqie', pngfilename], cwd=dirpath)
+    exitcode = geeqie_process.wait()
+    if exitcode != 0:
+        sys.stderr.write('Error from geeqie, aborting.\n')
+        sys.exit(1)
+    output_delete(dirpath)
+
+
 
 def action_image_gc(config_file, config, args):
     raise RuntimeError('Sorry, this code is currently in a state of ill-repair.')
@@ -414,6 +443,7 @@ actions = {
     'generate-to-editor': action_generate_to_editor,
     'apply': action_apply,
     'destroy': action_destroy,
+    'graph': action_graph,
     'image-gc': action_image_gc,
 }
 
