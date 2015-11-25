@@ -213,6 +213,8 @@ local apt = import "../cmd/apt.jsonnet";
         networkName:: "default",
         zones:: error "Cluster3 version (or service) needs an array of zones.",
 
+        // In this service, the 'instance' is really an instance template used to create
+        // a pool of instances.
         Mixin+: {
             zones:: service.zones,
         },
