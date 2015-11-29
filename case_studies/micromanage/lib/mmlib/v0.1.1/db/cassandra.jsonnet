@@ -7,6 +7,8 @@ local service_amazon = import "../service/amazon.jsonnet";
 
         local service = self,
 
+        networkName:: "default",
+
         // Unchanged from Cassandra distribution
         defaultConf:: {
             authenticator: "AllowAllAuthenticator",
@@ -120,6 +122,7 @@ local service_amazon = import "../service/amazon.jsonnet";
             },
             machine_type: "n1-standard-1",
             tags+: [service.clusterName],
+            networkName: service.networkName,
 
             enableMonitoring: true,
             enableJmxMonitoring: true,
