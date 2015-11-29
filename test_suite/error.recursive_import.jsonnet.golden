@@ -1,2 +1,2 @@
-RUNTIME ERROR: Couldn't open import "recursive_import.jsonnet": No match locally or in the Jsonnet library path.
+RUNTIME ERROR: Couldn't open import "recursive_import.jsonnet": No match locally or in the Jsonnet library paths.
 	error.recursive_import.jsonnet:17:13-45	

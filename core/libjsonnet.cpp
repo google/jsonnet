@@ -45,47 +45,8 @@ static char *from_string(JsonnetVm* vm, const std::string &v)
     return r;
 }
 
-/** Resolve the absolute path and use C++ file io to load the file.
- */
-static char *default_import_callback(void *ctx, const char *base, const char *file,
-                                     char **found_here_cptr, int *success)
-{
-    auto *vm = static_cast<JsonnetVm*>(ctx);
-
-    if (std::strlen(file) == 0) {
-        *success = 0;
-        return from_string(vm, "The empty string is not a valid filename");
-    }
-
-    if (file[std::strlen(file) - 1] == '/') {
-        *success = 0;
-        return from_string(vm, "Attempted to import a directory");
-    }
-
-    std::string abs_path;
-    // It is possible that file is an absolute path
-    if (file[0] == '/')
-        abs_path = file;
-    else
-        abs_path = std::string(base) + file;
-
-    std::ifstream f;
-    f.open(abs_path.c_str());
-    if (!f.good()) {
-        *success = 0;
-        return from_string(vm, std::strerror(errno));
-    }
-    try {
-        std::string input;
-        input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-        *success = 1;
-        *found_here_cptr = from_string(vm, abs_path);
-        return from_string(vm, input);
-    } catch (const std::ios_base::failure &io_err) {
-        *success = 0;
-        return from_string(vm, io_err.what());
-    }
-}
+static char *default_import_callback(void *ctx, const char *dir, const char *file,
+                                     char **found_here_cptr, int *success);
 
 struct JsonnetVm {
     double gcGrowthTrigger;
@@ -99,13 +60,98 @@ struct JsonnetVm {
     JsonnetImportCallback *importCallback;
     void *importCallbackContext;
     bool stringOutput;
+    std::vector<std::string> jpaths;
+    
     JsonnetVm(void)
       : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), debugLexer(false), debugAst(false),
         debugDesugaring(false), maxTrace(20), importCallback(default_import_callback),
         importCallbackContext(this), stringOutput(false)
-    { }
+    {
+        jpaths.emplace_back("/usr/share/" + std::string(jsonnet_version()) + "/");
+        jpaths.emplace_back("/usr/local/share/" + std::string(jsonnet_version()) + "/");
+    }
 };
 
+enum ImportStatus {
+    IMPORT_STATUS_OK,
+    IMPORT_STATUS_FILE_NOT_FOUND,
+    IMPORT_STATUS_IO_ERROR
+};
+
+static enum ImportStatus try_path(const std::string &dir, const std::string &rel,
+                                  std::string &content, std::string &found_here,
+                                  std::string &err_msg)
+{
+    std::string abs_path;
+    if (rel.length() == 0) {
+        err_msg = "The empty string is not a valid filename";
+        return IMPORT_STATUS_IO_ERROR;
+    }
+    // It is possible that rel is actually absolute.
+    if (rel[0] == '/') {
+        abs_path = rel;
+    } else {
+        abs_path = dir + rel;
+    }
+
+    if (abs_path[abs_path.length() - 1] == '/') {
+        err_msg = "Attempted to import a directory";
+        return IMPORT_STATUS_IO_ERROR;
+    }
+
+    std::ifstream f;
+    f.open(abs_path.c_str());
+    if (!f.good()) return IMPORT_STATUS_FILE_NOT_FOUND;
+    try {
+        content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    } catch (const std::ios_base::failure &io_err) {
+        err_msg = io_err.what();
+        return IMPORT_STATUS_IO_ERROR;
+    }
+    if (!f.good()) {
+        err_msg = strerror(errno);
+        return IMPORT_STATUS_IO_ERROR;
+    }
+
+    found_here = abs_path;
+
+    return IMPORT_STATUS_OK;
+}
+
+static char *default_import_callback(void *ctx, const char *dir, const char *file,
+                                     char **found_here_cptr, int *success)
+{
+    auto *vm = static_cast<JsonnetVm*>(ctx);
+
+    std::string input, found_here, err_msg;
+
+    ImportStatus status = try_path(dir, file, input, found_here, err_msg);
+
+    std::vector<std::string> jpaths(vm->jpaths);
+
+    // If not found, try library search path.
+    while (status == IMPORT_STATUS_FILE_NOT_FOUND) {
+        if (jpaths.size() == 0) {
+            *success = 0;
+            const char *err = "No match locally or in the Jsonnet library paths.";
+            char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
+            std::strcpy(r, err);
+            return r;
+        }
+        status = try_path(jpaths.back(), file, input, found_here, err_msg);
+        jpaths.pop_back();
+    }
+
+    if (status == IMPORT_STATUS_IO_ERROR) {
+        *success = 0;
+        return from_string(vm, err_msg);
+    } else {
+        assert(status == IMPORT_STATUS_OK);
+        *success = 1;
+        *found_here_cptr = from_string(vm, found_here);
+        return from_string(vm, input);
+    }
+}
 #define TRY try {
 #define CATCH(func) \
     } catch (const std::bad_alloc &) {\
@@ -190,6 +236,14 @@ void jsonnet_debug_desugaring(JsonnetVm *vm, int v)
 void jsonnet_max_trace(JsonnetVm *vm, unsigned v)
 {
     vm->maxTrace = v;
+}
+
+void jsonnet_jpath_add(JsonnetVm *vm, const char *path_)
+{
+    if (std::strlen(path_) == 0) return;
+    std::string path = path_;
+    if (path[path.length() - 1] != '/') path += '/';
+    vm->jpaths.emplace_back(path);
 }
 
 static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,

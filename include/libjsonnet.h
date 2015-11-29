@@ -103,6 +103,9 @@ void jsonnet_debug_desugaring(struct JsonnetVm *vm, int v);
 /** Set the number of lines of stack trace to display (0 for all of them). */
 void jsonnet_max_trace(struct JsonnetVm *vm, unsigned v);
 
+/** Add to the default import callback's library search path. */
+void jsonnet_jpath_add(struct JsonnetVm *vm, const char *v);
+
 /** Evaluate a file containing Jsonnet code, return a JSON string.
  *
  * The returned string should be cleaned up with jsonnet_realloc.

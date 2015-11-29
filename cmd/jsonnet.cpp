@@ -29,99 +29,6 @@ extern "C" {
     #include <libjsonnet.h>
 }
 
-struct ImportCallbackContext {
-    JsonnetVm *vm;
-    std::vector<std::string> *jpaths;
-};
-
-enum ImportStatus {
-    IMPORT_STATUS_OK,
-    IMPORT_STATUS_FILE_NOT_FOUND,
-    IMPORT_STATUS_IO_ERROR
-};
-
-static enum ImportStatus try_path(const std::string &dir, const std::string &rel,
-                                  std::string &content, std::string &found_here,
-                                  std::string &err_msg)
-{
-    std::string abs_path;
-    if (rel.length() == 0) {
-        err_msg = "The empty string is not a valid filename";
-        return IMPORT_STATUS_IO_ERROR;
-    }
-    // It is possible that rel is actually absolute.
-    if (rel[0] == '/') {
-        abs_path = rel;
-    } else {
-        abs_path = dir + rel;
-    }
-
-    if (abs_path[abs_path.length() - 1] == '/') {
-        err_msg = "Attempted to import a directory";
-        return IMPORT_STATUS_IO_ERROR;
-    }
-
-    std::ifstream f;
-    f.open(abs_path.c_str());
-    if (!f.good()) return IMPORT_STATUS_FILE_NOT_FOUND;
-    try {
-        content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-    } catch (const std::ios_base::failure &io_err) {
-        err_msg = io_err.what();
-        return IMPORT_STATUS_IO_ERROR;
-    }
-    if (!f.good()) {
-        err_msg = strerror(errno);
-        return IMPORT_STATUS_IO_ERROR;
-    }
-
-    found_here = abs_path;
-
-    return IMPORT_STATUS_OK;
-}
-
-static char *from_string(JsonnetVm* vm, const std::string &v)
-{
-    char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
-    std::strcpy(r, v.c_str());
-    return r;
-}
-
-static char *import_callback(void *ctx_, const char *dir, const char *file,
-                             char **found_here_cptr, int *success)
-{
-    const auto &ctx = *static_cast<ImportCallbackContext*>(ctx_);
-
-    std::string input, found_here, err_msg;
-
-    ImportStatus status = try_path(dir, file, input, found_here, err_msg);
-
-    std::vector<std::string> jpaths(*ctx.jpaths);
-
-    // If not found, try library search path.
-    while (status == IMPORT_STATUS_FILE_NOT_FOUND) {
-        if (jpaths.size() == 0) {
-            *success = 0;
-            const char *err = "No match locally or in the Jsonnet library path.";
-            char *r = jsonnet_realloc(ctx.vm, nullptr, std::strlen(err) + 1);
-            std::strcpy(r, err);
-            return r;
-        }
-        status = try_path(jpaths.back(), file, input, found_here, err_msg);
-        jpaths.pop_back();
-    }
-
-    if (status == IMPORT_STATUS_IO_ERROR) {
-        *success = 0;
-        return from_string(ctx.vm, err_msg);
-    } else {
-        assert(status == IMPORT_STATUS_OK);
-        *success = 1;
-        *found_here_cptr = from_string(ctx.vm, found_here);
-        return from_string(ctx.vm, input);
-    }
-}
-
 std::string next_arg(unsigned &i, const std::vector<std::string> &args)
 {
     i++;
@@ -213,10 +120,6 @@ class JsonnetConfig {
     JsonnetConfig()
         : filename_is_code_(false),
           multi_(false) {
-        jpaths_.emplace_back(
-            "/usr/share/" + std::string(jsonnet_version()) + "/");
-        jpaths_.emplace_back(
-            "/usr/local/share/" + std::string(jsonnet_version()) + "/");
     }
 
     bool filename_is_code() const {
@@ -259,25 +162,12 @@ class JsonnetConfig {
         output_dir_ = output_dir;
     }
 
-    void AddJpath(const std::string& jpath) {
-        jpaths_.emplace_back(jpath);
-    }
-
-    const std::vector<std::string>& jpaths() const {
-        return jpaths_;
-    }
-
-    std::vector<std::string>* mutable_jpaths() {
-        return &jpaths_;
-    }
-
   private:
     bool filename_is_code_;
     bool multi_;
     std::string input_file_;
     std::string output_file_;
     std::string output_dir_;
-    std::vector<std::string> jpaths_;
 };
 
 /** Parse the command line arguments, configuring the Jsonnet VM context and
@@ -316,7 +206,7 @@ static bool process_args(int argc,
             if (dir[dir.length() - 1] != '/') {
                 dir += '/';
             }
-            config->AddJpath(dir);
+            jsonnet_jpath_add(vm, dir.c_str());
         } else if (arg == "-E" || arg == "--env") {
             const std::string var = next_arg(i, args);
             const char *val = ::getenv(var.c_str());
@@ -580,10 +470,6 @@ int main(int argc, const char **argv)
         if (!read_input(&config, &input)) {
             return EXIT_FAILURE;
         }
-
-        // Set import callbacks for jpaths.
-        ImportCallbackContext import_callback_ctx{vm, config.mutable_jpaths()};
-        jsonnet_import_callback(vm, import_callback, &import_callback_ctx);
 
         // Evaluate input Jsonnet and handle any errors from Jsonnet VM.
         int error;
