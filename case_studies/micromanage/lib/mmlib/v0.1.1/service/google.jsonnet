@@ -173,6 +173,21 @@ local apt = import "../cmd/apt.jsonnet";
     },
 
 
+    Network:: $.Service {
+        local service = self,
+        refName(name):: "${google_compute_network.%s.name}" % name,
+        ipv4Range:: "10.0.0.0/16",
+        infrastructure: {
+            google_compute_network: {
+                "${-}": {
+                    name: "${-}",
+                    ipv4_range: service.ipv4Range,
+                }
+            }
+        },
+    },
+
+
     InstanceBasedService: $.Service {
         local service = self,
         fwTcpPorts:: [22],
