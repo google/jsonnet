@@ -45,11 +45,17 @@ local resolve_path(f, r) =
         target: "fractal-appserv",
     },
 
+    network: service_google.Network {
+        ipv4Range: "10.10.0.0/16",
+    },
+
     appserv: service_google.Cluster3 + web.HttpService3 + web_solutions.DebianFlaskHttpService {
 
         local service = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
+
+        networkName: $.network.refName("fractal-network"),
 
         Instance+: {
             StandardRootImage+: app.ImageMixin {
@@ -80,6 +86,8 @@ local resolve_path(f, r) =
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
 
+        networkName: $.network.refName("fractal-network"),
+
         httpPort: app.tilegenPort,
         Instance+: {
             StandardRootImage+: app.ImageMixin {
@@ -103,6 +111,8 @@ local resolve_path(f, r) =
         local db = self,
         dnsZone: app.zone,
         dnsZoneName: "fractal-zone",
+
+        networkName: $.network.refName("fractal-network"),
 
         clusterName: "fractal-cluster",
         rootPassword: app.cassandraRootPass,
