@@ -20,7 +20,7 @@ from subprocess import Popen
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 LIB_OBJECTS = [
-    'core/desugarer.o',
+    'core/desugaring.o',
     'core/libjsonnet.o',
     'core/lexer.o',
     'core/parser.o',
