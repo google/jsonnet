@@ -863,6 +863,8 @@ namespace {
                 case Token::FUNCTION:
                 case Token::IF:
                 case Token::IN:
+                case Token::IMPORT:
+                case Token::IMPORTSTR:
                 case Token::LOCAL:
                 case Token::OPERATOR:
                 case Token::PAREN_R:
@@ -960,18 +962,6 @@ namespace {
                 case Token::NULL_LIT:
                 return alloc->make<LiteralNull>(span(tok));
 
-                // Import
-                case Token::IMPORT: {
-                    Token file = popExpect(Token::STRING_DOUBLE);
-                    return alloc->make<Import>(span(tok, file), file.data32());
-                }
-
-                case Token::IMPORTSTR: {
-                    Token file = popExpect(Token::STRING_DOUBLE);
-                    return alloc->make<Importstr>(span(tok, file), file.data32());
-                }
-
-
                 // Variables
                 case Token::DOLLAR:
                 return alloc->make<Dollar>(span(tok));
@@ -1063,6 +1053,30 @@ namespace {
                         std::stringstream ss;
                         ss << "Expected ( but got " << next;
                         throw StaticError(next.location, ss.str());
+                    }
+                }
+
+                case Token::IMPORT: {
+                    pop();
+                    AST *body = parse(MAX_PRECEDENCE);
+                    if (auto *lit = dynamic_cast<LiteralString*>(body)) {
+                        return alloc->make<Import>(span(begin, body), lit->value);
+                    } else {
+                        std::stringstream ss;
+                        ss << "Computed imports are not allowed.";
+                        throw StaticError(body->location, ss.str());
+                    }
+                }
+
+                case Token::IMPORTSTR: {
+                    pop();
+                    AST *body = parse(MAX_PRECEDENCE);
+                    if (auto *lit = dynamic_cast<LiteralString*>(body)) {
+                        return alloc->make<Importstr>(span(begin, body), lit->value);
+                    } else {
+                        std::stringstream ss;
+                        ss << "Computed imports are not allowed.";
+                        throw StaticError(body->location, ss.str());
                     }
                 }
 

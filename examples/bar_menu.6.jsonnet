@@ -16,7 +16,7 @@ limitations under the License.
 
 // bar_menu.6.jsonnet
 {
-    cocktails: import "martinis.jsonnet" + {
+    cocktails: (import "martinis.jsonnet") + {
         Manhattan: {
             ingredients: [
                 { kind: "Rye", qty: 2.5 },
