@@ -1,11 +1,11 @@
 RUNTIME ERROR: foobar
 	error.inside_equals_object.jsonnet:18:22-35	object <b>
-	std.jsonnet:883:58-61	thunk <b>
-	std.jsonnet:857:25	thunk <x>
-	std.jsonnet:857:16-26	thunk <tb>
-	std.jsonnet:858:33-34	thunk <b>
-	std.jsonnet:858:9-35	function <anonymous>
-	std.jsonnet:883:50-61	function <aux>
-	std.jsonnet:886:25-40	function <aux>
-	std.jsonnet:887:17-28	function <anonymous>
+	std.jsonnet:883:62-65	thunk <b>
+	std.jsonnet:857:29	thunk <x>
+	std.jsonnet:857:20-30	thunk <tb>
+	std.jsonnet:858:37-38	thunk <b>
+	std.jsonnet:858:13-39	function <anonymous>
+	std.jsonnet:883:54-65	function <aux>
+	std.jsonnet:886:29-44	function <aux>
+	std.jsonnet:887:21-32	function <anonymous>
 	error.inside_equals_object.jsonnet:19:1-6	
