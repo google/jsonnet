@@ -202,8 +202,8 @@ class Desugarer {
                 str(U"length"),
                 nullptr),
             std::vector<AST*>{v},
-            true,  // tailstrict
-            false  // trailingComma
+            false,  // trailingComma
+            true  // tailstrict
         );
     }
 
@@ -354,8 +354,8 @@ class Desugarer {
                     make<Binary>(E, var(_i[last_for]), BOP_PLUS, one),
                     make<Binary>(E, var(_r), BOP_PLUS, singleton(ast->body))
                 },
-                true,  // tailstrict
-                false  // trailingComma
+                false,  // trailingComma
+                true  // tailstrict
             );
             for (int i = n - 1; i >= 0 ; --i) {
                 const ComprehensionSpec &spec = ast->specs[i];
@@ -371,8 +371,8 @@ class Desugarer {
                         var(_aux[prev_for]), 
                         std::vector<AST*> {
                             make<Binary>(E, var(_i[prev_for]), BOP_PLUS, one), var(_r)},
-                        true,  // tailstrict
-                        false  // trailingComma
+                        false, // trailingComma
+                        true  // tailstrict
                     );
                 } else {
                     out = var(_r);
@@ -432,8 +432,8 @@ class Desugarer {
                                         i == 0 ? make<Array>(E, std::vector<AST*>{}, false)
                                                : static_cast<AST*>(var(_r))
                                     },
-                                    true,  // tailstrict
-                                    false));  // trailingComma
+                                    false,  // trailingComma
+                                    true));  // tailstrict
                     } break;
                 }
             }
