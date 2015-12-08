@@ -37,6 +37,17 @@ LDFLAGS ?=
 
 SHARED_LDFLAGS ?= -shared
 
+# Prefix for all installed files
+prefix = /usr/local
+
+exec_prefix = ${prefix}
+bindir = ${exec_prefix}/bin
+includedir = ${prefix}/include
+libdir = ${exec_prefix}/lib
+DESTDIR =
+INSTALL = install -c
+INSTALL_DATA = ${INSTALL} -m 644
+
 ################################################################################
 # End of user-servicable parts
 ################################################################################
@@ -70,8 +81,10 @@ ALL_HEADERS = \
 	core/std.jsonnet.h \
 	include/libjsonnet.h
 
+.PHONY: default
 default: jsonnet
 
+.PHONY: all
 all: $(ALL)
 
 TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
@@ -89,6 +102,7 @@ MAKEDEPEND_SRCS = \
 	core/libjsonnet_test_snippet.c \
 	core/libjsonnet_test_file.c
 
+.PHONY: depend
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
 
@@ -141,7 +155,15 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 		| tr "\n" "," ) && echo "0") > $@
 	echo >> $@
 
+.PHONY: clean
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Make.depend
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend
+
+.PHONY: install
+install: all
+	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+	$(INSTALL) jsonnet $(DESTDIR)$(bindir)/jsonnet
+	$(INSTALL) libjsonnet.so $(DESTDIR)$(libdir)/libjsonnet.so
+	$(INSTALL_DATA) include/libjsonnet.h $(DESTDIR)$(includedir)/libjsonnet.h
 
 -include Makefile.depend
