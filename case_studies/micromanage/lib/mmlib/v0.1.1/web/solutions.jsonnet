@@ -2,7 +2,7 @@ local nginx = import "nginx.jsonnet";
 local uwsgi_flask = import "uwsgi_flask.jsonnet";
 
 {
-    /** A mixin on top of an HttpService with Debian isntances that adds nginx, uwsgi, and flask. */
+    /** A mixin on top of an HttpService with Debian instances that adds nginx, uwsgi, and flask. */
     DebianFlaskHttpService: {
         local service = self,
         uwsgiModuleContent:: |||
