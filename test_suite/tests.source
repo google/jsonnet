@@ -43,7 +43,7 @@ test_eval() {
 
     case "$GOLDEN_KIND" in
         "REGEX")
-        if [[ ! "$TEST_OUTPUT" =~ $GOLDEN_REGEX ]] ; then
+        if [[ ! "$TEST_OUTPUT" =~ $GOLDEN_OUTPUT ]] ; then
             FAILED=$((FAILED + 1))
             echo -e "\e[31;1mFAIL\e[0m \e[1m(regex mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
             echo "This run's output:"
