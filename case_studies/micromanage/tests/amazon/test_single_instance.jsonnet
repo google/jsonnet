@@ -1,4 +1,6 @@
-local libimgcmd = import "lib/libimgcmd.jsonnet";
+local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
+local amis_ubuntu = import "mmlib/v0.1.1/amis/ubuntu.jsonnet";
+local amis_debian = import "mmlib/v0.1.1/amis/debian.jsonnet";
 
 {
     environments: import "../testenv.jsonnet",
@@ -37,28 +39,14 @@ local libimgcmd = import "lib/libimgcmd.jsonnet";
         },
     },
 
-    local ubuntu_ami_map = {
-        "ap-northeast-1": "ami-48c27448",
-        "ap-southeast-1": "ami-86e3e1d4",
-        "eu-central-1": "ami-88333695",
-        "eu-west-1": "ami-c8a5eebf",
-        "sa-east-1": "ami-1319960e",
-        "us-east-1": "ami-d96cb0b2",
-        "us-west-1": "ami-6988752d",
-        "cn-north-1": "ami-9871eca1",
-        "us-gov-west-1": "ami-25fc9c06",
-        "ap-southeast-2": "ami-21eea81b",
-        "us-west-2": "ami-d9353ae9",
-    },
-
     ubuntu_aws: SingleAmazonInstance {
         externalIp: true,
         keyName: "kp",
-        amiMap: ubuntu_ami_map,
+        amiMap: amis_ubuntu.trusty.amd64["20151117"],
         zone: "us-west-1b",
         cmds: [
             "echo hi > /hi.txt",
-            libimgcmd.LiteralFile {
+            cmd.LiteralFile {
                 to: "/var/log/bye.txt",
                 content: |||
                     bye
@@ -73,12 +61,52 @@ local libimgcmd = import "lib/libimgcmd.jsonnet";
         externalIp: true,
         keyName: "kp",
         ami: {
-            sourceAmi: "ami-6988752d",
+            sourceAmi: amis_ubuntu.trusty.amd64["20151117"]["us-west-1"],
             instanceType: "t2.small",
             sshUser: "ubuntu",
             cmds: [
                 "echo hi > /hi.txt",
-                libimgcmd.LiteralFile {
+                cmd.LiteralFile {
+                    to: "/var/log/bye.txt",
+                    content: |||
+                        bye
+                    |||,
+                    filePermissions: "700",
+                },
+            ],
+        },
+        zone: "us-west-1b",
+    },
+
+
+    debian_aws: SingleAmazonInstance {
+        externalIp: true,
+        keyName: "kp",
+        amiMap: amis_debian.wheezy.amd64["20150128"],
+        zone: "us-west-1c",
+        cmds: [
+            "echo hi > /hi.txt",
+            cmd.LiteralFile {
+                to: "/var/log/bye.txt",
+                content: |||
+                    bye
+                |||,
+                filePermissions: "700",
+            },
+        ],
+    },
+
+
+    debian_aws_ami: SingleAmazonInstance {
+        externalIp: true,
+        keyName: "kp",
+        ami: {
+            sourceAmi: amis_debian.wheezy.amd64["20150128"]["us-west-1"],
+            instanceType: "t2.small",
+            sshUser: "admin",
+            cmds: [
+                "echo hi > /hi.txt",
+                cmd.LiteralFile {
                     to: "/var/log/bye.txt",
                     content: |||
                         bye

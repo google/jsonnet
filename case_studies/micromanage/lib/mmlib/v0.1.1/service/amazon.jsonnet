@@ -1,4 +1,7 @@
 local base = import "base.jsonnet";
+local cmd = import "../cmd/cmd.jsonnet";
+local apt = import "../cmd/apt.jsonnet";
+local amis_debian = import "../amis/debian.jsonnet";
 
 {
     Credentials:: {
@@ -8,15 +11,104 @@ local base = import "base.jsonnet";
         region: "us-east-1",
     },
 
+
+    Image:: {
+        sourceAmi: error "Amazon AMI must have 'sourceAmi'",
+        instanceType: "t2.small",
+        sshUser: error "Amazon AMI must have 'sshUser'",
+        cmds: [],
+    },
+
+
+    DebianImage:: $.Image + apt.Mixin + apt.PipMixin {
+        sourceAmi: amis_debian.wheezy.amd64["20150128"]["us-west-1"],
+        sshUser: "admin",
+    },
+
+
     StandardInstance:: {
-        machine_type: "m1.small",
-        ami: error "StandardInstance must have 'ami'",
+        local instance = self,
+        instance_type: "t2.small",
+        ami: instance.StandardRootImage,
+        associate_public_ip_address: true,
         cmds: [],
         bootCmds: [],
+        # TODO(dcunnin): Figure out an equivalent here.
+        supportsLogging:: false,
+        supportsMonitoring:: false,
+        supportsJmxMonitoring:: false,
+        enableLogging:: false,
+        enableMonitoring:: false,
+        enableJmxMonitoring:: false,
+        MonitoringLoggingImageMixin:: {
+        },
+        StandardRootImage:: $.DebianImage + instance.MonitoringLoggingImageMixin,
     },
+
 
     Service:: base.Service {
     },
+
+
+    Network:: $.Service {
+        local service = self,
+        refName(name):: "${aws_vpc.%s.id}" % name,
+        ipv4Range:: "10.0.0.0/16",
+        infrastructure: {
+            aws_vpc: {
+                "${-}": {
+                    cidr_block: service.ipv4Range,
+                },
+            },
+            aws_internet_gateway: {
+                "${-}": {
+                    vpc_id: "${aws_vpc.${-}.id}",
+                },
+            },
+        },
+    },
+
+
+    InstanceBasedService: $.Service {
+        local service = self,
+        fwTcpPorts:: [22],
+        fwUdpPorts:: [],
+        networkName:: null,
+        keyName:: error "InstanceBasedService needs keyName",
+
+        Mixin:: {
+            security_groups: [
+                if service.networkName != null then
+                    "${aws_security_group.${-}.id}"
+                else
+                    "${aws_security_group.${-}.name}"
+            ],
+            [if service.keyName != null then "key_name"]: service.keyName,
+        },
+
+        Instance:: $.StandardInstance + service.Mixin,
+
+        infrastructure+: {
+            aws_security_group: {
+                "${-}": {
+                    name: "${-}",
+
+                    local IngressRule(p, protocol) = {
+                        from_port: p,
+                        to_port: p,
+                        protocol: protocol,
+                        cidr_blocks: ["0.0.0.0/0"],
+                    },
+                    ingress: [IngressRule(p, "tcp") for p in service.fwTcpPorts]
+                           + [IngressRule(p, "udp") for p in service.fwUdpPorts],
+
+                    [if service.networkName != null then "vpc_id"]: service.networkName,
+                }
+            },
+            aws_instance: error "InstanceBasedService should define some instances.",
+        },
+    },
+
 
     Cluster3: base.Service {
         local service = self,
@@ -25,9 +117,10 @@ local base = import "base.jsonnet";
         fwTcpPorts:: [22],
         fwUdpPorts:: [],
         httpHealthCheckPort:: 80,
-        networkName:: "default",
         zones:: error "Cluster3 version (or service) needs an array of zones.",
 
+        // In this service, the 'instance' is really an instance template used to create
+        // a pool of instances.
         Mixin:: {
             networkName: service.networkName,
             zones:: service.zones,
@@ -56,18 +149,9 @@ local base = import "base.jsonnet";
             for vname in std.objectFields(service.deployment)
         ]),
 
+        refAddress(name):: "${aws_elb.%s.address}" % name,
+
         infrastructure+: {
-/*
-            google_compute_firewall: {
-                "${-}": {
-                    name: "${-}",
-                    source_ranges: ["0.0.0.0/0"],
-                    network: service.networkName,
-                    allow: [{ protocol: "tcp", ports: [std.toString(p) for p in service.fwTcpPorts]}],
-                    target_tags: ["${-}"],
-                }
-            },
-*/
             aws_instance: instances,
 
             aws_elb: {
@@ -103,33 +187,19 @@ local base = import "base.jsonnet";
         },
     },
 
-    InstanceBasedService: $.Service {
+
+    SingleInstance: $.InstanceBasedService {
         local service = self,
-        fwTcpPorts:: [22],
-        fwUdpPorts:: [],
-        //networkName:: "default",
+        zone:: error "SingleInstance needs a zone.",
 
-        Mixin:: {
-            //networkName: service.networkName,
-        },
-
-        Instance:: $.StandardInstance + service.Mixin,
-
-        refAddress(name):: "${aws_instance.%s.public_ip}" % name,
+        refAddress(name):: "${aws_instance.%s.address}" % name,
 
         infrastructure+: {
-/*
-            google_compute_firewall: {
-                "${-}": {
-                    name: "${-}",
-                    source_ranges: ["0.0.0.0/0"],
-                    network: service.networkName,
-                    allow: [{ protocol: "tcp", ports: [std.toString(p) for p in service.fwTcpPorts]}],
-                    target_tags: ["${-}"],
-                }
+            aws_instance: {
+                "${-}": service.Instance {
+                    availability_zone: service.zone,
+                },
             },
-*/
-            google_compute_instance: error "InstanceBasedService should define some instances.",
         },
     },
 }

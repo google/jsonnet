@@ -8,8 +8,8 @@ local cmd = import "../cmd/cmd.jsonnet";
 
         httpPort:: error "DebianNginxMixin requires port",
 
-        enableMonitoring: true,
-        enableLogging: true,
+        enableMonitoring: version.supportsMonitoring,
+        enableLogging: version.supportsLogging,
 
         StandardRootImage+: {
             local image = self,

@@ -124,8 +124,8 @@ local service_amazon = import "../service/amazon.jsonnet";
             tags+: [service.clusterName],
             networkName: service.networkName,
 
-            enableMonitoring: true,
-            enableJmxMonitoring: true,
+            enableMonitoring: self.supportsMonitoring,
+            enableJmxMonitoring: self.supportsJmxMonitoring,
             jmxHost: "localhost",
             jmxPort: 7199,
             jmxLocalhostConfig+: {
@@ -217,7 +217,7 @@ local service_amazon = import "../service/amazon.jsonnet";
                 ]
             },
 
-            enableLogging: true,
+            enableLogging: self.supportsLogging,
             StandardRootImage+: {
                 aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
                 aptRepoLines+: {

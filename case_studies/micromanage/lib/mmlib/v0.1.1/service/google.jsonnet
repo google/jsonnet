@@ -48,6 +48,9 @@ local apt = import "../cmd/apt.jsonnet";
             }   
         ],      
 
+        supportsLogging:: true,
+        supportsMonitoring:: true,
+        supportsJmxMonitoring:: true,
         enableLogging:: false,
         enableMonitoring:: false,
         enableJmxMonitoring:: false,

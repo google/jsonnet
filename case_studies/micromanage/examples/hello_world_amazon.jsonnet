@@ -12,26 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+local service_amazon = import "mmlib/v0.1.1/service/amazon.jsonnet";
 local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
 local web = import "mmlib/v0.1.1/web/web.jsonnet";
 local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
+local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
 
 {
     environments: {
         default: {
-            kind: "Google",
-            project: "readable-name-123",  // Change this.
-            region: "us-central1",  // Maybe change this.
-            // Download this file from the developers console.
-            serviceAccount: import "service_account.json",
-            sshUser: "yourusername"  // Change this.
+            kind: "Amazon",
+            accessKey: "XXXXXXXX",  // Chane this.
+            secretKey: "xxxxxxxx",  // Chane this.
+            region: "us-west-1",
         },
     },
 
+/*
+    awsvpc: service_amazon.Network {
+    },
+*/
+
     // Simple case -- one machine serving this Python script.
-    helloworld: service_google.SingleInstance + web.HttpSingleInstance
+    helloworld: service_amazon.SingleInstance + web.HttpSingleInstance
                 + web_solutions.DebianFlaskHttpService {
-        zone: "us-central1-f",
+        zone: "us-west-1c",
+        keyName: "kp",
         uwsgiModuleContent: |||
             import flask
             import socket
@@ -40,10 +46,11 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
             def hello_world():
                 return 'Hello from %s!' % socket.gethostname()
         |||,
+        //networkName: $.awsvpc.refName("awsvpc"),
     },
 
     // For production -- allows canarying changes, also use a dns zone
-    helloworld2: service_google.Cluster3 + web.HttpService3
+    [null]/*helloworld2*/: service_amazon.Cluster3 + web.HttpService3
                  + web_solutions.DebianFlaskHttpService {
         local service = self,
         httpPort: 8080,
@@ -86,7 +93,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
     },
 
 /*
-    dns: service_google.DnsZone {
+    dns: service_amazon.DnsZone {
         local service = self,
         dnsName: "hw.example.com.",
     },

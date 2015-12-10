@@ -152,6 +152,7 @@ static char *default_import_callback(void *ctx, const char *dir, const char *fil
         return from_string(vm, input);
     }
 }
+
 #define TRY try {
 #define CATCH(func) \
     } catch (const std::bad_alloc &) {\

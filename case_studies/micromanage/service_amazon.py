@@ -21,6 +21,7 @@ import boto3
 
 import packer
 import service
+import util
 import validate
 
 AMI_CACHE = {}
@@ -37,7 +38,7 @@ def amazon_get_ami_by_name(region_name, aws_access_key_id, aws_secret_access_key
                        aws_secret_access_key=aws_secret_access_key)
     result = ec2.describe_images(Owners=['self'], Filters=[{'Name': 'name', 'Values': [name]}])
     images = result['Images']
-    assert len(images) == 1, jsonstr(images)
+    assert len(images) == 1, util.jsonstr(images)
     image = images[0]
     return image['ImageId']
 
