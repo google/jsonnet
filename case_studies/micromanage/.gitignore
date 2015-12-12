@@ -1,2 +1,3 @@
 tests/testenv.jsonnet
-examples/test.jsonnet
+examples/test_google.jsonnet
+examples/test_amazon.jsonnet
