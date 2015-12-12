@@ -52,7 +52,9 @@ local amis_debian = import "../amis/debian.jsonnet";
 
     Network:: $.Service {
         local service = self,
-        refName(name):: "${aws_vpc.%s.id}" % name,
+        refId(name):: "${aws_vpc.%s.id}" % name,
+        refName(name):: "${aws_vpc.%s.name}" % name,
+        refSubnetId(name, zone):: "${aws_subnet.%s-%s.id}" % [name, zone],
         ipv4Range:: "10.0.0.0/16",
         infrastructure: {
             aws_vpc: {
@@ -65,7 +67,33 @@ local amis_debian = import "../amis/debian.jsonnet";
                     vpc_id: "${aws_vpc.${-}.id}",
                 },
             },
+            aws_route_table: {
+                "${-}": {
+                    vpc_id: "${aws_vpc.${-}.id}",
+                    route: {
+                        cidr_block: "0.0.0.0/0",
+                        gateway_id: "${aws_internet_gateway.${-}.id}",
+                    },
+                },
+            },
+            aws_subnet: {
+                ["${-}-" + zone]: {
+                    vpc_id: "${aws_vpc.${-}.id}",
+                    cidr_block: service.subnets[zone],
+                    availability_zone: zone,
+                }
+                for zone in std.objectFields(service.subnets)
+            },
+            aws_route_table_association: {
+                ["${-}-" + zone]: {
+                    subnet_id: "${aws_subnet.${-}-" + zone + ".id}",
+                    route_table_id: "${aws_route_table.${-}.id}",
+                }
+                for zone in std.objectFields(service.subnets)
+            },
         },
+        // Maps zone to CIDR.
+        subnets:: {},
     },
 
 
@@ -76,13 +104,14 @@ local amis_debian = import "../amis/debian.jsonnet";
         networkName:: null,
         keyName:: error "InstanceBasedService needs keyName",
 
-        Mixin:: {
-            security_groups: [
-                if service.networkName != null then
-                    "${aws_security_group.${-}.id}"
-                else
-                    "${aws_security_group.${-}.name}"
-            ],
+        Mixin:: (
+            if service.networkName != null then {
+                vpc_security_group_ids: ["${aws_security_group.${-}.id}"],
+                subnet_id: $.Network.refSubnetId(service.networkName, self.availability_zone),
+            } else {
+                security_groups: ["${aws_security_group.${-}.name}"],
+            }
+        ) + {
             [if service.keyName != null then "key_name"]: service.keyName,
         },
 
@@ -102,7 +131,7 @@ local amis_debian = import "../amis/debian.jsonnet";
                     ingress: [IngressRule(p, "tcp") for p in service.fwTcpPorts]
                            + [IngressRule(p, "udp") for p in service.fwUdpPorts],
 
-                    [if service.networkName != null then "vpc_id"]: service.networkName,
+                    [if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
                 }
             },
             aws_instance: error "InstanceBasedService should define some instances.",
@@ -192,7 +221,7 @@ local amis_debian = import "../amis/debian.jsonnet";
         local service = self,
         zone:: error "SingleInstance needs a zone.",
 
-        refAddress(name):: "${aws_instance.%s.address}" % name,
+        refAddress(name):: "${aws_instance.%s.public_ip}" % name,
 
         infrastructure+: {
             aws_instance: {

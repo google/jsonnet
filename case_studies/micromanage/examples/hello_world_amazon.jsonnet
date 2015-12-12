@@ -28,10 +28,11 @@ local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
         },
     },
 
-/*
-    awsvpc: service_amazon.Network {
+    mynetwork: service_amazon.Network {
+        subnets: {
+            "us-west-1c": "10.0.0.0/24",
+        }
     },
-*/
 
     // Simple case -- one machine serving this Python script.
     helloworld: service_amazon.SingleInstance + web.HttpSingleInstance
@@ -46,7 +47,7 @@ local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
             def hello_world():
                 return 'Hello from %s!' % socket.gethostname()
         |||,
-        //networkName: $.awsvpc.refName("awsvpc"),
+        networkName: "mynetwork",
     },
 
     // For production -- allows canarying changes, also use a dns zone
