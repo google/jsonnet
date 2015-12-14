@@ -69,7 +69,7 @@ std.assertEqual(str1, "text\n") &&
 // Blank line with trailing whitespace
 local blank_line1 = |||
         foo
-        
+
         bar
     |||;
 
@@ -87,7 +87,7 @@ std.assertEqual(blank_line2, "foo\n\nbar\n") &&
 
 // Initial blank line
 local blank_line3 = |||
-
+        
         foo
     |||;
 

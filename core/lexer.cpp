@@ -522,6 +522,12 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     std::stringstream block;
                     c += 4; // Skip the "|||\n"
                     line_number++;
+                    // Skip any blank lines at the beginning of the block.
+                    while (*c == '\n') {
+                        line_number++;
+                        ++c;
+                        block << '\n';
+                    }
                     line_start = c;
                     const char *first_line = c;
                     int ws_chars = whitespace_check(first_line, c);
@@ -543,6 +549,12 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                         ++c;
                         line_number++;
                         line_start = c;
+                        // Skip any blank lines
+                        while (*c == '\n') {
+                            line_number++;
+                            ++c;
+                            block << '\n';
+                        }
                         // Examine next line
                         ws_chars = whitespace_check(first_line, c);
                         if (ws_chars == 0) {
@@ -634,7 +646,7 @@ std::string jsonnet_unlex(const Tokens &tokens)
             ss << t.stringBlockIndent;
             for (const char *cp = t.data.c_str() ; *cp != '\0' ; ++cp) {
                 ss << *cp;
-                if (*cp == '\n' && *(cp + 1) != U'\0') {
+                if (*cp == '\n' && *(cp + 1) != '\n' && *(cp + 1) != '\0') {
                     ss << t.stringBlockIndent;
                 }
             }

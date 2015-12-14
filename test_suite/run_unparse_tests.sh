@@ -29,6 +29,10 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
     GOLDEN_OUTPUT="$(cat $TEST)"
     GOLDEN_KIND="PLAIN"
 
+    if [ -r "$TEST.unparse.golden" ] ; then
+        GOLDEN_OUTPUT=$(cat "$TEST.unparse.golden")
+    fi
+
     if [ $(echo "$TEST" | cut -b 1-12) == "error.parse." ] ; then
         continue  # No point testing these
     fi
