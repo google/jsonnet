@@ -1,3 +1,0 @@
-RUNTIME ERROR: Assertion failed.
-	error.invariant.avoid_output_change.jsonnet:18:12-25	thunk <object_assert>
-	During manifestation	

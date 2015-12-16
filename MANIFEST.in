@@ -1,2 +1,0 @@
-include LICENSE core/*.cpp core/*.h python/*.c stdlib/std.jsonnet Makefile
-#recursive-include test_suite examples gc_stress benchmarks editors

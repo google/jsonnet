@@ -1,3 +1,0 @@
-RUNTIME ERROR: Assertion failed. 1 != 2
-	std.jsonnet:600:13-55	function <anonymous>
-	error.sanity.jsonnet:17:1-21	
