@@ -56,7 +56,7 @@ jsonnet_ext = Extension(
 )
 
 setup(name='jsonnet',
-      url='https://google.github.io/jsonnet/doc/',
+      url='https://jsonnet.org',
       description='Python bindings for Jsonnet - The data templating language ',
       author='David Cunningham',
       author_email='dcunnin@google.com',

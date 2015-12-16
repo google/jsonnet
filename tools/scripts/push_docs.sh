@@ -31,7 +31,7 @@ set -e
 
 readonly WORKING_DIR=$1
 
-readonly JSONNET_REPO="https://github.com/google/jsonnet.git"
+readonly JSONNET_REPO="git@github.com:google/jsonnet.git"
 
 function check {
   which $1 > /dev/null || (echo "$1 not installed. Please install $1."; exit 1)
