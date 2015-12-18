@@ -4,12 +4,6 @@ local cassandra = import "mmlib/v0.1.1/db/cassandra.jsonnet";
 local web = import "mmlib/v0.1.1/web/web.jsonnet";
 local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 
-// TODO(dcunnin):  Add to stdlib.
-local resolve_path(f, r) =
-    local arr = std.split(f, "/");
-    std.join("/", std.makeArray(std.length(arr)-1, function(i)arr[i]) + [r]);
-
-
 {
     local app = self,
 
@@ -75,7 +69,7 @@ local resolve_path(f, r) =
             // Copy website content and code.
             httpContentCmds+: [
                 "echo '%s tilegen' >> /etc/hosts" % app.tilegen.refAddress("fractal-tilegen"),
-                cmd.CopyFile { from: resolve_path(std.thisFile, "appserv/*"), to: "/var/www" },
+                cmd.CopyFile { from: std.resolvePath(std.thisFile, "appserv/*"), to: "/var/www" },
                 cmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
             ],
         },
@@ -100,7 +94,7 @@ local resolve_path(f, r) =
             },
             module: "mandelbrot_service",
             httpContentCmds+: [
-                cmd.CopyFile { from: resolve_path(std.thisFile, "tilegen/*"), to: "/var/www" },
+                cmd.CopyFile { from: std.resolvePath(std.thisFile, "tilegen/*"), to: "/var/www" },
                 "g++ -Wall -Wextra -ansi -pedantic -O3 -ffast-math -g /var/www/mandelbrot.cpp -lpng -o /var/www/mandelbrot",
                 cmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
             ],
