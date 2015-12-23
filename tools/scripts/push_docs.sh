@@ -47,6 +47,12 @@ function main {
     trap "rm -rf ${working_dir}" EXIT
   fi
 
+  if [ ! -r 'BUILD' ]; then
+    echo 'No BUILD file found.' >&1
+    echo 'Are you running this script from the root of the Jsonnet repository?' >&1
+    exit 1
+  fi
+
   local jekyll_tree_zip=${working_dir}/jekyll_tree.zip
   bazel build //doc:jekyll_tree
   cp bazel-genfiles/doc/jekyll_tree.zip $jekyll_tree_zip
