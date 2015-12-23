@@ -395,6 +395,23 @@ def action_show(config_file, config, args):
 
 
 
+def action_output(config_file, config, args):
+    if args:
+        sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.exit(1)
+
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, False)
+    tfstate = '%s/%s.tfstate' % (os.getcwd(), config_file)
+    tf_process = subprocess.Popen(['terraform', 'output', '-state=' + tfstate], cwd=dirpath)
+    exitcode = tf_process.wait()
+    if exitcode != 0:
+        sys.stderr.write('Error from terraform, aborting.\n')
+        sys.exit(1)
+    output_delete(dirpath)
+
+
+
 def action_image_gc(config_file, config, args):
     raise RuntimeError('Sorry, this code is currently in a state of ill-repair.')
     config = preprocess(config)
@@ -462,6 +479,7 @@ actions = {
     'destroy': action_destroy,
     'graph': action_graph,
     'show': action_show,
+    'output': action_output,
     'image-gc': action_image_gc,
 }
 
