@@ -1763,10 +1763,14 @@ namespace {
                                         r = true;
                                         break;
 
+                                        case Value::FUNCTION:
+                                        throw makeError(loc, "Cannot test equality of functions");
+                                        break;
+
                                         default:
                                         throw makeError(loc,
-                                                        "length operates on strings, objects, "
-                                                        "and arrays, got " + type_str(args[0]));
+                                                        "primitiveEquals operates on primitive "
+                                                        "types, got " + type_str(args[0]));
                                     }
                                     scratch = makeBoolean(r);
                                 } break;
