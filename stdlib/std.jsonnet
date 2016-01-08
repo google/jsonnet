@@ -840,6 +840,30 @@ limitations under the License.
                     aux(a, b, i, j + 1, acc) tailstrict;
         aux(a, b, 0, 0, []) tailstrict,
 
+    mergePatch(target, patch)::
+        if std.type(patch) == "object" then
+            local target_object =
+                if std.type(target) == "object" then target else {};
+
+            local target_fields =
+                if std.type(target_object) == "object" then std.objectFields(target_object) else [];
+
+            local null_fields = [k for k in std.objectFields(patch) if patch[k] == null];
+            local both_fields = std.setUnion(target_fields, std.objectFields(patch));
+
+            {
+                [k]:
+                    if !std.objectHas(patch, k) then
+                        target_object[k]
+                    else if !std.objectHas(target_object, k) then
+                        std.mergePatch(null, patch[k]) tailstrict
+                    else
+                        std.mergePatch(target_object[k], patch[k]) tailstrict
+                for k in std.setDiff(both_fields, null_fields)
+            }
+        else
+            patch,
+
     objectFields(o)::
         std.objectFieldsEx(o, false),
 
