@@ -33,6 +33,7 @@ local amis_debian = import "../amis/debian.jsonnet";
         associate_public_ip_address: true,
         cmds: [],
         bootCmds: [],
+        tags: {},
         # TODO(dcunnin): Figure out an equivalent here.
         supportsLogging:: false,
         supportsMonitoring:: false,
@@ -47,6 +48,32 @@ local amis_debian = import "../amis/debian.jsonnet";
 
 
     Service:: base.Service {
+        infrastructure+: if self.dnsZone == null then {
+        } else {
+/*
+            local instances = if std.objectHas(self, "aws_instance") then self.google_compute_instance else { },
+            local addresses = { }, //if std.objectHas(self, "google_compute_address") then self.google_compute_address else { },
+            local DnsRecord = {
+                managed_zone: service.dnsZone.refName(service.dnsZoneName),
+                type: "A",
+                ttl: 300,
+            },
+            # Add a record for every address and instance
+            google_dns_record_set: {
+                [name]: DnsRecord {
+                    name: "${google_compute_address." + name + ".name}." + service.dnsZone.dnsName,
+                    rrdatas: ["${google_compute_address." + name + ".address}"],
+                } for name in std.objectFields(addresses)
+            } + {
+                [name]: DnsRecord {
+                    name: "${google_compute_instance." + name + ".name}." + service.dnsZone.dnsName,
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
+                } for name in std.objectFields(instances)
+            },
+*/
+        },
+        dnsZone:: null,
+        dnsZoneName:: error "Must set dnsZoneName if dnsZone is set.",
     },
 
 
@@ -139,7 +166,7 @@ local amis_debian = import "../amis/debian.jsonnet";
     },
 
 
-    Cluster3: base.Service {
+    Cluster3: $.InstanceBasedService {
         local service = self,
         lbTcpPorts:: [],
         lbUdpPorts:: [],
@@ -151,7 +178,6 @@ local amis_debian = import "../amis/debian.jsonnet";
         // In this service, the 'instance' is really an instance template used to create
         // a pool of instances.
         Mixin:: {
-            networkName: service.networkName,
             zones:: service.zones,
         },
         versions:: {},
@@ -161,9 +187,11 @@ local amis_debian = import "../amis/debian.jsonnet";
                 ["${-}-%s-%d" % [vname, i]]:
                     if std.objectHas(service.versions, vname) then
                         service.versions[vname] {
-                            name: "${-}-%s-%d" % [vname, i],
-                            zone: self.zones[i % std.length(self.zones)],
-                            tags+: [vname, "index-%d" % i]
+                            availability_zone: self.zones[i % std.length(self.zones)],
+                            tags+: {
+                                version: vname,
+                                index: i,
+                            }
                         }
                     else
                         error "Undefined version: %s" % vname
@@ -178,26 +206,28 @@ local amis_debian = import "../amis/debian.jsonnet";
             for vname in std.objectFields(service.deployment)
         ]),
 
-        refAddress(name):: "${aws_elb.%s.address}" % name,
+        refAddress(name):: "${aws_elb.%s.dns_name}" % name,
 
         infrastructure+: {
             aws_instance: instances,
 
             aws_elb: {
-                "{-}": {
-                    name: "{-}",
+                "${-}": {
+                    name: "${-}",
+
+                    availability_zones: service.zones,
 
                     listener: [{
                         instance_port: p,
                         instance_protocol: "tcp",
                         lb_port: p,
                         lb_protocol: "tcp",
-                    } for p in service.fwTcpPorts],
+                    } for p in service.lbTcpPorts],
 
                     health_check: {
                         healthy_threshold: 2,
                         unhealthy_threshold: 2,
-                        timeout: 5,
+                        timeout: 3,
                         target: "HTTP:%d/" % service.httpHealthCheckPort,
                         interval: 5,
                     },
@@ -207,11 +237,23 @@ local amis_debian = import "../amis/debian.jsonnet";
                     idle_timeout: 60,
                     connection_draining: true,
                     connection_draining_timeout: 60,
-
-                    tags: {
-                        Name: "foobar-terraform-elb",
-                    },
                 },
+            },
+            aws_security_group: {
+                "${-}-elb": {
+                    name: "${-}-elb",
+
+                    local IngressRule(p, protocol) = {
+                        from_port: p,
+                        to_port: p,
+                        protocol: protocol,
+                        cidr_blocks: ["0.0.0.0/0"],
+                    },
+                    ingress: [IngressRule(p, "tcp") for p in service.lbTcpPorts]
+                           + [IngressRule(p, "udp") for p in service.lbUdpPorts],
+
+                    //[if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
+                }
             },
         },
     },
@@ -231,4 +273,47 @@ local amis_debian = import "../amis/debian.jsonnet";
             },
         },
     },
+
+    DnsZone:: self.Service {
+        local service = self,
+        dnsName:: error "DnsZone must have dnsName, e.g. example.com",
+        refName(name):: "${aws_route53_zone.%s.zone_id}" % name,
+        description:: "Zone for " + self.dnsName,
+        infrastructure+: {
+            aws_route53_zone: {
+                "${-}": {
+                    dns_name: service.dnsName,
+                    comment: service.description,
+                },
+            },
+            aws_dns_record: {
+            }
+        },
+        outputs+: {
+            "${-}-name_servers": "${google_dns_managed_zone.${-}.name_servers.0}",
+        },
+    },
+
+
+/*
+    DnsRecordWww:: self.Service {
+        local service = self,
+        dnsName:: service.zone.dnsName,
+        zone:: error "DnsRecordWww requires zone.",
+        zoneName:: error "DnsRecordWww requires zoneName.",
+        target:: error "DnsRecordWww requires target.",
+        infrastructure+: {
+            google_dns_record_set: {
+                "${-}": {
+                    managed_zone: service.zone.refName(service.zoneName),
+                    name: "www." + service.dnsName,
+                    type: "CNAME",
+                    ttl: 300,
+                    rrdatas: [service.target + "." + service.dnsName],
+                },
+            }
+        }
+	},
+*/
+
 }

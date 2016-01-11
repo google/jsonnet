@@ -17,13 +17,15 @@ local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
 local web = import "mmlib/v0.1.1/web/web.jsonnet";
 local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
+local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
+
 
 {
     environments: {
         default: {
             kind: "Amazon",
-            accessKey: "XXXXXXXX",  // Chane this.
-            secretKey: "xxxxxxxx",  // Chane this.
+            accessKey: "XXXXXXXX",  // Change this.
+            secretKey: "xxxxxxxx",  // Change this.
             region: "us-west-1",
         },
     },
@@ -35,6 +37,7 @@ local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
     },
 
     // Simple case -- one machine serving this Python script.
+/*
     helloworld: service_amazon.SingleInstance + web.HttpSingleInstance
                 + web_solutions.DebianFlaskHttpService {
         zone: "us-west-1c",
@@ -49,13 +52,14 @@ local debian_amis = import "mmlib/v0.1.1/amis/debian.jsonnet";
         |||,
         networkName: "mynetwork",
     },
+*/
 
     // For production -- allows canarying changes, also use a dns zone
-    [null]/*helloworld2*/: service_amazon.Cluster3 + web.HttpService3
+    helloworld2: service_amazon.Cluster3 + web.HttpService3
                  + web_solutions.DebianFlaskHttpService {
         local service = self,
         httpPort: 8080,
-        zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
+        zones: ["us-west-1c", "us-west-1b"],
         versions: {
             v1: service.Instance {
                 uwsgiModuleContent: |||
