@@ -23,9 +23,11 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         thumb_height: 64,
     },
 
-    ImageMixin:: {
-        local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
-        aptPackages +: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
+    BaseInstanceMixin:: {
+        StandardRootImage+: {
+            local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
+            aptPackages +: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
+        },
     },
 
 
@@ -51,8 +53,8 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 
         networkName: $.network.refName("fractal-network"),
 
-        Instance+: {
-            StandardRootImage+: app.ImageMixin {
+        Instance+: $.BaseInstanceMixin {
+            StandardRootImage+: {
                 pipPackages +: ["httplib2", "cassandra-driver", "blist"],
             },
             local version = self,
@@ -83,8 +85,8 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         networkName: $.network.refName("fractal-network"),
 
         httpPort: app.tilegenPort,
-        Instance+: {
-            StandardRootImage+: app.ImageMixin {
+        Instance+: $.BaseInstanceMixin {
+            StandardRootImage+: {
                 aptPackages +: ["g++", "libpng-dev"],
             },
             local version = self,
@@ -111,33 +113,26 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         clusterName: "fractal-cluster",
         rootPassword: app.cassandraRootPass,
 
-
-        StandardNode+: {
-            StandardRootImage+: app.ImageMixin,
-            conf+: {
-                cluster_name: db.clusterName,
-                rpc_address:: null,  // Unset by making it hidden (::).
-                listen_address:: null,  // Unset by making it hidden (::).
-                authenticator: "PasswordAuthenticator",
-                seed_provider: [
-                    {
-                        class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                        parameters: [ { seeds: std.join(", ", app.cassandraNodes) } ],
-                    },
-                ],
-            },
+        cassandraConf+: {
+            rpc_address:: null,  // Unset by making it hidden (::).
+            listen_address:: null,  // Unset by making it hidden (::).
+            authenticator: "PasswordAuthenticator",
+            seed_provider: [
+                {
+                    class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
+                    parameters: [ { seeds: std.join(", ", app.cassandraNodes) } ],
+                },
+            ],
         },
 
-        StarterNode(rep): super.StarterNode(rep) + {
-            local starter = self,
-
+        FractalStarterMixin:: {
             local cql_insert(uuid, x, y, l, n) =
                 "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
                 + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),
 
             initCql: [
                 "CREATE USER %s WITH PASSWORD '%s';" % [app.cassandraUser, app.cassandraUserPass],
-                "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [app.cassandraKeyspace, starter.initReplication],
+                "CREATE KEYSPACE %s WITH REPLICATION = %s;" % [app.cassandraKeyspace, self.initReplication],
                 "USE %s;" % app.cassandraKeyspace,
                 "CREATE TABLE discoveries("
                 + "Date TEXT, TimeId TIMEUUID, Text TEXT, X FLOAT, Y FLOAT, L INT, "
@@ -158,10 +153,13 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
             ],
         },
 
+        StarterNode +: $.BaseInstanceMixin + self.FractalStarterMixin,
+        TopUpNode +: $.BaseInstanceMixin,
+
         nodes: {
-            n1: db.StarterNode(1) {
+            n1: db.StarterNode {
+                initReplicationFactor: 1,
             },
         },
     },
-
 }
