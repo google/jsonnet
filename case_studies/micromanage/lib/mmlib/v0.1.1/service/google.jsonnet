@@ -228,7 +228,6 @@ local apt = import "../cmd/apt.jsonnet";
         lbTcpPorts:: [],
         lbUdpPorts:: [],
         httpHealthCheckPort:: 80,
-        networkName:: "default",
         zones:: error "Cluster3 version (or service) needs an array of zones.",
 
         Mixin+: {
