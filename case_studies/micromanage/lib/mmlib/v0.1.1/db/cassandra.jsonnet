@@ -106,13 +106,8 @@ local service_amazon = import "../service/amazon.jsonnet";
         local node = self,
 
         rootPassword:: error "Needs 'rootPassword'",
-        clusterName:: error "Needs 'clusterName'",
 
-        // Can be overridden by applications.
-        conf:: $.DefaultConf {
-            authenticator: "PasswordAuthenticator",
-            cluster_name: node.clusterName,
-        },
+        conf:: error "Needs 'conf'",
 
         StandardRootImage+: {
             aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
@@ -123,7 +118,6 @@ local service_amazon = import "../service/amazon.jsonnet";
 
             local bootstrap_conf = $.DefaultConf {
                 authenticator: "PasswordAuthenticator",
-                cluster_name: node.clusterName,
             },
 
             cmds+: [
@@ -217,7 +211,10 @@ local service_amazon = import "../service/amazon.jsonnet";
 
         tcpFirewallPorts:: self.gossipPorts + self.otherPorts,
 
-        cassandraConf:: $.DefaultConf,
+        cassandraConf:: $.DefaultConf {
+            authenticator: "PasswordAuthenticator",
+            cluster_name: service.clusterName,
+        },
 
         StandardGcpInstance:: service_google.StandardInstance {
             machine_type: "n1-standard-1",
@@ -226,7 +223,6 @@ local service_amazon = import "../service/amazon.jsonnet";
         GeneralNodeMixin:: self.JmxMixin {
             conf: service.cassandraConf,
             rootPassword: service.rootPassword,
-            clusterName: service.clusterName,
         },
 
         // GCP only.
