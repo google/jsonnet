@@ -709,7 +709,8 @@ namespace {
                 first = false;
 
                 switch (next.kind) {
-                    case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING_DOUBLE: {
+                    case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING_DOUBLE:
+                    case Token::STRING_SINGLE: case Token::STRING_BLOCK: {
                         ObjectField::Kind kind;
                         AST *expr1 = nullptr;
                         const Identifier *id = nullptr;
@@ -720,6 +721,14 @@ namespace {
                             kind = ObjectField::FIELD_STR;
                             expr1 = alloc->make<LiteralString>(
                                 next.location, next.data32(), LiteralString::DOUBLE, "");
+                        } else if (next.kind == Token::STRING_SINGLE) {
+                            kind = ObjectField::FIELD_STR;
+                            expr1 = alloc->make<LiteralString>(
+                                next.location, next.data32(), LiteralString::SINGLE, "");
+                        } else if (next.kind == Token::STRING_BLOCK) {
+                            kind = ObjectField::FIELD_STR;
+                            expr1 = alloc->make<LiteralString>(
+                                next.location, next.data32(), LiteralString::BLOCK, "");
                         } else {
                             kind = ObjectField::FIELD_EXPR;
                             expr1 = parse(MAX_PRECEDENCE);

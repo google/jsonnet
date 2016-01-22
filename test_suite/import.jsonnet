@@ -17,6 +17,10 @@ limitations under the License.
 // Can capture variables from another file.
 std.assertEqual((import "lib/A_20_func.jsonnet")(), 20) &&
 
+# Test single quoted string.
+std.assertEqual((import 'lib/A_20_func.jsonnet')(), 20) &&
+# The block string is hard to test because the filename would include a terminating \n
+
 // Each import has its own environment, can't be overidden.
 std.assertEqual(local A = 7; local lib = import "lib/A_20.jsonnet"; lib, 20) &&
 std.assertEqual(local A = 7, lib = import "lib/A_20.jsonnet"; lib, 20) &&

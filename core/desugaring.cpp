@@ -72,6 +72,7 @@ static String desugar_string(const LocationRange &loc, const String &s)
             case '\\':
             switch (*(++c)) {
                 case '"':
+                case '\'':
                 r += *c;
                 break;
 

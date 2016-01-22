@@ -14,19 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-{
-    neg_integer: -1029301293,
-    pos_integer: 13212381932,
-    number: 1/3,
-    small_number: 0.00000000000001,
-    zero: 0,
-    string: "'foo\n bar\n\n\"bar\u0005\"\'\t \u0050\b\f\r\\",
-    string2: '"foo\n bar\n\n\'bar\u0005\"\'\t \u0050\b\f\r\\',
-    "lit_field1": 1,
-    'lit_field2': 1,
-    "false": false,
-    "true": true,
-    "null": null,
-    hidden_field:: null,
-    ["hidden_field2"]:: null,
-}
+'
