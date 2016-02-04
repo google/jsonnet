@@ -262,7 +262,7 @@ class Desugarer {
         for (auto &field : copy) {
             if (field.kind == ObjectField::LOCAL) continue;
             if (!binds.empty())
-                field.expr2 = alloc->make<Local>(ast->location, binds, field.expr2);
+                field.expr2 = alloc->make<Local>(field.expr2->location, binds, field.expr2);
             fields.push_back(field);
         }
 

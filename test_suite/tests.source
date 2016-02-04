@@ -58,6 +58,8 @@ test_eval() {
             echo -e "\e[31;1mFAIL\e[0m \e[1m(output mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
             echo "This run's output:"
             echo "$TEST_OUTPUT"
+            echo "Expected:"
+            echo "$GOLDEN_OUTPUT"
             return 1
         fi
         ;;
