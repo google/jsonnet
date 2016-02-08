@@ -745,35 +745,53 @@ namespace {
                         }
 
                         bool plus_sugar = false;
-                        LocationRange plus_loc;
-                        if (peek().kind == Token::OPERATOR && peek().data == "+") {
-                            plus_loc = peek().location;
+
+                        Token op = popExpect(Token::OPERATOR);
+                        const char *od = op.data.c_str();
+                        if (*od == '+') {
                             plus_sugar = true;
-                            pop();
+                            od++;
+                        }
+                        unsigned colons = 0;
+                        for (; *od != '\0' ; ++od) {
+                            if (*od != ':') {
+                                throw StaticError(
+                                    next.location,
+                                    "Expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
+                            }
+                            ++colons;
+                        }
+                        ObjectField::Hide field_hide;
+                        switch (colons) {
+                            case 1:
+                            field_hide = ObjectField::INHERIT;
+                            break;
+
+                            case 2:
+                            field_hide = ObjectField::HIDDEN;
+                            break;
+
+                            case 3:
+                            field_hide = ObjectField::VISIBLE;
+                            break;
+
+                            default:
+                                throw StaticError(
+                                    next.location,
+                                    "Expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
                         }
 
+                        // Basic checks for invalid Jsonnet code.
                         if (is_method && plus_sugar) {
                             throw StaticError(
                                 next.location,
                                 "Cannot use +: syntax sugar in a method: " + next.data);
-                        }
-
-                        popExpect(Token::COLON);
-                        ObjectField::Hide field_hide = ObjectField::INHERIT;
-                        if (peek().kind == Token::COLON) {
-                            pop();
-                            field_hide = ObjectField::HIDDEN;
-                            if (peek().kind == Token::COLON) {
-                                pop();
-                                field_hide = ObjectField::VISIBLE;
-                            }
                         }
                         if (kind != ObjectField::FIELD_EXPR) {
                             if (!literal_fields.insert(next.data).second) {
                                 throw StaticError(next.location, "Duplicate field: "+next.data);
                             }
                         }
-
 
                         AST *body = parse(MAX_PRECEDENCE);
 
@@ -812,7 +830,7 @@ namespace {
                     case Token::ASSERT: {
                         AST *cond = parse(MAX_PRECEDENCE);
                         AST *msg = nullptr;
-                        if (peek().kind == Token::COLON) {
+                        if (peek().kind == Token::OPERATOR && peek().data == ":") {
                             pop();
                             msg = parse(MAX_PRECEDENCE);
                         }
@@ -863,7 +881,6 @@ namespace {
                 case Token::ASSERT:
                 case Token::BRACE_R:
                 case Token::BRACKET_R:
-                case Token::COLON:
                 case Token::COMMA:
                 case Token::DOT:
                 case Token::ELSE:
@@ -1018,7 +1035,7 @@ namespace {
                     pop();
                     AST *cond = parse(MAX_PRECEDENCE);
                     AST *msg = nullptr;
-                    if (peek().kind == Token::COLON) {
+                    if (peek().kind == Token::OPERATOR && peek().data == ":") {
                         pop();
                         msg = parse(MAX_PRECEDENCE);
                     }
@@ -1141,6 +1158,14 @@ namespace {
                     switch (peek().kind) {
                         // Logical / arithmetic binary operator.
                         case Token::OPERATOR:
+                        if (peek().data == ":") {
+                            // Special case for the colons in assert.
+                            // Since COLON is no-longer a special token, we have to make sure it
+                            // does not trip the op_is_binary test below.  It should
+                            // terminate parsing of the expression here, returning control
+                            // to the parsing of the actual assert AST.
+                            return lhs;
+                        }
                         if (!op_is_binary(peek().data, bop)) {
                             std::stringstream ss;
                             ss << "Not a binary operator: " << peek().data;

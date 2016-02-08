@@ -53,7 +53,6 @@ struct Token {
         BRACE_R,
         BRACKET_L,
         BRACKET_R,
-        COLON,
         COMMA,
         DOLLAR,
         DOT,
@@ -128,7 +127,6 @@ struct Token {
             case BRACE_R: return "\"}\"";
             case BRACKET_L: return "\"[\"";
             case BRACKET_R: return "\"]\"";
-            case COLON: return "\":\"";
             case COMMA: return "\",\"";
             case DOLLAR: return "\"$\"";
             case DOT: return "\".\"";

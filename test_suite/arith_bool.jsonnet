@@ -16,8 +16,7 @@ limitations under the License.
 
 std.assertEqual(!false, true) &&
 std.assertEqual(!true, false) &&
-std.assertEqual(!!false, false) &&
-std.assertEqual(!!true, true) &&
+std.assertEqual(!(!true), true) &&
 
 std.assertEqual(false && false, false) &&
 std.assertEqual(false && true, false) &&

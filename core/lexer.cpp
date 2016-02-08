@@ -51,6 +51,8 @@ static bool is_identifier(char c)
 static bool is_symbol(char c)
 {
     switch (c) {
+        case '!': case '$': case ':':
+        case '~': case '+': case '-':
         case '&': case '|': case '^':
         case '=': case '<': case '>':
         case '*': case '/': case '%':
@@ -276,6 +278,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             line_start = c+1;
             continue;
 
+            // The following operators should never be combined with subsequent symbols.
             case '{':
             kind = Token::BRACE_L;
             data = "{";
@@ -296,19 +299,9 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             data = "]";
             break;
 
-            case ':':
-            kind = Token::COLON;
-            data = ":";
-            break;
-
             case ',':
             kind = Token::COMMA;
             data = ",";
-            break;
-
-            case '$':
-            kind = Token::DOLLAR;
-            data = "$";
             break;
 
             case '.':
@@ -329,32 +322,6 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             case ';':
             kind = Token::SEMICOLON;
             data = ";";
-            break;
-
-            // Special cases for unary operators.
-            case '!':
-            kind = Token::OPERATOR;
-            if (*(c+1) == '=') {
-                c++;
-                data = "!=";
-            } else {
-                data = "!";
-            }
-            break;
-
-            case '~':
-            kind = Token::OPERATOR;
-            data = "~";
-            break;
-
-            case '+':
-            kind = Token::OPERATOR;
-            data = "+";
-
-            break;
-            case '-':
-            kind = Token::OPERATOR;
-            data = "-";
             break;
 
             // Numeric literals.
@@ -586,7 +553,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     data += *c;
                 }
                 --c;
-                kind = Token::OPERATOR;
+                kind = data == "$" ? Token::DOLLAR : Token::OPERATOR;
             } else {
                 std::stringstream ss;
                 ss << "Could not lex the character ";
