@@ -56,7 +56,6 @@ static bool is_symbol(char c)
         case '&': case '|': case '^':
         case '=': case '<': case '>':
         case '*': case '/': case '%':
-        case '#':
         return true;
     }
     return false;
@@ -431,7 +430,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     kind = Token::IDENTIFIER;
                 }
                 data = id;
-            } else if (is_symbol(*c)) {
+            } else if (is_symbol(*c) || *c == '#') {
 
                 // Single line C++ style comment
                 if (*c == '/' && *(c+1) == '/') {
