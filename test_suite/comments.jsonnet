@@ -18,4 +18,29 @@ limitations under the License.
 
 # this kind of comment
 
-/* ignore this */ true
+/* ignore this */ true &&
+
+// Test lexing:
+local x = 1-/*foo*/1;
+
+local x = 1-/*foo*/1;
+
+local x = 1-#foo
+1;
+
+local x = 1*/*foo*/1;
+
+local x = 1*#foo
+1;
+
+local x = 1-/*+foo*/1;
+
+local x = 1-#+foo
+1;
+
+local x = 1*/*+foo*/1;
+
+local x = 1*#+foo
+1;
+
+true

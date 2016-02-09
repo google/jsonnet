@@ -430,7 +430,21 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     kind = Token::IDENTIFIER;
                 }
                 data = id;
-            } else if (is_symbol(*c) || *c == '#') {
+
+            // Single line # comment
+            } else if (*c == '#') {
+                const char *start = c + 1;
+                while (*c != '\0' && *c != '\n') {
+                    ++c;
+                }
+                // Do not include the # or \n in the comment.
+                fodder.emplace_back(FodderElement::COMMENT_HASH, std::string(start, c - start));
+                // Leaving it on the \n allows processing of \n on next iteration,
+                // I.e., managing of the line & column counter.
+                c--;  // Will be iterated again by the for loop.
+                continue;
+
+            } else if (is_symbol(*c)) {
 
                 // Single line C++ style comment
                 if (*c == '/' && *(c+1) == '/') {
@@ -442,20 +456,6 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     fodder.emplace_back(FodderElement::COMMENT_CPP, std::string(start, c - start));
                     // Leaving it on the \n allows processing of \n on next iteration,
                     // i.e. managing of the line & column counter.
-                    c--;  // Will be iterated again by the for loop.
-                    continue;
-                }
-
-                // Single line # comment
-                if (*c == '#') {
-                    const char *start = c + 1;
-                    while (*c != '\0' && *c != '\n') {
-                        ++c;
-                    }
-                    // Do not include the # or \n in the comment.
-                    fodder.emplace_back(FodderElement::COMMENT_HASH, std::string(start, c - start));
-                    // Leaving it on the \n allows processing of \n on next iteration,
-                    // I.e., managing of the line & column counter.
                     c--;  // Will be iterated again by the for loop.
                     continue;
                 }
@@ -483,6 +483,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     c++;
                     continue;
                 }
+
                 // Text block
                 if (*c == '|' && *(c+1) == '|' && *(c+2) == '|' && *(c+3) == '\n') {
                     std::stringstream block;
@@ -545,12 +546,22 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     break;  // Out of the switch.
                 }
 
-                for (; *c != '\0' ; ++c) {
-                    if (!is_symbol(*c)) {
-                        break;
-                    }
-                    data += *c;
+                const char *operator_begin = c;
+                for (; is_symbol(*c) ; ++c) {
+                    // Not allowed // in operators
+                    if (*c == '/' && *(c+1) == '/') break;
+                    // Not allowed /* in operators
+                    if (*c == '/' && *(c+1) == '*') break;
+                    // Not allowed ||| in operators
+                    if (*c == '|' && *(c+1) == '|' && *(c+2) == '|') break;
                 }
+                // Not allowed to end with a + - ~ ! unless a single char.
+                // So, wind it back if we need to (but not too far).
+                while (c > operator_begin + 1
+                       && (*(c-1) == '+' || *(c-1) == '-' || *(c-1) == '~' || *(c-1) == '!')) {
+                    c--;
+                }
+                data += std::string(operator_begin, c);
                 --c;
                 kind = data == "$" ? Token::DOLLAR : Token::OPERATOR;
             } else {

@@ -91,6 +91,16 @@ local blank_line3 = |||
         foo
     |||;
 
+// Interaction with operators (1)
+local op1 = "foo"+|||
+    foo
+|||;
+
+// Interaction with operators (2)
+local op2 = "foo"<|||
+    foo
+|||;
+
 std.assertEqual(blank_line3, "\nfoo\n") &&
 
 
