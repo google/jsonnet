@@ -88,6 +88,41 @@ limitations under the License.
     range(from, to)::
         std.makeArray(to - from + 1, function(i) i + from),
 
+    slice(indexable, index, end, step)::
+        if (index != null && index < 0) || (end != null && end < 0) || (step != null && step < 0) then
+            error("got [%s:%s:%s] but negative index, end, and steps are not implemented" % [index, end, step] )
+        else if std.type(indexable) != "string" && std.type(indexable) != "array" then
+            error("std.slice accepts a string or an array, but got: %s" % std.type(indexable))
+        else
+            local invar =
+                // loop invariant with defaults applied
+                {
+                    indexable: indexable,
+                    index:
+                        if index == null then 0
+                        else index,
+                    end:
+                        if end == null then std.length(indexable)
+                        else end,
+                    step:
+                        if step == null then 1
+                        else step,
+                    length: std.length(indexable),
+                    type: std.type(indexable)
+                };
+            local build(slice, cur) =
+                if cur >= invar.end || cur >= invar.length then
+                    slice
+                else
+                    build(
+                        if invar.type == "string" then
+                            slice + invar.indexable[cur]
+                        else
+                            slice + [ invar.indexable[cur] ],
+                        cur + invar.step
+                    ) tailstrict;
+            build(if invar.type == "string" then "" else [], invar.index),
+
     count(arr, x):: std.length(std.filter(function(v) v==x, arr)),
 
     mod(a, b)::
@@ -260,7 +295,7 @@ limitations under the License.
                     { i: i + 1, v: "%", caps: false }
                 else
                     error "Unrecognised conversion type: " + c;
-                    
+
 
         // Parsed initial %, now the rest.
         local parse_code(str, i) =
@@ -658,10 +693,10 @@ limitations under the License.
                 else
                     ch;
         "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
-    
+
     escapeStringPython(str)::
         std.escapeStringJson(str),
-        
+
     escapeStringBash(str_)::
         local str = std.toString(str_);
         local trans(ch) =
@@ -754,7 +789,7 @@ limitations under the License.
         else
             aux(bytes, 0, ""),
 
-    
+
     base64DecodeBytes(str)::
         if std.length(str) % 4 != 0 then
             error "Not a base64 encoded string \"%s\"" % str

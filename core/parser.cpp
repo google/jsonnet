@@ -526,6 +526,10 @@ namespace {
             return tok;
         }
 
+        void push(Token tok) {
+            tokens.push_front(tok);
+        }
+
         Token peek(void)
         {
             Token tok = tokens.front();
@@ -955,7 +959,7 @@ namespace {
                         }
                     } while (true);
                     return alloc->make<Array>(span(tok, next), elements, got_comma);
-                    
+
                 }
 
                 case Token::PAREN_L: {
@@ -1186,9 +1190,54 @@ namespace {
 
                     Token op = pop();
                     if (op.kind == Token::BRACKET_L) {
-                        AST *index = parse(MAX_PRECEDENCE);
+                        bool is_slice = true;
+                        AST *first = nullptr;
+                        AST *second = nullptr;
+                        AST *third = nullptr;
+
+                        if (peek().kind == Token::BRACKET_R)
+                            throw unexpected(pop(), "parsing index");
+
+                        if (peek().data == "::") {
+                            Token joined = popExpect(Token::OPERATOR, "::");
+                            Token delim = Token(Token::OPERATOR, joined.fodder, ":",
+                                joined.stringBlockIndent, joined.stringBlockTermIndent,
+                                joined.location);
+                            push(delim);
+                            push(delim);
+                        }
+
+                        if (peek().data != ":")
+                            first = parse(MAX_PRECEDENCE);
+
+                        if (peek().kind != Token::BRACKET_R) {
+
+                            Token delim = pop();
+                            if (delim.data != ":")
+                                throw unexpected(delim, "parsing slice");
+
+                            if (peek().data != ":" &&
+                                peek().kind != Token::BRACKET_R)
+                                second = parse(MAX_PRECEDENCE);
+
+                            if (peek().kind != Token::BRACKET_R) {
+
+                                Token delim = pop();
+                                if (delim.data != ":")
+                                    throw unexpected(delim, "parsing slice");
+
+                                if (peek().kind != Token::BRACKET_R)
+                                    third= parse(MAX_PRECEDENCE);
+                            }
+                        } else {
+                            is_slice = false;
+                        }
                         Token end = popExpect(Token::BRACKET_R);
-                        lhs = alloc->make<Index>(span(begin, end), lhs, index, nullptr);
+
+                        if (is_slice)
+                            lhs = alloc->make<Index>(span(begin, end), lhs, first, second, third);
+                        else
+                            lhs = alloc->make<Index>(span(begin, end), lhs, first, nullptr);
 
                     } else if (op.kind == Token::DOT) {
                         Token field_id = popExpect(Token::IDENTIFIER);

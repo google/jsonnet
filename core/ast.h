@@ -309,11 +309,17 @@ struct Importstr : public AST {
  * One of index and id will be nullptr before desugaring.  After desugaring id will be nullptr.
  */
 struct Index : public AST {
+    bool isSlice;
     AST *target;
     AST *index;
+    AST *end;
+    AST *step;
     const Identifier *id;
     Index(const LocationRange &lr, AST *target, AST *index, const Identifier *id)
-      : AST(lr, AST_INDEX), target(target), index(index), id(id)
+      : AST(lr, AST_INDEX), isSlice(false), target(target), index(index), end(nullptr), step(nullptr), id(id)
+    { }
+    Index(const LocationRange &lr, AST *target, AST *index, AST *end, AST *step)
+      : AST(lr, AST_INDEX), isSlice(true), target(target), index(index), end(end), step(step), id(nullptr)
     { }
 };
 
