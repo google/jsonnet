@@ -19,7 +19,7 @@ import re
 
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import GoogleCredentials
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 from googleapiclient.discovery import build
 
 import packer
@@ -29,11 +29,9 @@ import validate
 IMAGE_CACHE = {}
 
 def google_get_images_json_key(project, key_json):
-    credentials = SignedJwtAssertionCredentials(
-        key_json['client_email'],
-        key_json['private_key'],
-        scope='https://www.googleapis.com/auth/compute')
-        
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        key_json, scopes=['https://www.googleapis.com/auth/compute'])
+
     compute = build('compute', 'v1', credentials=credentials)
     images = compute.images().list(project=project).execute()
     items = images.get('items', [])
