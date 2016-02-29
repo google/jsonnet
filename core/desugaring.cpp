@@ -21,7 +21,7 @@ limitations under the License.
 #include "parser.h"
 
 static LocationRange E;  // Empty.
-    
+
 static unsigned long max_builtin = 24;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
@@ -438,7 +438,7 @@ class Desugarer {
                     } break;
                 }
             }
-                    
+
             ast_ = in;
 
         } else if (auto *ast = dynamic_cast<Assert*>(ast_)) {
@@ -511,13 +511,44 @@ class Desugarer {
             // Nothing to do.
 
         } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
-            desugar(ast->target, obj_level);
-            if (ast->id != nullptr) {
-                assert(ast->index == nullptr);
-                ast->index = str(ast->id->name);
-                ast->id = nullptr;
+            if (ast->isSlice) {
+                if (ast->index == nullptr)
+                    ast->index = make<LiteralNull>(ast->location);
+                desugar(ast->index, obj_level);
+
+                if (ast->end == nullptr)
+                    ast->end = make<LiteralNull>(ast->location);
+                desugar(ast->end, obj_level);
+
+                if (ast->step == nullptr)
+                    ast->step = make<LiteralNull>(ast->location);
+                desugar(ast->step, obj_level);
+
+                ast_ = make<Apply>(
+                    ast->location,
+                    make<Index>(
+                        E,
+                        std(),
+                        str(U"slice"),
+                        nullptr),
+                    std::vector<AST*>{
+                        ast->target,
+                        ast->index,
+                        ast->end,
+                        ast->step,
+                    },
+                    false,
+                    false
+                );
+            } else {
+                desugar(ast->target, obj_level);
+                if (ast->id != nullptr) {
+                    assert(ast->index == nullptr);
+                    ast->index = str(ast->id->name);
+                    ast->id = nullptr;
+                }
+                desugar(ast->index, obj_level);
             }
-            desugar(ast->index, obj_level);
 
         } else if (auto *ast = dynamic_cast<Local*>(ast_)) {
             for (auto &bind: ast->binds)
