@@ -854,12 +854,22 @@ namespace {
                         if (peek().kind == Token::BRACKET_R)
                             throw unexpected(pop(), "parsing index");
 
+                        // break up "::" into ":", ":" before we start parsing.
                         if (peek().kind == Token::OPERATOR && peek().data == "::") {
                             Token joined = pop();
                             push(Token(Token::OPERATOR, joined.fodder, ":", "", "",
                                        joined.location));
                             push(Token(Token::OPERATOR, Fodder{}, ":", "", "", joined.location));
                         }
+
+                        Token first_token = pop();
+                        if (peek().kind == Token::OPERATOR && peek().data == "::") {
+                            Token joined = pop();
+                            push(Token(Token::OPERATOR, joined.fodder, ":", "", "",
+                                       joined.location));
+                            push(Token(Token::OPERATOR, Fodder{}, ":", "", "", joined.location));
+                        }
+                        push(first_token);
 
                         if (peek().data != ":")
                             first = parse(MAX_PRECEDENCE);
