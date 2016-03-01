@@ -14,7 +14,7 @@ local uwsgi_flask = import "uwsgi_flask.jsonnet";
         |||,
         Instance+: nginx.DebianNginxMixin + uwsgi_flask.DebianUwsgiFlask + uwsgi_flask.NginxUwsgiGlue {
             httpPort: service.httpPort,
-            uwsgiModuleContent: service.uwsgiModuleContent
+            uwsgiModuleContent: service.uwsgiModuleContent,
         },
     },
 }

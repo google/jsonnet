@@ -36,17 +36,17 @@ local apt = import "../cmd/apt.jsonnet";
             network: instance.networkName,
             access_config: {
             },
-        },  
+        },
         service_account: [
             {
                 scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
-            }
-        ],      
+            },
+        ],
         disk: [
-            {   
+            {
                 image: instance.StandardRootImage,
-            }   
-        ],      
+            },
+        ],
 
         supportsLogging:: true,
         supportsMonitoring:: true,
@@ -58,19 +58,19 @@ local apt = import "../cmd/apt.jsonnet";
         jmxPort:: 9012,
         jmxHotspotConfig:: {
             host: instance.jmxHost,
-            port : instance.jmxPort,
-            numQueryThreads : 2,
+            port: instance.jmxPort,
+            numQueryThreads: 2,
             SdQuery:: {
                 outputWriters: [
-                  {
-                     "@class" : "com.googlecode.jmxtrans.model.output.StackdriverWriter",
-                     settings: {
-                        token: "STACKDRIVER_API_KEY",
-                        detectInstance: "GCE",
-                        url: "https://jmx-gateway.google.stackdriver.com/v1/custom"
-                     }
-                  }
-               ],
+                    {
+                        "@class": "com.googlecode.jmxtrans.model.output.StackdriverWriter",
+                        settings: {
+                            token: "STACKDRIVER_API_KEY",
+                            detectInstance: "GCE",
+                            url: "https://jmx-gateway.google.stackdriver.com/v1/custom",
+                        },
+                    },
+                ],
             },
             queries: [
                 self.SdQuery {
@@ -89,8 +89,8 @@ local apt = import "../cmd/apt.jsonnet";
                     attr: ["Uptime"],
                 },
                 self.SdQuery {
-                    resultAlias : "jvm.localhost.os",
-                    obj : "java.lang:type=OperatingSystem",
+                    resultAlias: "jvm.localhost.os",
+                    obj: "java.lang:type=OperatingSystem",
                     attr: [
                         "CommittedVirtualMemorySize",
                         "FreePhysicalMemorySize",
@@ -98,20 +98,20 @@ local apt = import "../cmd/apt.jsonnet";
                         "OpenFileDescriptorCount",
                         "ProcessCpuTime",
                         "SystemLoadAverage",
-                    ]
+                    ],
                 },
                 self.SdQuery {
                     resultAlias: "jvm.localhost.gc",
                     obj: "java.lang:type=GarbageCollector,name=*",
                     attr: ["CollectionCount", "CollectionTime"],
-                }
+                },
             ],
         },
         jmxLocalhostConfig:: instance.jmxHotspotConfig,
         jmxConfig:: {
             servers: [
                 instance.jmxLocalhostConfig,
-            ]
+            ],
         },
 
         MonitoringLoggingImageMixin:: {
@@ -151,8 +151,8 @@ local apt = import "../cmd/apt.jsonnet";
         local service = self,
         infrastructure+: if self.dnsZone == null then {
         } else {
-            local instances = if std.objectHas(self, "google_compute_instance") then self.google_compute_instance else { },
-            local addresses = if std.objectHas(self, "google_compute_address") then self.google_compute_address else { },
+            local instances = if std.objectHas(self, "google_compute_instance") then self.google_compute_instance else {},
+            local addresses = if std.objectHas(self, "google_compute_address") then self.google_compute_address else {},
             local DnsRecord = {
                 managed_zone: service.dnsZone.refName(service.dnsZoneName),
                 type: "A",
@@ -185,8 +185,8 @@ local apt = import "../cmd/apt.jsonnet";
                 "${-}": {
                     name: "${-}",
                     ipv4_range: service.ipv4Range,
-                }
-            }
+                },
+            },
         },
     },
 
@@ -207,16 +207,16 @@ local apt = import "../cmd/apt.jsonnet";
 
         infrastructure+: {
             google_compute_address: {
-                "${-}": { name: "${-}" }
+                "${-}": { name: "${-}" },
             },
             google_compute_firewall: {
                 "${-}": {
                     name: "${-}",
                     source_ranges: ["0.0.0.0/0"],
                     network: service.networkName,
-                    allow: [{ protocol: "tcp", ports: [std.toString(p) for p in service.fwTcpPorts]}],
+                    allow: [{ protocol: "tcp", ports: [std.toString(p) for p in service.fwTcpPorts] }],
                     target_tags: ["${-}"],
-                }
+                },
             },
             google_compute_instance: error "InstanceBasedService should define some instances.",
         },
@@ -233,7 +233,7 @@ local apt = import "../cmd/apt.jsonnet";
         Mixin+: {
             zones:: service.zones,
         },
-    
+
         versions:: {},
         deployment:: {},
         local instances = std.foldl(function(a, b) a + b, [
@@ -243,7 +243,7 @@ local apt = import "../cmd/apt.jsonnet";
                         service.versions[vname] {
                             name: "${-}-%s-%d" % [vname, i],
                             zone: self.zones[i % std.length(self.zones)],
-                            tags+: [vname, "index-%d" % i]
+                            tags+: [vname, "index-%d" % i],
                         }
                     else
                         error "Undefined version: %s" % vname
@@ -251,12 +251,13 @@ local apt = import "../cmd/apt.jsonnet";
             }
             for vname in std.objectFields(service.deployment)
         ], {}),
-        local attached_instances = std.join([], [
-            local attached = std.set(service.deployment[vname].attached);
-            local deployed = std.set(service.deployment[vname].deployed);
-            ["${-}-%s-%d" % [vname, i] for i in std.setInter(attached, deployed)]
-            for vname in std.objectFields(service.deployment)
-        ]),
+        local attached_instances = std.join(
+            [], [
+                local attached = std.set(service.deployment[vname].attached);
+                local deployed = std.set(service.deployment[vname].deployed);
+                ["${-}-%s-%d" % [vname, i] for i in std.setInter(attached, deployed)]
+                for vname in std.objectFields(service.deployment)
+            ]),
 
         infrastructure+: {
             google_compute_http_health_check: {
@@ -322,7 +323,7 @@ local apt = import "../cmd/apt.jsonnet";
                 },
             },
             google_dns_record_set: {
-            }
+            },
         },
         outputs+: {
             "${-}-name_servers": "${google_dns_managed_zone.${-}.name_servers.0}",
@@ -345,7 +346,7 @@ local apt = import "../cmd/apt.jsonnet";
                     ttl: 300,
                     rrdatas: [service.target + "." + service.dnsName],
                 },
-            }
-        }
+            },
+        },
     },
 }

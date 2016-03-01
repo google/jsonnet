@@ -17,7 +17,7 @@ local Kube = import "libkube.jsonnet";
 {
 
     # The port that this service should serve on.
-    redis_port::  6379,
+    redis_port:: 6379,
     # Change this to your project ID.
     project_id:: "cooltool-1009",
 
@@ -38,8 +38,8 @@ local Kube = import "libkube.jsonnet";
             template: {
                 metadata: {
                     labels: {
-                        name: "twitter-stream"
-                    }
+                        name: "twitter-stream",
+                    },
                 },
                 spec: {
                     containers: [
@@ -55,11 +55,11 @@ local Kube = import "libkube.jsonnet";
                                 ACCESSTOKENSEC: $.twitter_access_token_sec,
                                 TWSTREAMMODE: "sample",
                             }),
-                        }
-                    ]
-                }
-            }
-        }
+                        },
+                    ],
+                },
+            },
+        },
     },
     "redis-master-service.new.yaml": Kube.v1.Service("redis-master") {
         metadata+: {
@@ -72,12 +72,12 @@ local Kube = import "libkube.jsonnet";
                     # You don't need to specify the targetPort if it is the same as the port,
                     # though here we include it anyway, to show the syntax.
                     targetPort: $.redis_port,
-                }
+                },
             ],
             selector: {
                 name: "redis-master",
-            }
-        }
+            },
+        },
     },
     "redis-master.new.yaml": Kube.v1.ReplicationController("redis-master") {
         spec: {
@@ -86,7 +86,7 @@ local Kube = import "libkube.jsonnet";
                 metadata: {
                     labels: {
                         name: "redis-master",
-                    }
+                    },
                 },
                 spec: {
                     containers: [
@@ -103,11 +103,11 @@ local Kube = import "libkube.jsonnet";
                             name: "collectd",
                             image: "gcr.io/%s/collectd-redis:latest" % $.project_id,
                             ports: [],
-                        }
-                    ]
-                }
-            }
-        }
+                        },
+                    ],
+                },
+            },
+        },
     },
     "bigquery-controller.new.yaml": Kube.v1.ReplicationController("bigquery-controller") {
         spec: {
@@ -116,7 +116,7 @@ local Kube = import "libkube.jsonnet";
                 metadata: {
                     labels: {
                         name: "bigquery-controller",
-                    }
+                    },
                 },
                 spec: {
                     containers: [
@@ -131,10 +131,10 @@ local Kube = import "libkube.jsonnet";
                                 BQ_DATASET: $.bq_dataset,
                                 BQ_TABLE: $.bq_table,
                             }),
-                        }
-                    ]
-                }
-            }
-        }
-    }
+                        },
+                    ],
+                },
+            },
+        },
+    },
 }

@@ -1,1 +1,1 @@
-STATIC ERROR: error.function_duplicate_param.jsonnet:17:1-17: Duplicate function parameter: x
+STATIC ERROR: error.function_duplicate_param.jsonnet:17:1-16: Duplicate function parameter: x

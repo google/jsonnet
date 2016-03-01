@@ -5,103 +5,103 @@ local b = 4;
 
 local arrCases = [
     {
-        input:  arr[2:4],
-        output: [ 2, 3 ],
+        input: arr[2:4],
+        output: [2, 3],
     },
     {
-        input:  arr[2:4:1],
-        output: [ 2, 3 ],
+        input: arr[2:4:1],
+        output: [2, 3],
     },
     {
-        input:  arr[:4],
-        output: [ 0, 1, 2, 3 ],
+        input: arr[:4],
+        output: [0, 1, 2, 3],
     },
     {
-        input:  arr[2:],
-        output: [ 2, 3, 4, 5 ],
+        input: arr[2:],
+        output: [2, 3, 4, 5],
     },
     {
-        input:  arr[:],
+        input: arr[:],
         output: arr,
     },
     {
-        input:  arr[:1000],
+        input: arr[:1000],
         output: arr,
     },
     {
-        input:  arr[::],
+        input: arr[::],
         output: arr,
     },
     {
-        input:  arr[::2],
-        output: [ 0, 2, 4 ],
+        input: arr[::2],
+        output: [0, 2, 4],
     },
     {
-        input:  arr[:0:],
+        input: arr[:0:],
         output: [],
     },
     {
-        input:  arr[a:b],
-        output: [ 2, 3 ],
+        input: arr[a:b],
+        output: [2, 3 ],
     },
     {
-        input:  arr[a:b+1],
-        output: [ 2, 3, 4 ],
+        input: arr[a:b + 1],
+        output: [2, 3, 4],
     },
     {
-        input:  arr[2:1000],
-        output: [ 2, 3, 4, 5 ],
+        input: arr[2:1000],
+        output: [2, 3, 4, 5],
     },
 
 ];
 
 local strCases = [
     {
-        input:  str[2:4],
+        input: str[2:4],
         output: "23",
     },
     {
-        input:  str[2:4:1],
+        input: str[2:4:1],
         output: "23",
     },
     {
-        input:  str[:4],
+        input: str[:4],
         output: "0123",
     },
     {
-        input:  str[2:],
+        input: str[2:],
         output: "2345",
     },
     {
-        input:  str[:],
+        input: str[:],
         output: str,
     },
     {
-        input:  str[:1000],
+        input: str[:1000],
         output: str,
     },
     {
-        input:  str[::],
+        input: str[::],
         output: str,
     },
     {
-        input:  str[::2],
+        input: str[::2],
         output: "024",
     },
     {
-        input:  str[:0:],
+        input: str[:0:],
         output: "",
     },
     {
-        input:  str[a:b],
+        input: str[a:b],
         output: "23",
     },
     {
-        input:  str[a:b+1],
+        input: str[a:b + 1],
         output: "234",
     },
     {
-        input:  str[2:1000],
+        input: str[2:1000],
         output: "2345",
     },
 ];

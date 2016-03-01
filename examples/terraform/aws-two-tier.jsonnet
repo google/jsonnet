@@ -107,7 +107,7 @@ local aws_amis = {
                         inline: [
                             "sudo apt-get -y update",
                             "sudo apt-get -y install nginx",
-                            "sudo service nginx start"
+                            "sudo service nginx start",
                         ],
                     },
                 },
@@ -119,6 +119,6 @@ local aws_amis = {
     output: {
         address: {
             value: "${aws_elb.web.dns_name}",
-        }
+        },
     },
 }

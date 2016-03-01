@@ -17,7 +17,7 @@ limitations under the License.
 {
     neg_integer: -1029301293,
     pos_integer: 13212381932,
-    number: 1/3,
+    number: 1 / 3,
     small_number: 0.00000000000001,
     zero: 0,
     string: "'foo\n bar\n\n\"bar\u0005\"\'\t \u0050\b\f\r\\",

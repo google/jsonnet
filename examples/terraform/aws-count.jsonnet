@@ -57,7 +57,7 @@ local web_indexes = std.range(1, 4);
     },
     output: {
         address: {
-            value: "Instances: " + std.join(", ", ["${aws_instance.web-%d.id}" % i for i in web_indexes])
-        }
+            value: "Instances: " + std.join(", ", ["${aws_instance.web-%d.id}" % i for i in web_indexes]),
+        },
     },
 }

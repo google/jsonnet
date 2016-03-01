@@ -18,6 +18,7 @@ limitations under the License.
 #define JSONNET_LEXER_H
 
 #include <cstdlib>
+#include <cassert>
 
 #include <iostream>
 #include <string>
@@ -28,23 +29,57 @@ limitations under the License.
 #include "unicode.h"
 #include "static_error.h"
 
-/** Represents stuff that lexers usually strip, but we must keep if we want to output the code
- * unchanged.
+/** Whitespace and comments.
+ *
+ * "Fodder" (as in cannon fodder) implies this data is expendable.
  */
 struct FodderElement {
     enum Kind {
-        WHITESPACE,
-        COMMENT_C,
-        COMMENT_CPP,
-        COMMENT_HASH,
+        LINE_END,
+        INTERSTITIAL,
+        PARAGRAPH,
     };
     Kind kind;
-    std::string data;
-    FodderElement(Kind kind, const std::string &data)
-      : kind(kind), data(data)
-    { }
+    unsigned blanks;
+    unsigned indent;
+    std::vector<std::string> comment;
+    FodderElement(Kind kind, unsigned blanks, unsigned indent,
+                  const std::vector<std::string> &comment)
+      : kind(kind), blanks(blanks), indent(indent), comment(comment)
+    {
+        assert(kind != LINE_END || comment.size() <= 1);
+        assert(kind != INTERSTITIAL || (blanks == 0 && indent == 0 && comment.size() == 1));
+        assert(kind != PARAGRAPH || comment.size() >= 1);
+    }
 };
+static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
+{
+    switch (f.kind) {
+        case FodderElement::LINE_END:
+        o << "END(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";
+        break;
+        case FodderElement::INTERSTITIAL:
+        o << "INT(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";
+        break;
+        case FodderElement::PARAGRAPH:
+        o << "PAR(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << "...)";
+        break;
+    }
+    return o;
+}
 typedef std::vector<FodderElement> Fodder;
+
+static inline std::ostream &operator<<(std::ostream &o, const Fodder &fodder)
+{
+    bool first = true;
+    for (const auto &f : fodder) {
+        o << (first ? "[" : ", ");
+        first = false;
+        o << f;
+    }
+    o << (first ? "[]" : "]");
+    return o;
+}
 
 struct Token {
     enum Kind {

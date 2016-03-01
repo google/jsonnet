@@ -26,7 +26,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
     BaseInstanceMixin:: {
         StandardRootImage+: {
             local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
-            aptPackages +: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
+            aptPackages+: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
         },
     },
 
@@ -55,7 +55,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
 
         Instance+: $.BaseInstanceMixin {
             StandardRootImage+: {
-                pipPackages +: ["httplib2", "cassandra-driver", "blist"],
+                pipPackages+: ["httplib2", "cassandra-driver", "blist"],
             },
             local version = self,
             conf:: app.ApplicationConf {
@@ -67,7 +67,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
                 tilegen_port: app.tilegenPort,
             },
             module: "main",  // Entrypoint in the Python code.
-            uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
+            uwsgiConf+: { lazy: "true" },  // cassandra-driver does not survive fork()
             // Copy website content and code.
             httpContentCmds+: [
                 "echo '%s tilegen' >> /etc/hosts" % app.tilegen.refAddress("fractal-tilegen"),
@@ -87,7 +87,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         httpPort: app.tilegenPort,
         Instance+: $.BaseInstanceMixin {
             StandardRootImage+: {
-                aptPackages +: ["g++", "libpng-dev"],
+                aptPackages+: ["g++", "libpng-dev"],
             },
             local version = self,
             srcDir:: "tilegen3",
@@ -120,7 +120,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
             seed_provider: [
                 {
                     class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                    parameters: [ { seeds: std.join(", ", app.cassandraNodes) } ],
+                    parameters: [{ seeds: std.join(", ", app.cassandraNodes) }],
                 },
             ],
         },
@@ -153,8 +153,8 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
             ],
         },
 
-        StarterNode +: $.BaseInstanceMixin + self.FractalStarterMixin,
-        TopUpNode +: $.BaseInstanceMixin,
+        StarterNode+: $.BaseInstanceMixin + self.FractalStarterMixin,
+        TopUpNode+: $.BaseInstanceMixin,
 
         nodes: {
             n1: db.StarterNode {

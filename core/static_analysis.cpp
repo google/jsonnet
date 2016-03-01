@@ -41,12 +41,12 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
 
     if (auto *ast = dynamic_cast<const Apply*>(ast_)) {
         append(r, static_analysis(ast->target, in_object, vars));
-        for (AST *arg : ast->arguments)
-            append(r, static_analysis(arg, in_object, vars));
+        for (const auto &arg : ast->args)
+            append(r, static_analysis(arg.expr, in_object, vars));
 
     } else if (auto *ast = dynamic_cast<const Array*>(ast_)) {
-        for (AST *el : ast->elements)
-            append(r, static_analysis(el, in_object, vars));
+        for (auto & el : ast->elements)
+            append(r, static_analysis(el.expr, in_object, vars));
 
     } else if (auto *ast = dynamic_cast<const Binary*>(ast_)) {
         append(r, static_analysis(ast->left, in_object, vars));
@@ -66,17 +66,17 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     } else if (auto *ast = dynamic_cast<const Function*>(ast_)) {
         auto new_vars = vars;
         IdSet params;
-        for (auto *p : ast->parameters) {
-            if (params.find(p) != params.end()) {
-                std::string msg = "Duplicate function parameter: " + encode_utf8(p->name);
+        for (const auto &p : ast->params) {
+            if (params.find(p.id) != params.end()) {
+                std::string msg = "Duplicate function parameter: " + encode_utf8(p.id->name);
                 throw StaticError(ast_->location, msg);
             }
-            params.insert(p);
-            new_vars.insert(p);
+            params.insert(p.id);
+            new_vars.insert(p.id);
         }
         auto fv = static_analysis(ast->body, in_object, new_vars);
-        for (auto *p : ast->parameters)
-            fv.erase(p);
+        for (const auto &p : ast->params)
+            fv.erase(p.id);
         append(r, fv);
 
     } else if (dynamic_cast<const Import*>(ast_)) {

@@ -38,5 +38,5 @@ limitations under the License.
             garnish: "Maraschino Cherry",
             served: "Straight Up",
         },
-    }
-} 
+    },
+}

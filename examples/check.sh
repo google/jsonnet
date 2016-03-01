@@ -17,7 +17,7 @@
 FAILED=0
 SUCCESS=0
 
-for I in *.golden ; do
+for I in *.jsonnet.golden ; do
     TEST=$(basename "$I" .golden)
     OUT1=$(../jsonnet "$TEST" 2>&1)
     OUT2=$(../jsonnet "$I" 2>&1)

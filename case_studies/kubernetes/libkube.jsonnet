@@ -35,11 +35,11 @@
 
         Service(name): ApiVersion + Metadata(name) {
             kind: "Service",
-        }
+        },
     },
 
     pair_list_ex(tab, kfield, vfield)::
-        [{[kfield]: k, [vfield]: tab[k]} for k in std.objectFields(tab)],
+        [{ [kfield]: k, [vfield]: tab[k] } for k in std.objectFields(tab)],
 
     pair_list(tab)::
         self.pair_list_ex(tab, "name", "value"),

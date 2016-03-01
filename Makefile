@@ -42,11 +42,13 @@ SHARED_LDFLAGS ?= -shared
 ################################################################################
 
 LIB_SRC = \
-	core/desugaring.cpp \
+	core/desugarer.cpp \
+	core/formatter.cpp \
 	core/lexer.cpp \
 	core/libjsonnet.cpp \
 	core/parser.cpp \
 	core/static_analysis.cpp \
+	core/string_utils.cpp \
 	core/vm.cpp
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
@@ -60,12 +62,14 @@ ALL = \
 	$(LIB_OBJ)
 ALL_HEADERS = \
 	core/ast.h \
-	core/desugaring.h \
+	core/desugarer.h \
+	core/formatter.h \
 	core/lexer.h \
 	core/parser.h \
 	core/state.h \
 	core/static_analysis.h \
 	core/static_error.h \
+	core/string_utils.h \
 	core/vm.h \
 	core/std.jsonnet.h \
 	include/libjsonnet.h
@@ -82,7 +86,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 	cd examples ; ./check.sh
 	cd examples/terraform ; ./check.sh
 	cd test_suite ; ./run_tests.sh
-	cd test_suite ; ./run_unparse_tests.sh
+	cd test_suite ; ./run_fmt_tests.sh
 
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
@@ -92,7 +96,7 @@ MAKEDEPEND_SRCS = \
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
 
-core/desugaring.cpp: core/std.jsonnet.h
+core/desugarer.cpp: core/std.jsonnet.h
 
 # Object files
 %.o: %.cpp

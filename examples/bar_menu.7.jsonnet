@@ -34,6 +34,5 @@ local utils = import "bar_menu_utils.jsonnet";
             garnish: "Orange Peel",
             served: "On The Rocks",
         },
-    }   
-}           
-
+    },
+}

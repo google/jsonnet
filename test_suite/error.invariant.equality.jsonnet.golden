@@ -7,4 +7,4 @@ RUNTIME ERROR: Object assertion failed.
 	std.jsonnet:917:13-39	function <anonymous>
 	std.jsonnet:942:54-65	function <aux>
 	std.jsonnet:946:21-32	function <anonymous>
-	error.invariant.equality.jsonnet:17:1-32	
+	error.invariant.equality.jsonnet:17:1-34	

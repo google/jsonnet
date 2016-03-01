@@ -42,10 +42,5 @@ limitations under the License.
             garnish: "Celery salt & pepper",
             served: "Tall",
         },
-    }
+    },
 }
-
-
-
-
-

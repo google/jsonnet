@@ -5,7 +5,7 @@
                 []
             else
                 ["pip install " + std.join(" ", self.pipPackages)],
-        pipPackages :: [],
+        pipPackages:: [],
     },
 
 }

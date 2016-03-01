@@ -36,5 +36,5 @@ limitations under the License.
             garnish: "Lime Wheel",
             served: "Straight Up",
         },
-    }
+    },
 }

@@ -17,7 +17,7 @@ local cmd = import "../cmd/cmd.jsonnet";
                              + "--die-on-term --uid www-data --gid www-data\n",
                     filePermissions: "700",
                 },
-            ]
+            ],
         },
 
         application:: "app",
@@ -38,7 +38,7 @@ local cmd = import "../cmd/cmd.jsonnet";
 
         uwsgiModuleContent:: null,
 
-        httpContentCmds+: if version.uwsgiModuleContent == null then [ ] else [
+        httpContentCmds+: if version.uwsgiModuleContent == null then [] else [
             cmd.LiteralFile {
                 content: version.uwsgiModuleContent,
                 to: "/var/www/%s.py" % version.module,
@@ -52,14 +52,14 @@ local cmd = import "../cmd/cmd.jsonnet";
                 to: "/etc/uwsgi/vassals/uwsgi.ini",
                 content: std.manifestIni({
                     sections: {
-                        uwsgi: version.uwsgiConf
-                    }
-                })
+                        uwsgi: version.uwsgiConf,
+                    },
+                }),
             },
             cmd.EnsureDir { dir: "/var/log/uwsgi", owner: "www-data" },
             "/usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
-                     + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
-                     + "--die-on-term --uid www-data --gid www-data\n",
+            + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
+            + "--die-on-term --uid www-data --gid www-data\n",
         ],
     },
 
@@ -79,7 +79,7 @@ local cmd = import "../cmd/cmd.jsonnet";
                     uwsgi_pass unix:%(socket)s;
                 }
             }
-        ||| % {port: version.httpPort, socket: version.uwsgiSocket},
+        ||| % { port: version.httpPort, socket: version.uwsgiSocket },
 
         nginxAdditionalCmds+: [
             cmd.LiteralFile {

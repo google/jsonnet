@@ -50,7 +50,7 @@ local amis_debian = import "../amis/debian.jsonnet";
     Service:: base.Service {
         infrastructure+: if self.dnsZone == null then {
         } else {
-/*
+            /*
             local instances = if std.objectHas(self, "aws_instance") then self.google_compute_instance else { },
             local addresses = { }, //if std.objectHas(self, "google_compute_address") then self.google_compute_address else { },
             local DnsRecord = {
@@ -70,7 +70,7 @@ local amis_debian = import "../amis/debian.jsonnet";
                     rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
                 } for name in std.objectFields(instances)
             },
-*/
+            */
         },
         dnsZone:: null,
         dnsZoneName:: error "Must set dnsZoneName if dnsZone is set.",
@@ -156,10 +156,10 @@ local amis_debian = import "../amis/debian.jsonnet";
                         cidr_blocks: ["0.0.0.0/0"],
                     },
                     ingress: [IngressRule(p, "tcp") for p in service.fwTcpPorts]
-                           + [IngressRule(p, "udp") for p in service.fwUdpPorts],
+                             + [IngressRule(p, "udp") for p in service.fwUdpPorts],
 
                     [if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
-                }
+                },
             },
             aws_instance: error "InstanceBasedService should define some instances.",
         },
@@ -182,7 +182,8 @@ local amis_debian = import "../amis/debian.jsonnet";
         },
         versions:: {},
         deployment:: {},
-        local instances = std.foldl(function(a, b) a + b, [
+        local merge(objs) = std.fold(function(a, b) a + b, objs, {}),
+        local instances = merge([
             {
                 ["${-}-%s-%d" % [vname, i]]:
                     if std.objectHas(service.versions, vname) then
@@ -191,14 +192,14 @@ local amis_debian = import "../amis/debian.jsonnet";
                             tags+: {
                                 version: vname,
                                 index: i,
-                            }
+                            },
                         }
                     else
                         error "Undefined version: %s" % vname
                 for i in std.set(service.deployment[vname].deployed)
             }
             for vname in std.objectFields(service.deployment)
-        ], {}),
+        ]),
         local attached_instances = std.join([], [
             local attached = std.set(service.deployment[vname].attached);
             local deployed = std.set(service.deployment[vname].deployed);
@@ -250,10 +251,10 @@ local amis_debian = import "../amis/debian.jsonnet";
                         cidr_blocks: ["0.0.0.0/0"],
                     },
                     ingress: [IngressRule(p, "tcp") for p in service.lbTcpPorts]
-                           + [IngressRule(p, "udp") for p in service.lbUdpPorts],
+                             + [IngressRule(p, "udp") for p in service.lbUdpPorts],
 
                     //[if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
-                }
+                },
             },
         },
     },
@@ -287,7 +288,7 @@ local amis_debian = import "../amis/debian.jsonnet";
                 },
             },
             aws_dns_record: {
-            }
+            },
         },
         outputs+: {
             "${-}-name_servers": "${google_dns_managed_zone.${-}.name_servers.0}",
@@ -295,7 +296,7 @@ local amis_debian = import "../amis/debian.jsonnet";
     },
 
 
-/*
+    /*
     DnsRecordWww:: self.Service {
         local service = self,
         dnsName:: service.zone.dnsName,
@@ -313,7 +314,7 @@ local amis_debian = import "../amis/debian.jsonnet";
                 },
             }
         }
-	},
-*/
+    },
+    */
 
 }

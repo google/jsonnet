@@ -22,19 +22,19 @@
                     }],
                     network_interface: {
                         network: "default",
-                        access_config: 
-                            if service.externalIp then [{}] else []
+                        access_config:
+                            if service.externalIp then [{}] else [],
                     },
                     metadata: {
                     },
                     cmds: [],
                     bootCmds: [],
-                }
-            }
+                },
+            },
         },
         outputs: {
             [if service.externalIp then "address"]:
-                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}"
+                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}",
         },
     },
 
@@ -54,5 +54,5 @@
             zone: "us-central1-f",
             externalIp: true,
         },
-    }
+    },
 }

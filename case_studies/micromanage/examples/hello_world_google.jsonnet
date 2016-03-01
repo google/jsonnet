@@ -25,7 +25,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
             region: "us-central1",  // Maybe change this.
             // Download this file from the developers console.
             serviceAccount: import "service_account.json",
-            sshUser: "yourusername"  // Change this.
+            sshUser: "yourusername",  // Change this.
         },
     },
 
@@ -86,7 +86,7 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         // dnsZoneName: "dns",
     },
 
-/*
+    /*
     dns: service_google.DnsZone {
         local service = self,
         dnsName: "hw.example.com.",
@@ -99,6 +99,6 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
         zoneName: "dns",
         target: "helloworld2",
     },
-*/
+    */
 
 }

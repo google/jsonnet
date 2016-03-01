@@ -18,7 +18,7 @@ local service_amazon = import "../service/amazon.jsonnet";
             client_encryption_options: {
                 enabled: false,
                 keystore: "conf/.keystore",
-                keystore_password: "cassandra"
+                keystore_password: "cassandra",
             },
             cluster_name: "Unnamed Cluster",
             column_index_size_in_kb: 64,
@@ -72,15 +72,15 @@ local service_amazon = import "../service/amazon.jsonnet";
             seed_provider: [
                 {
                     class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                    parameters: [ { seeds: "127.0.0.1" } ],
-                }
+                    parameters: [{ seeds: "127.0.0.1" }],
+                },
             ],
             server_encryption_options: {
                 internode_encryption: "none",
                 keystore: "conf/.keystore",
                 keystore_password: "cassandra",
                 truststore: "conf/.truststore",
-                truststore_password: "cassandra"
+                truststore_password: "cassandra",
             },
             snapshot_before_compaction: false,
             ssl_storage_port: 7001,
@@ -94,7 +94,7 @@ local service_amazon = import "../service/amazon.jsonnet";
             trickle_fsync: false,
             trickle_fsync_interval_in_kb: 10240,
             truncate_request_timeout_in_ms: 60000,
-            write_request_timeout_in_ms: 2000
+            write_request_timeout_in_ms: 2000,
         },
 
 
@@ -109,8 +109,6 @@ local service_amazon = import "../service/amazon.jsonnet";
         clusterName:: error "Cassandra Service must have field: clusterName",
 
         tcpFirewallPorts:: self.gossipPorts + self.otherPorts,
-
-
 
 
         StandardNode:: service_google.StandardInstance {
@@ -210,8 +208,8 @@ local service_amazon = import "../service/amazon.jsonnet";
                         obj: "org.apache.cassandra.db:type=StorageProxy",
                         attr: ["RecentReadLatencyMicros", "RecentWriteLatencyMicros",
                                "RecentRangeLatencyMicros", "HintsInProgress"],
-                    }
-                ]
+                    },
+                ],
             },
 
             enableLogging: true,
@@ -235,14 +233,14 @@ local service_amazon = import "../service/amazon.jsonnet";
                     "rm -rfv /var/log/cassandra/*",
                     // Enable authentication
                     local dest = "/etc/cassandra/cassandra.yaml";
-                        "echo %s > %s" % [std.escapeStringBash("" + bootstrapConf), dest],
+                    "echo %s > %s" % [std.escapeStringBash("" + bootstrapConf), dest],
                     // Start it up again (for some reason 'start' does not do anything...)
                     "/etc/init.d/cassandra restart",
                     // Wait for it to be ready
                     wait_for_cqlsh("cassandra", "cassandra", "localhost"),
                     // Set root password
                     local cql = "ALTER USER cassandra WITH PASSWORD '%s';" % service.rootPassword;
-                        "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
+                    "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
 
                 ],
             },
@@ -260,13 +258,13 @@ local service_amazon = import "../service/amazon.jsonnet";
 
                 // Set up system_auth replication level
                 "echo %s | cqlsh -u cassandra -p %s localhost"
-                    % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
-                                            % node.initAuthReplication),
-                       service.rootPassword],
+                % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
+                                        % node.initAuthReplication),
+                   service.rootPassword],
 
                 // Drop in the correct configuration.
                 "echo %s > %s"
-                    % [std.escapeStringBash("" + node.conf), "/etc/cassandra/cassandra.yaml"],
+                % [std.escapeStringBash("" + node.conf), "/etc/cassandra/cassandra.yaml"],
 
                 // Restart with new configuration.
                 "/etc/init.d/cassandra restart",
@@ -276,8 +274,8 @@ local service_amazon = import "../service/amazon.jsonnet";
 
                 // Set up users, empty tables, etc.
                 "echo %s | cqlsh -u cassandra -p %s $HOSTNAME"
-                    % [std.escapeStringBash(std.lines(node.initCql)), service.rootPassword],
-            ]
+                % [std.escapeStringBash(std.lines(node.initCql)), service.rootPassword],
+            ],
         },
 
         TopUpNode:: self.StandardNode {
@@ -294,12 +292,12 @@ local service_amazon = import "../service/amazon.jsonnet";
 
                 // Drop in the correct configuration.
                 "echo %s > %s"
-                    % [std.escapeStringBash("" + node.conf), "/etc/cassandra/cassandra.yaml"],
+                % [std.escapeStringBash("" + node.conf), "/etc/cassandra/cassandra.yaml"],
 
                 // Start it up again.
                 "/etc/init.d/cassandra restart",
 
-            ]
+            ],
         },
 
         nodes:: {},
@@ -320,7 +318,7 @@ local service_amazon = import "../service/amazon.jsonnet";
                         {
                             disk: "${google_compute_disk.${-}-%s.name}" % n,
                             auto_delete: false,
-                        }
+                        },
                     ],
                 }
                 for n in std.objectFields(service.nodes)
@@ -333,11 +331,11 @@ local service_amazon = import "../service/amazon.jsonnet";
                     allow: [
                         {
                             protocol: "tcp",
-                            ports:  [std.toString(p) for p in service.tcpFirewallPorts]
-                        }
+                            ports: [std.toString(p) for p in service.tcpFirewallPorts],
+                        },
                     ],
                     target_tags: [service.clusterName],
-                }
+                },
             },
         },
     },

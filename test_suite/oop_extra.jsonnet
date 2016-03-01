@@ -15,44 +15,43 @@ limitations under the License.
 */
 
 // Simple super
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, y : super.y }).y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, y: super.y }).y, 1) &&
 
 // returning self
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : self }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, z: self }).z.y, 1) &&
 
 // extending self on the right
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : (self + {}).y }).z, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : (self + {}) }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, z: (self + {}).y }).z, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, z: (self + {}) }).z.y, 1) &&
 
 // extending self on the right has dynamic binding
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, z : (self + { x : 1 }).y }).z, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, z : (self + { x : 1 }) }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, z: (self + { x: 1 }).y }).z, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, z: (self + { x: 1 }) }).z.y, 1) &&
 
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, w : 1, z : (self + { x : super.w }).y }).z, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, w : 1, z : (self + { x : super.w }) }).z.y, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, w : 1, z : (self + { x : self.w }).y }).z, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 2, w : 1, z : (self + { x : self.w }) }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, w: 1, z: (self + { x: super.w }).y }).z, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, w: 1, z: (self + { x: super.w }) }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, w: 1, z: (self + { x: self.w }).y }).z, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 2, w: 1, z: (self + { x: self.w }) }).z.y, 1) &&
 
 // self + self
-std.assertEqual(({ x : 1, y : super.x } + { z : (self + self).y }).z, 1) &&
+std.assertEqual(({ x: 1, y: super.x } + { z: (self + self).y }).z, 1) &&
 
 // extending self on the left
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : ({} + self).y }).z, 1) &&
-std.assertEqual(({ x : 0, y : self.x } + { x : 1, z : ({} + self) }).z.y, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, z: ({} + self).y }).z, 1) &&
+std.assertEqual(({ x: 0, y: self.x } + { x: 1, z: ({} + self) }).z.y, 1) &&
 
-std.assertEqual(({ x : 1, z : ({ x : 0, y : self.x } + self).y }).z, 1) &&
-std.assertEqual(({ x : 1, z : ({ x : 0, y : self.x } + self) }).z.y, 1) &&
+std.assertEqual(({ x: 1, z: ({ x: 0, y: self.x } + self).y }).z, 1) &&
+std.assertEqual(({ x: 1, z: ({ x: 0, y: self.x } + self) }).z.y, 1) &&
 
-std.assertEqual(({ x : 0, z : ({ w : 1, x : 2, y : self.w } + self).y }).z, 1) &&
-std.assertEqual(({ x : 0, z : ({ w : 1, x : 2, y : self.w } + self) }).z.y, 1) &&
+std.assertEqual(({ x: 0, z: ({ w: 1, x: 2, y: self.w } + self).y }).z, 1) &&
+std.assertEqual(({ x: 0, z: ({ w: 1, x: 2, y: self.w } + self) }).z.y, 1) &&
 
-std.assertEqual(({ x : 1, w : self.x,  z : ({ x : 2, y : self.w } + self).y }).z, 1) &&
-std.assertEqual(({ x : 1, w : self.x,  z : ({ x : 2, y : self.w } + self) }).z.y, 1) &&
-
+std.assertEqual(({ x: 1, w: self.x, z: ({ x: 2, y: self.w } + self).y }).z, 1) &&
+std.assertEqual(({ x: 1, w: self.x, z: ({ x: 2, y: self.w } + self) }).z.y, 1) &&
 
 
 // extra
 
-std.assertEqual({ a : ({ b : self.c, c : 1 } + self).b}.a, 1) &&
+std.assertEqual({ a: ({ b: self.c, c: 1 } + self).b }.a, 1) &&
 
 true

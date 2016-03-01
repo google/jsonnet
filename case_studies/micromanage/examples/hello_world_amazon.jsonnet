@@ -33,11 +33,11 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
     mynetwork: service_amazon.Network {
         subnets: {
             "us-west-1c": "10.0.0.0/24",
-        }
+        },
     },
 
     // Simple case -- one machine serving this Python script.
-/*
+    /*
     helloworld: service_amazon.SingleInstance + web.HttpSingleInstance
                 + web_solutions.DebianFlaskHttpService {
         zone: "us-west-1c",
@@ -45,14 +45,14 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
         uwsgiModuleContent: |||
             import flask
             import socket
-            app = flask.Flask(__name__) 
-            @app.route('/') 
+            app = flask.Flask(__name__)
+            @app.route('/')
             def hello_world():
                 return 'Hello from %s!' % socket.gethostname()
         |||,
         networkName: "mynetwork",
     },
-*/
+    */
 
     // For production -- allows canarying changes, also use a dns zone
     helloworld2: service_amazon.Cluster3 + web.HttpService3
@@ -97,7 +97,7 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
         // dnsZoneName: "dns",
     },
 
-/*
+    /*
     dns: service_amazon.DnsZone {
         local service = self,
         dnsName: "hw.example.com.",
@@ -110,6 +110,6 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
         zoneName: "dns",
         target: "helloworld2",
     },
-*/
+    */
 
 }

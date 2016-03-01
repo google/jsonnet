@@ -1,0 +1,1 @@
+STATIC ERROR: error.parse.import_not_literal.jsonnet:17:8-27: Computed imports are not allowed.

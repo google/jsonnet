@@ -44,7 +44,7 @@ local aws_amis = {
                     name: "size",
                     path: "tf_test/size",
                     default: "m1.small",
-                }
+                },
             },
 
             # Setup a key in Consul to store the instance id and

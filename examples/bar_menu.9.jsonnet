@@ -28,12 +28,7 @@ limitations under the License.
         },
         "Whiskey Sour With Egg": self["Whiskey Sour"] + {
             ingredients: super.ingredients
-                         + [ { kind: "Egg White", qty: 0.5 } ],
+                         + [{ kind: "Egg White", qty: 0.5 }],
         },
-    }
+    },
 }
-
-
-
-
-

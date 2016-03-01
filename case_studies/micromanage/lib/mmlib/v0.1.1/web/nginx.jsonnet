@@ -51,7 +51,7 @@ local cmd = import "../cmd/cmd.jsonnet";
                 },
             ] else []) + [
                 "rm /etc/nginx/sites-enabled/default",
-            ]
+            ],
         },
 
 

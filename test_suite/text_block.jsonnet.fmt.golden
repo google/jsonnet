@@ -87,17 +87,17 @@ std.assertEqual(blank_line2, "foo\n\nbar\n") &&
 
 // Initial blank line
 local blank_line3 = |||
-        
+
         foo
     |||;
 
 // Interaction with operators (1)
-local op1 = "foo"+|||
+local op1 = "foo" + |||
     foo
 |||;
 
 // Interaction with operators (2)
-local op2 = "foo"<|||
+local op2 = "foo" < |||
     foo
 |||;
 

@@ -29,5 +29,5 @@ limitations under the License.
             garnish: "Orange Peel",
             served: "On The Rocks",
         },
-    }
-}           
+    },
+}

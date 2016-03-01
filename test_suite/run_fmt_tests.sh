@@ -29,8 +29,8 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
     GOLDEN_OUTPUT="$(cat $TEST)"
     GOLDEN_KIND="PLAIN"
 
-    if [ -r "$TEST.unparse.golden" ] ; then
-        GOLDEN_OUTPUT=$(cat "$TEST.unparse.golden")
+    if [ -r "$TEST.fmt.golden" ] ; then
+        GOLDEN_OUTPUT=$(cat "$TEST.fmt.golden")
     fi
 
     if [ $(echo "$TEST" | cut -b 1-12) == "error.parse." ] ; then
@@ -38,7 +38,7 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
     fi
 
     EXPECTED_EXIT_CODE=0
-    JSONNET_CMD="$VALGRIND ../jsonnet --debug-lexer"
+    JSONNET_CMD="$VALGRIND ../jsonnet fmt"
     test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 

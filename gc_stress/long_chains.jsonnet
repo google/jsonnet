@@ -20,7 +20,7 @@ local chain(last, n) =
     if n == 0 then
         last
     else
-        chain({next: last, data: 0}, n - 1) tailstrict;
+        chain({ next: last, data: 0 }, n - 1) tailstrict;
 
 local length(chain, n) =
     if std.objectHas(chain, "next") then
@@ -30,5 +30,4 @@ local length(chain, n) =
 
 local chain_lens = [length(chain({}, chain_len), 0) for x in std.range(1, num_chains)];
 
-std.foldl(function(a,b) a + b, [l for l in chain_lens], 0) == num_chains * chain_len
-
+std.foldl(function(a, b) a + b, [l for l in chain_lens], 0) == num_chains * chain_len

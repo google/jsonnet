@@ -14,6 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local A = { x: 1, y: 2},
+local A = { x: 1, y: 2 },
       B = { x: 1, y: error "foobar" };
 A == B

@@ -30,8 +30,8 @@ local amis_debian = import "mmlib/v0.1.1/amis/debian.jsonnet";
                     ami: if service.ami != null then service.ami else service.amiMap[region_from_zone(service.zone)],
                     associate_public_ip_address: service.externalIp,
                     cmds: service.cmds,
-                }
-            }
+                },
+            },
         },
         outputs: {
             "${-}-address": "${aws_instance.${-}.public_ip}",

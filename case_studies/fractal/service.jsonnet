@@ -45,7 +45,7 @@ local credentials = import "credentials.jsonnet";
         seed_provider: [
             {
                 class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                parameters: [ { seeds: std.join(", ", cassandraNodes) } ],
+                parameters: [{ seeds: std.join(", ", cassandraNodes) }],
             },
         ],
     },
@@ -100,17 +100,17 @@ local credentials = import "credentials.jsonnet";
 
         // For debugging:
         local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
-        aptPackages +: ["vim", "git", "psmisc", "screen", "strace" ] + network_debug,
+        aptPackages+: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
     },
 
     // Frontend image.
     "appserv.packer.json": packer.GcpDebianNginxUwsgiFlaskImage + ImageMixin {
         name: "appserv-v20150430-2145",
-        module: "main",   // Entrypoint in the Python code.
-        pipPackages +: ["httplib2", "cassandra-driver", "blist"],
-        uwsgiConf +: { lazy: "true" },  // cassandra-driver does not survive fork()
+        module: "main",  // Entrypoint in the Python code.
+        pipPackages+: ["httplib2", "cassandra-driver", "blist"],
+        uwsgiConf+: { lazy: "true" },  // cassandra-driver does not survive fork()
         // Copy website content and code.
-        provisioners +: [
+        provisioners+: [
             packer.File {
                 source: "appserv",
                 destination: "/tmp/",
@@ -134,12 +134,12 @@ local credentials = import "credentials.jsonnet";
         name: "tilegen-v20150430-2145",
         module: "mandelbrot_service",
 
-        aptPackages +: ["g++", "libpng-dev"],
+        aptPackages+: ["g++", "libpng-dev"],
 
         port: tilegenPort,
 
         // Copy the flask handlers and also build the C++ executable.
-        provisioners +: [
+        provisioners+: [
             packer.File {
                 source: "tilegen",
                 destination: "/tmp/",
@@ -168,7 +168,7 @@ local credentials = import "credentials.jsonnet";
                 account_file: "service_account_key.json",
                 project: credentials.project,
                 region: "us-central1",
-            }
+            },
         },
 
         // The deployed resources.
@@ -213,12 +213,12 @@ local credentials = import "credentials.jsonnet";
                 appserv: {
                     name: "appserv",
                     health_checks: ["${google_compute_http_health_check.appserv.name}"],
-                    instances: [ "%s/appserv%d" % [zone(k), k] for k in [1, 2, 3] ],
+                    instances: ["%s/appserv%d" % [zone(k), k] for k in [1, 2, 3]],
                 },
                 tilegen: {
                     name: "tilegen",
                     health_checks: ["${google_compute_http_health_check.tilegen.name}"],
-                    instances: [ "%s/tilegen%d" % [zone(k), k] for k in [1, 2, 3, 4, 5] ],
+                    instances: ["%s/tilegen%d" % [zone(k), k] for k in [1, 2, 3, 4, 5]],
                 },
             },
 
@@ -234,12 +234,12 @@ local credentials = import "credentials.jsonnet";
                     name: "tilegen",
                     target: "${google_compute_target_pool.tilegen.self_link}",
                     port_range: tilegenPort,
-                }
+                },
             },
 
             // Open ports for the various services, to instances (identified by tags)
             google_compute_firewall: {
-                local NetworkMixin = { network: "${google_compute_network.fractal.name}", },
+                local NetworkMixin = { network: "${google_compute_network.fractal.name}" },
                 ssh: terraform.GcpFirewallSsh + NetworkMixin { name: "ssh" },
                 appserv: terraform.GcpFirewallHttp + NetworkMixin { name: "appserv" },
                 tilegen: terraform.GcpFirewallHttp + NetworkMixin { name: "tilegen", port: tilegenPort },
@@ -249,17 +249,17 @@ local credentials = import "credentials.jsonnet";
 
             // All our instances share this configuration.
             local FractalInstance(zone_hash) = terraform.GcpInstance {
-                network_interface: [super.network_interface[0] + {network: "${google_compute_network.fractal.name}"} ],
-                tags +: ["fractal"],
+                network_interface: [super.network_interface[0] { network: "${google_compute_network.fractal.name}" }],
+                tags+: ["fractal"],
                 zone: zone(zone_hash),
-                scopes +: ["devstorage.full_control"]
+                scopes+: ["devstorage.full_control"],
             },
 
             // The various kinds of Cassandra instances all share this basic configuration.
             local CassandraInstance(zone_hash) = FractalInstance(zone_hash) {
                 image: "cassandra-v20150430-2145",
                 machine_type: "n1-standard-1",
-                tags +: ["fractal-db", "cassandra-server"],
+                tags+: ["fractal-db", "cassandra-server"],
                 user:: cassandraUser,
                 userPass:: credentials.cassandraUserPass,
                 rootPass:: credentials.cassandraRootPass,
@@ -279,8 +279,8 @@ local credentials = import "credentials.jsonnet";
                         database_user: cassandraUser,
                         database_pass: credentials.cassandraUserPass,
                     },
-                    tags +: ["fractal-appserv", "http-server"],
-                    startup_script +: [self.addFile(self.conf, "/var/www/conf.json")],
+                    tags+: ["fractal-appserv", "http-server"],
+                    startup_script+: [self.addFile(self.conf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3]
 
@@ -326,8 +326,8 @@ local credentials = import "credentials.jsonnet";
                 ["tilegen" + k]: FractalInstance(k) {
                     name: "tilegen" + k,
                     image: "tilegen-v20150430-2145",
-                    tags +: ["fractal-tilegen", "http-server"],
-                    startup_script +: [self.addFile(ApplicationConf, "/var/www/conf.json")],
+                    tags+: ["fractal-tilegen", "http-server"],
+                    startup_script+: [self.addFile(ApplicationConf, "/var/www/conf.json")],
                 }
                 for k in [1, 2, 3, 4]
             },
@@ -337,7 +337,7 @@ local credentials = import "credentials.jsonnet";
                     name: "fractaldemo-com",
                     dns_name: credentials.dnsPrefix + "fractaldemo.com.",
                     description: "Fractal Demo DNS Zone",
-                }
+                },
             },
 
             local instances = self.google_compute_instance,
@@ -374,14 +374,14 @@ local credentials = import "credentials.jsonnet";
                     ttl: 300,
                     rrdatas: ["${google_compute_address.appserv.address}"],
                 },
-            }
+            },
 
         },
 
         output: {
-            "frontend": { value: "${google_compute_address.appserv.address}" },
+            frontend: { value: "${google_compute_address.appserv.address}" },
         },
 
-    } // terraform.tf
+    },  // terraform.tf
 
 }

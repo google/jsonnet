@@ -19,13 +19,13 @@ limitations under the License.
 
     // A Packer shell provisioner to run something as root.
     RootShell:: {
-        type: "shell", 
-        execute_command: "{{ .Vars }} sudo -E /bin/bash '{{ .Path }}'", 
+        type: "shell",
+        execute_command: "{{ .Vars }} sudo -E /bin/bash '{{ .Path }}'",
     },
 
     // A Packer shell provisioner to run something as the current user.
     Shell:: {
-        type: "shell", 
+        type: "shell",
     },
 
     // A Packer file provisioner.
@@ -89,7 +89,7 @@ limitations under the License.
     // packages are given as an array of strings.
     Pip:: packer.RootShell {
         packages:: error "Pip provisioner must have field: packages",
-        inline: [ "pip install " + std.join(" ", self.packages) ],
+        inline: ["pip install " + std.join(" ", self.packages)],
     },
 
     // A Packer provisioner to install Apt packages.  This provisioner can be configured with
@@ -102,7 +102,7 @@ limitations under the License.
         // { foo: "..." } will add a foo.list fetched from the given URL.
         repoUrls:: {},
 
-        keyCommands:: [ "curl --silent %s | apt-key add -" % [url] for url in self.keyUrls],
+        keyCommands:: ["curl --silent %s | apt-key add -" % [url] for url in self.keyUrls],
 
         local dir = "/etc/apt/sources.list.d",
         local repoLineCommands = ["echo \"%s\" > %s/%s.list" % [self.repoLines[k], dir, k]
@@ -112,11 +112,11 @@ limitations under the License.
         repoCommands:: repoLineCommands + repoUrlCommands,
 
         local opts = "-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold",
-        installCommands:: [ "apt-get -qq -y %s install %s" % [opts, std.join(" ", self.packages) ]],
+        installCommands:: ["apt-get -qq -y %s install %s" % [opts, std.join(" ", self.packages)]],
 
-        environment_vars: [ "DEBIAN_FRONTEND=noninteractive" ],
+        environment_vars: ["DEBIAN_FRONTEND=noninteractive"],
         inline: self.repoCommands + self.keyCommands
-                + [ "apt-get -qq -y update" ] + self.installCommands,
+                + ["apt-get -qq -y update"] + self.installCommands,
     },
     // TODO(dcunnin): yum
     /*
@@ -145,7 +145,7 @@ limitations under the License.
 
         local img = self,
         builder:: {
-            type: "googlecompute", 
+            type: "googlecompute",
 
             name: img.name,
             image_name: "%s" % [self.name],
@@ -153,18 +153,18 @@ limitations under the License.
 
             // Project & authentication
             project_id: img.project_id,
-            account_file: img.account_file, 
+            account_file: img.account_file,
 
             // Instance mechanics
             machine_type: "n1-standard-1",  // Multicore probably doesn't provide any benefit
             source_image: img.source_image,
             instance_name: "packer-" + self.name,
-            zone: "us-central1-a", 
-            ssh_username: std.extVar("USER"), 
+            zone: "us-central1-a",
+            ssh_username: std.extVar("USER"),
             [if std.objectHas(img, "disk_size") then "disk_size"]: img.disk_size,
         },
 
-        builders: [ self.builder ],
+        builders: [self.builder],
 
         provisioners: [],
     },
@@ -187,10 +187,10 @@ limitations under the License.
 
         local apt_provisioners =
             if std.length(pip_pkgs) == 0
-               && std.length(self.aptKeyUrls) == 0 
+               && std.length(self.aptKeyUrls) == 0
                && std.length(self.aptRepos) == 0 then [
             ] else [
-                 packer.Apt {
+                packer.Apt {
                     packages: pip_pkgs,
                     keyUrls: image.aptKeyUrls,
                     repoLines: image.aptRepoLines,
@@ -201,11 +201,11 @@ limitations under the License.
         local pip_provisioners =
             if std.length(self.pipPackages) == 0 then [
             ] else [
-                packer.Pip { packages: image.pipPackages, },
+                packer.Pip { packages: image.pipPackages },
             ],
 
-        provisioners +: apt_provisioners + pip_provisioners,
-        
+        provisioners+: apt_provisioners + pip_provisioners,
+
     },
 
     // A template for building Nginx/uwsgi/flask based application servers.  The uwsgi configuration
@@ -220,8 +220,8 @@ limitations under the License.
         port:: 80,
         uwsgiSocket:: "/var/www/uwsgi.sock",
 
-        aptPackages +: ["nginx", "python-dev"],
-        pipPackages +: ["flask", "uwsgi"],
+        aptPackages+: ["nginx", "python-dev"],
+        pipPackages+: ["flask", "uwsgi"],
 
         uwsgiConf:: {
             chdir: "/var/www",
@@ -248,8 +248,8 @@ limitations under the License.
             "}",
         ],
 
-        provisioners +: [
-            packer.RootShell { inline: ["rm /etc/nginx/sites-enabled/default"], },
+        provisioners+: [
+            packer.RootShell { inline: ["rm /etc/nginx/sites-enabled/default"] },
             packer.EnsureFile {
                 destination: "/etc/nginx/conf.d/frontend_nginx.conf",
                 content: std.lines(image.nginxConf),
@@ -258,35 +258,35 @@ limitations under the License.
                 destination: "/etc/uwsgi/vassals/uwsgi.ini",
                 content: std.manifestIni({
                     sections: {
-                        uwsgi: image.uwsgiConf
-                    }
-                })
+                        uwsgi: image.uwsgiConf,
+                    },
+                }),
             },
             packer.EnsureFile {
                 destination: "/etc/cron.d/emperor",
                 content: "@reboot root /usr/local/bin/uwsgi --master --emperor /etc/uwsgi/vassals "
                          + "--daemonize /var/log/uwsgi/emperor.log --pidfile /var/run/uwsgi.pid "
-                         + "--die-on-term --uid www-data --gid www-data\n"
+                         + "--die-on-term --uid www-data --gid www-data\n",
             },
-            packer.EnsureDir { dir: "/var/log/uwsgi", user: "www-data", },
-            packer.EnsureDir { dir: "/var/www", user: "www-data", },
+            packer.EnsureDir { dir: "/var/log/uwsgi", user: "www-data" },
+            packer.EnsureDir { dir: "/var/www", user: "www-data" },
         ],
     },
 
 
     // A template to help build PostgreSQL images (experimental).
-    GcpDebianPostgresqlImage: packer.GcpDebianImage  {
+    GcpDebianPostgresqlImage: packer.GcpDebianImage {
         local image = self,
 
         rootPassword:: error "GcpDebianPostgresqlImage: must have field: rootPassword",
 
-        aptPackages +: ["postgresql", "postgresql-contrib"],
+        aptPackages+: ["postgresql", "postgresql-contrib"],
 
         initSql:: [
             "ALTER USER POSTGRES WITH PASSWORD '%s';" % image.rootPassword,
         ],
 
-        provisioners +: [
+        provisioners+: [
             packer.RootShell { inline: [
                 "echo %s | sudo -u postgres psql" % std.escapeStringBash(std.lines(image.initSql)),
             ] },
@@ -310,7 +310,7 @@ limitations under the License.
                     "lc_numeric = 'en_US.UTF-8'",
                     "lc_time = 'en_US.UTF-8'",
                     "default_text_search_config = 'pg_catalog.english'",
-                ])
+                ]),
             },
             packer.EnsureFile {
                 destination: "/etc/postgresql/9.1/main/pg_hba.conf",
@@ -318,7 +318,7 @@ limitations under the License.
                     "local all all                   md5",
                     "host  all all 255.255.255.255/0 md5",
                     "host  all all ::1/128           md5",
-                ])
+                ]),
             },
         ],
     },
@@ -329,11 +329,11 @@ limitations under the License.
 
         rootPassword:: error "GcpDebianMysqlImage: must have field: rootPassword",
 
-        aptPackages +: ["mysql-server"],
+        aptPackages+: ["mysql-server"],
 
         initSql:: [],
 
-        provisioners +: [
+        provisioners+: [
             packer.RootShell { inline: [
                 "mysqladmin -u root password '%s'" % std.escapeStringBash(image.rootPassword),
                 "echo %s | mysql -u root --password=%s"
@@ -346,11 +346,10 @@ limitations under the License.
                     sections: {
                         mysqld: {
                             "bind-address": "0.0.0.0",
-                        }
+                        },
                     },
                 }),
             },
         ],
     },
 }
-

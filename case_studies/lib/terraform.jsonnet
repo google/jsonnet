@@ -30,7 +30,7 @@ limitations under the License.
         service_account: [
             {
                 scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
-            }
+            },
         ],
 
         machine_type: "f1-micro",
@@ -53,10 +53,10 @@ limitations under the License.
         network_interface: [{
             network: "default",
             access_config: if instance.address != null then [
-                { nat_ip: instance.address }
+                { nat_ip: instance.address },
             ] else [
-                { }
-            ]
+                {},
+            ],
         }],
 
     },

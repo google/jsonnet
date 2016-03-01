@@ -22,8 +22,8 @@ local Template = {
     },
     x:: error "Must set x",
     y:: error "Must set y",
-    
+
     str: output.str,
 };
 
-Template {x: 1, y: 2, str+:" 4"}
+Template { x: 1, y: 2, str+: " 4" }

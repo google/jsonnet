@@ -23,6 +23,96 @@ limitations under the License.
 #include "static_error.h"
 #include "unicode.h"
 
+static const std::vector<std::string> EMPTY;
+
+/** Strip whitespace from both ends of a string, but only up to margin on the left hand side. */
+static std::string strip_ws(const std::string &s, unsigned margin)
+{
+    size_t i = 0;
+    while (i < s.length() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') && i < margin)
+        i++;
+    size_t j = s.size() - 1;
+    while (j >= i && (s[j] == ' ' || s[j] == '\t' || s[j] == '\r'))
+        j--;
+    return std::string(&s[i], &s[j+1]);
+}
+
+/** Split a string by \n and also strip left (up to margin) & right whitespace from each line. */
+static std::vector<std::string> line_split(const std::string &s, unsigned margin)
+{
+    std::vector<std::string> ret;
+    std::stringstream ss;
+    for (size_t i=0 ; i<s.length() ; ++i) {
+        if (s[i] == '\n') {
+            ret.emplace_back(strip_ws(ss.str(), margin));
+            ss.str("");
+        } else {
+            ss << s[i];
+        }
+    }
+    ret.emplace_back(strip_ws(ss.str(), margin));
+    return ret;
+}
+
+
+
+/** Consume whitespace.
+ *
+ * Return number of \n and number of spaces after last \n.  Convert \t to spaces.
+ */
+static void lex_ws(const char *&c, unsigned &new_lines, unsigned &indent, const char *&line_start,
+                   unsigned long &line_number)
+{
+    indent = 0;
+    new_lines = 0;
+    for (; *c != '\0' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'); c++) {
+        switch (*c) {
+            case '\r':
+            // Ignore.
+            break;
+
+            case '\n':
+            indent = 0;
+            new_lines++;
+            line_number++;
+            line_start = c + 1;
+            break;
+
+            case ' ':
+            indent += 1;
+            break;
+
+            // This only works for \t at the beginning of lines, but we strip it everywhere else
+            // anyway.  The only case where this will cause a problem is spaces followed by \t
+            // at the beginning of a line.  However that is rare, ill-advised, and if re-indentation
+            // is enabled it will be fixed later.
+            case '\t':
+            indent += 8;
+            break;
+        }
+    }
+}
+
+
+/** 
+# Consume all text until the end of the line, return number of newlines after that and indent
+*/
+static void lex_until_newline(const char *&c, std::string &text, unsigned &blanks, unsigned &indent,
+                              const char *&line_start, unsigned long &line_number)
+{
+    const char *original_c = c;
+    const char *last_non_space = c;
+    for (; *c != '\0' && *c != '\n'; c++) {
+        if (*c != ' ' && *c != '\t' && *c != '\r')
+            last_non_space = c;
+    }
+    text = std::string(original_c, last_non_space - original_c + 1);
+    // Consume subsequent whitespace including the '\n'.
+    unsigned new_lines;
+    lex_ws(c, new_lines, indent, line_start, line_number);
+    blanks = new_lines == 0 ? 0 : new_lines - 1;
+}
+
 static bool is_upper(char c)
 {
     return c >= 'A' && c <= 'Z';
@@ -219,7 +309,6 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
         c++;
     }
     end:
-    c--;
     return r;
 }
 
@@ -235,6 +324,7 @@ static int whitespace_check(const char *a, const char *b)
     return i;
 }
 
+/*
 static void add_whitespace(Fodder &fodder, const char *s, size_t n)
 {
     std::string ws(s, n);
@@ -244,6 +334,7 @@ static void add_whitespace(Fodder &fodder, const char *s, size_t n)
         fodder.back().data += ws;
     }
 }
+*/
 
 Tokens jsonnet_lex(const std::string &filename, const char *input)
 {
@@ -255,72 +346,85 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
     const char *c = input;
 
     Fodder fodder;
+    bool fresh_line = true;  // Are we tokenizing from the beginning of a new line?
 
-    for ( ; *c!='\0' ; ++c) {
-        Location begin(line_number, c - line_start + 1);
+    while (*c!='\0') {
         Token::Kind kind;
         std::string data;
         std::string string_block_indent;
         std::string string_block_term_indent;
 
+        unsigned new_lines, indent;
+        lex_ws(c, new_lines, indent, line_start, line_number);
+
+        // If it's the end of the file, discard final whitespace.
+        if (*c == '\0')
+            break;
+
+        if (new_lines > 0) {
+            // Otherwise store whitespace in fodder.
+            unsigned blanks = new_lines - 1;
+            fodder.emplace_back(FodderElement::LINE_END, blanks, indent, EMPTY);
+            fresh_line = true;
+        }
+
+        Location begin(line_number, c - line_start + 1);
+
         switch (*c) {
-
-            // Skip non-\n whitespace
-            case ' ': case '\t': case '\r':
-            add_whitespace(fodder, c, 1);
-            continue;
-
-            // Skip \n and maintain line numbers
-            case '\n':
-            add_whitespace(fodder, c, 1);
-            line_number++;
-            line_start = c+1;
-            continue;
 
             // The following operators should never be combined with subsequent symbols.
             case '{':
             kind = Token::BRACE_L;
             data = "{";
+            c++;
             break;
 
             case '}':
             kind = Token::BRACE_R;
             data = "}";
+            c++;
             break;
 
             case '[':
             kind = Token::BRACKET_L;
             data = "[";
+            c++;
             break;
 
             case ']':
             kind = Token::BRACKET_R;
             data = "]";
+            c++;
             break;
 
             case ',':
             kind = Token::COMMA;
             data = ",";
+            c++;
             break;
 
             case '.':
             kind = Token::DOT;
             data = ".";
+            c++;
             break;
 
             case '(':
             kind = Token::PAREN_L;
             data = "(";
+            c++;
             break;
 
             case ')':
             kind = Token::PAREN_R;
             data = ")";
+            c++;
             break;
 
             case ';':
             kind = Token::SEMICOLON;
             data = ";";
+            c++;
             break;
 
             // Numeric literals.
@@ -351,6 +455,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     }
                     data += *c;
                 }
+                c++;  // Advance beyond the ".
                 kind = Token::STRING_DOUBLE;
             }
             break;
@@ -376,6 +481,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     }
                     data += *c;
                 }
+                c++;  // Advance beyond the '.
                 kind = Token::STRING_SINGLE;
             }
             break;
@@ -384,13 +490,8 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             default:
             if (is_identifier_first(*c)) {
                 std::string id;
-                for (; *c != '\0' ; ++c) {
-                    if (!is_identifier(*c)) {
-                        break;
-                    }
+                for (; is_identifier(*c); ++c)
                     id += *c;
-                }
-                --c;
                 if (id == "assert") {
                     kind = Token::ASSERT;
                 } else if (id == "else") {
@@ -431,40 +532,33 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                 }
                 data = id;
 
-            // Single line # comment
-            } else if (*c == '#') {
-                const char *start = c + 1;
-                while (*c != '\0' && *c != '\n') {
-                    ++c;
-                }
-                // Do not include the # or \n in the comment.
-                fodder.emplace_back(FodderElement::COMMENT_HASH, std::string(start, c - start));
-                // Leaving it on the \n allows processing of \n on next iteration,
-                // I.e., managing of the line & column counter.
-                c--;  // Will be iterated again by the for loop.
-                continue;
+            } else if (is_symbol(*c) || *c == '#') {
 
-            } else if (is_symbol(*c)) {
-
-                // Single line C++ style comment
-                if (*c == '/' && *(c+1) == '/') {
-                    const char *start = c + 2;
-                    while (*c != '\0' && *c != '\n') {
-                        ++c;
-                    }
-                    // Do not include the // or \n in the comment.
-                    fodder.emplace_back(FodderElement::COMMENT_CPP, std::string(start, c - start));
-                    // Leaving it on the \n allows processing of \n on next iteration,
-                    // i.e. managing of the line & column counter.
-                    c--;  // Will be iterated again by the for loop.
-                    continue;
+                // Single line C++ and Python style comments.
+                if (*c == '#' || (*c == '/' && *(c+1) == '/')) {
+                    std::vector<std::string> comment(1);
+                    unsigned blanks;
+                    unsigned indent;
+                    lex_until_newline(c, comment[0], blanks, indent, line_start, line_number);
+                    auto kind = fresh_line ? FodderElement::PARAGRAPH : FodderElement::LINE_END;
+                    fodder.emplace_back(kind, blanks, indent, comment);
+                    fresh_line = true;
+                    continue;  // We've not got a token, just fodder, so keep scanning.
                 }
 
-                // Multi-line comment.
+                // Multi-line C style comment.
                 if (*c == '/' && *(c+1) == '*') {
+
+                    unsigned margin = c - line_start;
+ 
+                    const char *initial_c = c;
                     c += 2;  // Avoid matching /*/: skip the /* before starting the search for */.
-                    const char *start = c;
-                    while (*c != '\0' && !(*c == '*' && *(c+1) == '/')) {
+
+                    while (!(*c == '*' && *(c+1) == '/')) {
+                        if (*c == '\0') {
+                            auto msg = "Multi-line comment has no terminating */.";
+                            throw StaticError(filename, begin, msg);
+                        }
                         if (*c == '\n') {
                             // Just keep track of the line / column counters.
                             line_number++;
@@ -472,16 +566,51 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                         }
                         ++c;
                     }
-                    if (*c == '\0') {
-                        auto msg = "Multi-line comment has no terminating */.";
-                        throw StaticError(filename, begin, msg);
+                    c += 2;  // Move the pointer to the char after the closing '/'.
+
+                    std::string comment(initial_c, c - initial_c);  // Includes the "/*" and "*/".
+
+                    // Lex whitespace after comment
+                    unsigned new_lines_after, indent_after;
+                    lex_ws(c, new_lines_after, indent_after, line_start, line_number);
+                    std::vector<std::string> lines;
+                    if (comment.find('\n') >= comment.length()) {
+                        // Comment looks like /* foo */
+                        lines.push_back(comment);
+                        fodder.emplace_back(FodderElement::INTERSTITIAL, 0, 0, lines);
+                        if (new_lines_after > 0) {
+                            fodder.emplace_back(FodderElement::LINE_END, new_lines_after - 1,
+                                                indent_after, EMPTY);
+                            fresh_line = true;
+                        }
+                    } else {
+                        lines = line_split(comment, margin);
+                        assert(lines[0][0] == '/');
+                        // Little hack to support PARAGRAPHs with * down the LHS:
+                        // Add a space to lines that start with a '*'
+                        bool all_star = true;
+                        for (auto &l : lines) {
+                            if (l[0] != '*')
+                                all_star = false;
+                        }
+                        if (all_star) {
+                            for (auto &l : lines) {
+                                if (l[0] == '*') l = " " + l;
+                            }
+                        }
+                        if (new_lines_after == 0) {
+                            // Ensure a line end after the paragraph.
+                            new_lines_after = 1;
+                            indent_after = 0;
+                        }
+                        if (!fresh_line)
+                            // Ensure a line end before the comment.
+                            fodder.emplace_back(FodderElement::LINE_END, 0, 0, EMPTY);
+                        fodder.emplace_back(FodderElement::PARAGRAPH, new_lines_after - 1,
+                                            indent_after, lines);
+                        fresh_line = true;
                     }
-                    // Do not include the /* or the */ in the comment.
-                    fodder.emplace_back(FodderElement::COMMENT_C,
-                                        std::string(start, c - start));
-                    // Move the counter from the * to the closing /.
-                    c++;
-                    continue;
+                    continue;  // We've not got a token, just fodder, so keep scanning.
                 }
 
                 // Text block
@@ -536,10 +665,10 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                                 auto msg = "Text block not terminated with |||";
                                 throw StaticError(filename, begin, msg);
                             }
-                            c += 2;  // Leave on the last |
+                            c += 3;  // Leave after the last |
                             data = block.str();
                             kind = Token::STRING_BLOCK;
-                            break;
+                            break;  // Out of the while loop.
                         }
                     }
 
@@ -562,7 +691,6 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     c--;
                 }
                 data += std::string(operator_begin, c);
-                --c;
                 kind = data == "$" ? Token::DOLLAR : Token::OPERATOR;
             } else {
                 std::stringstream ss;
@@ -574,13 +702,13 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     ss << "'" << *c << "'";
                 throw StaticError(filename, begin, ss.str());
             }
-            break;
         }
 
-        Location end(line_number, c - line_start + 1);
+        Location end(line_number, c - line_start);
         r.emplace_back(kind, fodder, data, string_block_indent, string_block_term_indent,
                        LocationRange(filename, begin, end));
         fodder.clear();
+        fresh_line = false;
     }
 
     Location end(line_number, c - line_start + 1);
@@ -594,30 +722,36 @@ std::string jsonnet_unlex(const Tokens &tokens)
     for (const auto &t : tokens) {
         for (const auto &f : t.fodder) {
             switch (f.kind) {
-                case FodderElement::WHITESPACE:
-                ss << f.data;
-                break;
+                case FodderElement::LINE_END: {
+                    if (f.comment.size() > 0) {
+                        ss << "LineEnd(" << f.blanks << ", " << f.indent << ", "
+                           << f.comment[0] << ")\n";
+                    } else {
+                        ss << "LineEnd(" << f.blanks << ", " << f.indent << ")\n";
+                    }
+                } break;
 
-                case FodderElement::COMMENT_C:
-                ss << "/*" << f.data << "*/";
-                break;
+                case FodderElement::INTERSTITIAL: {
+                    ss << "Interstitial(" << f.comment[0] << ")\n";
+                } break;
 
-                case FodderElement::COMMENT_CPP:
-                ss << "//" << f.data;
-                break;
-
-                case FodderElement::COMMENT_HASH:
-                ss << "#" << f.data;
-                break;
+                case FodderElement::PARAGRAPH: {
+                    ss << "Paragraph(\n";
+                    for (const auto &line : f.comment) {
+                        ss << "    " << line << '\n';
+                    }
+                    ss << ")\n";
+                } break;
             }
         }
         if (t.kind == Token::END_OF_FILE) {
+            ss << "EOF\n";
             break;
         }
         if (t.kind == Token::STRING_DOUBLE) {
-            ss << "\"" << t.data << "\"";
+            ss << "\"" << t.data << "\"\n";
         } else if (t.kind == Token::STRING_SINGLE) {
-            ss << "'" << t.data << "'";
+            ss << "'" << t.data << "'\n";
         } else if (t.kind == Token::STRING_BLOCK) {
             ss << "|||\n";
             ss << t.stringBlockIndent;
@@ -627,9 +761,9 @@ std::string jsonnet_unlex(const Tokens &tokens)
                     ss << t.stringBlockIndent;
                 }
             }
-            ss << t.stringBlockTermIndent << "|||";
+            ss << t.stringBlockTermIndent << "|||\n";
         } else {
-            ss << t.data;
+            ss << t.data << "\n";
         }
     }
     return ss.str();

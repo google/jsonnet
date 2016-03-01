@@ -14,83 +14,83 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-# These cases are shamelessly lifted from 
+# These cases are shamelessly lifted from
 # https://tools.ietf.org/html/draft-ietf-appsawg-json-merge-patch-07#appendix-A
 local cases = [
     {
-        target: {"a":"b"},
-        patch:  {"a":"c"},
-        expect: {"a":"c"}
+        target: { a: "b" },
+        patch: { a: "c" },
+        expect: { a: "c" },
     },
     {
-        target: {"a":"b"},
-        patch:  {"b":"c"},
-        expect: {"a":"b", "b":"c"}
+        target: { a: "b" },
+        patch: { b: "c" },
+        expect: { a: "b", b: "c" },
     },
     {
-        target: {"a":"b"},
-        patch:  {"a":null},
+        target: { a: "b" },
+        patch: { a: null },
         expect: {},
     },
     {
-        target: {"a":"b","b":"c"},
-        patch:  {"a":null},
-        expect: {"b":"c"},
+        target: { a: "b", b: "c" },
+        patch: { a: null },
+        expect: { b: "c" },
     },
     {
-        target: {"a":["b"]},
-        patch:  {"a":"c"},
-        expect: {"a":"c"},
+        target: { a: ["b"] },
+        patch: { a: "c" },
+        expect: { a: "c" },
     },
     {
-        target: {"a":"c"},
-        patch:  {"a":["b"]},
-        expect: {"a":["b"]},
+        target: { a: "c" },
+        patch: { a: ["b"] },
+        expect: { a: ["b"] },
     },
     {
-        target: {"a":{"b":"c"}},
-        patch:  {"a":[1]},
-        expect: {"a":[1]},
+        target: { a: { b: "c" } },
+        patch: { a: [1] },
+        expect: { a: [1] },
     },
     {
-        target: ["a","b"],
-        patch:  ["c","d"],
-        expect: ["c","d"],
+        target: ["a", "b"],
+        patch: ["c", "d"],
+        expect: ["c", "d"],
     },
     {
-        target: {"a":"b"},
-        patch:  ["c"],
+        target: { a: "b" },
+        patch: ["c"],
         expect: ["c"],
     },
     {
-        target: {"a":"foo"},
-        patch:  null,
+        target: { a: "foo" },
+        patch: null,
         expect: null,
     },
     {
-        target: {"a":"foo"},
-        patch:  "bar",
+        target: { a: "foo" },
+        patch: "bar",
         expect: "bar",
     },
     {
-        target: {"e":null},
-        patch:  {"a":1},
-        expect: {"e":null,"a":1},
+        target: { e: null },
+        patch: { a: 1 },
+        expect: { e: null, a: 1 },
     },
     {
-        target: [1,2],
-        patch:  {"a":"b","c":null},
-        expect: {"a":"b"},
+        target: [1, 2],
+        patch: { a: "b", c: null },
+        expect: { a: "b" },
     },
     {
         target: {},
-        patch:  {"a":{"bb":{"ccc":null}}},
-        expect: {"a":{"bb":{}}},
+        patch: { a: { bb: { ccc: null } } },
+        expect: { a: { bb: {} } },
     },
 ];
 
 local results =
-    [ std.assertEqual(std.mergePatch(case.target, case.patch), case.expect)
-      for case in cases ];
+    [std.assertEqual(std.mergePatch(case.target, case.patch), case.expect)
+      for case in cases];
 
-std.foldl(function(a,b) a && b, results, true)
+std.foldl(function(a, b) a && b, results, true)

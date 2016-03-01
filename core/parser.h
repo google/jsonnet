@@ -27,14 +27,10 @@ limitations under the License.
  *
  * \param alloc Used to allocate the AST nodes.  The Allocator must outlive the
  * AST pointer returned.
- * \param tokens The list of tokens (destroyed by parsing).
+ * \param tokens The list of tokens (all tokens are popped except EOF).
  * \returns The parsed abstract syntax tree.
  */
 AST *jsonnet_parse(Allocator *alloc, Tokens &tokens);
-
-/** Escapes a string for JSON output.
- */
-String jsonnet_unparse_escape(const String &str);
 
 /** Outputs a number, trying to preserve precision as well as possible.
  */
@@ -45,11 +41,12 @@ struct BuiltinDecl {
     std::vector<String> params;
 };
 
-/** Returns the name of each built-in function. */
+/** Returns the signature of each built-in function. */
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin);
 
-/** The inverse of jsonnet_parse.  
+/** The inverse of jsonnet_parse.
  */
-std::string jsonnet_unparse_jsonnet(const AST *ast);
+std::string jsonnet_unparse_jsonnet(const AST *ast, const Fodder &final_fodder, unsigned indent,
+                                    bool pad_arrays, bool pad_objects, char comment_style);
 
 #endif  // JSONNET_PARSER_H

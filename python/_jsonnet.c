@@ -144,17 +144,17 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
-    int debug_ast = 0, error;
+    int error;
     PyObject *ext_vars = NULL, *import_callback = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", "import_callback", NULL};
+    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "max_trace", "import_callback", NULL};
 
     (void) self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOiIO", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOIO", kwlist,
                                      &filename,
                                      &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-                                     &debug_ast, &max_trace, &import_callback)) {
+                                     &max_trace, &import_callback)) {
         return NULL;
     }
 
@@ -163,7 +163,6 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    jsonnet_debug_ast(vm, debug_ast);
     if (!handle_ext_vars(vm, ext_vars)) {
         return NULL;
     }
@@ -182,17 +181,17 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
-    int debug_ast = 0, error;
+    int error;
     PyObject *ext_vars = NULL, *import_callback = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "debug_ast", "max_trace", "import_callback", NULL};
+    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "max_trace", "import_callback", NULL};
 
     (void) self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOiIO", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOIO", kwlist,
                                      &filename, &src,
                                      &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-                                     &debug_ast, &max_trace, &import_callback)) {
+                                     &max_trace, &import_callback)) {
         return NULL;
     }
 
@@ -201,7 +200,6 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    jsonnet_debug_ast(vm, debug_ast);
     if (!handle_ext_vars(vm, ext_vars)) {
         return NULL;
     }

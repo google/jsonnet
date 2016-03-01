@@ -38,7 +38,7 @@ local base = import "base.jsonnet";
                         service.versions[vname] {
                             name: "${-}-%s-%d" % [vname, i],
                             zone: self.zones[i % std.length(self.zones)],
-                            tags+: [vname, "index-%d" % i]
+                            tags+: [vname, "index-%d" % i],
                         }
                     else
                         error "Undefined version: %s" % vname
@@ -54,7 +54,7 @@ local base = import "base.jsonnet";
         ]),
 
         infrastructure+: {
-/*
+            /*
             google_compute_firewall: {
                 "${-}": {
                     name: "${-}",
@@ -64,7 +64,7 @@ local base = import "base.jsonnet";
                     target_tags: ["${-}"],
                 }
             },
-*/
+            */
             aws_instance: instances,
 
             aws_elb: {

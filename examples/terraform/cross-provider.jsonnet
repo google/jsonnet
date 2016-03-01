@@ -17,7 +17,7 @@ local aws_amis = {
         # automatically assign a name.
         heroku_app: {
             web: {
-            }
+            },
         },
 
         # Create our DNSimple record to point to the
@@ -34,7 +34,7 @@ local aws_amis = {
 
                 type: "CNAME",
                 ttl: 3600,
-            }
+            },
         },
 
         # The Heroku domain, which will be created and added
@@ -44,13 +44,13 @@ local aws_amis = {
             foobar: {
                 app: "${heroku_app.web.name}",
                 hostname: "${dnsimple_record.web.hostname}",
-            }
-        }
+            },
+        },
     },
 
     output: {
         address: {
             value: "${dnsimple_record.web.hostname}",
-        }
+        },
     },
 }

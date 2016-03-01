@@ -30,7 +30,7 @@ local packer = import "packer.jsonnet";
         client_encryption_options: {
             enabled: false,
             keystore: "conf/.keystore",
-            keystore_password: "cassandra"
+            keystore_password: "cassandra",
         },
         cluster_name: "Unnamed Cluster",
         column_index_size_in_kb: 64,
@@ -84,15 +84,15 @@ local packer = import "packer.jsonnet";
         seed_provider: [
             {
                 class_name: "org.apache.cassandra.locator.SimpleSeedProvider",
-                parameters: [ { seeds: "127.0.0.1" } ],
-            }
+                parameters: [{ seeds: "127.0.0.1" }],
+            },
         ],
         server_encryption_options: {
             internode_encryption: "none",
             keystore: "conf/.keystore",
             keystore_password: "cassandra",
             truststore: "conf/.truststore",
-            truststore_password: "cassandra"
+            truststore_password: "cassandra",
         },
         snapshot_before_compaction: false,
         ssl_storage_port: 7001,
@@ -106,7 +106,7 @@ local packer = import "packer.jsonnet";
         trickle_fsync: false,
         trickle_fsync_interval_in_kb: 10240,
         truncate_request_timeout_in_ms: 60000,
-        write_request_timeout_in_ms: 2000
+        write_request_timeout_in_ms: 2000,
     },
 
     // Some firewall resources to open up Cassandra ports.
@@ -118,7 +118,7 @@ local packer = import "packer.jsonnet";
         // From the Internet to these ports.
         target_tags: [self.cassandraTag],
     },
-    GcpFirewallGossip:: { 
+    GcpFirewallGossip:: {
         cassandraTag:: "cassandra-server",
         source_ranges: ["0.0.0.0/0"],
         network: error "cassandra.GcpFirewallGossip must have field: network",
@@ -129,40 +129,40 @@ local packer = import "packer.jsonnet";
     },
 
     // Sets the root password to something, while the server is listening only on localhost.
-    GcpDebianImage: packer.GcpDebianImage  {
+    GcpDebianImage: packer.GcpDebianImage {
         local image = self,
 
         rootPassword:: error "GcpDebianCassandraPrimedImage: must have field: rootPassword",
         clusterName:: error "GcpDebianCassandraPrimedImage: must have field: clusterName",
 
-        aptKeyUrls +: ["https://www.apache.org/dist/cassandra/KEYS"],
-        aptRepoLines +: {
+        aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
+        aptRepoLines+: {
             cassandra: "deb http://www.apache.org/dist/cassandra/debian 21x main",
         },
-        aptPackages +: ["cassandra"],
+        aptPackages+: ["cassandra"],
 
         conf:: cassandra.conf {
             authenticator: "PasswordAuthenticator",
             cluster_name: image.clusterName,
         },
 
-        provisioners +: [
+        provisioners+: [
             packer.RootShell {
-                inline:  [
+                inline: [
                     // Shut it down
                     "/etc/init.d/cassandra stop",
                     // Remove junk from unconfigured startup
                     "rm -rfv /var/lib/cassandra/*",
                     // Enable authentication
                     local dest = "/etc/cassandra/cassandra.yaml";
-                        "echo %s > %s" % [std.escapeStringBash("" + image.conf), dest],
+                    "echo %s > %s" % [std.escapeStringBash("" + image.conf), dest],
                     // Start it up again
                     "/etc/init.d/cassandra start",
                     // Wait for it to be ready
                     cassandra.waitForCqlsh("cassandra", "cassandra", "localhost"),
                     // Set root password
                     local cql = "ALTER USER cassandra WITH PASSWORD '%s';" % image.rootPassword;
-                        "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
+                    "echo %s | cqlsh -u cassandra -p cassandra" % std.escapeStringBash(cql),
                 ],
             },
         ],
@@ -181,19 +181,19 @@ local packer = import "packer.jsonnet";
     // given CQL script and configuration.
     GcpStarterMixin: {
 
-        startup_script +: [
+        startup_script+: [
             // Wait for the misconfigured cassandra to start up.
             cassandra.waitForCqlsh("cassandra", self.rootPass, "localhost"),
 
             // Set up system_auth replication level
             "echo %s | cqlsh -u cassandra -p %s localhost"
-                % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
-                                        % self.authReplication),
-                   self.rootPass],
+            % [std.escapeStringBash("ALTER KEYSPACE system_auth WITH REPLICATION = %s;"
+                                    % self.authReplication),
+               self.rootPass],
 
             // Drop in the correct configuration.
             "echo %s > %s"
-                % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
+            % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
 
             // Restart with new configuration.
             "/etc/init.d/cassandra restart",
@@ -203,7 +203,7 @@ local packer = import "packer.jsonnet";
 
             // Set up users, empty tables, etc.
             "echo %s | cqlsh -u cassandra -p %s $HOSTNAME"
-                % [std.escapeStringBash(std.lines(self.initCql)), self.rootPass],
+            % [std.escapeStringBash(std.lines(self.initCql)), self.rootPass],
 
         ],
     },
@@ -212,7 +212,7 @@ local packer = import "packer.jsonnet";
     // GcpDebianImage.  It adds commands to the startup script that bootstrap Cassandra by wiping
     // its slate clean and allowing it to join an existing cluster.
     GcpTopUpMixin: {
-        startup_script +: [
+        startup_script+: [
             // Wait for the misconfigured cassandra to start up.
             cassandra.waitForCqlsh("cassandra", self.rootPass, "localhost"),
 
@@ -224,7 +224,7 @@ local packer = import "packer.jsonnet";
 
             // Drop in the correct configuration.
             "echo %s > %s"
-                % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
+            % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
 
             // Start it up again.
             "/etc/init.d/cassandra start",

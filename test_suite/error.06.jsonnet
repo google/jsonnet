@@ -14,6 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local err = 1/0;
+local err = 1 / 0;
 local f = function() err;
 f() + 1

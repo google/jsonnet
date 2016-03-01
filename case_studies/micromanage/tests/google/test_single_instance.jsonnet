@@ -25,19 +25,19 @@ local cmd = import "mmlib/v0.1.0/cmd/cmd.jsonnet";
                     }],
                     network_interface: {
                         network: "default",
-                        access_config: 
-                            if service.externalIp then [{}] else []
+                        access_config:
+                            if service.externalIp then [{}] else [],
                     },
                     metadata: {
                     },
                     cmds: service.cmds,
                     bootCmds: [],
-                }
-            }
+                },
+            },
         },
         outputs: {
             [if service.externalIp then "${-}-address"]:
-                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}"
+                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}",
         },
     },
 

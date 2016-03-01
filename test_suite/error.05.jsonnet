@@ -14,6 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local ErrObj = {x: error "foo"};
-local WrapperObj = {y: ErrObj};
+local ErrObj = { x: error "foo" };
+local WrapperObj = { y: ErrObj };
 WrapperObj

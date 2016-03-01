@@ -1,3 +1,3 @@
 RUNTIME ERROR: Cannot test equality of functions
 	std.jsonnet:948:17-41	function <anonymous>
-	error.equality_function.jsonnet:17:1-31	
+	error.equality_function.jsonnet:17:1-32	

@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-std.assertEqual({}, {assert true, assert true}) &&
-std.assertEqual({}, {assert true, assert 1==1}) &&
-std.assertEqual({assert true, assert 1==1}, {}) &&
-std.assertEqual({assert 1==1}, {}) &&
-std.assertEqual({assert true, f: 1}.f, 1) &&
-std.assertEqual({assert self.f == 1, f: 1}.f, 1) &&
-std.assertEqual({assert self.f == g, f: 1, local g = 1}.f, 1) &&
+std.assertEqual({}, { assert true, assert true }) &&
+std.assertEqual({}, { assert true, assert 1 == 1 }) &&
+std.assertEqual({ assert true, assert 1 == 1 }, {}) &&
+std.assertEqual({ assert 1 == 1 }, {}) &&
+std.assertEqual({ assert true, f: 1 }.f, 1) &&
+std.assertEqual({ assert self.f == 1, f: 1 }.f, 1) &&
+std.assertEqual({ assert self.f == g, f: 1, local g = 1 }.f, 1) &&
 
-local x = { assert x.f == y.f, f: 1},
-      y = {assert x.f == y.f, f: 1};
+local x = { assert x.f == y.f, f: 1 },
+      y = { assert x.f == y.f, f: 1 };
 
 std.assertEqual(x.f, y.f) &&
 
@@ -33,7 +33,7 @@ local Mixin1 = {
     x: super.x,
 };
 
-std.assertEqual({x:1} + Mixin1, {x:1}) &&
+std.assertEqual({ x: 1 } + Mixin1, { x: 1 }) &&
 
 local Mixin2 = {
     assert self.x > super.x,
@@ -41,7 +41,7 @@ local Mixin2 = {
     increment:: 1,
 };
 
-std.assertEqual({x:1} + Mixin2, {x:2}) &&
+std.assertEqual({ x: 1 } + Mixin2, { x: 2 }) &&
 
 local Template = {
     assert self == output,
@@ -55,6 +55,6 @@ local Template = {
     str: output.str,
 };
 
-std.assertEqual(Template {x: 1, y: 2}, {str: "1 2"}) &&
+std.assertEqual(Template { x: 1, y: 2 }, { str: "1 2" }) &&
 
 true
