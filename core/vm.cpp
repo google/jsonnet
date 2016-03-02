@@ -2292,6 +2292,42 @@ namespace {
             return r;
         }
 
+        std::vector<std::string> manifestStream(void)
+        {
+            std::vector<std::string> r;
+            LocationRange loc("During manifestation");
+            if (scratch.t != Value::ARRAY) {
+                std::stringstream ss;
+                ss << "Stream mode: Top-level object was a " << type_str(scratch.t) << ", "
+                   << "should be an array whose elements hold "
+                   << "the JSON for each document in the stream.";
+                throw makeError(loc, ss.str());
+            }
+            auto *arr = static_cast<HeapArray*>(scratch.v.h);
+            for (auto *thunk : arr->elements) {
+                LocationRange tloc = thunk->body == nullptr
+                                   ? loc
+                                   : thunk->body->location;
+                if (thunk->filled) {
+                    stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
+                    // Keep arr alive when scratch is overwritten
+                    stack.top().val = scratch;
+                    scratch = thunk->content;
+                } else {
+                    stack.newCall(loc, thunk,
+                                  thunk->self, thunk->offset, thunk->upValues);
+                    // Keep arr alive when scratch is overwritten
+                    stack.top().val = scratch;
+                    evaluate(thunk->body, stack.size());
+                }
+                String element = manifestJson(tloc, true, U"");
+                scratch = stack.top().val;
+                stack.pop();
+                r.push_back(encode_utf8(element));
+            }
+            return r;
+        }
+
     };
 
 }
@@ -2322,5 +2358,16 @@ StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &
                    import_callback, ctx);
     vm.evaluate(ast, 0);
     return vm.manifestMulti(string_output);
+}
+
+std::vector<std::string> jsonnet_vm_execute_stream(
+  Allocator *alloc, const AST *ast, const ExtMap &ext_vars, unsigned max_stack,
+  double gc_min_objects, double gc_growth_trigger, JsonnetImportCallback *import_callback,
+  void *ctx)
+{
+    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
+                   import_callback, ctx);
+    vm.evaluate(ast, 0);
+    return vm.manifestStream();
 }
 

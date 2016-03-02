@@ -87,6 +87,7 @@ void usage(std::ostream &o)
     o << "  --code-file <var>=<val> As --file but file contents is Jsonnet code\n";
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
     o << "  -m / --multi <dir>      Write multiple files to the directory, list files on stdout\n";
+    o << "  -y / --yaml-stream      Write output as a YAML stream of JSON documents\n";
     o << "  -S / --string           Expect a string, manifest as plain text\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
@@ -148,6 +149,7 @@ struct JsonnetConfig {
 
     // EVAL flags
     bool evalMulti;
+    bool evalStream;
     std::string evalMultiOutputDir;
 
     // FMT flags
@@ -157,6 +159,7 @@ struct JsonnetConfig {
     JsonnetConfig()
       : cmd(EVAL), filenameIsCode(false),
         evalMulti(false),
+        evalStream(false),
         fmtInPlace(false),
         fmtTest(false)
     { }
@@ -328,6 +331,8 @@ static bool process_args(int argc,
                     output_dir += '/';
                 }
                 config->evalMultiOutputDir = output_dir;
+            } else if (arg == "-y" || arg == "--yaml-stream") {
+                config->evalStream = true;
             } else if (arg == "-S" || arg == "--string") {
                 jsonnet_string_output(vm, 1);
             } else {
@@ -457,7 +462,8 @@ static bool read_input(JsonnetConfig* config, std::string* input) {
 
 /** Writes output files for multiple file output */
 static bool write_multi_output_files(JsonnetVm* vm, char* output,
-                                     const std::string& output_dir) {
+                                     const std::string& output_dir)
+{
     // If multiple file output is used, then iterate over each string from
     // the sequence of strings returned by jsonnet_evaluate_snippet_multi,
     // construct pairs of filename and content, and write each output file.
@@ -513,6 +519,30 @@ static bool write_multi_output_files(JsonnetVm* vm, char* output,
     return true;
 }
 
+/** Writes output files for YAML stream output */
+static bool write_output_stream(JsonnetVm* vm, char* output)
+{
+    // If YAML stream output is used, then iterate over each string from
+    // the sequence of strings returned by jsonnet_evaluate_snippet_stream,
+    // and add the --- and ... as defined by the YAML spec.
+    std::vector<std::string> r;
+    for (const char *c=output ; *c!='\0' ; ) {
+        const char *json = c;
+        while (*c != '\0') ++c;
+        ++c;
+        r.emplace_back(json);
+    }
+    jsonnet_realloc(vm, output, 0);
+    for (const auto &str : r) {
+        std::cout << "---\n";
+        std::cout << str;
+    }
+    if (r.size() > 0)
+        std::cout << "...\n";
+    std::cout.flush();
+    return true;
+}
+
 /** Writes the output JSON to the specified output file for single-file
  * output
  */
@@ -563,6 +593,9 @@ int main(int argc, const char **argv)
                 if (config.evalMulti) {
                     output = jsonnet_evaluate_snippet_multi(
                         vm, config.inputFile.c_str(), input.c_str(), &error);
+                } else if (config.evalStream) {
+                    output = jsonnet_evaluate_snippet_stream(
+                        vm, config.inputFile.c_str(), input.c_str(), &error);
                 } else {
                     output = jsonnet_evaluate_snippet(
                         vm, config.inputFile.c_str(), input.c_str(), &error);
@@ -581,8 +614,12 @@ int main(int argc, const char **argv)
                     if (!write_multi_output_files(vm, output, config.evalMultiOutputDir)) {
                         return EXIT_FAILURE;
                     }
+                } else if (config.evalStream) {
+                    if (!write_output_stream(vm, output)) {
+                        return EXIT_FAILURE;
+                    }
                 } else {
-                    bool successful =  write_output_file(output, config.outputFile);
+                    bool successful = write_output_file(output, config.outputFile);
                     jsonnet_realloc(vm, output, 0);
                     if (!successful) {
                         jsonnet_destroy(vm);

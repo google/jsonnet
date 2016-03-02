@@ -188,7 +188,7 @@ char *jsonnet_evaluate_snippet(struct JsonnetVm *vm,
                                const char *snippet,
                                int *error);
 
-/** Evaluate a file containing Jsonnet code, return a number of JSON files.
+/** Evaluate a file containing Jsonnet code, return a number of named JSON files.
  *
  * The returned character buffer contains an even number of strings, the filename and JSON for each
  * JSON file interleaved.  It should be cleaned up with jsonnet_realloc.
@@ -201,7 +201,7 @@ char *jsonnet_evaluate_file_multi(struct JsonnetVm *vm,
                                   const char *filename,
                                   int *error);
 
-/** Evaluate a string containing Jsonnet code, return a number of JSON files.
+/** Evaluate a string containing Jsonnet code, return a number of named JSON files.
  *
  * The returned character buffer contains an even number of strings, the filename and JSON for each
  * JSON file interleaved.  It should be cleaned up with jsonnet_realloc.
@@ -215,6 +215,34 @@ char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
                                      const char *filename,
                                      const char *snippet,
                                      int *error);
+
+/** Evaluate a file containing Jsonnet code, return a number of JSON files.
+ *
+ * The returned character buffer contains several strings.  It should be cleaned up with
+ * jsonnet_realloc.
+ *
+ * \param filename Path to a file containing Jsonnet code.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
+ */
+char *jsonnet_evaluate_file_stream(struct JsonnetVm *vm,
+                                   const char *filename,
+                                   int *error);
+
+/** Evaluate a string containing Jsonnet code, return a number of JSON files.
+ *
+ * The returned character buffer contains several strings.  It should be cleaned up with
+ * jsonnet_realloc.
+ *
+ * \param filename Path to a file containing Jsonnet code.
+ * \param snippet Jsonnet code to execute.
+ * \param error Return by reference whether or not there was an error.
+ * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
+ */
+char *jsonnet_evaluate_snippet_stream(struct JsonnetVm *vm,
+                                      const char *filename,
+                                      const char *snippet,
+                                      int *error);
 
 /** Complement of \see jsonnet_vm_make. */
 void jsonnet_destroy(struct JsonnetVm *vm);
