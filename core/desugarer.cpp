@@ -469,6 +469,7 @@ class Desugarer {
             // Nothing to do.
 
         } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
+            desugar(ast->target, obj_level);
             if (ast->isSlice) {
                 if (ast->index == nullptr)
                     ast->index = make<LiteralNull>(ast->location, EF);
@@ -500,7 +501,6 @@ class Desugarer {
                     false  // tailstrict
                 );
             } else {
-                desugar(ast->target, obj_level);
                 if (ast->id != nullptr) {
                     assert(ast->index == nullptr);
                     ast->index = str(ast->id->name);

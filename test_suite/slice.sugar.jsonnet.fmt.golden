@@ -76,6 +76,10 @@ local arrCases = [
         input: arr[2:1000],
         output: [2, 3, 4, 5],
     },
+    {
+        input: (arr)[2:1000],
+        output: [2, 3, 4, 5],
+    },
 
 ];
 
@@ -134,6 +138,10 @@ local strCases = [
     },
     {
         input: str[2:1000],
+        output: "2345",
+    },
+    {
+        input: (str)[2:1000],
         output: "2345",
     },
 ];
