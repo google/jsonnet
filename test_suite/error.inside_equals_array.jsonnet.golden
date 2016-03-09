@@ -1,7 +1,7 @@
 RUNTIME ERROR: foobar
 	error.inside_equals_array.jsonnet:18:18-31	thunk <array_element>
-	std.jsonnet:921:41-44	thunk <b>
-	std.jsonnet:921:33-44	function <anonymous>
-	std.jsonnet:921:33-44	function <aux>
-	std.jsonnet:924:29-44	function <anonymous>
-	std.jsonnet:925:21-32	
+	std.jsonnet:960:41-44	thunk <b>
+	std.jsonnet:960:33-44	function <anonymous>
+	std.jsonnet:960:33-44	function <aux>
+	std.jsonnet:963:29-44	function <anonymous>
+	std.jsonnet:964:21-32	

@@ -338,4 +338,30 @@ std.assertEqual(std.split("/foo/", "/"), ["", "foo", ""]) &&
 std.assertEqual(std.splitLimit("foo/bar", "/", 1), ["foo", "bar"]) &&
 std.assertEqual(std.splitLimit("/foo/", "/", 1), ["", "foo/"]) &&
 
+std.assertEqual(std.manifestJsonEx({
+    x: [1, 2, 3, true, false, null, "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+}, "    ") + "\n", |||
+    {
+        "x": [
+            1,
+            2,
+            3,
+            true,
+            false,
+            null,
+            "string\nstring"
+        ],
+        "y": {
+            "a": 1,
+            "b": 2,
+            "c": [
+                1,
+                2
+            ]
+        }
+    }
+|||
+) &&
+
 true

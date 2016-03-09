@@ -677,15 +677,13 @@ limitations under the License.
                 "\\r"
             else if ch == "\t" then
                 "\\t"
-            else if ch == "\u0000" then
-                "\\u0000"
             else
                 local cp = std.codepoint(ch);
-                if cp < 32 || cp > 126 then
+                if cp < 32 || (cp >= 126 && cp <= 159) then
                     "\\u%04x" % [cp]
                 else
                     ch;
-        "\"%s\"" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+        "\"%s\"" % std.join("", [trans(ch) for ch in std.stringChars(str)]),
 
     escapeStringPython(str)::
         std.escapeStringJson(str),
@@ -697,7 +695,7 @@ limitations under the License.
                 "'\"'\"'"
             else
                 ch;
-        "'%s'" % std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+        "'%s'" % std.join("", [trans(ch) for ch in std.stringChars(str)]),
 
     escapeStringDollars(str_)::
         local str = std.toString(str_);
@@ -707,6 +705,47 @@ limitations under the License.
             else
                 ch;
         std.foldl(function(a, b) a + trans(b), std.stringChars(str), ""),
+
+    manifestJson(value):: std.manifestJsonEx(value, "    "),
+
+    manifestJsonEx(value, indent):: 
+        local aux(v, path, cindent) =
+            if v == true then
+                "true"
+            else if v == false then
+                "false"
+            else if v == null then
+                "null"
+            else if std.type(v) == "number" then
+                "" + v
+            else if std.type(v) == "string" then
+                std.escapeStringJson(v)
+            else if std.type(v) == "function" then
+                error "Tried to manifest function at " + path
+            else if std.type(v) == "array" then
+                local range = std.range(0, std.length(v) - 1);
+                local lines = ["[\n" + cindent] 
+                              + std.join([",\n" + cindent],
+                                         [[indent + aux(v[i], path + [i], cindent + indent)] for i
+in range])                
+                              + ["\n" + cindent + "]"];
+                std.join("", lines)
+            else if std.type(v) == "object" then
+                local lines = ["{\n" + cindent] 
+                              + std.join([",\n" + cindent],
+                                         [[indent + "\"" + k + "\": "
+                                           + aux(v[k], path + [k], cindent + indent)]
+                                          for k in std.objectFields(v)])
+                              + ["\n" + cindent + "}"];
+                std.join("", lines);
+        aux(value, [], ""),
+
+    manifestYamlStream(value)::
+        if std.type(value) != "array" then
+            error "manifestYamlStream only takes arrays, got " + std.type(value)
+        else
+            "---\n" + std.join("\n---\n", [std.manifestJson(e) for e in value]) + '\n...\n',
+
 
     manifestPython(o)::
         if std.type(o) == "object" then
