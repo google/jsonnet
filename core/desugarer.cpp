@@ -88,6 +88,9 @@ class Desugarer {
     LiteralString *str(const String &s)
     { return make<LiteralString>(E, EF, s, LiteralString::DOUBLE, "", ""); }
 
+    LiteralString *str(const LocationRange &loc, const String &s)
+    { return make<LiteralString>(loc, EF, s, LiteralString::DOUBLE, "", ""); }
+
     Var *var(const Identifier *ident)
     { return make<Var>(E, EF, ident); }
 
@@ -111,12 +114,12 @@ class Desugarer {
                            false, EF);
     }
 
-    Apply *length(AST *v)
+    Apply *stdFunc(const String &name, AST *v)
     {
         return make<Apply>(
             v->location, 
             EF,
-            make<Index>(E, EF, std(), EF, false, str(U"length"), EF, nullptr, EF, nullptr, EF),
+            make<Index>(E, EF, std(), EF, false, str(name), EF, nullptr, EF, nullptr, EF),
             EF,
             Apply::Args{{v, EF}},
             false,  // trailingComma
@@ -124,6 +127,46 @@ class Desugarer {
             EF,
             true  // tailstrict
         );
+    }
+
+    Apply *stdFunc(const LocationRange &loc, const String &name, AST *a, AST *b)
+    {
+        return make<Apply>(
+            loc, 
+            EF,
+            make<Index>(E, EF, std(), EF, false, str(name), EF, nullptr, EF, nullptr, EF),
+            EF,
+            Apply::Args{{a, EF}, {b, EF}},
+            false,  // trailingComma
+            EF,
+            EF,
+            true  // tailstrict
+        );
+    }
+
+    Apply *length(AST *v)
+    {
+        return stdFunc(U"length", v);
+    }
+
+    Apply *type(AST *v)
+    {
+        return stdFunc(U"type", v);
+    }
+
+    Apply *equals(const LocationRange &loc, AST *a, AST *b)
+    {
+        return stdFunc(loc, U"equals", a, b);
+    }
+
+    Error *error(AST *msg)
+    {
+        return alloc->make<Error>(msg->location, EF, msg);
+    }
+
+    Error *error(const LocationRange &loc, const String &msg)
+    {
+        return error(str(loc, msg));
     }
 
     public:
@@ -159,7 +202,7 @@ class Desugarer {
                 EF,
                 alloc->make<LiteralBoolean>(E, EF, true),
                 EF,
-                alloc->make<Error>(msg->location, EF, msg));
+                error(msg));
         }
 
         // Remove methods
@@ -332,20 +375,23 @@ class Desugarer {
                     } break;
                     case ComprehensionSpec::FOR: {
                         /*
-                            local $l = [[[...array...]]];
-                            local aux_{i}(i_{i}, r) =
-                                if i_{i} >= std.length(l) then
+                            local $l = [[[...array...]]]
+                                  aux_{i}(i_{i}, r) =
+                                if i_{i} >= std.length($l) then
                                     [[[...out...]]]
                                 else
-                                    local [[[...var...]]] = l[i_{i}];
-                                    [[[...in...]]]
-                            aux_{i}(0, r) tailstrict;
+                                    local [[[...var...]]] = $l[i_{i}];
+                                    [[[...in...]]];`
+                            if std.type($l) != "array" then
+                                error "In comprehension, can only iterate over array.."
+                            else
+                                aux_{i}(0, r) tailstrict;
                         */
                         in = make<Local>(
                             ast->location,
                             EF,
                             Local::Binds {
-                                bind(_l, spec.expr),
+                                bind(_l, spec.expr),  // Need to check expr is an array
                                 bind(_aux[i], make<Function>(
                                     ast->location,
                                     EF,
@@ -372,23 +418,32 @@ class Desugarer {
                                             in)
                                     )
                                 ))},
-                            make<Apply>(
-                                E,
+                            make<Conditional>(
+                                ast->location, 
                                 EF,
-                                var(_aux[i]),
+                                equals(ast->location, type(var(_l)), str(U"array")),
                                 EF,
-                                Apply::Args {
-                                    {zero, EF},
-                                    {
-                                        i == 0 ? make<Array>(E, EF, Array::Elements{}, false, EF)
-                                               : static_cast<AST*>(var(_r)),
-                                        EF,
-                                    }
-                                },
-                                false,  // trailingComma
+                                make<Apply>(
+                                    E,
+                                    EF,
+                                    var(_aux[i]),
+                                    EF,
+                                    Apply::Args {
+                                        {zero, EF},
+                                        {
+                                            i == 0
+                                            ? make<Array>(E, EF, Array::Elements{}, false, EF)
+                                            : static_cast<AST*>(var(_r)),
+                                            EF,
+                                        }
+                                    },
+                                    false,  // trailingComma
+                                    EF,
+                                    EF,
+                                    true),  // tailstrict
                                 EF,
-                                EF,
-                                true));  // tailstrict
+                                error(ast->location,
+                                      U"In comprehension, can only iterate over array.")));
                     } break;
                 }
             }
@@ -426,11 +481,7 @@ class Desugarer {
                 case BOP_MANIFEST_UNEQUAL:
                 invert = true;
                 case BOP_MANIFEST_EQUAL: {
-                    AST *f_equals = alloc->make<Index>(E, EF, std(), EF, false, str(U"equals"), EF,
-                                                       nullptr, EF, nullptr, EF);
-                    Apply::Args args = {{ast->left, EF}, {ast->right, EF}};
-                    ast_ = alloc->make<Apply>(ast->location, ast->openFodder,
-                                              f_equals, EF, args, false, EF, EF, false);
+                    ast_ = equals(ast->location, ast->left, ast->right);
                     if (invert)
                         ast_ = alloc->make<Unary>(ast->location, ast->openFodder, UOP_NOT, ast_);
                 }
