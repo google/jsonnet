@@ -187,9 +187,8 @@ namespace {
             for (const auto &p_ast_fodder : exprs) {
                 auto *p = dynamic_cast<Var*>(p_ast_fodder.first);
                 if (p == nullptr) {
-                    std::stringstream ss;
-                    ss << "Not an identifier: " << p_ast_fodder.first;
-                    throw StaticError(p_ast_fodder.first->location, ss.str());
+                    throw StaticError(p_ast_fodder.first->location,
+                                      "Expected an identifier but got a complex expression.");
                 }
                 ret.emplace_back(p->openFodder, p->id, p_ast_fodder.second);
             }
