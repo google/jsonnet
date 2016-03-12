@@ -182,7 +182,7 @@ local amis_debian = import "../amis/debian.jsonnet";
         },
         versions:: {},
         deployment:: {},
-        local merge(objs) = std.fold(function(a, b) a + b, objs, {}),
+        local merge(objs) = std.foldl(function(a, b) a + b, objs, {}),
         local instances = merge([
             {
                 ["${-}-%s-%d" % [vname, i]]:
