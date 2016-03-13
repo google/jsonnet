@@ -375,55 +375,46 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             // The following operators should never be combined with subsequent symbols.
             case '{':
             kind = Token::BRACE_L;
-            data = "{";
             c++;
             break;
 
             case '}':
             kind = Token::BRACE_R;
-            data = "}";
             c++;
             break;
 
             case '[':
             kind = Token::BRACKET_L;
-            data = "[";
             c++;
             break;
 
             case ']':
             kind = Token::BRACKET_R;
-            data = "]";
             c++;
             break;
 
             case ',':
             kind = Token::COMMA;
-            data = ",";
             c++;
             break;
 
             case '.':
             kind = Token::DOT;
-            data = ".";
             c++;
             break;
 
             case '(':
             kind = Token::PAREN_L;
-            data = "(";
             c++;
             break;
 
             case ')':
             kind = Token::PAREN_R;
-            data = ")";
             c++;
             break;
 
             case ';':
             kind = Token::SEMICOLON;
-            data = ";";
             c++;
             break;
 
@@ -691,7 +682,12 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     c--;
                 }
                 data += std::string(operator_begin, c);
-                kind = data == "$" ? Token::DOLLAR : Token::OPERATOR;
+                if (data == "$") {
+                    kind = Token::DOLLAR;
+                    data = "";
+                } else {
+                    kind = Token::OPERATOR;
+                }
             } else {
                 std::stringstream ss;
                 ss << "Could not lex the character ";
