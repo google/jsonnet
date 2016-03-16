@@ -50,16 +50,24 @@ LIB_SRC = \
 	core/static_analysis.cpp \
 	core/string_utils.cpp \
 	core/vm.cpp
+
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
+
+LIB_CPP_SRC = \
+	cpp/libjsonnet++.cc
+
+LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cc=.o)
 
 ALL = \
 	jsonnet \
 	libjsonnet.so \
+	libjsonnet++.so \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
 	libjsonnet.js \
 	doc/js/libjsonnet.js \
 	$(LIB_OBJ)
+
 ALL_HEADERS = \
 	core/ast.h \
 	core/desugarer.h \
@@ -72,7 +80,8 @@ ALL_HEADERS = \
 	core/string_utils.h \
 	core/vm.h \
 	core/std.jsonnet.h \
-	include/libjsonnet.h
+	include/libjsonnet.h \
+	include/libjsonnet++.h
 
 default: jsonnet
 
@@ -91,7 +100,9 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
 	core/libjsonnet_test_snippet.c \
-	core/libjsonnet_test_file.c
+	core/libjsonnet_test_file.c \
+	cpp/libjsonnet_cpp_test_snippet.c \
+	cpp/libjsonnet_cpp_test_file.c
 
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
@@ -102,6 +113,9 @@ core/desugarer.cpp: core/std.jsonnet.h
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
+%.o: %.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
 # Commandline executable.
 jsonnet: cmd/jsonnet.cpp $(LIB_OBJ)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC:.cpp=.o) -o $@
@@ -109,6 +123,9 @@ jsonnet: cmd/jsonnet.cpp $(LIB_OBJ)
 # C binding.
 libjsonnet.so: $(LIB_OBJ)
 	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -o $@
+
+libjsonnet++.so: $(LIB_CPP_OBJ)
+	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -o $@
 
 # Javascript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_realloc", "_jsonnet_destroy"]'
