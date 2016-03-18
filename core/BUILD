@@ -1,12 +1,39 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "common",
+    hdrs = [
+        "unicode.h",
+        "static_error.h",
+    ],
+    includes = ["."],
+)
+
+cc_library(
+    name = "lexer",
+    srcs = ["lexer.cpp"],
+    hdrs = ["lexer.h"],
+    deps = [
+        ":common",
+    ],
+    includes = ["."],
+)
+
+cc_test(
+    name = "lexer_test",
+    srcs = ["lexer_test.cc"],
+    deps = [
+        ":lexer",
+        "//external:gtest_main",
+    ],
+)
+
+cc_library(
     name = "jsonnet-common",
     srcs = [
         "desugarer.cpp",
         "formatter.cpp",
         "libjsonnet.cpp",
-        "lexer.cpp",
         "parser.cpp",
         "static_analysis.cpp",
         "string_utils.cpp",
@@ -17,16 +44,15 @@ cc_library(
         "ast.h",
         "desugarer.h",
         "formatter.h",
-        "lexer.h",
         "parser.h",
         "state.h",
         "static_analysis.h",
-        "static_error.h",
         "string_utils.h",
-        "unicode.h",
         "vm.h",
     ],
     deps = [
+        ":common",
+        ":lexer",
         "//include:libjsonnet",
     ],
     linkopts = ["-lm"],

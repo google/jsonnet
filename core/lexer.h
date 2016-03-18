@@ -136,7 +136,7 @@ struct Token {
     std::string stringBlockIndent;
 
     /** If kind == STRING_BLOCK then stores the sequence of whitespace that indented the end of
-     * the block. 
+     * the block.
      *
      * This is always fewer whitespace characters than in stringBlockIndent.
      */
@@ -153,7 +153,8 @@ struct Token {
         stringBlockTermIndent(string_block_term_indent), location(location)
     { }
 
-    //Token(Kind kind, const std::string &data="") : kind(kind), data(data) { }
+    Token(Kind kind, const std::string &data="")
+        : kind(kind), data(data) { }
 
     static const char *toString(Kind v)
     {
@@ -204,7 +205,7 @@ struct Token {
 };
 
 /** The result of lexing.
- * 
+ *
  * Because of the EOF token, this will always contain at least one token.  So element 0 can be used
  * to get the filename.
  */
