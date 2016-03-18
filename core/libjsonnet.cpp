@@ -63,7 +63,7 @@ struct JsonnetVm {
 
     FmtOpts fmtOpts;
     bool fmtDebugDesugaring;
-    
+
     JsonnetVm(void)
       : gcGrowthTrigger(2.0), maxStack(500), gcMinObjects(1000), maxTrace(20),
         importCallback(default_import_callback), importCallbackContext(this), stringOutput(false),
