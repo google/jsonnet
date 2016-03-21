@@ -4,10 +4,9 @@ cc_library(
     name = "libjsonnet++",
     srcs = ["libjsonnet++.cc"],
     deps = [
-        "//:libjsonnet",
+        "//core:libjsonnet",
         "//include:libjsonnet++",
     ],
-    includes = ["include"],
 )
 
 cc_test(

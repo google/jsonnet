@@ -17,6 +17,8 @@ limitations under the License.
 #ifndef LIB_JSONNET_H
 #define LIB_JSONNET_H
 
+#include <stddef.h>
+
 /** \file This file is a library interface for evaluating Jsonnet.  It is written in C++ but exposes
  * a C interface for easier wrapping by other languages.  See \see jsonnet_lib_test.c for an example
  * of using the library.
