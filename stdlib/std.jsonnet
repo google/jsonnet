@@ -321,25 +321,20 @@ limitations under the License.
                 };
 
         // Parse a format string (containing none or more % format tags).
-        local parse_codes(str, i, out) = 
+        local parse_codes(str, i, out, cur) =
             if i >= std.length(str) then
-                out
+                out + [cur]
             else
                 local c = str[i];
                 if c == "%" then
                     local r = parse_code(str, i + 1);
-                    parse_codes(str, r.i, out+[r.code]) tailstrict
+                    parse_codes(str, r.i, out+[cur, r.code], "") tailstrict
                 else
                     local last = out[std.length(out)-1];
                     local append = std.length(out) > 0 && std.type(last) == "string";
-                    parse_codes(str, i + 1, if append then
-                        std.makeArray(std.length(out),
-                            function(i) if i < std.length(out)-1 then out[i] else last + c) tailstrict
-                    else
-                        std.makeArray(std.length(out) + 1,
-                            function(i) if i < std.length(out) then out[i] else c)) tailstrict;
+                    parse_codes(str, i + 1, out, cur + c) tailstrict;
 
-        local codes = parse_codes(str, 0, []);
+        local codes = parse_codes(str, 0, [], "");
 
 
         ///////////////////////

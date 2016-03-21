@@ -251,4 +251,25 @@ std.assertEqual("%*.*f" % [10, 3, 1 / 3], "%10.3f" % [1 / 3]) &&
 std.assertEqual("%(name)s[%(id)05d]-%(a)2x%(b)2x%(c)2x%(x)c" % { name: "foo", id: 3991, a: 17, b: 18, c: 17, x: 100 },
                 "foo[03991]-111211d") &&
 
+local text = |||
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. In pellentesque felis mi, et iaculis
+    tellus consectetur pretium. Integer ultricies ullamcorper arcu quis bibendum. Vivamus luctus nec
+    nulla id egestas. Vestibulum lectus nibh, lobortis sed gravida ac, pellentesque sit amet eros.
+    Nulla urna purus, ornare at iaculis eget, pharetra sed libero. Fusce a neque malesuada,
+    hendrerit ex nec, suscipit lorem. Aenean orci quam, placerat sed mollis ut, faucibus nec turpis.
+    Vivamus consectetur auctor vehicula. Nam eu risus sit amet eros mattis finibus nec ac enim.
+    Quisque velit metus, tristique in urna in, dictum gravida elit.%(a)s
+
+    Aenean laoreet libero nunc. Cras molestie condimentum mollis. Nam quis leo sed enim vestibulum
+    dapibus faucibus eget elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Class
+    aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Praesent
+    cursus magna at urna viverra, eget venenatis ante sodales. In vitae magna sed lacus iaculis
+    porttitor eu vel nisl. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut vitae sapien
+    vel eros ultricies iaculis. Pellentesque et metus libero. Proin nec rhoncus est. Vivamus a
+    aliquam ipsum, ut vehicula nibh. Sed ac posuere dolor.
+  ||| % { a: "a" };
+
+std.assertEqual(std.length(text), 1244) &&
+
+
 true
