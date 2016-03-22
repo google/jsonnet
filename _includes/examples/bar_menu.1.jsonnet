@@ -22,5 +22,5 @@
             garnish: "Maraschino Cherry",
             served: "Straight Up",
         },
-    }
-} 
+    },
+}

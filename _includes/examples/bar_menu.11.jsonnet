@@ -26,10 +26,5 @@
             garnish: "Celery salt & pepper",
             served: "Tall",
         },
-    }
+    },
 }
-
-
-
-
-

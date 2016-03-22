@@ -24,5 +24,5 @@ local Dbg = { cFlags: super.cFlags + ["-g"] };
         Clang { files: ["test.c"], out: "test" },
         Clang + Opt { files: ["test2.c"], out: "test2" },
         Gcc + Opt + Dbg { files: ["foo.c", "bar.c"], out: "baz" },
-    ]
+    ],
 }

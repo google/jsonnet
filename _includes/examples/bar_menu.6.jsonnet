@@ -20,5 +20,5 @@
             garnish: "Lime Wheel",
             served: "Straight Up",
         },
-    }
+    },
 }

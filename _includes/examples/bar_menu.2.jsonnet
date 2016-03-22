@@ -8,17 +8,17 @@
                 { kind: "Simple Syrup", qty: 0.5 },
                 { kind: "Soda", qty: 2 },
                 { kind: "Angostura", qty: "dash" },
-            ],  
+            ],
             garnish: "Maraschino Cherry",
             served: "Tall",
-        },  
+        },
         Martini: {
             ingredients: [
                 {
                     // Evaluate a path to get the first ingredient of the Tom Collins.
-                    kind: $.cocktails["Tom Collins"].ingredients[0].kind, 
+                    kind: $.cocktails["Tom Collins"].ingredients[0].kind,
                     // or $["cocktails"]["Tom Collins"]["ingredients"][0]["kind"],
-                    qty: 1
+                    qty: 1,
                 },
                 { kind: "Dry White Vermouth", qty: 1 },
             ],
@@ -26,6 +26,5 @@
             served: "Straight Up",
         },
         "Gin Martini": self.Martini,
-    }   
-}   
-
+    },
+}

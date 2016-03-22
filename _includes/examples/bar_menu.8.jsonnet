@@ -13,5 +13,5 @@
             garnish: "Orange Peel",
             served: "On The Rocks",
         },
-    }
-}           
+    },
+}

@@ -24,6 +24,10 @@ raise an error. </p>
 
 <h3>Types and Reflection</h3>
 
+<h4>std.thisFile</h4>
+
+<p>Note that this is a field. It contains the current Jsonnet filename as a string.</p>
+
 <h4>std.type(x)</h4>
 
 <p>Return a string that indicates the type of the value.  The possible return values are:
@@ -317,8 +321,8 @@ given array, using the two functions provided.</p>
  
 <h4>std.foldl(func, arr, init)</h4>
 
-<p>Classic foldl function.  Calls the function on each array element and the result of the previous
-function call, or <code>init</code> in the case of the initial element.  Traverses the array from
+<p>Classic foldl function.  Calls the function on the result of the previous function call and each
+array element, or <code>init</code> in the case of the initial element.  Traverses the array from
 left to right.</p>
 
 
@@ -410,4 +414,12 @@ words, it consumes the output of std.base64().</p>
 <h4>std.base64Decode(s)</h4>
 
 <p>Behaves like std.base64DecodeBytes() except returns a string instead of an array of bytes.</p>
+
+
+<h3>JSON Merge Patch</h3>
+
+<h4>std.mergePatch(target, patch)</h4>
+
+<p>Applies <code>patch</code> to <code>target</code> according to <a
+href="https://tools.ietf.org/html/rfc7396">RFC7396</a></p>
 
