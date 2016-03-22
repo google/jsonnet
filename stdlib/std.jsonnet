@@ -328,10 +328,8 @@ limitations under the License.
                 local c = str[i];
                 if c == "%" then
                     local r = parse_code(str, i + 1);
-                    parse_codes(str, r.i, out+[cur, r.code], "") tailstrict
+                    parse_codes(str, r.i, out + [cur, r.code], "") tailstrict
                 else
-                    local last = out[std.length(out)-1];
-                    local append = std.length(out) > 0 && std.type(last) == "string";
                     parse_codes(str, i + 1, out, cur + c) tailstrict;
 
         local codes = parse_codes(str, 0, [], "");
