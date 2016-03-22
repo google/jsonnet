@@ -38,7 +38,6 @@ cc_library(
         "static_analysis.cpp",
         "string_utils.cpp",
         "vm.cpp",
-        "//stdlib:std.jsonnet.h",
     ],
     hdrs = [
         "ast.h",
@@ -54,6 +53,7 @@ cc_library(
         ":common",
         ":lexer",
         "//include:libjsonnet",
+        "//stdlib:std",
     ],
     linkopts = ["-lm"],
     includes = ["."],
