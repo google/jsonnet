@@ -342,8 +342,8 @@ char *jsonnet_fmt_snippet(JsonnetVm *vm, const char *filename, const char *snipp
 
 
 namespace {
-  enum EvalKind { REGULAR, MULTI, STREAM };
-}
+enum EvalKind { REGULAR, MULTI, STREAM };
+}  // namespace
 
 static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
                                           const char *snippet, int *error, EvalKind kind)
