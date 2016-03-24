@@ -768,94 +768,96 @@ class Allocator {
 };
 
 namespace {
-    // Precedences used by various compilation units are defined here.
-    const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
-    const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
-    const int BEFORE_ELSE_PRECEDENCE = 15; // True branch of an if.
-    const int MAX_PRECEDENCE = 16; // Local, If, Import, Function, Error
 
-    /** These are the binary operator precedences, unary precedence is given by
-     * UNARY_PRECEDENCE.
-     */
-    std::map<BinaryOp, int> build_precedence_map(void)
-    {
-        std::map<BinaryOp, int> r;
+// Precedences used by various compilation units are defined here.
+const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
+const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
+const int BEFORE_ELSE_PRECEDENCE = 15; // True branch of an if.
+const int MAX_PRECEDENCE = 16; // Local, If, Import, Function, Error
 
-        r[BOP_MULT] = 5;
-        r[BOP_DIV] = 5;
-        r[BOP_PERCENT] = 5;
+/** These are the binary operator precedences, unary precedence is given by
+ * UNARY_PRECEDENCE.
+ */
+std::map<BinaryOp, int> build_precedence_map(void)
+{
+    std::map<BinaryOp, int> r;
 
-        r[BOP_PLUS] = 6;
-        r[BOP_MINUS] = 6;
+    r[BOP_MULT] = 5;
+    r[BOP_DIV] = 5;
+    r[BOP_PERCENT] = 5;
 
-        r[BOP_SHIFT_L] = 7;
-        r[BOP_SHIFT_R] = 7;
+    r[BOP_PLUS] = 6;
+    r[BOP_MINUS] = 6;
 
-        r[BOP_GREATER] = 8;
-        r[BOP_GREATER_EQ] = 8;
-        r[BOP_LESS] = 8;
-        r[BOP_LESS_EQ] = 8;
+    r[BOP_SHIFT_L] = 7;
+    r[BOP_SHIFT_R] = 7;
 
-        r[BOP_MANIFEST_EQUAL] = 9;
-        r[BOP_MANIFEST_UNEQUAL] = 9;
+    r[BOP_GREATER] = 8;
+    r[BOP_GREATER_EQ] = 8;
+    r[BOP_LESS] = 8;
+    r[BOP_LESS_EQ] = 8;
 
-        r[BOP_BITWISE_AND] = 10;
+    r[BOP_MANIFEST_EQUAL] = 9;
+    r[BOP_MANIFEST_UNEQUAL] = 9;
 
-        r[BOP_BITWISE_XOR] = 11;
+    r[BOP_BITWISE_AND] = 10;
 
-        r[BOP_BITWISE_OR] = 12;
+    r[BOP_BITWISE_XOR] = 11;
 
-        r[BOP_AND] = 13;
+    r[BOP_BITWISE_OR] = 12;
 
-        r[BOP_OR] = 14;
+    r[BOP_AND] = 13;
 
-        return r;
-    }
+    r[BOP_OR] = 14;
 
-    std::map<std::string, UnaryOp> build_unary_map(void)
-    {
-        std::map<std::string, UnaryOp> r;
-        r["!"] = UOP_NOT;
-        r["~"] = UOP_BITWISE_NOT;
-        r["+"] = UOP_PLUS;
-        r["-"] = UOP_MINUS;
-        return r;
-    }
-
-    std::map<std::string, BinaryOp> build_binary_map(void)
-    {
-        std::map<std::string, BinaryOp> r;
-
-        r["*"] = BOP_MULT;
-        r["/"] = BOP_DIV;
-        r["%"] = BOP_PERCENT;
-
-        r["+"] = BOP_PLUS;
-        r["-"] = BOP_MINUS;
-
-        r["<<"] = BOP_SHIFT_L;
-        r[">>"] = BOP_SHIFT_R;
-
-        r[">"] = BOP_GREATER;
-        r[">="] = BOP_GREATER_EQ;
-        r["<"] = BOP_LESS;
-        r["<="] = BOP_LESS_EQ;
-
-        r["=="] = BOP_MANIFEST_EQUAL;
-        r["!="] = BOP_MANIFEST_UNEQUAL;
-
-        r["&"] = BOP_BITWISE_AND;
-        r["^"] = BOP_BITWISE_XOR;
-        r["|"] = BOP_BITWISE_OR;
-
-        r["&&"] = BOP_AND;
-        r["||"] = BOP_OR;
-        return r;
-    }
-
-    auto precedence_map = build_precedence_map();
-    auto unary_map = build_unary_map();
-    auto binary_map = build_binary_map();
+    return r;
 }
+
+std::map<std::string, UnaryOp> build_unary_map(void)
+{
+    std::map<std::string, UnaryOp> r;
+    r["!"] = UOP_NOT;
+    r["~"] = UOP_BITWISE_NOT;
+    r["+"] = UOP_PLUS;
+    r["-"] = UOP_MINUS;
+    return r;
+}
+
+std::map<std::string, BinaryOp> build_binary_map(void)
+{
+    std::map<std::string, BinaryOp> r;
+
+    r["*"] = BOP_MULT;
+    r["/"] = BOP_DIV;
+    r["%"] = BOP_PERCENT;
+
+    r["+"] = BOP_PLUS;
+    r["-"] = BOP_MINUS;
+
+    r["<<"] = BOP_SHIFT_L;
+    r[">>"] = BOP_SHIFT_R;
+
+    r[">"] = BOP_GREATER;
+    r[">="] = BOP_GREATER_EQ;
+    r["<"] = BOP_LESS;
+    r["<="] = BOP_LESS_EQ;
+
+    r["=="] = BOP_MANIFEST_EQUAL;
+    r["!="] = BOP_MANIFEST_UNEQUAL;
+
+    r["&"] = BOP_BITWISE_AND;
+    r["^"] = BOP_BITWISE_XOR;
+    r["|"] = BOP_BITWISE_OR;
+
+    r["&&"] = BOP_AND;
+    r["||"] = BOP_OR;
+    return r;
+}
+
+auto precedence_map = build_precedence_map();
+auto unary_map = build_unary_map();
+auto binary_map = build_binary_map();
+
+}  // namespace
 
 #endif  // JSONNET_AST_H
