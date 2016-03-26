@@ -3,8 +3,9 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "common",
     hdrs = [
-        "unicode.h",
+        "ast.h",
         "static_error.h",
+        "unicode.h",
     ],
     includes = ["."],
 )
@@ -21,9 +22,28 @@ cc_library(
 
 cc_test(
     name = "lexer_test",
-    srcs = ["lexer_test.cc"],
+    srcs = ["lexer_test.cpp"],
     deps = [
         ":lexer",
+        "//external:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "parser",
+    srcs = ["parser.cpp"],
+    hdrs = ["parser.h"],
+    deps = [
+        ":common",
+        ":lexer",
+    ],
+)
+
+cc_test(
+    name = "parser_test",
+    srcs = ["parser_test.cpp"],
+    deps = [
+        ":parser",
         "//external:gtest_main",
     ],
 )
@@ -34,16 +54,13 @@ cc_library(
         "desugarer.cpp",
         "formatter.cpp",
         "libjsonnet.cpp",
-        "parser.cpp",
         "static_analysis.cpp",
         "string_utils.cpp",
         "vm.cpp",
     ],
     hdrs = [
-        "ast.h",
         "desugarer.h",
         "formatter.h",
-        "parser.h",
         "state.h",
         "static_analysis.h",
         "string_utils.h",
@@ -52,6 +69,7 @@ cc_library(
     deps = [
         ":common",
         ":lexer",
+        ":parser",
         "//include:libjsonnet",
         "//stdlib:std",
     ],
@@ -70,7 +88,7 @@ cc_library(
 
 cc_test(
     name = "libjsonnet_test",
-    srcs = ["libjsonnet_test.cc"],
+    srcs = ["libjsonnet_test.cpp"],
     deps = [
         ":jsonnet-common",
         "//external:gtest_main",
