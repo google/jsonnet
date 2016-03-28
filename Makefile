@@ -54,9 +54,9 @@ LIB_SRC = \
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
 LIB_CPP_SRC = \
-	cpp/libjsonnet++.cc
+	cpp/libjsonnet++.cpp
 
-LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cc=.o)
+LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cpp=.o)
 
 ALL = \
 	jsonnet \
@@ -100,9 +100,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
 	core/libjsonnet_test_snippet.c \
-	core/libjsonnet_test_file.c \
-	cpp/libjsonnet_cpp_test_snippet.c \
-	cpp/libjsonnet_cpp_test_file.c
+	core/libjsonnet_test_file.c
 
 depend:
 	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
@@ -111,9 +109,6 @@ core/desugarer.cpp: core/std.jsonnet.h
 
 # Object files
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
-
-%.o: %.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 # Commandline executable.
