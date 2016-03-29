@@ -24,7 +24,7 @@ limitations under the License.
 static const Fodder EF;  // Empty fodder.
 
 static const LocationRange E;  // Empty.
-    
+
 static unsigned long max_builtin = 24;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
@@ -97,7 +97,7 @@ class Desugarer {
     Var *std(void)
     { return var(id(U"std")); }
 
-    
+
     Local::Bind bind(const Identifier *id, AST *body)
     {
         return Local::Bind(EF, id, EF, body, false, EF, Params{}, false, EF, EF);
@@ -117,7 +117,7 @@ class Desugarer {
     Apply *stdFunc(const String &name, AST *v)
     {
         return make<Apply>(
-            v->location, 
+            v->location,
             EF,
             make<Index>(E, EF, std(), EF, false, str(name), EF, nullptr, EF, nullptr, EF),
             EF,
@@ -132,7 +132,7 @@ class Desugarer {
     Apply *stdFunc(const LocationRange &loc, const String &name, AST *a, AST *b)
     {
         return make<Apply>(
-            loc, 
+            loc,
             EF,
             make<Index>(E, EF, std(), EF, false, str(name), EF, nullptr, EF, nullptr, EF),
             EF,
@@ -342,7 +342,7 @@ class Desugarer {
                     out = make<Apply>(  // False branch.
                         E,
                         EF,
-                        var(_aux[prev_for]), 
+                        var(_aux[prev_for]),
                         EF,
                         Apply::Args {
                             { make<Binary>(E, EF, var(_i[prev_for]), EF, BOP_PLUS, one), EF, },
@@ -400,7 +400,7 @@ class Desugarer {
                                     false,  // trailingComma
                                     EF,
                                     make<Conditional>(
-                                        ast->location, 
+                                        ast->location,
                                         EF,
                                         make<Binary>(
                                             E, EF, var(_i[i]), EF, BOP_GREATER_EQ, length(var(_l))),
@@ -419,7 +419,7 @@ class Desugarer {
                                     )
                                 ))},
                             make<Conditional>(
-                                ast->location, 
+                                ast->location,
                                 EF,
                                 equals(ast->location, type(var(_l)), str(U"array")),
                                 EF,

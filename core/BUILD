@@ -31,11 +31,20 @@ cc_test(
 
 cc_library(
     name = "parser",
-    srcs = ["parser.cpp"],
-    hdrs = ["parser.h"],
+    srcs = [
+        "desugarer.cpp",
+        "parser.cpp",
+        "string_utils.cpp",
+    ],
+    hdrs = [
+        "desugarer.h",
+        "parser.h",
+        "string_utils.h",
+    ],
     deps = [
         ":common",
         ":lexer",
+        "//stdlib:std",
     ],
 )
 
@@ -55,7 +64,6 @@ cc_library(
         "formatter.cpp",
         "libjsonnet.cpp",
         "static_analysis.cpp",
-        "string_utils.cpp",
         "vm.cpp",
     ],
     hdrs = [
@@ -63,7 +71,6 @@ cc_library(
         "formatter.h",
         "state.h",
         "static_analysis.h",
-        "string_utils.h",
         "vm.h",
     ],
     deps = [
@@ -71,7 +78,6 @@ cc_library(
         ":lexer",
         ":parser",
         "//include:libjsonnet",
-        "//stdlib:std",
     ],
     linkopts = ["-lm"],
     includes = ["."],
