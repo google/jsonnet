@@ -28,6 +28,7 @@ static const std::vector<std::string> EMPTY;
 /** Strip whitespace from both ends of a string, but only up to margin on the left hand side. */
 static std::string strip_ws(const std::string &s, unsigned margin)
 {
+    if (s.size() == 0) return s;  // Avoid underflow below.
     size_t i = 0;
     while (i < s.length() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') && i < margin)
         i++;
