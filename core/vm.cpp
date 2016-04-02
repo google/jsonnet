@@ -718,9 +718,7 @@ class Interpreter {
         BindingFrame env;
         for (auto fv : free_vars) {
             auto *th = stack.lookUpVar(fv);
-            if (th != nullptr) {
-                env[fv] = th;
-            }
+            env[fv] = th;
         }
         return env;
     }
