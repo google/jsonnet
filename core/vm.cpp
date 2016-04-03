@@ -565,33 +565,28 @@ class Interpreter {
      * with the given field.  Call with offset initially set to 0.
      *
      * \param f The field we're looking for.
-     * \param curr The root object.
      * \param start_from Step over this many leaves first.
      * \param counter Return the level of "super" that contained the field.
-     * \param self Return the new root.
      * \returns The first object with the field, or nullptr if it could not be found.
      */
-    HeapLeafObject *findObject(const Identifier *f, HeapObject *root, HeapObject *curr,
-                               unsigned start_from, unsigned &counter,
-                               HeapObject *&self)
+    HeapLeafObject *findObject(const Identifier *f, HeapObject *curr,
+                               unsigned start_from, unsigned &counter)
     {
         if (auto *ext = dynamic_cast<HeapExtendedObject*>(curr)) {
-            auto *r = findObject(f, root, ext->right, start_from, counter, self);
+            auto *r = findObject(f, ext->right, start_from, counter);
             if (r) return r;
-            auto *l = findObject(f, root, ext->left, start_from, counter, self);
+            auto *l = findObject(f, ext->left, start_from, counter);
             if (l) return l;
         } else {
             if (counter >= start_from) {
                 if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
                     auto it = simp->fields.find(f);
                     if (it != simp->fields.end()) {
-                        self = root;
                         return simp;
                     }
                 } else if (auto *comp = dynamic_cast<HeapComprehensionObject*>(curr)) {
                     auto it = comp->compValues.find(f);
                     if (it != comp->compValues.end()) {
-                        self = root;
                         return comp;
                     }
                 }
@@ -847,8 +842,8 @@ class Interpreter {
                            const Identifier *f, unsigned offset)
     {
         unsigned found_at = 0;
-        HeapObject *self = nullptr;
-        HeapLeafObject *found = findObject(f, obj, obj, offset, found_at, self);
+        HeapObject *self = obj;
+        HeapLeafObject *found = findObject(f, obj, offset, found_at);
         if (found == nullptr) {
             throw makeError(loc, "Field does not exist: " + encode_utf8(f->name));
         }
