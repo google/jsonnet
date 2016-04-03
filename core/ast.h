@@ -717,13 +717,8 @@ struct Unary : public AST {
 /** Represents variables. */
 struct Var : public AST {
     const Identifier *id;
-    const Identifier *original;
     Var(const LocationRange &lr, const Fodder &open_fodder, const Identifier *id)
-      : AST(lr, AST_VAR, open_fodder), id(id), original(id)
-    { }
-    Var(const LocationRange &lr, const Fodder &open_fodder, const Identifier *id,
-        const Identifier *original)
-      : AST(lr, AST_VAR, open_fodder), id(id), original(original)
+      : AST(lr, AST_VAR, open_fodder), id(id)
     { }
 };
 
