@@ -600,20 +600,17 @@ class Interpreter {
 
     /** Auxiliary function.
      */
-    IdHideMap objectFields(const HeapObject *obj_,
-                           unsigned &counter, unsigned skip)
+    IdHideMap objectFieldsAux(const HeapObject *obj_)
     {
         IdHideMap r;
         if (auto *obj = dynamic_cast<const HeapSimpleObject*>(obj_)) {
-            counter++;
-            if (counter <= skip) return r;
             for (const auto &f : obj->fields) {
                 r[f.first] = f.second.hide;
             }
 
         } else if (auto *obj = dynamic_cast<const HeapExtendedObject*>(obj_)) {
-            r = objectFields(obj->right, counter, skip);
-            for (const auto &pair : objectFields(obj->left, counter, skip)) {
+            r = objectFieldsAux(obj->right);
+            for (const auto &pair : objectFieldsAux(obj->left)) {
                 auto it = r.find(pair.first);
                 if (it == r.end()) {
                     // First time it is seen
@@ -625,8 +622,6 @@ class Interpreter {
             }
 
         } else if (auto *obj = dynamic_cast<const HeapComprehensionObject*>(obj_)) {
-            counter++;
-            if (counter <= skip) return r;
             for (const auto &f : obj->compValues)
                 r[f.first] = ObjectField::VISIBLE;
         }
@@ -637,9 +632,8 @@ class Interpreter {
      */
     std::set<const Identifier*> objectFields(const HeapObject *obj_, bool manifesting)
     {
-        unsigned counter = 0;
         std::set<const Identifier*> r;
-        for (const auto &pair : objectFields(obj_, counter, 0)) {
+        for (const auto &pair : objectFieldsAux(obj_)) {
             if (!manifesting || pair.second != ObjectField::HIDDEN) r.insert(pair.first);
         }
         return r;
