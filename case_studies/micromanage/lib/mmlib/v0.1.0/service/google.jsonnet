@@ -132,7 +132,7 @@ local apt = import "../cmd/apt.jsonnet";
                 ] else [],
             local logging =
                 if instance.enableLogging then [
-                    "curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | bash",
+                    "curl -s https://dl.google.com/cloudagents/install-logging-agent.sh | bash",
                 ] else [],
             cmds+: monitoring + jmx + logging,
         },
