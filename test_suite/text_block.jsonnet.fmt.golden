@@ -66,6 +66,14 @@ local str1 = |||
 std.assertEqual(str1, "text\n") &&
 
 
+// Escape chars
+local str1 = |||
+        \n
+    |||;
+
+std.assertEqual(str1, "\\n\n") &&
+
+
 // Blank line with trailing whitespace
 local blank_line1 = |||
         foo
