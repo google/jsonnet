@@ -23,7 +23,6 @@ public class JsonnetValue {
     public static String manifest(Object value) {
         StringBuffer buf = new StringBuffer();
         if (value == null) {
-            // FIXME: does not escape the string
             buf.append("null");
 
         } else if (value instanceof String) {
