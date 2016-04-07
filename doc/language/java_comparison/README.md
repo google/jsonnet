@@ -4,7 +4,7 @@ Jsonnet to Java
 This little code example shows how a Jsonnet config using object-oriented features can be
 transliterated (in a structure-preserving manner) to use the object-oriented features of Java.  Not
 all Jsonnet programs can be converted to Java because Jsonnet has mixins and virtual inner classes.
-The semantics are also different, as Jsonnet is lazy and Java is eager.  Likewise, Java programs
+Execution order is also different, as Jsonnet is lazy and Java is eager.  Likewise, Java programs
 cannot all be converted to Jsonnet because they have mutable state and I/O.
 
 However said all this, there is a significant overlap between the two languages.  This example fits
@@ -34,9 +34,9 @@ Structure of Java code
 
 The translation is as as follows:
 
-* Everything is typed as Object, as Jsonnet is dynamically typed.
+* Everything is typed as Object, as Jsonnet is dynamically typed.  Everything is public, as is implicit in Jsonnet.
 * Jsonnet arrays are Object[], and primitives are Boolean / Double / String.
-* Jsonnet objects because singleton instances of Java classes that extend JsonnetObject.
+* Jsonnet objects are singleton instances of named Java classes that extend JsonnetObject.
 * Jsonnet fields become Java methods with no parameters (fields are virtual in Jsonnet).
 * Jsonnet hidden field status is represented with a method nonHiddenFields which returns a set of
   field names.  Other fields are considered hidden.
