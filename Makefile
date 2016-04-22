@@ -29,7 +29,7 @@ OD ?= od
 
 OPT ?= -O3
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c++0x -fPIC -Iinclude
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0

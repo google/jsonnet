@@ -951,7 +951,7 @@ class Pass {
         }
     }
 
-    virtual void file(AST *body, Fodder &final_fodder)
+    virtual void file(AST *&body, Fodder &final_fodder)
     {
         expr(body);
         fodder(final_fodder);
@@ -960,6 +960,7 @@ class Pass {
 
 
 class EnforceStringStyle : public Pass {
+    using Pass::visit;
     public:
     EnforceStringStyle(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
     void visit(LiteralString *lit)
@@ -1108,6 +1109,7 @@ bool contains_newline(const Fodder &fodder)
 
 /* Commas should appear at the end of an object/array only if the closing token is on a new line. */
 class FixTrailingCommas : public Pass {
+    using Pass::visit;
     public:
     FixTrailingCommas(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
     Fodder comments;
@@ -1182,6 +1184,7 @@ class FixTrailingCommas : public Pass {
 
 /* Remove nested parens. */
 class FixParens : public Pass {
+    using Pass::visit;
     public:
     FixParens(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
     void visit(Parens *expr)
@@ -1200,6 +1203,7 @@ class FixParens : public Pass {
 
 /* Ensure ApplyBrace syntax sugar is used in the case of A + { }. */
 class FixPlusObject : public Pass {
+    using Pass::visit;
     public:
     FixPlusObject(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
     void visitExpr(AST *&expr)
@@ -1225,6 +1229,7 @@ class FixPlusObject : public Pass {
 
 /* Remove final colon in slices. */
 class NoRedundantSliceColon : public Pass {
+    using Pass::visit;
     public:
     NoRedundantSliceColon(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
 
@@ -1243,6 +1248,7 @@ class NoRedundantSliceColon : public Pass {
 
 /* Ensure syntax sugar is used where possible. */
 class PrettyFieldNames : public Pass {
+    using Pass::visit;
     public:
     PrettyFieldNames(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
 
