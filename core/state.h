@@ -233,14 +233,22 @@ struct HeapClosure : public HeapEntity {
     HeapObject *self;
     /** The offset from the captured self variable.  \see Frame.*/
     unsigned offset;
-    const std::vector<const Identifier*> params;
+    struct Param {
+        const Identifier *id;
+        const AST *def;
+        Param(const Identifier *id, const AST *def)
+          : id(id), def(def)
+        { }
+    };
+    typedef std::vector<Param> Params;
+    const Params params;
     const AST *body;
     const unsigned long builtin;
     HeapClosure(const BindingFrame &up_values,
-                 HeapObject *self,
-                 unsigned offset,
-                 const std::vector<const Identifier*> &params,
-                 const AST *body, unsigned long builtin)
+                HeapObject *self,
+                unsigned offset,
+                const Params &params,
+                const AST *body, unsigned long builtin)
       : upValues(up_values), self(self), offset(offset),
         params(params), body(body), builtin(builtin)
     { }

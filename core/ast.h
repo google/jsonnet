@@ -67,17 +67,6 @@ struct Identifier {
     { }
 };
 
-struct Param {
-    Fodder fodder;
-    const Identifier *id;
-    Fodder commaFodder;  // Before the comma (if there is a comma).
-    Param (const Fodder &fodder, const Identifier *id, const Fodder &comma_fodder)
-      : fodder(fodder), id(id), commaFodder(comma_fodder)
-    { }
-};
-
-typedef std::vector<Param> Params;
-
 static inline std::ostream &operator<<(std::ostream &o, const Identifier *id)
 {
     o << encode_utf8(id->name);
@@ -105,6 +94,39 @@ struct AST {
 
 typedef std::vector<AST*> ASTs;
 
+/** Either an arg in a function apply, or a param in a closure / other function definition.
+ *
+ * They happen to have exactly the same structure.
+ *
+ * In the case of an arg, the id is optional and the expr is required.  Presence of the id indicates
+ * that this is a named rather than positional argument.
+ *
+ * In the case of a param, the id is required and if expr is given, it is a default argument to be
+ * used when no argument is bound to the param.
+ */
+struct ArgParam {
+    Fodder idFodder;  // Empty if no id.
+    const Identifier *id;  // nullptr if there isn't one
+    Fodder eqFodder; // Empty if no id or no expr.
+    AST *expr;  // nullptr if there wasn't one.
+    Fodder commaFodder;  // Before the comma (if there is a comma).
+    // Only has id
+    ArgParam (const Fodder &id_fodder, const Identifier *id, const Fodder &comma_fodder)
+      : idFodder(id_fodder), id(id), expr(nullptr), commaFodder(comma_fodder)
+    { }
+    // Only has expr
+    ArgParam (AST *expr, const Fodder &comma_fodder)
+      : id(nullptr), expr(expr), commaFodder(comma_fodder)
+    { }
+    // Has both id and expr
+    ArgParam (const Fodder &id_fodder, const Identifier *id, const Fodder &eq_fodder,
+              AST *expr, const Fodder &comma_fodder)
+      : idFodder(id_fodder), id(id), eqFodder(eq_fodder), expr(expr), commaFodder(comma_fodder)
+    { }
+};
+
+typedef std::vector<ArgParam> ArgParams;
+
 /** Used in Object & Array Comprehensions. */
 struct ComprehensionSpec {
     enum Kind {
@@ -128,22 +150,14 @@ struct ComprehensionSpec {
 /** Represents function calls. */
 struct Apply : public AST {
     AST *target;
-    struct Arg {
-        AST *expr;
-        Fodder commaFodder;
-        Arg(AST *expr, const Fodder &comma_fodder)
-          : expr(expr), commaFodder(comma_fodder)
-        { }
-    };
-    typedef std::vector<Arg> Args;
     Fodder fodderL;
-    Args args;
+    ArgParams args;
     bool trailingComma;
     Fodder fodderR;
     Fodder tailstrictFodder;
     bool tailstrict;
     Apply(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &fodder_l,
-          const Args &args, bool trailing_comma, const Fodder &fodder_r,
+          const ArgParams &args, bool trailing_comma, const Fodder &fodder_r,
           const Fodder &tailstrict_fodder, bool tailstrict)
       : AST(lr, AST_APPLY, open_fodder), target(target), fodderL(fodder_l), args(args),
         trailingComma(trailing_comma), fodderR(fodder_r), tailstrictFodder(tailstrict_fodder),
@@ -336,15 +350,16 @@ struct Error : public AST {
     { }
 };
 
-/** Represents function calls. */
+/** Represents closures. */
 struct Function : public AST {
     Fodder parenLeftFodder;
-    Params params;
+    ArgParams params;
     bool trailingComma;
     Fodder parenRightFodder;
     AST *body;
     Function(const LocationRange &lr, const Fodder &open_fodder, const Fodder &paren_left_fodder,
-             const Params &params, bool trailing_comma, const Fodder &paren_right_fodder, AST *body)
+             const ArgParams &params, bool trailing_comma, const Fodder &paren_right_fodder,
+             AST *body)
       : AST(lr, AST_FUNCTION, open_fodder), parenLeftFodder(paren_left_fodder),
         params(params), trailingComma(trailing_comma), parenRightFodder(paren_right_fodder),
         body(body)
@@ -409,12 +424,12 @@ struct Local : public AST {
         AST *body;
         bool functionSugar;
         Fodder parenLeftFodder;
-        Params params;  // If functionSugar == true
+        ArgParams params;  // If functionSugar == true
         bool trailingComma;
         Fodder parenRightFodder;
         Fodder closeFodder;
         Bind(const Fodder &var_fodder, const Identifier *var, const Fodder &op_fodder, AST *body,
-             bool function_sugar, const Fodder &paren_left_fodder, const Params &params,
+             bool function_sugar, const Fodder &paren_left_fodder, const ArgParams &params,
              bool trailing_comma, const Fodder &paren_right_fodder, const Fodder &close_fodder)
           : varFodder(var_fodder), var(var), opFodder(op_fodder), body(body),
             functionSugar(function_sugar), parenLeftFodder(paren_left_fodder), params(params),
@@ -520,7 +535,7 @@ struct ObjectField {
     bool methodSugar;  // f(x, y, z): ...  (ignore if kind  == ASSERT)
     AST *expr1;  // Not in scope of the object
     const Identifier *id;
-    Params params;  // If methodSugar == true then holds the params.
+    ArgParams params;  // If methodSugar == true then holds the params.
     bool trailingComma;  // If methodSugar == true then remembers the trailing comma.
     Fodder opFodder;  // Before the : or =
     AST *expr2, *expr3;  // In scope of the object (can see self).
@@ -529,7 +544,7 @@ struct ObjectField {
     ObjectField(
         enum Kind kind, const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
         const Fodder &fodder_r, enum Hide hide, bool super_sugar, bool method_sugar, AST *expr1,
-        const Identifier *id, const Params &params, bool trailing_comma, const Fodder &op_fodder,
+        const Identifier *id, const ArgParams &params, bool trailing_comma, const Fodder &op_fodder,
         AST *expr2, AST *expr3, const Fodder &comma_fodder)
         : kind(kind), fodder1(fodder1), fodder2(fodder2), fodderL(fodder_l), fodderR(fodder_r),
           hide(hide), superSugar(super_sugar), methodSugar(method_sugar), expr1(expr1), id(id),
@@ -547,7 +562,7 @@ struct ObjectField {
     // For when we don't know if it's a function or not.
     static ObjectField Local(
         const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
-        const Fodder &fodder_r, bool method_sugar, const Identifier *id, const Params &params,
+        const Fodder &fodder_r, bool method_sugar, const Identifier *id, const ArgParams &params,
         bool trailing_comma, const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
     {
         return ObjectField(
@@ -560,11 +575,11 @@ struct ObjectField {
     {
         return ObjectField(
             LOCAL, fodder1, fodder2, Fodder{}, Fodder{}, VISIBLE, false, false, nullptr, id,
-            Params{}, false, op_fodder, body, nullptr, comma_fodder);
+            ArgParams{}, false, op_fodder, body, nullptr, comma_fodder);
     }
     static ObjectField LocalMethod(
         const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
-        const Fodder &fodder_r, const Identifier *id, const Params &params, bool trailing_comma,
+        const Fodder &fodder_r, const Identifier *id, const ArgParams &params, bool trailing_comma,
         const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
     {
         return ObjectField(
@@ -576,7 +591,7 @@ struct ObjectField {
     {
         return ObjectField(
             ASSERT, fodder1, Fodder{}, Fodder{}, Fodder{}, VISIBLE, false, false, nullptr, nullptr,
-            Params{}, false, op_fodder, body, msg, comma_fodder);
+            ArgParams{}, false, op_fodder, body, msg, comma_fodder);
     }
 };
 typedef std::vector<ObjectField> ObjectFields;

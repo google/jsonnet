@@ -66,12 +66,15 @@ struct VmExt {
  * \throws RuntimeError reports runtime errors in the program.
  * \returns The JSON result in string form.
  */
-std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
-                               const std::map<std::string, VmExt> &ext,
-                               unsigned max_stack, double gc_min_objects,
-                               double gc_growth_trigger,
-                               JsonnetImportCallback *import_callback, void *import_callback_ctx,
-                               bool string_output);
+std::string jsonnet_vm_execute(
+    Allocator *alloc, const AST *ast,
+    const std::map<std::string, VmExt> &ext,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    JsonnetImportCallback *import_callback,
+    void *import_callback_ctx,
+    bool string_output);
 
 /** Execute the program and return the value as a number of named JSON files.
  *
@@ -80,6 +83,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  * \param alloc The allocator used to create the ast.
  * \param ast The program to execute.
  * \param ext The external vars / code.
+ * \param tla The top-level arguments (strings or code).
  * \param max_stack Recursion beyond this level gives an error.
  * \param gc_min_objects The garbage collector does not run when the heap is this small.
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
@@ -90,9 +94,14 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
-    Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext,
-    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx,
+    Allocator *alloc,
+    const AST *ast,
+    const std::map<std::string, VmExt> &ext,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    JsonnetImportCallback *import_callback,
+    void *import_callback_ctx,
     bool string_output);
 
 /** Execute the program and return the value as a stream of JSON files.
@@ -103,6 +112,7 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
  * \param alloc The allocator used to create the ast.
  * \param ast The program to execute.
  * \param ext The external vars / code.
+ * \param tla The top-level arguments (strings or code).
  * \param max_stack Recursion beyond this level gives an error.
  * \param gc_min_objects The garbage collector does not run when the heap is this small.
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
@@ -113,8 +123,13 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::vector<std::string> jsonnet_vm_execute_stream(
-    Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext,
-    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx);
+    Allocator *alloc,
+    const AST *ast,
+    const std::map<std::string, VmExt> &ext,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    JsonnetImportCallback *import_callback,
+    void *import_callback_ctx);
 
 #endif

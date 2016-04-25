@@ -56,6 +56,7 @@ struct JsonnetVm {
     unsigned gcMinObjects;
     unsigned maxTrace;
     std::map<std::string, VmExt> ext;
+    std::map<std::string, VmExt> tla;
     JsonnetImportCallback *importCallback;
     void *importCallbackContext;
     bool stringOutput;
@@ -221,6 +222,16 @@ void jsonnet_ext_code(JsonnetVm *vm, const char *key, const char *val)
     vm->ext[key] = VmExt(val, true);
 }
 
+void jsonnet_tla_var(JsonnetVm *vm, const char *key, const char *val)
+{
+    vm->tla[key] = VmExt(val, false);
+}
+
+void jsonnet_tla_code(JsonnetVm *vm, const char *key, const char *val)
+{
+    vm->tla[key] = VmExt(val, true);
+}
+
 void jsonnet_fmt_debug_desugaring(JsonnetVm *vm, int v)
 {
     vm->fmtDebugDesugaring = v;
@@ -294,7 +305,7 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
         Fodder final_fodder = tokens.front().fodder;
 
         if (vm->fmtDebugDesugaring)
-            jsonnet_desugar(&alloc, expr);
+            jsonnet_desugar(&alloc, expr, &vm->tla);
 
         json_str = jsonnet_fmt(expr, final_fodder, vm->fmtOpts);
 
@@ -355,14 +366,15 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
 
         expr = jsonnet_parse(&alloc, tokens);
 
-        jsonnet_desugar(&alloc, expr);
+        jsonnet_desugar(&alloc, expr, &vm->tla);
 
         jsonnet_static_analysis(expr);
         switch (kind) {
             case REGULAR: {
                 std::string json_str = jsonnet_vm_execute(
-                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects, vm->gcGrowthTrigger,
-                    vm->importCallback, vm->importCallbackContext, vm->stringOutput);
+                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects,
+                    vm->gcGrowthTrigger, vm->importCallback, vm->importCallbackContext,
+                    vm->stringOutput);
                 json_str += "\n";
                 *error = false;
                 return from_string(vm, json_str);
@@ -371,8 +383,9 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
 
             case MULTI: {
                 std::map<std::string, std::string> files = jsonnet_vm_execute_multi(
-                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects, vm->gcGrowthTrigger,
-                    vm->importCallback, vm->importCallbackContext, vm->stringOutput);
+                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects,
+                    vm->gcGrowthTrigger, vm->importCallback, vm->importCallbackContext,
+                    vm->stringOutput);
                 size_t sz = 1; // final sentinel
                 for (const auto &pair : files) {
                     sz += pair.first.length() + 1; // include sentinel
@@ -399,8 +412,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
 
             case STREAM: {
                 std::vector<std::string> documents = jsonnet_vm_execute_stream(
-                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects, vm->gcGrowthTrigger,
-                    vm->importCallback, vm->importCallbackContext);
+                    &alloc, expr, vm->ext, vm->maxStack, vm->gcMinObjects,
+                    vm->gcGrowthTrigger, vm->importCallback, vm->importCallbackContext);
                 size_t sz = 1; // final sentinel
                 for (const auto &doc : documents) {
                     sz += doc.length() + 2; // Add a '\n' as well as sentinel

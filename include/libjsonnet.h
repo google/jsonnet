@@ -81,17 +81,29 @@ char *jsonnet_realloc(struct JsonnetVm *vm, char *buf, size_t sz);
  */
 void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, void *ctx);
 
-/** Bind a Jsonnet external var to the given value.
+/** Bind a Jsonnet external var to the given string.
  *
  * Argument values are copied so memory should be managed by caller.
  */
 void jsonnet_ext_var(struct JsonnetVm *vm, const char *key, const char *val);
 
-/** Bind a Jsonnet external code var to the given value.
+/** Bind a Jsonnet external var to the given code.
  *
  * Argument values are copied so memory should be managed by caller.
  */
 void jsonnet_ext_code(struct JsonnetVm *vm, const char *key, const char *val);
+
+/** Bind a string top-level argument for a top-level parameter.
+ *
+ * Argument values are copied so memory should be managed by caller.
+ */
+void jsonnet_tla_var(struct JsonnetVm *vm, const char *key, const char *val);
+
+/** Bind a code top-level argument for a top-level parameter.
+ *
+ * Argument values are copied so memory should be managed by caller.
+ */
+void jsonnet_tla_code(struct JsonnetVm *vm, const char *key, const char *val);
 
 /** Indentation level when reformatting (number of spaeces).
  *

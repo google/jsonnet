@@ -74,7 +74,12 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
             params.insert(p.id);
             new_vars.insert(p.id);
         }
+
         auto fv = static_analysis(ast->body, in_object, new_vars);
+        for (const auto &p : ast->params) {
+            if (p.expr != nullptr)
+                append(fv, static_analysis(p.expr, in_object, new_vars));
+        }
         for (const auto &p : ast->params)
             fv.erase(p.id);
         append(r, fv);
@@ -97,8 +102,9 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         auto new_vars = vars;
         append(new_vars, ast_vars);
         IdSet fvs;
-        for (const auto &bind: ast->binds)
+        for (const auto &bind: ast->binds) {
             append(fvs, static_analysis(bind.body, in_object, new_vars));
+        }
 
         append(fvs, static_analysis(ast->body, in_object, new_vars));
 
