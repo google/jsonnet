@@ -42,7 +42,15 @@ for TEST in *.jsonnet ; do
         GOLDEN_OUTPUT=$(cat "$TEST.golden_regex")
     fi
 
-    JSONNET_CMD="$VALGRIND ../jsonnet $PARAMS --var var1=test --code-var var2={x:1,y:2}"
+    EXT_PARAMS=""
+    TLA_PARAMS=""
+    if [[ "$TEST" =~ ^tla[.] ]] ; then
+        TLA_PARAMS="--tla-str var1=test --tla-code var2={x:1,y:2}"
+    else
+        EXT_PARAMS="--ext-str var1=test --ext-code var2={x:1,y:2}"
+    fi
+
+    JSONNET_CMD="$VALGRIND ../jsonnet $PARAMS $EXT_PARAMS $TLA_PARAMS"
     test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 
