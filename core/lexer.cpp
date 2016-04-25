@@ -32,10 +32,11 @@ static std::string strip_ws(const std::string &s, unsigned margin)
     size_t i = 0;
     while (i < s.length() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') && i < margin)
         i++;
-    size_t j = s.size() - 1;
-    while (j >= i && (s[j] == ' ' || s[j] == '\t' || s[j] == '\r'))
+    size_t j = s.size();
+    while (j > i && (s[j - 1] == ' ' || s[j - 1] == '\t' || s[j - 1] == '\r')) {
         j--;
-    return std::string(&s[i], &s[j+1]);
+    }
+    return std::string(&s[i], &s[j]);
 }
 
 /** Split a string by \n and also strip left (up to margin) & right whitespace from each line. */
