@@ -14,21 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef JSONNET_DESUGARING_H
-#define JSONNET_DESUGARING_H
-
-#include <map>
-#include <string>
-
-#include "ast.h"
-#include "vm.h"
-
-/** Translate the AST to remove syntax sugar.
- * \param alloc Allocator for making new identifiers / ASTs.
- * \param ast The AST to change.
- * \param tla the top level arguments.  If null then do not try to process
- * top-level functions.
- */
-void jsonnet_desugar(Allocator *alloc, AST *&ast, std::map<std::string, VmExt> *tla);
-
-#endif
+function(name) {
+    name: name,
+}

@@ -79,12 +79,6 @@ void usage(std::ostream &o)
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code\n";
     o << "  -J / --jpath <dir>      Specify an additional library search dir\n";
-    o << "  -V / --var <var>=<val>  Specify an 'external' var to the given value\n";
-    o << "  -E / --env <var>        Bring in an environment var as an 'external' var\n";
-    o << "  -F / --file <var=<val>  Specify and 'external' var as the contents of a given file\n";
-    o << "  --code-var <var>=<val>  As --var but value is Jsonnet code\n";
-    o << "  --code-env <var>        As --env but env var contains Jsonnet code\n";
-    o << "  --code-file <var>=<val> As --file but file contents is Jsonnet code\n";
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
     o << "  -m / --multi <dir>      Write multiple files to the directory, list files on stdout\n";
     o << "  -y / --yaml-stream      Write output as a YAML stream of JSON documents\n";
@@ -94,6 +88,21 @@ void usage(std::ostream &o)
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
     o << "  --gc-growth-trigger <n> Run garbage collector after this amount of object growth\n";
     o << "  --version               Print version\n";
+    o << "Available options for specifying values of 'external' variables:\n";
+    o << "Provide the value as a string:\n";
+    o << "  -V / --ext-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
+    o << "  -f / --ext-str-file <var>=<file> Read the string from the file\n";
+    o << "Provide a value as Jsonnet code:\n";
+    o << "  --ext-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
+    o << "  --ext-code-file <var>=<file> Read the code from the file\n";
+    o << "\n";
+    o << "Available options for specifying values of 'top-level arguments':\n";
+    o << "Provide the value as a string:\n";
+    o << "  -V / --tla-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
+    o << "  -f / --tla-str-file <var>=<file> Read the string from the file\n";
+    o << "Provide a value as Jsonnet code:\n";
+    o << "  --tla-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
+    o << "  --tla-code-file <var>=<file> Read the code from the file\n";
     o << "\n";
     o << "Available fmt options:\n";
     o << "jsonnet fmt {<option>} <filename>\n";
@@ -165,6 +174,41 @@ struct JsonnetConfig {
     { }
 };
 
+bool get_var_val(const std::string &var_val, std::string &var, std::string &val)
+{
+    size_t eq_pos = var_val.find_first_of('=', 0);
+    if (eq_pos == std::string::npos) {
+        var = var_val;
+        const char *val_cstr = ::getenv(var.c_str());
+        if (val_cstr == nullptr) {
+            std::cerr << "ERROR: Environment variable " << var
+                      << " was undefined." << std::endl;
+            return false;
+        }
+        val = val_cstr;
+    } else {
+        var = var_val.substr(0, eq_pos);
+        val = var_val.substr(eq_pos + 1, std::string::npos);
+    }
+    return true;
+}
+
+bool get_var_file(const std::string &var_file, std::string &var, std::string &val)
+{
+    size_t eq_pos = var_file.find_first_of('=', 0);
+    if (eq_pos == std::string::npos) {
+        std::cerr << "ERROR: argument not in form <var>=<file> \""
+                  << var_file << "\"." << std::endl;
+        return false;
+    }
+    var = var_file.substr(0, eq_pos);
+    const std::string path = var_file.substr(eq_pos + 1, std::string::npos);
+
+    std::ifstream file(path);
+    val = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    return true;
+}
+
 /** Parse the command line arguments, configuring the Jsonnet VM context and
  * populating the JsonnetConfig.
  */
@@ -226,65 +270,47 @@ static bool process_args(int argc,
                     dir += '/';
                 }
                 jsonnet_jpath_add(vm, dir.c_str());
-            } else if (arg == "-E" || arg == "--env") {
-                const std::string var = next_arg(i, args);
-                const char *val = ::getenv(var.c_str());
-                if (val == nullptr) {
-                    std::cerr << "ERROR: Environment variable " << var
-                              << " was undefined." << std::endl;
-                    return false;
-                }
-                jsonnet_ext_var(vm, var.c_str(), val);
-            } else if (arg == "-V" || arg == "--var") {
-                const std::string var_val = next_arg(i, args);
-                size_t eq_pos = var_val.find_first_of('=', 0);
-                if (eq_pos == std::string::npos) {
-                    std::cerr << "ERROR: argument not in form <var>=<val> \""
-                              << var_val << "\"." << std::endl;
-                    return false;
-                }
-                const std::string var = var_val.substr(0, eq_pos);
-                const std::string val = var_val.substr(eq_pos + 1,
-                                                       std::string::npos);
+            } else if (arg == "-V" || arg == "--ext-str") {
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
+                    return EXIT_FAILURE;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
-            } else if (arg == "--code-env") {
-                const std::string var = next_arg(i, args);
-                const char *val = ::getenv(var.c_str());
-                if (val == nullptr) {
-                    std::cerr << "ERROR: Environment variable " << var
-                              << " was undefined." << std::endl;
+            } else if (arg == "-F" || arg == "--ext-str-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
-                }
-                jsonnet_ext_code(vm, var.c_str(), val);
-            } else if (arg == "--code-var") {
-                const std::string var_val = next_arg(i, args);
-                size_t eq_pos = var_val.find_first_of('=', 0);
-                if (eq_pos == std::string::npos) {
-                    std::cerr << "ERROR: argument not in form <var>=<val> \""
-                              << var_val << "\"." << std::endl;
+                jsonnet_ext_var(vm, var.c_str(), val.c_str());
+            } else if (arg == "--ext-code") {
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
-                }
-                const std::string var = var_val.substr(0, eq_pos);
-                const std::string val = var_val.substr(eq_pos + 1,
-                                                       std::string::npos);
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
-            } else if (arg == "--code-file") {
-                const std::string var_val = next_arg(i, args);
-                size_t eq_pos = var_val.find_first_of('=', 0);
-                if (eq_pos == std::string::npos) {
-                    std::cerr << "ERROR: argument not in form <var>=<val> \""
-                              << var_val << "\"." << std::endl;
+            } else if (arg == "--ext-code-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
-                }
-                const std::string var = var_val.substr(0, eq_pos);
-                const std::string path = var_val.substr(eq_pos + 1,
-                                                       std::string::npos);
-
-                std::ifstream file(path);
-                std::string val((std::istreambuf_iterator<char>(file)),
-                     std::istreambuf_iterator<char>());
-
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
+            } else if (arg == "--tla-str") {
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
+                    return EXIT_FAILURE;
+                jsonnet_tla_var(vm, var.c_str(), val.c_str());
+            } else if (arg == "--tla-str-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), var, val))
+                    return EXIT_FAILURE;
+                jsonnet_tla_var(vm, var.c_str(), val.c_str());
+            } else if (arg == "--tla-code") {
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
+                    return EXIT_FAILURE;
+                jsonnet_tla_code(vm, var.c_str(), val.c_str());
+            } else if (arg == "--tla-code-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), var, val))
+                    return EXIT_FAILURE;
+                jsonnet_tla_code(vm, var.c_str(), val.c_str());
+
             } else if (arg == "--gc-min-objects") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {
@@ -335,6 +361,9 @@ static bool process_args(int argc,
                 config->evalStream = true;
             } else if (arg == "-S" || arg == "--string") {
                 jsonnet_string_output(vm, 1);
+            } else if (arg[0] == '-') {
+                std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
+                return EXIT_FAILURE;
             } else {
                 remaining_args.push_back(args[i]);
             }

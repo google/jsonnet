@@ -31,4 +31,15 @@ local is_even = function(n) if n == 0 then true else is_odd(n - 1),
 std.assertEqual(is_even(42), true) &&
 std.assertEqual(is_odd(41), true) &&
 
+std.assertEqual((function(a, b) [a, b])(b=1, a=2), [2, 1]) &&
+std.assertEqual((function(a, b=2) [a, b])(3), [3, 2]) &&
+
+// Mutually recursive default arguments.
+std.assertEqual((function(a=[1, b[1]], b=[a[0], 2]) [a, b])(), [[1, 2], [1, 2]]) &&
+std.assertEqual((local a = "no1", b = "no2"; function(a=[1, b[1]], b=[a[0], 2]) [a, b])(),
+                [[1, 2], [1, 2]]) &&
+std.assertEqual((local x = 3; function(a=[x, b[1]], b=[a[0], 2]) [a, b])(),
+                [[3, 2], [3, 2]]) &&
+std.assertEqual({ g: 3, f(a=[self.g, b[1]], b=[a[0], 2]): [a, b] }.f(),
+                [[3, 2], [3, 2]]) &&
 true

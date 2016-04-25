@@ -274,7 +274,11 @@ class Stack {
         if (dynamic_cast<const HeapObject*>(e)) {
             return "object <" + name + ">";
         } else if (auto *thunk = dynamic_cast<const HeapThunk*>(e)) {
-            return "thunk <" + encode_utf8(thunk->name->name) + ">";
+            if (thunk->name == nullptr) {
+                return "";  // Argument of builtin, or root (since top level functions).
+            } else {
+                return "thunk <" + encode_utf8(thunk->name->name) + ">";
+            }
         } else {
             const auto *func = static_cast<const HeapClosure *>(e);
             if (func->body == nullptr) {
@@ -313,7 +317,8 @@ class Stack {
                     // Give the last line a name.
                     stack_trace[stack_trace.size()-1].name = getName(i, f.context);
                 }
-                stack_trace.push_back(TraceFrame(f.location));
+                if (f.location.isSet() || f.location.file.length() > 0)
+                    stack_trace.push_back(TraceFrame(f.location));
             }
         }
         return RuntimeError(stack_trace, msg);
@@ -365,7 +370,11 @@ class Stack {
 
         #ifndef NDEBUG
         for (const auto &bind : up_values) {
-            assert(bind.second != nullptr);
+            if (bind.second == nullptr) {
+                std::cerr << "iNTERNAL ERROR: No binding for variable "
+                          << encode_utf8(bind.first->name) << std::endl;
+                std::abort();
+            }
         }
         #endif
     }
@@ -525,7 +534,7 @@ class Interpreter {
     Value makeClosure(const BindingFrame &env,
                        HeapObject *self,
                        unsigned offset,
-                       const std::vector<const Identifier *> &params,
+                       const HeapClosure::Params &params,
                        AST *body)
     {
         Value r;
@@ -534,7 +543,7 @@ class Interpreter {
         return r;
     }
 
-    Value makeBuiltin(unsigned long builtin_id, const std::vector<const Identifier *> &params)
+    Value makeBuiltin(unsigned long builtin_id, const HeapClosure::Params &params)
     {
         AST *body = nullptr;
         Value r;
@@ -652,7 +661,7 @@ class Interpreter {
         const ImportCacheValue *input = importString(loc, file);
         Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
         AST *expr = jsonnet_parse(alloc, tokens);
-        jsonnet_desugar(alloc, expr);
+        jsonnet_desugar(alloc, expr, nullptr);
         jsonnet_static_analysis(expr);
         return expr;
     }
@@ -925,7 +934,13 @@ class Interpreter {
 
             case AST_BUILTIN_FUNCTION: {
                 const auto &ast = *static_cast<const BuiltinFunction*>(ast_);
-                scratch = makeBuiltin(ast.id, ast.params);
+                HeapClosure::Params params;
+                params.reserve(ast.params.size());
+                for (const auto &p : ast.params) {
+                    // None of the builtins have default args.
+                    params.emplace_back(p, nullptr);
+                }
+                scratch = makeBuiltin(ast.id, params);
             } break;
 
             case AST_CONDITIONAL: {
@@ -948,11 +963,12 @@ class Interpreter {
                 HeapObject *self;
                 unsigned offset;
                 stack.getSelfBinding(self, offset);
-                Identifiers ids;
-                ids.reserve(ast.params.size());
-                for (const auto &p : ast.params)
-                    ids.push_back(p.id);
-                scratch = makeClosure(env, self, offset, ids, ast.body);
+                HeapClosure::Params params;
+                params.reserve(ast.params.size());
+                for (const auto &p : ast.params) {
+                    params.emplace_back(p.id, p.expr);
+                }
+                scratch = makeClosure(env, self, offset, params, ast.body);
             } break;
 
             case AST_IMPORT: {
@@ -1099,25 +1115,92 @@ class Interpreter {
                                         + type_str(scratch));
                     }
                     auto *func = static_cast<HeapClosure*>(scratch.v.h);
-                    if (ast.args.size() != func->params.size()) {
-                        std::stringstream ss;
-                        ss << "Expected " << func->params.size() <<
-                              " arguments, got " << ast.args.size() << ".";
-                        throw makeError(ast.location, ss.str());
+
+                    std::set<const Identifier *> params_needed;
+                    for (const auto &param : func->params) {
+                        params_needed.insert(param.id);
                     }
 
                     // Create thunks for arguments.
+                    std::vector<HeapThunk*> positional_args;
+                    BindingFrame args;
+                    bool got_named = false;
                     for (unsigned i=0 ; i<ast.args.size() ; ++i) {
                         const auto &arg = ast.args[i];
+
+                        const Identifier *name;
+                        if (arg.id != nullptr) {
+                            got_named = true;
+                            name = arg.id;
+                        } else {
+                            if (got_named) {
+                                std::stringstream ss;
+                                ss << "Internal error: got positional param after named at index "
+                                   << i;
+                                throw makeError(ast.location, ss.str());
+                            }
+                            name = func->params[i].id;
+                        }
+                        // Special case for builtin functions -- leave identifier blank for
+                        // them in the thunk.  This removes the thunk frame from the stacktrace.
+                        const Identifier *name_ = func->body == nullptr ? nullptr : name;
                         HeapObject *self;
                         unsigned offset;
                         stack.getSelfBinding(self, offset);
-                        auto *thunk = makeHeap<HeapThunk>(func->params[i], self, offset, arg.expr);
+                        auto *thunk = makeHeap<HeapThunk>(name_, self, offset, arg.expr);
                         thunk->upValues = capture(arg.expr->freeVariables);
+                        // While making the thunks, keep them in a frame to avoid premature garbage
+                        // collection.
                         f.thunks.push_back(thunk);
+                        if (args.find(name) != args.end()) {
+                            std::stringstream ss;
+                            ss << "Binding parameter a second time: " << encode_utf8(name->name);
+                            throw makeError(ast.location, ss.str());
+                        }
+                        args[name] = thunk;
+                        if (params_needed.find(name) == params_needed.end()) {
+                            std::stringstream ss;
+                            ss << "Function has no parameter " << encode_utf8(name->name);
+                            throw makeError(ast.location, ss.str());
+                        }
                     }
-                    // Popping stack frame invalidates the f reference.
-                    std::vector<HeapThunk*> args = f.thunks;
+
+                    // For any func params for which there was no arg, create a thunk for those and
+                    // bind the default argument.  Allow default thunks to see other params.  If no
+                    // default argument than raise an error.
+
+                    // Raise errors for unbound params, create thunks (but don't fill in upvalues).
+                    // This is a subset of f.thunks, so will not get garbage collected.
+                    std::vector<HeapThunk*> def_arg_thunks;
+                    for (const auto &param : func->params) {
+                        if (args.find(param.id) != args.end()) continue;
+                        if (param.def == nullptr) {
+                            std::stringstream ss;
+                            ss << "Function parameter " << encode_utf8(param.id->name) <<
+                                  " not bound in call.";
+                            throw makeError(ast.location, ss.str());
+                        }
+
+                        // Special case for builtin functions -- leave identifier blank for
+                        // them in the thunk.  This removes the thunk frame from the stacktrace.
+                        const Identifier *name_ = func->body == nullptr ? nullptr : param.id;
+                        auto *thunk = makeHeap<HeapThunk>(name_, func->self, func->offset,
+                                                          param.def);
+                        f.thunks.push_back(thunk);
+                        def_arg_thunks.push_back(thunk);
+                        args[param.id] = thunk;
+                    }
+
+                    BindingFrame up_values = func->upValues;
+                    up_values.insert(args.begin(), args.end());
+
+                    // Fill in upvalues
+                    for (HeapThunk *thunk : def_arg_thunks) {
+                        thunk->upValues = up_values;
+                    }
+
+                    // Cache these, because pop will invalidate them.
+                    std::vector<HeapThunk*> thunks_copy = f.thunks;
 
                     stack.pop();
 
@@ -1126,24 +1209,21 @@ class Interpreter {
                         // Give nullptr for self because noone looking at this frame will
                         // attempt to bind to self (it's native code).
                         stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f.ast);
-                        stack.top().thunks = args;
+                        stack.top().thunks = thunks_copy;
                         stack.top().val = scratch;
                         goto replaceframe;
                     } else {
                         // User defined function.
-                        BindingFrame bindings = func->upValues;
-                        for (unsigned i=0 ; i<func->params.size() ; ++i)
-                            bindings[func->params[i]] = args[i];
-                        stack.newCall(ast.location, func, func->self, func->offset, bindings);
+                        stack.newCall(ast.location, func, func->self, func->offset, up_values);
                         if (ast.tailstrict) {
                             stack.top().tailCall = true;
-                            if (args.size() == 0) {
+                            if (thunks_copy.size() == 0) {
                                 // No need to force thunks, proceed straight to body.
                                 ast_ = func->body;
                                 goto recurse;
                             } else {
                                 // The check for args.size() > 0
-                                stack.top().thunks = args;
+                                stack.top().thunks = thunks_copy;
                                 stack.top().val = scratch;
                                 goto replaceframe;
                             }
@@ -1397,7 +1477,7 @@ class Interpreter {
                     } else {
                         auto *thunk = arr->elements[f.elementId];
                         BindingFrame bindings = func->upValues;
-                        bindings[func->params[0]] = thunk;
+                        bindings[func->params[0].id] = thunk;
                         stack.newCall(ast.location, func, func->self, func->offset, bindings);
                         ast_ = func->body;
                         goto recurse;
@@ -1441,10 +1521,10 @@ class Interpreter {
                                     f.thunks.push_back(th);
                                     th->upValues = func->upValues;
 
-                                    auto *el = makeHeap<HeapThunk>(func->params[0], nullptr,
+                                    auto *el = makeHeap<HeapThunk>(func->params[0].id, nullptr,
                                                                    0, nullptr);
                                     el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
-                                    th->upValues[func->params[0]] = el;
+                                    th->upValues[func->params[0].id] = el;
                                     elements[i] = th;
                                 }
                                 scratch = makeArray(elements);
@@ -1554,7 +1634,7 @@ class Interpreter {
 
                                     auto *thunk = arr->elements[f.elementId];
                                     BindingFrame bindings = func->upValues;
-                                    bindings[func->params[0]] = thunk;
+                                    bindings[func->params[0].id] = thunk;
                                     stack.newCall(loc, func, func->self, func->offset, bindings);
                                     ast_ = func->body;
                                     goto recurse;
@@ -1712,7 +1792,7 @@ class Interpreter {
                                     std::string filename = "<extvar:" + var8 + ">";
                                     Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
                                     AST *expr = jsonnet_parse(alloc, tokens);
-                                    jsonnet_desugar(alloc, expr);
+                                    jsonnet_desugar(alloc, expr, nullptr);
                                     jsonnet_static_analysis(expr);
                                     ast_ = expr;
                                     stack.pop();
@@ -1724,7 +1804,9 @@ class Interpreter {
 
                             case 24: {  // primitiveEquals
                                 if (args.size() != 2) {
-                                    throw makeError(loc, "primitiveEquals takes 2 parameters.");
+                                    std::stringstream ss;
+                                    ss << "primitiveEquals takes 2 parameters, got " << args.size();
+                                    throw makeError(loc, ss.str());
                                 }
                                 if (args[0].t != args[1].t) {
                                     scratch = makeBoolean(false);
@@ -2324,8 +2406,9 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
 }
 
 StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
-                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-                                JsonnetImportCallback *import_callback, void *ctx,
+                                unsigned max_stack, double gc_min_objects,
+                                double gc_growth_trigger, JsonnetImportCallback *import_callback,
+                                void *ctx,
                                 bool string_output)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
@@ -2335,9 +2418,9 @@ StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &
 }
 
 std::vector<std::string> jsonnet_vm_execute_stream(
-  Allocator *alloc, const AST *ast, const ExtMap &ext_vars, unsigned max_stack,
-  double gc_min_objects, double gc_growth_trigger, JsonnetImportCallback *import_callback,
-  void *ctx)
+    Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
+    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+    JsonnetImportCallback *import_callback, void *ctx)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
                    import_callback, ctx);

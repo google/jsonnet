@@ -111,6 +111,14 @@ class Parser {
         return tok;
     }
 
+    /** Only call this is peek() is not an EOF token. */
+    Token doublePeek(void)
+    {
+        Tokens::iterator it = tokens.begin();  // First one.
+        it++; // Now pointing at the second one.
+        return *(it);
+    }
+
     Token popExpect(Token::Kind k, const char *data=nullptr)
     {
         Token tok = pop();
@@ -144,9 +152,8 @@ class Parser {
      * \param element_kind Used in error messages when a comma was not found.
      * \returns The last token (the one that matched parameter end).
      */
-    Token parseCommaList(std::vector<std::pair<AST*, Fodder>> &exprs, Token::Kind end,
-                         const std::string &element_kind,
-                         bool &got_comma)
+    Token parseArgs(ArgParams &args, Token::Kind end,
+                    const std::string &element_kind, bool &got_comma)
     {
         got_comma = false;
         bool first = true;
@@ -170,31 +177,54 @@ class Parser {
                 ss << "Expected a comma before next " << element_kind <<  ".";
                 throw StaticError(next.location, ss.str());
             }
-            exprs.emplace_back(parse(MAX_PRECEDENCE), comma_fodder);
+            // Either id=expr or id or expr, but note that expr could be id==1 so this needs
+            // look-ahead.
+            Fodder id_fodder;
+            const Identifier *id = nullptr;
+            Fodder eq_fodder;
+            if (peek().kind == Token::IDENTIFIER) {
+                Token maybe_eq = doublePeek();
+                if (maybe_eq.kind == Token::OPERATOR && maybe_eq.data == "=") {
+                    id_fodder = peek().fodder;
+                    id = alloc->makeIdentifier(peek().data32());
+                    eq_fodder = maybe_eq.fodder;
+                    pop();  // id
+                    pop();  // eq
+                }
+            }
+            AST *expr = parse(MAX_PRECEDENCE);
+            // TODO(dcunnin): comma fodder attributed to the wrong AST.
+            // test case: 'f(x /*1*/, y)'
+            args.emplace_back(id_fodder, id, eq_fodder, expr, comma_fodder);
             got_comma = false;
             first = false;
         } while (true);
     }
 
-    Params parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder)
+    ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder)
     {
-        std::vector<std::pair<AST*, Fodder>> exprs;
-        Token paren_r = parseCommaList(exprs, Token::PAREN_R, element_kind, got_comma);
+        ArgParams params;
+        Token paren_r = parseArgs(params, Token::PAREN_R, element_kind, got_comma);
 
         // Check they're all identifiers
-        Params ret;
-        for (const auto &p_ast_fodder : exprs) {
-            auto *p = dynamic_cast<Var*>(p_ast_fodder.first);
-            if (p == nullptr) {
-                throw StaticError(p_ast_fodder.first->location,
-                                  "Expected an identifier but got a complex expression.");
+        // parseArgs returns f(x) with x as an expression.  Convert it here.
+        for (auto &p : params) {
+            if (p.id == nullptr) {
+                auto *pv = dynamic_cast<Var*>(p.expr);
+                if (pv == nullptr) {
+                    throw StaticError(p.expr->location,
+                                      "Could not parse parameter here.");
+
+                }
+                p.id = pv->id;
+                p.idFodder = pv->openFodder;
+                p.expr = nullptr;
             }
-            ret.emplace_back(p->openFodder, p->id, p_ast_fodder.second);
         }
 
         close_fodder = paren_r.fodder;
 
-        return ret;
+        return params;
     }
 
     Token parseBind(Local::Binds &binds)
@@ -206,7 +236,7 @@ class Parser {
                 throw StaticError(var_id.location, "Duplicate local var: " + var_id.data);
         }
         bool is_function = false;
-        Params params;
+        ArgParams params;
         bool trailing_comma = false;
         Fodder fodder_l, fodder_r;
         if (peek().kind == Token::PAREN_L) {
@@ -325,7 +355,7 @@ class Parser {
 
                     bool is_method = false;
                     bool meth_comma = false;
-                    Params params;
+                    ArgParams params;
                     Fodder fodder_l;
                     Fodder fodder_r;
                     if (peek().kind == Token::PAREN_L) {
@@ -409,7 +439,7 @@ class Parser {
                     }
                     bool is_method = false;
                     bool func_comma = false;
-                    Params params;
+                    ArgParams params;
                     Fodder paren_l_fodder;
                     Fodder paren_r_fodder;
                     if (peek().kind == Token::PAREN_L) {
@@ -711,7 +741,7 @@ class Parser {
                     std::vector<AST*> params_asts;
                     bool got_comma;
                     Fodder paren_r_fodder;
-                    Params params = parseParams(
+                    ArgParams params = parseParams(
                         "function parameter", got_comma, paren_r_fodder);
                     AST *body = parse(MAX_PRECEDENCE);
                     return alloc->make<Function>(
@@ -901,10 +931,9 @@ class Parser {
                                              op.fodder, field_id.fodder, id);
 
                 } else if (op.kind == Token::PAREN_L) {
-                    std::vector<std::pair<AST*, Fodder>> args;
+                    ArgParams args;
                     bool got_comma;
-                    Token end = parseCommaList(args, Token::PAREN_R,
-                                               "function argument", got_comma);
+                    Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
                     bool tailstrict = false;
                     Fodder tailstrict_fodder;
                     if (peek().kind == Token::TAILSTRICT) {
@@ -912,10 +941,8 @@ class Parser {
                         tailstrict_fodder = tailstrict_token.fodder;
                         tailstrict = true;
                     }
-                    Apply::Args args2;
-                    for (const auto &pair : args) args2.emplace_back(pair.first, pair.second);
                     lhs = alloc->make<Apply>(span(begin, end), begin_fodder, lhs, op.fodder,
-                                             args2, got_comma, end.fodder, tailstrict_fodder,
+                                             args, got_comma, end.fodder, tailstrict_fodder,
                                              tailstrict);
 
                 } else if (op.kind == Token::BRACE_L) {

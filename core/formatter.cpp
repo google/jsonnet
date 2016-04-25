@@ -156,16 +156,22 @@ class Unparser {
         fodder_fill(o, fodder, space_before, separate_token);
     }
 
-    void unparseParams(const Fodder &fodder_l, const Params &params, bool trailing_comma,
+    void unparseParams(const Fodder &fodder_l, const ArgParams &params, bool trailing_comma,
                        const Fodder &fodder_r)
     {
         fill(fodder_l, false, false);
         o << "(";
         bool first = true;
-        for (const Param &param : params) {
+        for (const auto &param : params) {
             if (!first) o << ",";
-            fill(param.fodder, !first, true);
+            fill(param.idFodder, !first, true);
             o << unparse_id(param.id);
+            if (param.expr != nullptr) {
+                // default arg, no spacing: x=e
+                fill(param.eqFodder, false, false);
+                o << "=";
+                unparse(param.expr, false);
+            }
             fill(param.commaFodder, false, false);
             first = false;
         }
@@ -271,7 +277,14 @@ class Unparser {
             bool first = true;
             for (const auto &arg : ast->args) {
                 if (!first) o << ',';
-                unparse(arg.expr, !first);
+                bool space = !first;
+                if (arg.id != nullptr) {
+                    fill(arg.idFodder, space, true);
+                    o << unparse_id(arg.id);
+                    space = false;
+                    o << "=";
+                }
+                unparse(arg.expr, space);
                 fill(arg.commaFodder, false, false);
                 first = false;
             }
@@ -627,11 +640,15 @@ class Pass {
         }
     }
 
-    virtual void params(Fodder &fodder_l, Params &params, Fodder &fodder_r)
+    virtual void params(Fodder &fodder_l, ArgParams &params, Fodder &fodder_r)
     {
         fodder(fodder_l);
-        for (Param &param : params) {
-            fodder(param.fodder);
+        for (auto &param : params) {
+            fodder(param.idFodder);
+            if (param.expr) {
+                fodder(param.eqFodder);
+                expr(param.expr);
+            }
             fodder(param.commaFodder);
         }
         fodder(fodder_r);
@@ -1435,19 +1452,26 @@ class FixIndentation {
         }
     }
 
-    void params(Fodder &fodder_l, Params &params, bool trailing_comma, Fodder &fodder_r,
+    void params(Fodder &fodder_l, ArgParams &params, bool trailing_comma, Fodder &fodder_r,
                 const Indent &indent)
     {
         fill(fodder_l, false, false, indent.lineUp, indent.lineUp);
         column++;  // (
-        const Fodder &first_inside = params.size() == 0 ? fodder_r : params[0].fodder;
+        const Fodder &first_inside = params.size() == 0 ? fodder_r : params[0].idFodder;
+
         Indent new_indent = newIndent(first_inside, indent, column);
         bool first = true;
-        for (Param &param : params) {
+        for (auto &param : params) {
             if (!first) column++;  // ','
-            fill(param.fodder, !first, true, new_indent.lineUp, new_indent.lineUp);
+            fill(param.idFodder, !first, true, new_indent.lineUp);
             column += param.id->name.length();
-            fill(param.commaFodder, false, false, new_indent.lineUp, new_indent.lineUp);
+            if (param.expr != nullptr) {
+                // default arg, no spacing: x=e
+                fill(param.eqFodder, false, false, new_indent.lineUp);
+                column++;
+                expr(param.expr, new_indent, false);
+            }
+            fill(param.commaFodder, false, false, new_indent.lineUp);
             first = false;
         }
         if (trailing_comma)
@@ -1594,7 +1618,15 @@ class FixIndentation {
             first = true;
             for (auto &arg : ast->args) {
                 if (!first) column++;  // ","
-                expr(arg.expr, arg_indent, !first);
+
+                bool space = !first;
+                if (arg.id != nullptr) {
+                    fill(arg.idFodder, space, false, arg_indent.lineUp);
+                    column += arg.id->name.length();
+                    space = false;
+                    column++;  // "="
+                }
+                expr(arg.expr, arg_indent, space);
                 fill(arg.commaFodder, false, false, arg_indent.lineUp);
                 first = false;
             }
