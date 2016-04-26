@@ -158,16 +158,7 @@ class Parser {
         got_comma = false;
         bool first = true;
         do {
-            Fodder comma_fodder;
             Token next = peek();
-            if (!first && !got_comma) {
-                if (next.kind == Token::COMMA) {
-                    Token comma = pop();
-                    comma_fodder = comma.fodder;
-                    next = peek();
-                    got_comma = true;
-                }
-            }
             if (next.kind == end) {
                 // got_comma can be true or false here.
                 return pop();
@@ -193,11 +184,15 @@ class Parser {
                 }
             }
             AST *expr = parse(MAX_PRECEDENCE);
-            // TODO(dcunnin): comma fodder attributed to the wrong AST.
-            // test case: 'f(x /*1*/, y)'
-            args.emplace_back(id_fodder, id, eq_fodder, expr, comma_fodder);
             got_comma = false;
             first = false;
+            Fodder comma_fodder;
+            if (peek().kind == Token::COMMA) {
+                Token comma = pop();
+                comma_fodder = comma.fodder;
+                got_comma = true;
+            }
+            args.emplace_back(id_fodder, id, eq_fodder, expr, comma_fodder);
         } while (true);
     }
 

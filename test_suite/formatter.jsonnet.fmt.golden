@@ -47,6 +47,9 @@ limitations under the License.
         g: 2,
     },
 
+    local f(a, b) = null,
+    func: /*0*/ f/*1*/(/*2*/ "x"/*3*/, /*4*/ "y"/*5*/,/*6*/)/*7*/,
+
     test_field0A: {
         g: 1,
     },
@@ -118,7 +121,6 @@ limitations under the License.
         f: 3,
     },
 
-    local f(a, b) = null,
     test_field7f: f
                   (
         1,
