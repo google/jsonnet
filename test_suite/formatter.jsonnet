@@ -36,6 +36,17 @@ limitations under the License.
         g: 2,
     },
 
+    local test_local_default1(x=100, y=200) = {
+        g: 2,
+    },
+
+    local test_local_default2(
+        x=100,
+        y=200)
+    = {
+        g: 2,
+    },
+
     test_field0A: {
         g: 1,
     },
