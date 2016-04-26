@@ -6,7 +6,11 @@ before_install:
   - echo $LANG
   - echo $LC_ALL
 before_script:
-script: make test
+script: |
+    make test
+    python setup.py build
+    sudo python setup.py install
+    ( cd python ; ./run_tests.sh )
 branches:
   only:
     - master
