@@ -91,15 +91,15 @@ void usage(std::ostream &o)
     o << "Available options for specifying values of 'external' variables:\n";
     o << "Provide the value as a string:\n";
     o << "  -V / --ext-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
-    o << "  -f / --ext-str-file <var>=<file> Read the string from the file\n";
+    o << "       --ext-str-file <var>=<file> Read the string from the file\n";
     o << "Provide a value as Jsonnet code:\n";
     o << "  --ext-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
     o << "  --ext-code-file <var>=<file> Read the code from the file\n";
     o << "\n";
     o << "Available options for specifying values of 'top-level arguments':\n";
     o << "Provide the value as a string:\n";
-    o << "  -V / --tla-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
-    o << "  -f / --tla-str-file <var>=<file> Read the string from the file\n";
+    o << "  -A / --tla-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
+    o << "       --tla-str-file <var>=<file> Read the string from the file\n";
     o << "Provide a value as Jsonnet code:\n";
     o << "  --tla-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
     o << "  --tla-code-file <var>=<file> Read the code from the file\n";
@@ -277,8 +277,8 @@ static bool process_args(int argc,
                 if (!get_var_val(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
-            // TODO(dcunnin): Remove deprecated --file
-            } else if (arg == "-F" || arg == "--ext-str-file" || arg == "--file") {
+            // TODO(dcunnin): Remove deprecated --file and -F
+            } else if (arg == "--ext-str-file" || arg == "--file" || arg == "-F") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
@@ -295,7 +295,7 @@ static bool process_args(int argc,
                 if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
-            } else if (arg == "--tla-str") {
+            } else if (arg == "-A" || arg == "--tla-str") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
