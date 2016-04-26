@@ -39,7 +39,10 @@ def get_version():
     with open(os.path.join(DIR, 'include/libjsonnet.h')) as f:
         for line in f:
             if '#define' in line and 'LIB_JSONNET_VERSION' in line:
-                return line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
+                v_code = line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
+                if v_code[0] == "v":
+                    v_code = v_code[1:]
+                return v_code
 
 class BuildJsonnetExt(BuildExt):
     def run(self):
