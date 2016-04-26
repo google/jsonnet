@@ -270,22 +270,27 @@ static bool process_args(int argc,
                     dir += '/';
                 }
                 jsonnet_jpath_add(vm, dir.c_str());
-            } else if (arg == "-V" || arg == "--ext-str") {
+            // TODO(dcunnin): Remove deprecated --var, --env and -E
+            } else if (arg == "-V" || arg == "--ext-str"
+                       || arg == "--var" || arg == "--env" || arg == "-E") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
-            } else if (arg == "-F" || arg == "--ext-str-file") {
+            // TODO(dcunnin): Remove deprecated --file
+            } else if (arg == "-F" || arg == "--ext-str-file" || arg == "--file") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
-            } else if (arg == "--ext-code") {
+            // TODO(dcunnin): Remove deprecated --code-var, --code-env
+            } else if (arg == "--ext-code" || arg == "--code-var" || arg == "--code-env") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
-            } else if (arg == "--ext-code-file") {
+            // TODO(dcunnin): Remove deprecated --code-file
+            } else if (arg == "--ext-code-file" || arg == "--code-file") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
                     return EXIT_FAILURE;
