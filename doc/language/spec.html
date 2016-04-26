@@ -68,10 +68,10 @@ div.rules {
 
 <h1>Specification</h1>
 
-<p> This page is the authority on what Jsonnet programs should do.  It defines Jsonnet syntax and
-parsing.  It describes which programs should be rejected statically (i.e. before execution).
+<p> This page is the authority on what Jsonnet programs should do.  It defines Jsonnet lexing and
+syntax.  It describes which programs should be rejected statically (i.e. before execution).
 Finally, it specifies the manner in which the program is executed, i.e. the JSON that is output, or
-the dynamic error if there is one.</p>
+the runtime error if there is one.</p>
 
 <p>The specification is intended to be terse but precise.  The intention is to illuminate various
 subtleties and edge cases in order to allow fully-compatible reimplementations of the language, as
@@ -80,6 +80,65 @@ computer science techniques, namely <a href="http://en.wikipedia.org/wiki/Type_s
 systems</a> and <a href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational
 semantics</a>.  If that's not your cup of tea, then see the more discussive description of Jsonnet
 behavior in <a href="/docs/tutorial.html">tutorial</a>.</p>
+
+<h2>Lexing</h2>
+
+<p>A Jsonnet program is a UTF-8 encoded text file or string.  The file is a sequence of tokens,
+separate by optional whitespace and comments.  Whitespace consists of space, tab, newline and
+carriage return.  Tokens are lexed greedily.  Comments are either single line comments, beginning
+with a <code>#</code> or a <code>//</code>, or block comments beginning with <code>/*</code> and
+terminating at the first <code>*/</code> encountered within the comment.</p>
+
+<ul>
+
+<li><i>id</i>: Matched by <tt>[_a-zA-Z][_a-zA-Z0-9]*</tt>
+<p>
+Some identifiers are reserved as keywords, thus are not in the set <i>id</i>:
+<code>assert</code> <code>else</code> <code>error</code> <code>false</code> <code>for</code>
+<code>function</code> <code>if</code> <code>import</code> <code>importstr</code> <code>in</code>
+<code>local</code> <code>null</code> <code>tailstrict</code> <code>then</code> <code>self</code>
+<code>super</code> <code>true</code>
+</p>
+</li>
+
+<li><i>number</i>: As defined by <a href="http://json.org/">JSON</a> but without the leading minus.</li>
+
+<li><i>string</i>: Which can have 3 forms:
+<ul>
+<li>Double-quoted, beginning with <code>"</code> and ending with the first subsequent non-quoted <code>"</code> </li>
+<li>Single-quoted, beginning with <code>'</code> and ending with the first subsequent non-quoted <code>'</code> </li>
+<li>Text block, beginning with <code>|||</code>, followed by optional whitespace and a new-line.
+The next line must be prefixed with some non-zero length whitespace <i>W</i>.  The block ends at the
+first subsequent line that does not begin with <i>W</i>, and it is an error if this line does not
+contain some optional whitespace followed by <code>|||</code>.  The content of the string is the
+concatenation of all the lines that began with <i>W</i> but with that prefix stripped.  The line
+ending style in the file is preserved in the string.</li>
+</ul>
+</li>
+<p>Double- and single-quoted strings are allowed to span multiple lines, in which case whatever
+dos/unix end-of-line character appears in the string.  They both understand the following escape
+characters: <code>"'\bfnrt0</code> which have their standard meanings, as well as
+<code>\uXXXX</code> for hexadecimal unicode escapes.</p>
+
+<li><i>symbol</i>: 
+<ul>
+<li>The following single-character symbols:
+<p><code>{}[],.();</code></p>
+</li>
+<li>Sequences of at least one of the following symbols:
+<code>!$:~+-&amp;|^=&lt;&gt;*/%</code>
+<p>With the following caveats, which will cause the sequence to stop:</p>
+<ul>
+<li>The sequence <code>//</code> is not allowed in an operator</li>
+<li>The sequence <code>/*</code> is not allowed in an operator</li>
+<li>The sequence <code>|||</code> is not allowed in an operator</li>
+<li>If the sequence has more than one symbol, it is not allowed to end in any of <code>+-~!</code></li>
+</ul>
+
+</li>
+</ul>
+
+
 
 <h2>Abstract Syntax</h2>
 
@@ -281,10 +340,6 @@ and + have their usual meaning, i.e. repetition without commas.  </p>
 )+
 </td></tr>
 </table>
-
-<p>Additionally, <i>id</i> is defined by regular expression: <tt>[a-zA-Z_][a-zA-Z0-9_]*</tt>.  The
-definition of <i>string</i> is equivalent to the JSON string, including escape characters.  Finally,
-<i>number</i> is equivalent to the JSON number, but without the leading <code>-</code>.</p>
 
 <h2>Associativity and Operator Precedence</h2>
 
