@@ -99,14 +99,14 @@ static PyObject *handle_result(struct JsonnetVm *vm, char *out, int error)
     }
 }
 
-int handle_ext_vars(struct JsonnetVm *vm, PyObject *ext_vars)
+int handle_vars(struct JsonnetVm *vm, PyObject *map, int code, int tla)
 {
-    if (ext_vars == NULL) return 1;
+    if (map == NULL) return 1;
 
     PyObject *key, *val;
     Py_ssize_t pos = 0;
     
-    while (PyDict_Next(ext_vars, &pos, &key, &val)) {
+    while (PyDict_Next(map, &pos, &key, &val)) {
         const char *key_ = PyString_AsString(key);
         if (key_ == NULL) {
             jsonnet_destroy(vm);
@@ -117,7 +117,15 @@ int handle_ext_vars(struct JsonnetVm *vm, PyObject *ext_vars)
             jsonnet_destroy(vm);
             return 0;
         }
-        jsonnet_ext_var(vm, key_, val_);
+        if (!tla && !code) {
+            jsonnet_ext_var(vm, key_, val_);
+        } else if (!tla && code) {
+            jsonnet_ext_code(vm, key_, val_);
+        } else if (tla && !code) {
+            jsonnet_tla_var(vm, key_, val_);
+        } else {
+            jsonnet_tla_code(vm, key_, val_);
+        }
     }
     return 1;
 }
@@ -145,16 +153,24 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
-    PyObject *ext_vars = NULL, *import_callback = NULL;
+    PyObject *ext_vars = NULL, *ext_codes = NULL;
+    PyObject *tla_vars = NULL, *tla_codes = NULL;
+    PyObject *import_callback = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "max_trace", "import_callback", NULL};
+    static char *kwlist[] = {
+        "filename",
+        "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
+        "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
+        NULL
+    };
 
     (void) self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|IIdOIO", kwlist,
-                                     &filename,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-                                     &max_trace, &import_callback)) {
+    if (!PyArg_ParseTupleAndKeywords(
+        args, keywds, "s|IIdOOOOIO", kwlist,
+        &filename,
+        &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
+        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback)) {
         return NULL;
     }
 
@@ -163,9 +179,10 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    if (!handle_ext_vars(vm, ext_vars)) {
-        return NULL;
-    }
+    if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
+    if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
+    if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
+    if (!handle_vars(vm, tla_codes, 1, 1)) return NULL;
     struct ImportCtx ctx = { vm, import_callback };
     if (!handle_import_callback(&ctx, import_callback)) {
         return NULL;
@@ -182,16 +199,24 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
-    PyObject *ext_vars = NULL, *import_callback = NULL;
+    PyObject *ext_vars = NULL, *ext_codes = NULL;
+    PyObject *tla_vars = NULL, *tla_codes = NULL;
+    PyObject *import_callback = NULL;
     struct JsonnetVm *vm;
-    static char *kwlist[] = {"filename", "src", "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars", "max_trace", "import_callback", NULL};
+    static char *kwlist[] = {
+        "filename", "src",
+        "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
+        "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
+        NULL
+    };
 
     (void) self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|IIdOIO", kwlist,
-                                     &filename, &src,
-                                     &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-                                     &max_trace, &import_callback)) {
+    if (!PyArg_ParseTupleAndKeywords(
+        args, keywds, "ss|IIdOOOOIO", kwlist,
+        &filename, &src,
+        &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
+        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback)) {
         return NULL;
     }
 
@@ -200,9 +225,10 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    if (!handle_ext_vars(vm, ext_vars)) {
-        return NULL;
-    }
+    if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
+    if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
+    if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
+    if (!handle_vars(vm, tla_codes, 1, 1)) return NULL;
     struct ImportCtx ctx = { vm, import_callback };
     if (!handle_import_callback(&ctx, import_callback)) {
         return NULL;
