@@ -1,5 +1,10 @@
 {
    "func": null,
+   "prettyFields": {
+      "function": true,
+      "identifier": true,
+      "not identifier": true
+   },
    "test_field0A": {
       "g": 1
    },

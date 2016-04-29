@@ -24,9 +24,9 @@ limitations under the License.
     string2: '"foo\n bar\n\n\'bar\u0005\"\'\t \u0050\b\f\r\\',
     lit_field1: 1,
     lit_field2: 1,
-    false: false,
-    true: true,
-    null: null,
+    "false": false,
+    "true": true,
+    "null": null,
     hidden_field:: null,
     hidden_field2:: null,
 }
