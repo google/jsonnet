@@ -269,4 +269,9 @@ limitations under the License.
     test_field19:: [1, 2, 3][/*foo*/ 1/*bar*/:],
     test_field20:: [1, 2, 3][/*foo*/ 1/*bar*/:/*baz*/:],
 
+    prettyFields: {
+        'identifier': true,
+        "not identifier": true,
+        "function": true,  // Test keyword.
+    }
 }

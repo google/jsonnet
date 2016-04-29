@@ -16,6 +16,7 @@ limitations under the License.
 
 #include <typeinfo>
 
+#include "lexer.h"
 #include "formatter.h"
 #include "string_utils.h"
 #include "unicode.h"
@@ -1281,6 +1282,9 @@ class PrettyFieldNames : public Pass {
                 continue;
             return false;
         }
+        // Filter out keywords.
+        if (lex_get_keyword_kind(encode_utf8(str)) != Token::IDENTIFIER)
+            return false;
         return true;
     }
 
@@ -1964,12 +1968,12 @@ std::string jsonnet_fmt(AST *ast, Fodder &final_fodder, const FmtOpts &opts)
         StripAllButComments(alloc, opts).file(ast, final_fodder);
     else if (opts.stripEverything)
         StripEverything(alloc, opts).file(ast, final_fodder);
+    if (opts.prettyFieldNames)
+        PrettyFieldNames(alloc, opts).file(ast, final_fodder);
     if (opts.stringStyle != 'l')
         EnforceStringStyle(alloc, opts).file(ast, final_fodder);
     if (opts.commentStyle != 'l')
         EnforceCommentStyle(alloc, opts).file(ast, final_fodder);
-    if (opts.prettyFieldNames)
-        PrettyFieldNames(alloc, opts).file(ast, final_fodder);
     if (opts.indent > 0)
         FixIndentation(alloc, opts).file(ast, final_fodder);
 

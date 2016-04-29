@@ -236,6 +236,9 @@ static inline std::ostream &operator<<(std::ostream &o, const Token &v)
     return o;
 }
 
+/** IF the given identifier is a keyword, return its kind, otherwise return IDENTIFIER. */
+Token::Kind lex_get_keyword_kind(const std::string &identifier);
+
 Tokens jsonnet_lex(const std::string &filename, const char *input);
 
 std::string jsonnet_unlex(const Tokens &tokens);
