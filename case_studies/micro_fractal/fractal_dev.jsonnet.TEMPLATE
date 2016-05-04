@@ -1,4 +1,4 @@
-local service_google = import "mmlib/v0.1.0/service/google.jsonnet";
+local service_google = import "mmlib/v0.1.2/service/google.libsonnet";
 
 local fractal = import "fractal.jsonnet";
 
@@ -15,5 +15,20 @@ local fractal = import "fractal.jsonnet";
         cassandraUserPass: "xxxxxxxx",  // CHANGE ME!
         cassandraRootPass: "XXXXXXXX",  // CHANGE ME!
         dnsSuffix: "dev.yourdomain.com.",  // CHANGE ME!
+        // By default only 1 node is deployed of each subservice.
+        // However you can configure this.
+        appserv+: {
+            zones: ["XXX", "YYY", "ZZZ"],  // CHANGE ME!
+        },
+        tilegen+: {
+            zones: ["XXX", "YYY", "ZZZ"],  // CHANGE ME!
+        },
+        db+: {
+            nodes+: {
+                n1+: {
+                    zone: "XXX",  // CHANGE ME!
+                },
+            },
+        },
     },
 }

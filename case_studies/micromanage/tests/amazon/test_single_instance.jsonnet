@@ -1,9 +1,9 @@
-local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
-local amis_ubuntu = import "mmlib/v0.1.1/amis/ubuntu.jsonnet";
-local amis_debian = import "mmlib/v0.1.1/amis/debian.jsonnet";
+local cmd = import "mmlib/v0.1.2/cmd/cmd.libsonnet";
+local amis_ubuntu = import "mmlib/v0.1.2/amis/ubuntu.libsonnet";
+local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
 
 {
-    environments: import "../testenv.jsonnet",
+    environments: import "../testenv.libsonnet",
 
     local SingleAmazonInstance = {
         local service = self,

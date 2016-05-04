@@ -15,14 +15,16 @@ limitations under the License.
 */
 
 // Import some libraries
-local packer = import "packer.jsonnet";
-local terraform = import "terraform.jsonnet";
-local cassandra = import "cassandra.jsonnet";
+local packer = import "packer.libsonnet";
+local terraform = import "terraform.libsonnet";
+local cassandra = import "cassandra.libsonnet";
 
 // Credentials file (don't commit this!)
-local credentials = import "credentials.jsonnet";
+local credentials = import "credentials.libsonnet";
 
-{
+
+function(ssh_username) {
+
     ///////////////////////////
     // GENERAL CONFIGURATION //
     ///////////////////////////
@@ -101,6 +103,7 @@ local credentials = import "credentials.jsonnet";
         // For debugging:
         local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
         aptPackages+: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
+        sshUsername: ssh_username,
     },
 
     // Frontend image.

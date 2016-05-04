@@ -7,4 +7,4 @@ service.list
 *.tf
 service_account_key.json
 tilegen/mandelbrot
-credentials.jsonnet
+credentials.libsonnet

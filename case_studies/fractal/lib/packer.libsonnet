@@ -142,6 +142,7 @@ limitations under the License.
         source_image:: error "GcpImage must have field: name",
         project_id:: error "GcpImage must have field: project_id",
         account_file:: error "GcpImage must have field: account_file",
+        sshUsername:: error "GcpImage must have field: sshUsername",
 
         local img = self,
         builder:: {
@@ -160,7 +161,7 @@ limitations under the License.
             source_image: img.source_image,
             instance_name: "packer-" + self.name,
             zone: "us-central1-a",
-            ssh_username: std.extVar("USER"),
+            ssh_username: img.sshUsername,
             [if std.objectHas(img, "disk_size") then "disk_size"]: img.disk_size,
         },
 

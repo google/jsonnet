@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local packer = import "packer.jsonnet";
+local packer = import "packer.libsonnet";
 
 {
     local cassandra = self,

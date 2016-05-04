@@ -1,5 +1,5 @@
 {
-    environments: import "../testenv.jsonnet",
+    environments: import "../testenv.libsonnet",
 
     local SingleInstance = {
         local service = self,

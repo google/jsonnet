@@ -1,5 +1,5 @@
 {
-    environments: import "../testenv.jsonnet",
+    environments: import "../testenv.libsonnet",
 
     empty_service: {
         environment: "google",

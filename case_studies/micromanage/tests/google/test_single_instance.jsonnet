@@ -1,7 +1,7 @@
-local cmd = import "mmlib/v0.1.0/cmd/cmd.jsonnet";
+local cmd = import "mmlib/v0.1.0/cmd/cmd.libsonnet";
 
 {
-    environments: import "../testenv.jsonnet",
+    environments: import "../testenv.libsonnet",
 
     local SingleGoogleInstance = {
         local service = self,
