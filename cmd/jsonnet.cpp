@@ -366,7 +366,7 @@ static bool process_args(int argc,
                 config->evalStream = true;
             } else if (arg == "-S" || arg == "--string") {
                 jsonnet_string_output(vm, 1);
-            } else if (arg[0] == '-') {
+            } else if (arg.length() > 1 && arg[0] == '-') {
                 std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
                 return EXIT_FAILURE;
             } else {
@@ -439,6 +439,9 @@ static bool process_args(int argc,
                 jsonnet_fmt_pretty_field_names(vm, false);
             } else if (arg == "--debug-desugaring") {
                 jsonnet_fmt_debug_desugaring(vm, true);
+            } else if (arg.length() > 1 && arg[0] == '-') {
+                std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
+                return EXIT_FAILURE;
             } else {
                 remaining_args.push_back(args[i]);
             }
