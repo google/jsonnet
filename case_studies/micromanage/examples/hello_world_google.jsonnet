@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-local service_amazon = import "mmlib/v0.1.1/service/amazon.jsonnet";
-local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
-local web = import "mmlib/v0.1.1/web/web.jsonnet";
-local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
+local service_amazon = import "mmlib/v0.1.1/service/amazon.libsonnet";
+local service_google = import "mmlib/v0.1.1/service/google.libsonnet";
+local web = import "mmlib/v0.1.1/web/web.libsonnet";
+local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
 
 {
     environments: {

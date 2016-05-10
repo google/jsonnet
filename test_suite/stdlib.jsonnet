@@ -17,12 +17,12 @@ limitations under the License.
 // This file tests functions from the standard library (std.jsonnet and builtins).
 
 // Can capture std from another file.
-std.assertEqual((import "lib/capture_std_func.jsonnet")().sqrt(4), 2) &&
+std.assertEqual((import "lib/capture_std_func.libsonnet")().sqrt(4), 2) &&
 
 // Each import has its own std.
 std.assertEqual(
     local std = { sqrt: function(x) x };
-    local lib = import "lib/capture_std.jsonnet";
+    local lib = import "lib/capture_std.libsonnet";
     lib.sqrt(4),
     2) &&
 
@@ -322,8 +322,8 @@ std.assertEqual(std.setMember("a", ["b", "c"]), false) &&
         std.assertEqual(std.thisFile, "stdlib.jsonnet")
 ) &&
 
-std.assertEqual(import "this_file/a.jsonnet", "this_file/a.jsonnet") &&
-std.assertEqual(import "this_file/b.jsonnet", "this_file/a.jsonnet") &&
+std.assertEqual(import "this_file/a.libsonnet", "this_file/a.libsonnet") &&
+std.assertEqual(import "this_file/b.libsonnet", "this_file/a.libsonnet") &&
 
 
 std.assertEqual(std.extVar("var1"), "test") &&

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // bar_menu.7.jsonnet
-local utils = import "bar_menu_utils.jsonnet";
+local utils = import "bar_menu_utils.libsonnet";
 {
     local my_gin = "Farmers Gin",
     cocktails: {

@@ -1,8 +1,8 @@
-local cmd = import "mmlib/v0.1.1/cmd/cmd.jsonnet";
-local service_google = import "mmlib/v0.1.1/service/google.jsonnet";
-local cassandra = import "mmlib/v0.1.1/db/cassandra.jsonnet";
-local web = import "mmlib/v0.1.1/web/web.jsonnet";
-local web_solutions = import "mmlib/v0.1.1/web/solutions.jsonnet";
+local cmd = import "mmlib/v0.1.2/cmd/cmd.libsonnet";
+local service_google = import "mmlib/v0.1.2/service/google.libsonnet";
+local cassandra = import "mmlib/v0.1.2/db/cassandra.libsonnet";
+local web = import "mmlib/v0.1.2/web/web.libsonnet";
+local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
 
 {
     local app = self,

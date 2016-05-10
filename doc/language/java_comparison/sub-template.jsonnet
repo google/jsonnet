@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-(import "base-template.jsonnet") + {
+(import "base-template.libsonnet") + {
     accessToken: "xxxxx",
     image: "gcr.io/cooltool-1009/pipeline_image@sha256:....",
 

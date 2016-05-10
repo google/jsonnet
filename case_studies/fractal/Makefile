@@ -15,7 +15,7 @@
 ALL_IMAGES = $(shell cat service.list | grep '[.]packer.json$$')
 
 default:
-	../../jsonnet -J ../lib -E USER --multi service.jsonnet > service.list
+	../../jsonnet -J lib -A ssh_username=$$USER --multi . service.jsonnet > service.list
 	$(MAKE) all_artifacts
 	$(MAKE) terraform.done
 
