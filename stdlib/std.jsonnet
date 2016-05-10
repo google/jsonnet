@@ -90,7 +90,9 @@ limitations under the License.
 
     slice(indexable, index, end, step)::
         if (index != null && index < 0) || (end != null && end < 0) || (step != null && step < 0) then
-            error("got [%s:%s:%s] but negative index, end, and steps are not supported" % [index, end, step] )
+            error("got [%s:%s:%s] but negative index, end, and steps are not supported" % [index, end, step])
+        else if step == 0 then
+            error("got %s but step must be greater than 0" % step)
         else if std.type(indexable) != "string" && std.type(indexable) != "array" then
             error("std.slice accepts a string or an array, but got: %s" % std.type(indexable))
         else
