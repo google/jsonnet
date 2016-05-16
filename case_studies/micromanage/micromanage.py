@@ -169,6 +169,7 @@ def preprocess(config):
 
     return r
 
+
 def get_build_artefacts(config):
     """Create all required build artefacts, modify config to refer to them."""
 
@@ -216,8 +217,20 @@ def compile(config, barts):
     if not len(tfs):
         tfs['empty.tf'] = {}
 
+    for tfname, tf in tfs.iteritems():
+        if 'resource' in tf:
+            new_resources = {}
+            for rtype_name, rtype_dict in tf['resource'].iteritems():
+                if rtype_dict:
+                    new_resources[rtype_name] = rtype_dict
+                    for r_name, r_dict in rtype_dict.iteritems():
+                        # depends_on changed to always be a list.
+                        if 'depends_on' in r_dict and isinstance(r_dict['depends_on'], basestring):
+                            r_dict['depends_on'] = [r_dict['depends_on']]
+            # Remove empty resource dicts, workaround for
+            # https://github.com/hashicorp/terraform/issues/6368
+            tf['resource'] = new_resources
     return tfs
-
 
 
 def confirmation_dialog(msg):
