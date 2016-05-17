@@ -135,7 +135,7 @@ local apt = import "../cmd/apt.jsonnet";
                 ] else [],
             local logging =
                 if instance.enableLogging then [
-                    "curl -s https://dl.google.com/cloudagents/install-logging-agent.sh | bash",
+                    "curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | bash",
                 ] else [],
             cmds+: monitoring + jmx + logging,
         },
@@ -167,7 +167,7 @@ local apt = import "../cmd/apt.jsonnet";
             } + {
                 [name]: DnsRecord {
                     name: "${google_compute_instance." + name + ".name}." + service.dnsZone.dnsName,
-                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.assigned_nat_ip}"],
                 } for name in std.objectFields(instances)
             },
         },

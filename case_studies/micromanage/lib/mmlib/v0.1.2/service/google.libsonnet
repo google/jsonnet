@@ -167,7 +167,7 @@ local apt = import "../cmd/apt.libsonnet";
             } + {
                 [name]: DnsRecord {
                     name: "${google_compute_instance." + name + ".name}." + service.dnsZone.dnsName,
-                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.assigned_nat_ip}"],
                 } for name in std.objectFields(instances)
             },
         },
@@ -269,7 +269,7 @@ local apt = import "../cmd/apt.libsonnet";
             google_compute_target_pool: {
                 "${-}": {
                     name: "${-}",
-                    depends_on: "google_compute_http_health_check.${-}",
+                    depends_on: ["google_compute_http_health_check.${-}"],
                     health_checks: ["${-}"],
                     instances: ["%s/%s" % [instances[iname].zone, iname]
                                 for iname in attached_instances],
