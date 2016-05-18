@@ -768,6 +768,10 @@ class Desugarer {
             str(U"thisFile"),
             str(decode_utf8(ast->location.file)));
 
+        std::vector<std::string> empty;
+        auto line_end_blank = Fodder{{FodderElement::LINE_END, 1, 0, empty}};
+        auto line_end = Fodder{{FodderElement::LINE_END, 0, 0, empty}};
+
         // local body = ast;
         // if std.type(body) == "function") then
         //     body(tlas...)
@@ -793,17 +797,17 @@ class Desugarer {
             const Identifier *body = id(U"top_level");
             ast = make<Local>(
                 ast->location,
-                EF,
+                line_end_blank,
                 singleBind(body, ast),
                 make<Conditional>(
                     E,
-                    EF,
+                    line_end,
                     primitiveEquals(E, type(var(body)), str(U"function")),
                     EF,
                     make<Apply>(
                         tla_loc,
                         EF,
-                        var(body),
+                        make<Var>(E, line_end, body),
                         EF,
                         args,
                         false,  // trailing comma
@@ -811,8 +815,8 @@ class Desugarer {
                         EF,
                         false  // tailstrict
                     ),
-                    EF,
-                    var(body)));
+                    line_end,
+                    make<Var>(E, line_end, body)));
         }
 
         // local std = (std.jsonnet stuff); ast
