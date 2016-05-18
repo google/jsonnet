@@ -1139,6 +1139,12 @@ class Interpreter {
                                    << i;
                                 throw makeError(ast.location, ss.str());
                             }
+                            if (i >= func->params.size()) {
+                                std::stringstream ss;
+                                ss << "Too many args, function has " << func->params.size()
+                                   << " parameter(s)";
+                                throw makeError(ast.location, ss.str());
+                            }
                             name = func->params[i].id;
                         }
                         // Special case for builtin functions -- leave identifier blank for
