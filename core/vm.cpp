@@ -872,6 +872,7 @@ class Interpreter {
         if (stack.alreadyExecutingInvariants(self)) return;
 
         unsigned counter = 0;
+        unsigned initial_stack_size = stack.size();
         stack.newFrame(FRAME_INVARIANTS, loc);
         std::vector<HeapThunk*> &thunks = stack.top().thunks;
         objectInvariants(self, self, counter, thunks);
@@ -880,7 +881,6 @@ class Interpreter {
             return;
         }
         HeapThunk *thunk = thunks[0];
-        unsigned initial_stack_size = stack.size();
         stack.top().elementId = 1;
         stack.top().self = self;
         stack.newCall(loc, thunk, thunk->self, thunk->offset, thunk->upValues);
