@@ -46,6 +46,7 @@ cc_library(
         ":lexer",
         "//stdlib:std",
     ],
+    includes = [".", "../include"],
 )
 
 cc_test(
@@ -80,7 +81,7 @@ cc_library(
         "//include:libjsonnet",
     ],
     linkopts = ["-lm"],
-    includes = ["."],
+    includes = [".", "../include"],
 )
 
 cc_library(
@@ -90,6 +91,7 @@ cc_library(
         ":jsonnet-common",
         "//include:libjsonnet",
     ],
+    includes = [".", "../include"],
 )
 
 cc_test(
