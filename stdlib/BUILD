@@ -1,8 +1,8 @@
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-  name = "stdlib",
-  srcs = ["std.jsonnet"],
+    name = "stdlib",
+    srcs = ["std.jsonnet"],
 )
 
 cc_library(
