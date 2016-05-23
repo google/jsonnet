@@ -1,5 +1,10 @@
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "stdlib",
+    srcs = ["std.jsonnet"],
+)
+
 cc_library(
     name = "std",
     hdrs = ["std.jsonnet.h"],
