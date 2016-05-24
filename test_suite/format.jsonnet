@@ -21,6 +21,12 @@ std.assertEqual(std.format("%#%", []), "%") &&
 std.assertEqual(std.format("%# +05.3%", []), "    %") &&
 std.assertEqual(std.format("%# -+05.3%", []), "%    ") &&
 
+// %
+std.assertEqual(std.format("%%", []), "%") &&
+std.assertEqual(std.format("%%%%", []), "%%") &&
+std.assertEqual(std.format("%s%%", ["foo"]), "foo%") &&
+std.assertEqual(std.format("%%%s", ["foo"]), "%foo") &&
+
 // s
 std.assertEqual(std.format("%s", ["test"]), "test") &&
 std.assertEqual(std.format("%s", [true]), "true") &&
