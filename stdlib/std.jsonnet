@@ -546,7 +546,12 @@ limitations under the License.
                             pad_right(s, tmp.fw, " ")
                         else
                             pad_left(s, tmp.fw, " ");
-                    format_codes_arr(codes, arr, i + 1, j2 + 1, v + s_padded) tailstrict;
+                    local j3 =
+                        if code.ctype == "%" then
+                            j2
+                        else
+                            j2 + 1;
+                    format_codes_arr(codes, arr, i + 1, j3, v + s_padded) tailstrict;
 
         // Render a parsed format string with an object of values.
         local format_codes_obj(codes, obj, i, v) =
