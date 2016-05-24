@@ -726,16 +726,16 @@ limitations under the License.
                 error "Tried to manifest function at " + path
             else if std.type(v) == "array" then
                 local range = std.range(0, std.length(v) - 1);
-                local lines = ["[\n" + cindent] 
-                              + std.join([",\n" + cindent],
-                                         [[indent + aux(v[i], path + [i], cindent + indent)] for i
+                local lines = ["[\n"]
+                              + std.join([",\n"],
+                                         [[cindent + indent + aux(v[i], path + [i], cindent + indent)] for i
 in range])                
                               + ["\n" + cindent + "]"];
                 std.join("", lines)
             else if std.type(v) == "object" then
-                local lines = ["{\n" + cindent] 
-                              + std.join([",\n" + cindent],
-                                         [[indent + "\"" + k + "\": "
+                local lines = ["{\n"]
+                              + std.join([",\n"],
+                                         [[cindent + indent + "\"" + k + "\": "
                                            + aux(v[k], path + [k], cindent + indent)]
                                           for k in std.objectFields(v)])
                               + ["\n" + cindent + "}"];
