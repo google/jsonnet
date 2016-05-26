@@ -343,7 +343,7 @@ class Unparser {
             unparse(ast->right, true);
 
         } else if (auto *ast = dynamic_cast<const BuiltinFunction*>(ast_)) {
-            o << "/* builtin " << ast->id << " */ null";
+            o << "/* builtin " << ast->name << " */ null";
 
         } else if (auto *ast = dynamic_cast<const Conditional*>(ast_)) {
             o << "if";
@@ -1724,10 +1724,8 @@ class FixIndentation {
             expr(ast->right, new_indent, true);
 
         } else if (auto *ast = dynamic_cast<BuiltinFunction*>(ast_)) {
-            std::stringstream ss;
-            ss << ast->id;
             column += 11;  // "/* builtin "
-            column += ss.str().length();
+            column += ast->name.length();
             column += 8;  // " */ null"
 
         } else if (auto *ast = dynamic_cast<Conditional*>(ast_)) {

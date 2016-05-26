@@ -63,10 +63,38 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * \param found_here Set this byref param to path to the file, absolute or relative to the
  *     process's CWD.  This is necessary so that imports from the content of the imported file can
  *     be resolved correctly.  Allocate memory with jsonnet_realloc.  Only use when *success = 0.
- *\ param success Set this byref param to 1 to indicate success and 0 for failure.
+ * \param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
  */
 typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, char **found_here, int *success);
+
+/** An opaque type which can only be utilized via the jsonnet_json_* family of functions.
+ */
+struct JsonnetJsonValue;
+
+/** If the value is a string, return it as UTF8 otherwise return NULL.
+ */
+const char *jsonnet_json_extract_string(struct JsonnetVm *vm, const struct JsonnetJsonValue *v);
+
+/** Convert the given UTF8 string to a JsonnetJsonValue.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_string(struct JsonnetVm *vm, const char *v);
+
+/** Callback to provide native extensions to Jsonnet.
+ *
+ * The returned JsonnetJsonValue* should be allocated with jsonnet_realloc.  It will be cleaned up
+ * along with the objects rooted at argv by libjsonnet when no-longer needed.  Return a string upon
+ * failure, which will appear in Jsonnet as an error.
+ *
+ * \param ctx User pointer, given in jsonnet_native_callback.
+ * \param argc The number of arguments from Jsonnet code.
+ * \param argv Array of arguments from Jsonnet code.
+ * \param success Set this byref param to 1 to indicate success and 0 for failure.
+ * \returns The content of the imported file, or an error message.
+ */
+typedef struct JsonnetJsonValue *JsonnetNativeCallback(void *ctx,
+                                                       const struct JsonnetJsonValue * const *argv,
+                                                       int *success);
 
 /** Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will
  * only return NULL if sz was zero.
@@ -80,6 +108,22 @@ char *jsonnet_realloc(struct JsonnetVm *vm, char *buf, size_t sz);
 /** Override the callback used to locate imports.
  */
 void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, void *ctx);
+
+/** Register a native extension.
+ *
+ * This will appear in Jsonnet as a function type and can be accessed from std.nativeExt("foo").
+ *
+ * DO NOT register native callbacks with side-effects!  Jsonnet is a lazy functional language and
+ * will call your function when you least expect it, more times than you expect, or not at all.
+ *
+ * \param vm The vm.
+ * \param name The name of the function as visible to Jsonnet code, e.g. "foo".
+ * \param cb The PURE function that implements the behavior you want.
+ * \param ctx User pointer, stash non-global state you need here.
+ * \param params The names of the params.  Must be valid Jsonnet identifiers.
+ */
+void jsonnet_native_callback(struct JsonnetVm *vm, const char *name, JsonnetNativeCallback *cb,
+                             void *ctx, const char * const *params);
 
 /** Bind a Jsonnet external var to the given string.
  *

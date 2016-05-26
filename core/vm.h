@@ -17,8 +17,9 @@ limitations under the License.
 #ifndef JSONNET_VM_H
 #define JSONNET_VM_H
 
+#include <libjsonnet.h>
+
 #include "ast.h"
-#include "libjsonnet.h"
 
 /** A single line of a stack trace from a runtime error.
  */
@@ -40,6 +41,15 @@ struct RuntimeError {
       : stackTrace(stack_trace), msg(msg)
     { }
 };
+
+/** Holds native callback and context. */
+struct VmNativeCallback {
+    JsonnetNativeCallback *cb;
+    void *ctx;
+    std::vector<std::string> params;
+};
+
+typedef std::map<std::string, VmNativeCallback> VmNativeCallbackMap;
 
 /** Stores external values / code. */
 struct VmExt {
@@ -72,6 +82,7 @@ std::string jsonnet_vm_execute(
     unsigned max_stack,
     double gc_min_objects,
     double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback,
     void *import_callback_ctx,
     bool string_output);
@@ -100,6 +111,7 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
     unsigned max_stack,
     double gc_min_objects,
     double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback,
     void *import_callback_ctx,
     bool string_output);
@@ -129,6 +141,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(
     unsigned max_stack,
     double gc_min_objects,
     double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback,
     void *import_callback_ctx);
 

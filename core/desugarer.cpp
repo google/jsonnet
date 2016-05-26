@@ -26,7 +26,12 @@ static const Fodder EF;  // Empty fodder.
 
 static const LocationRange E;  // Empty.
 
-static unsigned long max_builtin = 24;
+struct BuiltinDecl {
+    String name;
+    std::vector<String> params;
+};
+
+static unsigned long max_builtin = 25;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -55,6 +60,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 22: return {U"modulo", {U"a", U"b"}};
         case 23: return {U"extVar", {U"x"}};
         case 24: return {U"primitiveEquals", {U"a", U"b"}};
+        case 25: return {U"native", {U"name"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();
@@ -761,7 +767,7 @@ class Desugarer {
             fields.emplace_back(
                 ObjectField::HIDDEN,
                 str(decl.name),
-                make<BuiltinFunction>(E, c, params));
+                make<BuiltinFunction>(E, encode_utf8(decl.name), params));
         }
         fields.emplace_back(
             ObjectField::HIDDEN,

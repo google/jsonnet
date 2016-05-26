@@ -221,7 +221,7 @@ struct HeapComprehensionObject : public HeapLeafObject {
 
 /** Stores the function itself and also the captured environment.
  *
- * Either body is non-null and builtin is 0, or body is null and builtin refers to a built-in
+ * Either body is non-null and builtinName is "", or body is null and builtin refers to a built-in
  * function.  In the former case, the closure represents a user function, otherwise calling it
  * will trigger the builtin function to execute.  Params is empty when the function is a
  * builtin.
@@ -243,14 +243,14 @@ struct HeapClosure : public HeapEntity {
     typedef std::vector<Param> Params;
     const Params params;
     const AST *body;
-    const unsigned long builtin;
+    std::string builtinName;
     HeapClosure(const BindingFrame &up_values,
                 HeapObject *self,
                 unsigned offset,
                 const Params &params,
-                const AST *body, unsigned long builtin)
+                const AST *body, const std::string &builtin_name)
       : upValues(up_values), self(self), offset(offset),
-        params(params), body(body), builtin(builtin)
+        params(params), body(body), builtinName(builtin_name)
     { }
 };
 
