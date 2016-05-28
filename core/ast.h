@@ -308,11 +308,11 @@ struct Binary : public AST {
  * interpreter.
  */
 struct BuiltinFunction : public AST {
-    unsigned long id;
+    std::string name;
     Identifiers params;
-    BuiltinFunction(const LocationRange &lr, unsigned long id,
+    BuiltinFunction(const LocationRange &lr, const std::string &name,
                     const Identifiers &params)
-      : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), id(id), params(params)
+      : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), name(name), params(params)
     { }
 };
 

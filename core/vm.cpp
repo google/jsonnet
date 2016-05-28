@@ -19,7 +19,9 @@ limitations under the License.
 #include <set>
 #include <string>
 
+
 #include "desugarer.h"
+#include "json.h"
 #include "parser.h"
 #include "state.h"
 #include "static_analysis.h"
@@ -282,8 +284,7 @@ class Stack {
         } else {
             const auto *func = static_cast<const HeapClosure *>(e);
             if (func->body == nullptr) {
-                name = encode_utf8(jsonnet_builtin_decl(func->builtin).name);
-                return "builtin function <" + name + ">";
+                return "builtin function <" + func->builtinName + ">";
             }
             return "function <" + name + ">";
         }
@@ -371,7 +372,7 @@ class Stack {
         #ifndef NDEBUG
         for (const auto &bind : up_values) {
             if (bind.second == nullptr) {
-                std::cerr << "iNTERNAL ERROR: No binding for variable "
+                std::cerr << "INTERNAL ERROR: No binding for variable "
                           << encode_utf8(bind.first->name) << std::endl;
                 std::abort();
             }
@@ -411,6 +412,11 @@ typedef std::map<std::string, VmExt> ExtMap;
 /** Typedef to save some typing. */
 typedef std::map<std::string, std::string> StrMap;
 
+
+class Interpreter;
+
+typedef const AST *(Interpreter::*BuiltinFunc)(const LocationRange &loc,
+                                               const std::vector<Value> &args);
 
 /** Holds the intermediate state during execution and implements the necessary functions to
  * implement the semantics of the language.
@@ -456,10 +462,17 @@ class Interpreter {
     ExtMap externalVars;
 
     /** The callback used for loading imported files. */
+    VmNativeCallbackMap nativeCallbacks;
+
+    /** The callback used for loading imported files. */
     JsonnetImportCallback *importCallback;
 
     /** User context pointer for the import callback. */
     void *importCallbackContext;
+
+    /** Builtin functions by name. */
+    typedef std::map<std::string, BuiltinFunc> BuiltinMap;
+    BuiltinMap builtins;
 
     RuntimeError makeError(const LocationRange &loc, const std::string &msg)
     {
@@ -539,16 +552,25 @@ class Interpreter {
     {
         Value r;
         r.t = Value::FUNCTION;
-        r.v.h = makeHeap<HeapClosure>(env, self, offset, params, body, 0);
+        r.v.h = makeHeap<HeapClosure>(env, self, offset, params, body, "");
         return r;
     }
 
-    Value makeBuiltin(unsigned long builtin_id, const HeapClosure::Params &params)
+    Value makeNativeBuiltin(const std::string &name, const std::vector<std::string> &params)
+    {
+        HeapClosure::Params hc_params;
+        for (const auto &p : params) {
+            hc_params.emplace_back(alloc->makeIdentifier(decode_utf8(p)), nullptr);
+        }
+        return makeBuiltin(name, hc_params);
+    }
+
+    Value makeBuiltin(const std::string &name, const HeapClosure::Params &params)
     {
         AST *body = nullptr;
         Value r;
         r.t = Value::FUNCTION;
-        r.v.h = makeHeap<HeapClosure>(BindingFrame(), nullptr, 0, params, body, builtin_id);
+        r.v.h = makeHeap<HeapClosure>(BindingFrame(), nullptr, 0, params, body, name);
         return r;
     }
 
@@ -740,15 +762,53 @@ class Interpreter {
      *
      * \param loc The location range of the file to be executed.
      */
-    Interpreter(Allocator *alloc, const ExtMap &ext_vars,
-                unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-                JsonnetImportCallback *import_callback, void *import_callback_context)
-      : heap(gc_min_objects, gc_growth_trigger), stack(max_stack), alloc(alloc),
+    Interpreter(
+        Allocator *alloc,
+        const ExtMap &ext_vars,
+        unsigned max_stack,
+        double gc_min_objects,
+        double gc_growth_trigger,
+        const VmNativeCallbackMap &native_callbacks,
+        JsonnetImportCallback *import_callback,
+        void *import_callback_context)
+
+      : heap(gc_min_objects, gc_growth_trigger),
+        stack(max_stack),
+        alloc(alloc),
         idArrayElement(alloc->makeIdentifier(U"array_element")),
-        idInvariant(alloc->makeIdentifier(U"object_assert")), externalVars(ext_vars),
-        importCallback(import_callback), importCallbackContext(import_callback_context)
+        idInvariant(alloc->makeIdentifier(U"object_assert")),
+        externalVars(ext_vars),
+        nativeCallbacks(native_callbacks),
+        importCallback(import_callback),
+        importCallbackContext(import_callback_context)
     {
         scratch = makeNull();
+        builtins["makeArray"] = &Interpreter::builtinMakeArray;
+        builtins["pow"] = &Interpreter::builtinPow;
+        builtins["floor"] = &Interpreter::builtinFloor;
+        builtins["ceil"] = &Interpreter::builtinCeil;
+        builtins["sqrt"] = &Interpreter::builtinSqrt;
+        builtins["sin"] = &Interpreter::builtinSin;
+        builtins["cos"] = &Interpreter::builtinCos;
+        builtins["tan"] = &Interpreter::builtinTan;
+        builtins["asin"] = &Interpreter::builtinAsin;
+        builtins["acos"] = &Interpreter::builtinAcos;
+        builtins["atan"] = &Interpreter::builtinAtan;
+        builtins["type"] = &Interpreter::builtinType;
+        builtins["filter"] = &Interpreter::builtinFilter;
+        builtins["objectHasEx"] = &Interpreter::builtinObjectHasEx;
+        builtins["length"] = &Interpreter::builtinLength;
+        builtins["objectFieldsEx"] = &Interpreter::builtinObjectFieldsEx;
+        builtins["codepoint"] = &Interpreter::builtinCodepoint;
+        builtins["char"] = &Interpreter::builtinChar;
+        builtins["log"] = &Interpreter::builtinLog;
+        builtins["exp"] = &Interpreter::builtinExp;
+        builtins["mantissa"] = &Interpreter::builtinMantissa;
+        builtins["exponent"] = &Interpreter::builtinExponent;
+        builtins["modulo"] = &Interpreter::builtinModulo;
+        builtins["extVar"] = &Interpreter::builtinExtVar;
+        builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
+        builtins["native"] = &Interpreter::builtinNative;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -772,7 +832,7 @@ class Interpreter {
 
     /** Raise an error if the arguments aren't the expected types. */
     void validateBuiltinArgs(const LocationRange &loc,
-                             unsigned long builtin,
+                             const std::string &name,
                              const std::vector<Value> &args,
                              const std::vector<Value::Type> params)
     {
@@ -783,9 +843,8 @@ class Interpreter {
             return;
         }
         bad:;
-        const String &name = jsonnet_builtin_decl(builtin).name;
         std::stringstream ss;
-        ss << "Builtin function " + encode_utf8(name) + " expected (";
+        ss << "Builtin function " + name + " expected (";
         const char *prefix = "";
         for (auto p : params) {
             ss << prefix << type_str(p);
@@ -800,6 +859,406 @@ class Interpreter {
         ss << ")";
         throw makeError(loc, ss.str());
     }
+
+    const AST *builtinMakeArray(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        Frame &f = stack.top();
+        validateBuiltinArgs(loc, "makeArray", args,
+                            {Value::DOUBLE, Value::FUNCTION});
+        long sz = long(args[0].v.d);
+        if (sz < 0) {
+            std::stringstream ss;
+            ss << "makeArray requires size >= 0, got " << sz;
+            throw makeError(loc, ss.str());
+        }
+        auto *func = static_cast<const HeapClosure*>(args[1].v.h);
+        std::vector<HeapThunk*> elements;
+        if (func->params.size() != 1) {
+            std::stringstream ss;
+            ss << "makeArray function must take 1 param, got: " << func->params.size();
+            throw makeError(loc, ss.str());
+        }
+        elements.resize(sz);
+        for (long i=0 ; i<sz ; ++i) {
+            auto *th = makeHeap<HeapThunk>(idArrayElement, func->self, func->offset, func->body);
+            // The next line stops the new thunks from being GCed.
+            f.thunks.push_back(th);
+            th->upValues = func->upValues;
+
+            auto *el = makeHeap<HeapThunk>(func->params[0].id, nullptr, 0, nullptr);
+            el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
+            th->upValues[func->params[0].id] = el;
+            elements[i] = th;
+        }
+        scratch = makeArray(elements);
+        return nullptr;
+    }
+
+    const AST *builtinPow(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "pow", args, {Value::DOUBLE, Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::pow(args[0].v.d, args[1].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinFloor(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "floor", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::floor(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinCeil(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "ceil", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::ceil(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinSqrt(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "sqrt", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::sqrt(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinSin(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "sin", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::sin(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinCos(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "cos", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::cos(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinTan(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "tan", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::tan(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinAsin(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "asin", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::asin(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinAcos(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "acos", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::acos(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinAtan(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "atan", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::atan(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinType(const LocationRange &, const std::vector<Value> &args)
+    {
+        switch (args[0].t) {
+            case Value::NULL_TYPE:
+            scratch = makeString(U"null");
+            return nullptr;
+
+            case Value::BOOLEAN:
+            scratch = makeString(U"boolean");
+            return nullptr;
+
+            case Value::DOUBLE:
+            scratch = makeString(U"number");
+            return nullptr;
+
+            case Value::ARRAY:
+            scratch = makeString(U"array");
+            return nullptr;
+
+            case Value::FUNCTION:
+            scratch = makeString(U"function");
+            return nullptr;
+
+            case Value::OBJECT:
+            scratch = makeString(U"object");
+            return nullptr;
+
+            case Value::STRING:
+            scratch = makeString(U"string");
+            return nullptr;
+        }
+        return nullptr;  // Quiet, compiler.
+    }
+
+    const AST *builtinFilter(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        Frame &f = stack.top();
+        validateBuiltinArgs(loc, "filter", args, {Value::FUNCTION, Value::ARRAY});
+        auto *func = static_cast<HeapClosure*>(args[0].v.h);
+        auto *arr = static_cast<HeapArray*>(args[1].v.h);
+        if (func->params.size() != 1) {
+            throw makeError(loc, "filter function takes 1 parameter.");
+        }
+        if (arr->elements.size() == 0) {
+            scratch = makeArray({});
+        } else {
+            f.kind = FRAME_BUILTIN_FILTER;
+            f.val = args[0];
+            f.val2 = args[1];
+            f.thunks.clear();
+            f.elementId = 0;
+
+            auto *thunk = arr->elements[f.elementId];
+            BindingFrame bindings = func->upValues;
+            bindings[func->params[0].id] = thunk;
+            stack.newCall(loc, func, func->self, func->offset, bindings);
+            return func->body;
+        }
+        return nullptr;
+    }
+
+    const AST *builtinObjectHasEx(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "objectHasEx", args,
+                            {Value::OBJECT, Value::STRING,
+                             Value::BOOLEAN});
+        const auto *obj = static_cast<const HeapObject*>(args[0].v.h);
+        const auto *str = static_cast<const HeapString*>(args[1].v.h);
+        bool include_hidden = args[2].v.b;
+        bool found = false;
+        for (const auto &field : objectFields(obj, !include_hidden)) {
+            if (field->name == str->value) {
+                found = true;
+                break;
+            }
+        }
+        scratch = makeBoolean(found);
+        return nullptr;
+    } 
+
+    const AST *builtinLength(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if (args.size() != 1) {
+            throw makeError(loc, "length takes 1 parameter.");
+        }
+        HeapEntity *e = args[0].v.h;
+        switch (args[0].t) {
+            case Value::OBJECT: {
+                auto fields = objectFields(static_cast<HeapObject*>(e), true);
+                scratch = makeDouble(fields.size());
+            } break;
+
+            case Value::ARRAY:
+            scratch = makeDouble(static_cast<HeapArray*>(e)->elements.size());
+            break;
+
+            case Value::STRING:
+            scratch = makeDouble(static_cast<HeapString*>(e)->value.length());
+            break;
+
+            case Value::FUNCTION:
+            scratch = makeDouble(static_cast<HeapClosure*>(e)->params.size());
+            break;
+
+            default:
+            throw makeError(loc,
+                            "length operates on strings, objects, "
+                            "and arrays, got " + type_str(args[0]));
+        }
+        return nullptr;
+    } 
+
+    const AST *builtinObjectFieldsEx(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "objectFieldsEx", args,
+                            {Value::OBJECT, Value::BOOLEAN});
+        const auto *obj = static_cast<HeapObject*>(args[0].v.h);
+        bool include_hidden = args[1].v.b;
+        // Stash in a set first to sort them.
+        std::set<String> fields;
+        for (const auto &field : objectFields(obj, !include_hidden)) {
+            fields.insert(field->name);
+        }
+        scratch = makeArray({});
+        auto &elements = static_cast<HeapArray*>(scratch.v.h)->elements;
+        for (const auto &field : fields) {
+            auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+            elements.push_back(th);
+            th->fill(makeString(field));
+        }
+        return nullptr;
+    } 
+
+    const AST *builtinCodepoint(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "codepoint", args, {Value::STRING});
+        const String &str =
+            static_cast<HeapString*>(args[0].v.h)->value;
+        if (str.length() != 1) {
+            std::stringstream ss;
+            ss << "codepoint takes a string of length 1, got length "
+               << str.length();
+            throw makeError(loc, ss.str());
+        }
+        char32_t c = static_cast<HeapString*>(args[0].v.h)->value[0];
+        scratch = makeDouble((unsigned long)(c));
+        return nullptr;
+    } 
+
+    const AST *builtinChar(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "char", args, {Value::DOUBLE});
+        long l = long(args[0].v.d);
+        if (l < 0) {
+            std::stringstream ss;
+            ss << "Codepoints must be >= 0, got " << l;
+            throw makeError(loc, ss.str());
+        }
+        if (l >= JSONNET_CODEPOINT_MAX) {
+            std::stringstream ss;
+            ss << "Invalid unicode codepoint, got " << l;
+            throw makeError(loc, ss.str());
+        }
+        char32_t c = l;
+        scratch = makeString(String(&c, 1));
+        return nullptr;
+    } 
+
+    const AST *builtinLog(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "log", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::log(args[0].v.d));
+        return nullptr;
+    } 
+
+    const AST *builtinExp(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "exp", args, {Value::DOUBLE});
+        scratch = makeDoubleCheck(loc, std::exp(args[0].v.d));
+        return nullptr;
+    } 
+
+    const AST *builtinMantissa(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "mantissa", args, {Value::DOUBLE});
+        int exp;
+        double m = std::frexp(args[0].v.d, &exp);
+        scratch = makeDoubleCheck(loc, m);
+        return nullptr;
+    } 
+
+    const AST *builtinExponent(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "exponent", args, {Value::DOUBLE});
+        int exp;
+        std::frexp(args[0].v.d, &exp);
+        scratch = makeDoubleCheck(loc, exp);
+        return nullptr;
+    } 
+
+    const AST *builtinModulo(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "modulo", args, {Value::DOUBLE, Value::DOUBLE});
+        double a = args[0].v.d;
+        double b = args[1].v.d;
+        if (b == 0)
+            throw makeError(loc, "Division by zero.");
+        scratch = makeDoubleCheck(loc, std::fmod(a, b));
+        return nullptr;
+    } 
+
+    const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
+        const String &var =
+            static_cast<HeapString*>(args[0].v.h)->value;
+        std::string var8 = encode_utf8(var);
+        auto it = externalVars.find(var8);
+        if (it == externalVars.end()) {
+            std::string msg = "Undefined external variable: " + var8;
+            throw makeError(loc, msg);
+        }
+        const VmExt &ext = it->second;
+        if (ext.isCode) {
+            std::string filename = "<extvar:" + var8 + ">";
+            Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
+            AST *expr = jsonnet_parse(alloc, tokens);
+            jsonnet_desugar(alloc, expr, nullptr);
+            jsonnet_static_analysis(expr);
+            stack.pop();
+            return expr;
+        } else {
+            scratch = makeString(decode_utf8(ext.data));
+            return nullptr;
+        }
+    } 
+
+    const AST *builtinPrimitiveEquals(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if (args.size() != 2) {
+            std::stringstream ss;
+            ss << "primitiveEquals takes 2 parameters, got " << args.size();
+            throw makeError(loc, ss.str());
+        }
+        if (args[0].t != args[1].t) {
+            scratch = makeBoolean(false);
+            return nullptr;
+        }
+        bool r;
+        switch (args[0].t) {
+            case Value::BOOLEAN:
+            r = args[0].v.b == args[1].v.b;
+            break;
+
+            case Value::DOUBLE:
+            r = args[0].v.d == args[1].v.d;
+            break;
+
+            case Value::STRING:
+            r = static_cast<HeapString*>(args[0].v.h)->value
+              == static_cast<HeapString*>(args[1].v.h)->value;
+            break;
+
+            case Value::NULL_TYPE:
+            r = true;
+            break;
+
+            case Value::FUNCTION:
+            throw makeError(loc, "Cannot test equality of functions");
+            break;
+
+            default:
+            throw makeError(loc,
+                            "primitiveEquals operates on primitive "
+                            "types, got " + type_str(args[0]));
+        }
+        scratch = makeBoolean(r);
+        return nullptr;
+    } 
+
+    const AST *builtinNative(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "native", args, {Value::STRING});
+
+        std::string builtin_name = encode_utf8(static_cast<HeapString*>(args[0].v.h)->value);
+
+        VmNativeCallbackMap::const_iterator nit = nativeCallbacks.find(builtin_name);
+        if (nit == nativeCallbacks.end()) {
+            throw makeError(loc, "Unrecognized native function name: " + builtin_name);
+        }
+
+        const VmNativeCallback &cb = nit->second;
+        scratch = makeNativeBuiltin(builtin_name, cb.params);
+        return nullptr;
+    } 
 
 
     String toString(const LocationRange &loc)
@@ -940,7 +1399,7 @@ class Interpreter {
                     // None of the builtins have default args.
                     params.emplace_back(p, nullptr);
                 }
-                scratch = makeBuiltin(ast.id, params);
+                scratch = makeBuiltin(ast.name, params);
             } break;
 
             case AST_CONDITIONAL: {
@@ -1496,365 +1955,68 @@ class Interpreter {
                     if (f.elementId == f.thunks.size()) {
                         // All thunks forced, now the builtin implementations.
                         const LocationRange &loc = ast.location;
-                        unsigned builtin = func->builtin;
+                        const std::string &builtin_name = func->builtinName;
                         std::vector<Value> args;
                         for (auto *th : f.thunks) {
                             args.push_back(th->content);
                         }
-                        switch (builtin) {
-                            case 0: { // makeArray
-                                validateBuiltinArgs(loc, builtin, args,
-                                                    {Value::DOUBLE, Value::FUNCTION});
-                                long sz = long(args[0].v.d);
-                                if (sz < 0) {
-                                    std::stringstream ss;
-                                    ss << "makeArray requires size >= 0, got " << sz;
-                                    throw makeError(loc, ss.str());
-                                }
-                                auto *func = static_cast<const HeapClosure*>(args[1].v.h);
-                                std::vector<HeapThunk*> elements;
-                                if (func->params.size() != 1) {
-                                    std::stringstream ss;
-                                    ss << "makeArray function must take 1 param, got: "
-                                       << func->params.size();
-                                    throw makeError(loc, ss.str());
-                                }
-                                elements.resize(sz);
-                                for (long i=0 ; i<sz ; ++i) {
-                                    auto *th = makeHeap<HeapThunk>(idArrayElement, func->self,
-                                                                   func->offset, func->body);
-                                    // The next line stops the new thunks from being GCed.
-                                    f.thunks.push_back(th);
-                                    th->upValues = func->upValues;
-
-                                    auto *el = makeHeap<HeapThunk>(func->params[0].id, nullptr,
-                                                                   0, nullptr);
-                                    el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
-                                    th->upValues[func->params[0].id] = el;
-                                    elements[i] = th;
-                                }
-                                scratch = makeArray(elements);
-                            } break;
-
-                            case 1:  // pow
-                            validateBuiltinArgs(loc, builtin, args,
-                                                {Value::DOUBLE, Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::pow(args[0].v.d, args[1].v.d));
-                            break;
-
-                            case 2:  // floor
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::floor(args[0].v.d));
-                            break;
-
-                            case 3:  // ceil
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::ceil(args[0].v.d));
-                            break;
-
-                            case 4:  // sqrt
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::sqrt(args[0].v.d));
-                            break;
-
-                            case 5:  // sin
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::sin(args[0].v.d));
-                            break;
-
-                            case 6:  // cos
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::cos(args[0].v.d));
-                            break;
-
-                            case 7:  // tan
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::tan(args[0].v.d));
-                            break;
-
-                            case 8:  // asin
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::asin(args[0].v.d));
-                            break;
-
-                            case 9:  // acos
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::acos(args[0].v.d));
-                            break;
-
-                            case 10:  // atan
-                            validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                            scratch = makeDoubleCheck(loc, std::atan(args[0].v.d));
-                            break;
-
-                            case 11: {  // type
-                                switch (args[0].t) {
-                                    case Value::NULL_TYPE:
-                                    scratch = makeString(U"null");
-                                    break;
-
-                                    case Value::BOOLEAN:
-                                    scratch = makeString(U"boolean");
-                                    break;
-
-                                    case Value::DOUBLE:
-                                    scratch = makeString(U"number");
-                                    break;
-
-                                    case Value::ARRAY:
-                                    scratch = makeString(U"array");
-                                    break;
-
-                                    case Value::FUNCTION:
-                                    scratch = makeString(U"function");
-                                    break;
-
-                                    case Value::OBJECT:
-                                    scratch = makeString(U"object");
-                                    break;
-
-                                    case Value::STRING:
-                                    scratch = makeString(U"string");
-                                    break;
-
-                                }
+                        BuiltinMap::const_iterator bit = builtins.find(builtin_name);
+                        if (bit != builtins.end()) {
+                            const AST *new_ast = (this->*bit->second)(loc, args);
+                            if (new_ast != nullptr) {
+                                ast_ = new_ast;
+                                goto recurse;
                             }
                             break;
-
-                            case 12: {  // filter
-                                validateBuiltinArgs(loc, builtin, args,
-                                                    {Value::FUNCTION, Value::ARRAY});
-                                auto *func = static_cast<HeapClosure*>(args[0].v.h);
-                                auto *arr = static_cast<HeapArray*>(args[1].v.h);
-                                if (func->params.size() != 1) {
-                                    throw makeError(loc, "filter function takes 1 parameter.");
+                        }
+                        VmNativeCallbackMap::const_iterator nit =
+                            nativeCallbacks.find(builtin_name);
+                        // TODO(dcunnin): Support more than just strings.
+                        std::vector<JsonnetJsonValue> args2;
+                        for (const Value &arg : args) {
+                            if (arg.t != Value::STRING) {
+                                throw makeError(ast.location,
+                                                "Native extensions can only take strings.");
+                            }
+                            args2.push_back(JsonnetJsonValue{
+                                JsonnetJsonValue::STRING,
+                                encode_utf8(static_cast<HeapString*>(arg.v.h)->value)
+                            });
+                        }
+                        std::vector<const JsonnetJsonValue*> args3;
+                        for (size_t i = 0; i < args2.size() ; ++i) {
+                            args3.push_back(&args2[i]);
+                        }
+                        if (nit != nativeCallbacks.end()) {
+                            const VmNativeCallback &cb = nit->second;
+                            int succ;
+                            JsonnetJsonValue *r = cb.cb(cb.ctx, &args3[0], &succ);
+                            if (succ) {
+                                // TODO(dcunnin): Support more than just strings.
+                                if (r->kind != JsonnetJsonValue::STRING) {
+                                    delete r;
+                                    throw makeError(ast.location,
+                                                    "Native extensions can only return a string.");
                                 }
-                                if (arr->elements.size() == 0) {
-                                    scratch = makeArray({});
-                                } else {
-                                    f.kind = FRAME_BUILTIN_FILTER;
-                                    f.val = args[0];
-                                    f.val2 = args[1];
-                                    f.thunks.clear();
-                                    f.elementId = 0;
-
-                                    auto *thunk = arr->elements[f.elementId];
-                                    BindingFrame bindings = func->upValues;
-                                    bindings[func->params[0].id] = thunk;
-                                    stack.newCall(loc, func, func->self, func->offset, bindings);
-                                    ast_ = func->body;
-                                    goto recurse;
+                                std::string rs = r->string;
+                                delete r;
+                                scratch = makeString(decode_utf8(rs));
+                                break;
+                            } else {
+                                if (r->kind != JsonnetJsonValue::STRING) {
+                                    delete r;
+                                    throw makeError(
+                                        ast.location,
+                                        "Native extension returned an error that was not a string.");
                                 }
-                            } break;
-
-                            case 13: {  // objectHasEx
-                                validateBuiltinArgs(loc, builtin, args,
-                                                    {Value::OBJECT, Value::STRING,
-                                                     Value::BOOLEAN});
-                                const auto *obj = static_cast<const HeapObject*>(args[0].v.h);
-                                const auto *str = static_cast<const HeapString*>(args[1].v.h);
-                                bool include_hidden = args[2].v.b;
-                                bool found = false;
-                                for (const auto &field : objectFields(obj, !include_hidden)) {
-                                    if (field->name == str->value) {
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                scratch = makeBoolean(found);
-                            } break;
-
-                            case 14: {  // length
-                                if (args.size() != 1) {
-                                    throw makeError(loc, "length takes 1 parameter.");
-                                }
-                                HeapEntity *e = args[0].v.h;
-                                switch (args[0].t) {
-                                    case Value::OBJECT: {
-                                        auto fields =
-                                            objectFields(static_cast<HeapObject*>(e), true);
-                                        scratch = makeDouble(fields.size());
-                                    } break;
-
-                                    case Value::ARRAY:
-                                    scratch = makeDouble(static_cast<HeapArray*>(e)
-                                                         ->elements.size());
-                                    break;
-
-                                    case Value::STRING:
-                                    scratch = makeDouble(static_cast<HeapString*>(e)
-                                                         ->value.length());
-                                    break;
-
-                                    case Value::FUNCTION:
-                                    scratch = makeDouble(static_cast<HeapClosure*>(e)
-                                                         ->params.size());
-                                    break;
-
-                                    default:
-                                    throw makeError(loc,
-                                                    "length operates on strings, objects, "
-                                                    "and arrays, got " + type_str(args[0]));
-                                }
-                            } break;
-
-                            case 15: {  // objectFieldsEx
-                                validateBuiltinArgs(loc, builtin, args,
-                                                    {Value::OBJECT, Value::BOOLEAN});
-                                const auto *obj = static_cast<HeapObject*>(args[0].v.h);
-                                bool include_hidden = args[1].v.b;
-                                // Stash in a set first to sort them.
-                                std::set<String> fields;
-                                for (const auto &field : objectFields(obj, !include_hidden)) {
-                                    fields.insert(field->name);
-                                }
-                                scratch = makeArray({});
-                                auto &elements = static_cast<HeapArray*>(scratch.v.h)->elements;
-                                for (const auto &field : fields) {
-                                    auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr,
-                                                                   0, nullptr);
-                                    elements.push_back(th);
-                                    th->fill(makeString(field));
-                                }
-                            } break;
-
-                            case 16: { // codepoint
-                                validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                const String &str =
-                                    static_cast<HeapString*>(args[0].v.h)->value;
-                                if (str.length() != 1) {
-                                    std::stringstream ss;
-                                    ss << "codepoint takes a string of length 1, got length "
-                                       << str.length();
-                                    throw makeError(loc, ss.str());
-                                }
-                                char32_t c = static_cast<HeapString*>(args[0].v.h)->value[0];
-                                scratch = makeDouble((unsigned long)(c));
-                            } break;
-
-                            case 17: { // char
-                                validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                long l = long(args[0].v.d);
-                                if (l < 0) {
-                                    std::stringstream ss;
-                                    ss << "Codepoints must be >= 0, got " << l;
-                                    throw makeError(ast.location, ss.str());
-                                }
-                                if (l >= JSONNET_CODEPOINT_MAX) {
-                                    std::stringstream ss;
-                                    ss << "Invalid unicode codepoint, got " << l;
-                                    throw makeError(ast.location, ss.str());
-                                }
-                                char32_t c = l;
-                                scratch = makeString(String(&c, 1));
-                            } break;
-
-                            case 18: {  // log
-                                validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleCheck(loc, std::log(args[0].v.d));
-                            } break;
-
-                            case 19: {  // exp
-                                validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                scratch = makeDoubleCheck(loc, std::exp(args[0].v.d));
-                            } break;
-
-                            case 20: {  // mantissa
-                                validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                int exp;
-                                double m = std::frexp(args[0].v.d, &exp);
-                                scratch = makeDoubleCheck(loc, m);
-                            } break;
-
-                            case 21: {  // exponent
-                                validateBuiltinArgs(loc, builtin, args, {Value::DOUBLE});
-                                int exp;
-                                std::frexp(args[0].v.d, &exp);
-                                scratch = makeDoubleCheck(loc, exp);
-                            } break;
-
-                            case 22: {  // modulo
-                                validateBuiltinArgs(loc, builtin, args,
-                                                    {Value::DOUBLE, Value::DOUBLE});
-                                double a = args[0].v.d;
-                                double b = args[1].v.d;
-                                if (b == 0)
-                                    throw makeError(ast.location, "Division by zero.");
-                                scratch = makeDoubleCheck(loc, std::fmod(a, b));
-                            } break;
-
-                            case 23: {  // extVar
-                                validateBuiltinArgs(loc, builtin, args, {Value::STRING});
-                                const String &var =
-                                    static_cast<HeapString*>(args[0].v.h)->value;
-                                std::string var8 = encode_utf8(var);
-                                auto it = externalVars.find(var8);
-                                if (it == externalVars.end()) {
-                                    std::string msg = "Undefined external variable: " + var8;
-                                    throw makeError(ast.location, msg);
-                                }
-                                const VmExt &ext = it->second;
-                                if (ext.isCode) {
-                                    std::string filename = "<extvar:" + var8 + ">";
-                                    Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
-                                    AST *expr = jsonnet_parse(alloc, tokens);
-                                    jsonnet_desugar(alloc, expr, nullptr);
-                                    jsonnet_static_analysis(expr);
-                                    ast_ = expr;
-                                    stack.pop();
-                                    goto recurse;
-                                } else {
-                                    scratch = makeString(decode_utf8(ext.data));
-                                }
-                            } break;
-
-                            case 24: {  // primitiveEquals
-                                if (args.size() != 2) {
-                                    std::stringstream ss;
-                                    ss << "primitiveEquals takes 2 parameters, got " << args.size();
-                                    throw makeError(loc, ss.str());
-                                }
-                                if (args[0].t != args[1].t) {
-                                    scratch = makeBoolean(false);
-                                    break;
-                                }
-                                bool r;
-                                switch (args[0].t) {
-                                    case Value::BOOLEAN:
-                                    r = args[0].v.b == args[1].v.b;
-                                    break;
-
-                                    case Value::DOUBLE:
-                                    r = args[0].v.d == args[1].v.d;
-                                    break;
-
-                                    case Value::STRING:
-                                    r = static_cast<HeapString*>(args[0].v.h)->value
-                                      == static_cast<HeapString*>(args[1].v.h)->value;
-                                    break;
-
-                                    case Value::NULL_TYPE:
-                                    r = true;
-                                    break;
-
-                                    case Value::FUNCTION:
-                                    throw makeError(loc, "Cannot test equality of functions");
-                                    break;
-
-                                    default:
-                                    throw makeError(loc,
-                                                    "primitiveEquals operates on primitive "
-                                                    "types, got " + type_str(args[0]));
-                                }
-                                scratch = makeBoolean(r);
-                            } break;
-
-                            default:
-                            std::cerr << "INTERNAL ERROR: Unrecognized builtin: " << builtin
-                                      << std::endl;
-                            std::abort();
+                                std::string rs = r->string;
+                                delete r;
+                                throw makeError(ast.location, rs);
+                            }
                         }
 
+                        throw makeError(ast.location,
+                                        "Unrecognized builtin name: " + builtin_name);
                     } else {
                         HeapThunk *th = f.thunks[f.elementId++];
                         if (!th->filled) {
@@ -2394,15 +2556,20 @@ class Interpreter {
 
 }  // namespace
 
-std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
-                               const ExtMap &ext_vars,
-                               unsigned max_stack, double gc_min_objects,
-                               double gc_growth_trigger,
-                               JsonnetImportCallback *import_callback, void *ctx,
-                               bool string_output)
+std::string jsonnet_vm_execute(
+    Allocator *alloc,
+    const AST *ast,
+    const ExtMap &ext_vars,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
+    JsonnetImportCallback *import_callback,
+    void *ctx,
+    bool string_output)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   import_callback, ctx);
+                   natives, import_callback, ctx);
     vm.evaluate(ast, 0);
     if (string_output) {
         return encode_utf8(vm.manifestString(LocationRange("During manifestation")));
@@ -2411,26 +2578,39 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
     }
 }
 
-StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
-                                unsigned max_stack, double gc_min_objects,
-                                double gc_growth_trigger, JsonnetImportCallback *import_callback,
-                                void *ctx,
-                                bool string_output)
+StrMap jsonnet_vm_execute_multi(
+    Allocator *alloc,
+    const AST *ast,
+    const ExtMap &ext_vars,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
+    JsonnetImportCallback *import_callback,
+    void *ctx,
+    bool string_output)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   import_callback, ctx);
+                   natives, import_callback, ctx);
     vm.evaluate(ast, 0);
     return vm.manifestMulti(string_output);
 }
 
 std::vector<std::string> jsonnet_vm_execute_stream(
-    Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
-    unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
-    JsonnetImportCallback *import_callback, void *ctx)
+    Allocator *alloc,
+    const AST *ast,
+    const ExtMap &ext_vars,
+    unsigned max_stack,
+    double gc_min_objects,
+    double gc_growth_trigger,
+    const VmNativeCallbackMap &natives,
+    JsonnetImportCallback *import_callback,
+    void *ctx)
 {
     Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   import_callback, ctx);
+                   natives, import_callback, ctx);
     vm.evaluate(ast, 0);
     return vm.manifestStream();
 }
+
 

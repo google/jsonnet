@@ -20,7 +20,7 @@ import _jsonnet
 if len(sys.argv) != 2:
     raise Exception("Usage: <snippet>")
 
-#  Returns content if worked, None if file not found, or throws an exception
+# Returns content if worked, None if file not found, or throws an exception
 def try_path(dir, rel):
     if not rel:
         raise RuntimeError('Got invalid filename (empty string).')
@@ -43,4 +43,18 @@ def import_callback(dir, rel):
         return full_path, content
     raise RuntimeError('File not found')
 
-sys.stdout.write(_jsonnet.evaluate_snippet("snippet", sys.argv[1], import_callback=import_callback))
+# Test native extensions
+def concat(a, b):
+    return a + b
+
+native_callbacks = {
+  'concat': (('a', 'b'), concat),
+}
+
+json_str = _jsonnet.evaluate_snippet(
+    "snippet",
+    sys.argv[1],
+    import_callback=import_callback,
+    native_callbacks=native_callbacks,
+)
+sys.stdout.write(json_str)

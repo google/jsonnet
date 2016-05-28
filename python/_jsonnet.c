@@ -28,6 +28,70 @@ static char *jsonnet_str(struct JsonnetVm *vm, const char *str)
     return out;
 }
 
+static const char *exc_to_str(void)
+{
+    PyObject *ptype, *pvalue, *ptraceback;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    PyObject *exc_str = PyObject_Str(pvalue);
+    return PyString_AsString(exc_str);
+}
+
+struct NativeCtx {
+    struct JsonnetVm *vm;
+    PyObject *callback;
+    size_t argc;
+};
+
+/* This function is bound for every native callback, but with a different 
+ * context.
+ */
+static struct JsonnetJsonValue *cpython_native_callback(
+    void *ctx_, const struct JsonnetJsonValue * const *argv, int *succ)
+{
+    const struct NativeCtx *ctx = ctx_;
+    int i;
+
+    PyObject *arglist;  // Will hold a tuple of strings.
+    PyObject *result;  // Will hold a string.
+
+    // Populate python function args.
+    arglist = PyTuple_New(ctx->argc);
+    for (i = 0; i < ctx->argc; ++i) {
+        const char *param = jsonnet_json_extract_string(ctx->vm, argv[i]);
+        if (param == NULL) {
+            Py_DECREF(arglist);
+            *succ = 0;
+            return jsonnet_json_make_string(ctx->vm, "Non-string param.");
+        }
+        PyTuple_SetItem(arglist, i, PyString_FromString(param));
+    }
+
+    // Call python function.
+    result = PyEval_CallObject(ctx->callback, arglist);
+    Py_DECREF(arglist);
+
+    if (result == NULL) {
+        // Get string from exception.
+        struct JsonnetJsonValue *r = jsonnet_json_make_string(ctx->vm, exc_to_str());
+        *succ = 0;
+        PyErr_Clear();
+        return r;
+    }
+
+    if (!PyString_Check(result)) {
+        struct JsonnetJsonValue *r =
+            jsonnet_json_make_string(ctx->vm, "Python function did not return string");
+        *succ = 0;
+        return r;
+    }
+
+    struct JsonnetJsonValue *r =
+        jsonnet_json_make_string(ctx->vm, PyString_AsString(result));
+    *succ = 1;
+    return r;
+}
+
+
 struct ImportCtx {
     struct JsonnetVm *vm;
     PyObject *callback;
@@ -46,13 +110,7 @@ static char *cpython_import_callback(void *ctx_, const char *base, const char *r
 
     if (result == NULL) {
         // Get string from exception
-        PyObject *ptype;
-        PyObject *pvalue;
-        PyObject *ptraceback;
-        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-        PyObject *exc_str = PyObject_Str(pvalue);
-        const char *exc_cstr = PyString_AsString(exc_str);
-        char *out = jsonnet_str(ctx->vm, exc_cstr);
+        char *out = jsonnet_str(ctx->vm, exc_to_str());
         *success = 0;
         PyErr_Clear();
         return out;
@@ -136,11 +194,110 @@ int handle_import_callback(struct ImportCtx *ctx, PyObject *import_callback)
     if (import_callback == NULL) return 1;
 
     if (!PyCallable_Check(import_callback)) {
+        jsonnet_destroy(ctx->vm);
         PyErr_SetString(PyExc_TypeError, "import_callback must be callable");
         return 0;
     }
 
     jsonnet_import_callback(ctx->vm, cpython_import_callback, ctx);
+
+    return 1;
+}
+
+
+/** Register native callbacks with Jsonnet VM.
+ *
+ * Example native_callbacks = { 'name': (('p1', 'p2', 'p3'), func) }
+ *
+ * May set *ctxs, in which case it should be free()'d by caller.
+ *
+ * \returns 1 on success, 0 with exception set upon failure.
+ */
+static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callbacks,
+                                   struct NativeCtx **ctxs)
+{
+    size_t num_natives = 0;
+    PyObject *key, *val;
+    Py_ssize_t pos = 0;
+
+    if (native_callbacks == NULL) return 1;
+
+    /* Verify the input before we allocate memory, throw all errors at this point.
+     * Also, count the callbacks to see how much memory we need.
+     */
+    while (PyDict_Next(native_callbacks, &pos, &key, &val)) {
+        Py_ssize_t i;
+        Py_ssize_t num_params;
+        PyObject *params;
+        const char *key_ = PyString_AsString(key);
+        if (key_ == NULL) {
+            PyErr_SetString(PyExc_TypeError, "native callback dict keys must be string");
+            goto bad;
+        }
+        if (!PyTuple_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "native callback dict values must be tuples");
+            goto bad;
+        } else if (PyTuple_Size(val) != 2) {
+            PyErr_SetString(PyExc_TypeError, "native callback tuples must have size 2");
+            goto bad;
+        }
+        params = PyTuple_GetItem(val, 0);
+        if (!PyTuple_Check(params)) {
+            PyErr_SetString(PyExc_TypeError, "native callback params must be a tuple");
+            goto bad;
+        }
+        /* Check the params are all strings */
+        num_params = PyTuple_Size(params);
+        for (i = 0; i < num_params ; ++i) {
+            PyObject *param = PyTuple_GetItem(params, 0);
+            if (!PyString_Check(param)) {
+                PyErr_SetString(PyExc_TypeError, "native callback param must be string");
+                goto bad;
+            }
+        }
+        if (!PyCallable_Check(PyTuple_GetItem(val, 1))) {
+            PyErr_SetString(PyExc_TypeError, "native callback must be callable");
+            goto bad;
+        }
+
+        num_natives++;
+        continue;
+
+        bad:
+        jsonnet_destroy(vm);
+        return 0;
+    }
+
+    if (num_natives == 0) {
+        return 1;
+    }
+
+    *ctxs = malloc(sizeof(struct NativeCtx) * num_natives);
+    
+    /* Re-use num_natives but just as a counter this time. */
+    num_natives = 0;
+    pos = 0;
+    while (PyDict_Next(native_callbacks, &pos, &key, &val)) {
+        Py_ssize_t i;
+        Py_ssize_t num_params;
+        PyObject *params;
+        const char *key_ = PyString_AsString(key);
+        params = PyTuple_GetItem(val, 0);
+        num_params = PyTuple_Size(params);
+        /* Include space for terminating NULL. */
+        const char **params_c = malloc(sizeof(const char*) * (num_params + 1));
+        for (i = 0; i < num_params ; ++i) {
+            params_c[i] = PyString_AsString(PyTuple_GetItem(params, i));
+        }
+        params_c[num_params] = NULL;
+        (*ctxs)[num_natives].vm = vm;
+        (*ctxs)[num_natives].callback = PyTuple_GetItem(val, 1);
+        (*ctxs)[num_natives].argc = num_params;
+        jsonnet_native_callback(vm, key_, cpython_native_callback, &(*ctxs)[num_natives],
+                                params_c);
+        free(params_c);
+        num_natives++;
+    }
 
     return 1;
 }
@@ -156,21 +313,24 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     PyObject *ext_vars = NULL, *ext_codes = NULL;
     PyObject *tla_vars = NULL, *tla_codes = NULL;
     PyObject *import_callback = NULL;
+    PyObject *native_callbacks = NULL;
     struct JsonnetVm *vm;
     static char *kwlist[] = {
         "filename",
         "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
         "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
+        "native_callbacks",
         NULL
     };
 
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "s|IIdOOOOIO", kwlist,
+        args, keywds, "s|IIdOOOOIOO", kwlist,
         &filename,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback)) {
+        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
+        &native_callbacks)) {
         return NULL;
     }
 
@@ -187,8 +347,13 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     if (!handle_import_callback(&ctx, import_callback)) {
         return NULL;
     }
-
+    struct NativeCtx *ctxs = NULL;
+    if (!handle_native_callbacks(vm, native_callbacks, &ctxs)) {
+        free(ctxs);
+        return NULL;
+    }
     out = jsonnet_evaluate_file(vm, filename, &error);
+    free(ctxs);
     return handle_result(vm, out, error);
 }
 
@@ -202,21 +367,24 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     PyObject *ext_vars = NULL, *ext_codes = NULL;
     PyObject *tla_vars = NULL, *tla_codes = NULL;
     PyObject *import_callback = NULL;
+    PyObject *native_callbacks = NULL;
     struct JsonnetVm *vm;
     static char *kwlist[] = {
         "filename", "src",
         "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
         "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
+        "native_callbacks",
         NULL
     };
 
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "ss|IIdOOOOIO", kwlist,
+        args, keywds, "ss|IIdOOOOIOO", kwlist,
         &filename, &src,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
-        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback)) {
+        &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
+        &native_callbacks)) {
         return NULL;
     }
 
@@ -233,8 +401,13 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     if (!handle_import_callback(&ctx, import_callback)) {
         return NULL;
     }
-
+    struct NativeCtx *ctxs = NULL;
+    if (!handle_native_callbacks(vm, native_callbacks, &ctxs)) {
+        free(ctxs);
+        return NULL;
+    }
     out = jsonnet_evaluate_snippet(vm, filename, src, &error);
+    free(ctxs);
     return handle_result(vm, out, error);
 }
 

@@ -36,14 +36,6 @@ AST *jsonnet_parse(Allocator *alloc, Tokens &tokens);
  */
 std::string jsonnet_unparse_number(double v);
 
-struct BuiltinDecl {
-    String name;
-    std::vector<String> params;
-};
-
-/** Returns the signature of each built-in function. */
-BuiltinDecl jsonnet_builtin_decl(unsigned long builtin);
-
 /** The inverse of jsonnet_parse.
  */
 std::string jsonnet_unparse_jsonnet(const AST *ast, const Fodder &final_fodder, unsigned indent,

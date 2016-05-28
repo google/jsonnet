@@ -43,4 +43,17 @@ def import_callback(dir, rel):
         return full_path, content
     raise RuntimeError('File not found')
 
-sys.stdout.write(_jsonnet.evaluate_file(sys.argv[1], import_callback=import_callback))
+# Test native extensions
+def concat(a, b):
+    return a + b
+
+native_callbacks = {
+  'concat': (('a', 'b'), concat),
+}
+
+json_str = _jsonnet.evaluate_file(
+    sys.argv[1],
+    import_callback=import_callback,
+    native_callbacks=native_callbacks,
+)
+sys.stdout.write(json_str)
