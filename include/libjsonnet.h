@@ -76,9 +76,33 @@ struct JsonnetJsonValue;
  */
 const char *jsonnet_json_extract_string(struct JsonnetVm *vm, const struct JsonnetJsonValue *v);
 
+/** If the value is a number, return 1 and store the number in out, otherwise return 0.
+ */
+int jsonnet_json_extract_number(struct JsonnetVm *vm, const struct JsonnetJsonValue *v, double *out);
+
+/** Return 0 if the value is false, 1 if it is true, and 2 if it is not a bool.
+ */
+int jsonnet_json_extract_bool(struct JsonnetVm *vm, const struct JsonnetJsonValue *v);
+
+/** Return 1 if the value is null, else 0.
+ */
+int jsonnet_json_extract_null(struct JsonnetVm *vm, const struct JsonnetJsonValue *v);
+
 /** Convert the given UTF8 string to a JsonnetJsonValue.
  */
 struct JsonnetJsonValue *jsonnet_json_make_string(struct JsonnetVm *vm, const char *v);
+
+/** Convert the given double to a JsonnetJsonValue.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_number(struct JsonnetVm *vm, double v);
+
+/** Convert the given bool (1 or 0) to a JsonnetJsonValue.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_bool(struct JsonnetVm *vm, int v);
+
+/** Make a JsonnetJsonValue representing null.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_null(struct JsonnetVm *vm);
 
 /** Callback to provide native extensions to Jsonnet.
  *

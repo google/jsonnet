@@ -23,10 +23,16 @@ limitations under the License.
 
 struct JsonnetJsonValue {
     enum Kind {
-        STRING
+        ARRAY,  // Not implemented yet.
+        BOOL,
+        NULL_KIND,
+        NUMBER,
+        OBJECT,  // Not implemented yet.
+        STRING,
     };
     Kind kind;
     std::string string;
+    double number;  // Also used for bool (0 and 1)
 };
 
 #endif

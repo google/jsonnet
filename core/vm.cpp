@@ -16,6 +16,8 @@ limitations under the License.
 
 #include <cassert>
 #include <cmath>
+
+#include <memory>
 #include <set>
 #include <string>
 
@@ -1971,53 +1973,98 @@ class Interpreter {
                         }
                         VmNativeCallbackMap::const_iterator nit =
                             nativeCallbacks.find(builtin_name);
-                        // TODO(dcunnin): Support more than just strings.
+                        // TODO(dcunnin): Support arrays.
+                        // TODO(dcunnin): Support objects.
                         std::vector<JsonnetJsonValue> args2;
                         for (const Value &arg : args) {
-                            if (arg.t != Value::STRING) {
+                            switch (arg.t) {
+                                case Value::STRING:
+                                args2.push_back(JsonnetJsonValue{
+                                    JsonnetJsonValue::STRING,
+                                    encode_utf8(static_cast<HeapString*>(arg.v.h)->value),
+                                    0,
+                                });
+                                break;
+
+                                case Value::BOOLEAN:
+                                args2.push_back(JsonnetJsonValue{
+                                    JsonnetJsonValue::BOOL,
+                                    "",
+                                    arg.v.b ? 0.0 : 1.0,
+                                });
+                                break;
+
+                                case Value::DOUBLE:
+                                args2.push_back(JsonnetJsonValue{
+                                    JsonnetJsonValue::NUMBER,
+                                    "",
+                                    arg.v.d,
+                                });
+                                break;
+
+                                case Value::NULL_TYPE:
+                                args2.push_back(JsonnetJsonValue{
+                                    JsonnetJsonValue::NULL_KIND,
+                                    "",
+                                    0,
+                                });
+                                break;
+
+                                default:
                                 throw makeError(ast.location,
-                                                "Native extensions can only take strings.");
+                                                "Native extensions can only take primitives.");
                             }
-                            args2.push_back(JsonnetJsonValue{
-                                JsonnetJsonValue::STRING,
-                                encode_utf8(static_cast<HeapString*>(arg.v.h)->value)
-                            });
+
                         }
                         std::vector<const JsonnetJsonValue*> args3;
                         for (size_t i = 0; i < args2.size() ; ++i) {
                             args3.push_back(&args2[i]);
                         }
-                        if (nit != nativeCallbacks.end()) {
-                            const VmNativeCallback &cb = nit->second;
-                            int succ;
-                            JsonnetJsonValue *r = cb.cb(cb.ctx, &args3[0], &succ);
-                            if (succ) {
-                                // TODO(dcunnin): Support more than just strings.
-                                if (r->kind != JsonnetJsonValue::STRING) {
-                                    delete r;
-                                    throw makeError(ast.location,
-                                                    "Native extensions can only return a string.");
-                                }
-                                std::string rs = r->string;
-                                delete r;
-                                scratch = makeString(decode_utf8(rs));
+                        if (nit == nativeCallbacks.end()) {
+                            throw makeError(ast.location,
+                                            "Unrecognized builtin name: " + builtin_name);
+                        }
+                        const VmNativeCallback &cb = nit->second;
+
+                        int succ;
+                        std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, &args3[0], &succ));
+                        if (succ) {
+                            // TODO(dcunnin): Support arrays.
+                            // TODO(dcunnin): Support objects.
+                            switch (r->kind) {
+                                case JsonnetJsonValue::STRING:
+                                scratch = makeString(decode_utf8(r->string));
                                 break;
-                            } else {
-                                if (r->kind != JsonnetJsonValue::STRING) {
-                                    delete r;
-                                    throw makeError(
-                                        ast.location,
-                                        "Native extension returned an error that was not a string.");
-                                }
-                                std::string rs = r->string;
-                                delete r;
-                                throw makeError(ast.location, rs);
+
+                                case JsonnetJsonValue::BOOL:
+                                scratch = makeBoolean(r->number != 0.0);
+                                break;
+
+                                case JsonnetJsonValue::NUMBER:
+                                scratch = makeDouble(r->number);
+                                break;
+
+                                case JsonnetJsonValue::NULL_KIND:
+                                scratch = makeNull();
+                                break;
+
+                                default:
+                                throw makeError(ast.location,
+                                                "Native extensions can only return primitives.");
                             }
+
+                        } else {
+                            if (r->kind != JsonnetJsonValue::STRING) {
+                                throw makeError(
+                                    ast.location,
+                                    "Native extension returned an error that was not a string.");
+                            }
+                            std::string rs = r->string;
+                            throw makeError(ast.location, rs);
                         }
 
-                        throw makeError(ast.location,
-                                        "Unrecognized builtin name: " + builtin_name);
                     } else {
+                        // Not all arguments forced yet.
                         HeapThunk *th = f.thunks[f.elementId++];
                         if (!th->filled) {
                             stack.newCall(ast.location, th, th->self, th->offset, th->upValues);

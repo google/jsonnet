@@ -17,18 +17,18 @@ limitations under the License.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include <libjsonnet.h>
 
-struct JsonnetJsonValue *concat(void *ctx, const struct JsonnetJsonValue * const *argv, int *succ)
+struct JsonnetJsonValue *native_concat(void *ctx, const struct JsonnetJsonValue * const *argv, int *succ)
 {
     struct JsonnetVm *vm = (struct JsonnetVm *)ctx;
     const char *a = jsonnet_json_extract_string(vm, argv[0]);
     const char *b = jsonnet_json_extract_string(vm, argv[1]);
     if (a == NULL || b == NULL) {
-        struct JsonnetJsonValue *r = jsonnet_json_make_string(vm, "Bad params.");
         *succ = 0;
-        return r;
+        return jsonnet_json_make_string(vm, "Bad params.");
     }
     char *str = malloc(strlen(a) + strlen(b) + 1);
     sprintf(str, "%s%s", a, b);
@@ -38,18 +38,32 @@ struct JsonnetJsonValue *concat(void *ctx, const struct JsonnetJsonValue * const
     return r;
 }
 
+struct JsonnetJsonValue *native_square(void *ctx, const struct JsonnetJsonValue * const *argv, int *succ)
+{
+    struct JsonnetVm *vm = (struct JsonnetVm *)ctx;
+    double a;
+    if (!jsonnet_json_extract_number(vm, argv[0], &a)) {
+        *succ = 0;
+        return jsonnet_json_make_string(vm, "Bad param 'a'.");
+    }
+    *succ = 1;
+    return jsonnet_json_make_number(vm, a * a);
+}
+
 int main(int argc, const char **argv)
 {
     int error;
     char *output;
     struct JsonnetVm *vm;
-    const char *params[] = {"a", "b", NULL};
+    const char *params1[] = {"a", NULL};
+    const char *params2[] = {"a", "b", NULL};
     if (argc != 2) {
         fprintf(stderr, "libjsonnet_test_snippet <string>\n");
         return EXIT_FAILURE;
     }
     vm = jsonnet_make();
-    jsonnet_native_callback(vm, "concat", concat, vm, params);
+    jsonnet_native_callback(vm, "concat", native_concat, vm, params2);
+    jsonnet_native_callback(vm, "square", native_square, vm, params1);
     output = jsonnet_evaluate_snippet(vm, "snippet", argv[1], &error);
     if (error) {
         fprintf(stderr, "%s", output);
