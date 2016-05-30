@@ -57,13 +57,26 @@ static struct JsonnetJsonValue *cpython_native_callback(
     // Populate python function args.
     arglist = PyTuple_New(ctx->argc);
     for (i = 0; i < ctx->argc; ++i) {
-        const char *param = jsonnet_json_extract_string(ctx->vm, argv[i]);
-        if (param == NULL) {
+        double d;
+        const char *param_str = jsonnet_json_extract_string(ctx->vm, argv[i]);
+        int param_null = jsonnet_json_extract_null(ctx->vm, argv[i]);
+        int param_bool = jsonnet_json_extract_bool(ctx->vm, argv[i]);
+        int param_num = jsonnet_json_extract_number(ctx->vm, argv[i], &d);
+        if (param_str != NULL) {
+            PyTuple_SetItem(arglist, i, PyString_FromString(param_str));
+        } else if (param_null) {
+            PyTuple_SetItem(arglist, i, Py_None);
+        } else if (param_bool != 2) {
+            PyTuple_SetItem(arglist, i, PyBool_FromLong(param_bool));
+        } else if (param_num) {
+            PyTuple_SetItem(arglist, i, PyFloat_FromDouble(d));
+        } else {
+            // TODO(dcunnin): Support arrays (to tuples).
+            // TODO(dcunnin): Support objects (to dicts).
             Py_DECREF(arglist);
             *succ = 0;
-            return jsonnet_json_make_string(ctx->vm, "Non-string param.");
+            return jsonnet_json_make_string(ctx->vm, "Non-primitive param.");
         }
-        PyTuple_SetItem(arglist, i, PyString_FromString(param));
     }
 
     // Call python function.
@@ -78,16 +91,23 @@ static struct JsonnetJsonValue *cpython_native_callback(
         return r;
     }
 
-    if (!PyString_Check(result)) {
-        struct JsonnetJsonValue *r =
-            jsonnet_json_make_string(ctx->vm, "Python function did not return string");
+    // TODO(dcunnin): Support arrays (from tuples).
+    // TODO(dcunnin): Support objects (from dicts).
+    struct JsonnetJsonValue *r;
+        *succ = 1;
+    if (PyString_Check(result)) {
+        r = jsonnet_json_make_string(ctx->vm, PyString_AsString(result));
+    } else if (PyFloat_Check(result)) {
+        r = jsonnet_json_make_number(ctx->vm, PyFloat_AsDouble(result));
+    } else if (PyBool_Check(result)) {
+        r = jsonnet_json_make_bool(ctx->vm, PyObject_IsTrue(result));
+    } else if (result == Py_None) {
+        r = jsonnet_json_make_null(ctx->vm);
+    } else {
+        r = jsonnet_json_make_string(ctx->vm, "Python function did not return primitive");
         *succ = 0;
-        return r;
     }
 
-    struct JsonnetJsonValue *r =
-        jsonnet_json_make_string(ctx->vm, PyString_AsString(result));
-    *succ = 1;
     return r;
 }
 

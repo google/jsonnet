@@ -1,22 +1,36 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "common",
+    name = "libjsonnet",
+    srcs = [
+        "desugarer.cpp",
+        "formatter.cpp",
+        "lexer.cpp",
+        "libjsonnet.cpp",
+        "parser.cpp",
+        "static_analysis.cpp",
+        "string_utils.cpp",
+        "vm.cpp",
+    ],
     hdrs = [
         "ast.h",
+        "desugarer.h",
+        "formatter.h",
+        "json.h",
+        "lexer.h",
+        "parser.h",
+        "state.h",
+        "static_analysis.h",
         "static_error.h",
+        "string_utils.h",
         "unicode.h",
+        "vm.h",
     ],
-    includes = ["."],
-)
-
-cc_library(
-    name = "lexer",
-    srcs = ["lexer.cpp"],
-    hdrs = ["lexer.h"],
     deps = [
-        ":common",
+        "//include:libjsonnet",
+        "//stdlib:std",
     ],
+    linkopts = ["-lm"],
     includes = ["."],
 )
 
@@ -24,81 +38,26 @@ cc_test(
     name = "lexer_test",
     srcs = ["lexer_test.cpp"],
     deps = [
-        ":lexer",
+        ":libjsonnet",
+        # Note: On Ubuntu, apt-get install libgtest-dev google-mock
         "//external:gtest_main",
     ],
-)
-
-cc_library(
-    name = "parser",
-    srcs = [
-        "desugarer.cpp",
-        "parser.cpp",
-        "string_utils.cpp",
-    ],
-    hdrs = [
-        "desugarer.h",
-        "parser.h",
-        "string_utils.h",
-    ],
-    deps = [
-        ":common",
-        ":lexer",
-        "//stdlib:std",
-    ],
-    includes = [".", "../include"],
 )
 
 cc_test(
     name = "parser_test",
     srcs = ["parser_test.cpp"],
     deps = [
-        ":parser",
+        ":libjsonnet",
         "//external:gtest_main",
     ],
-)
-
-cc_library(
-    name = "jsonnet-common",
-    srcs = [
-        "desugarer.cpp",
-        "formatter.cpp",
-        "libjsonnet.cpp",
-        "static_analysis.cpp",
-        "vm.cpp",
-    ],
-    hdrs = [
-        "desugarer.h",
-        "formatter.h",
-        "state.h",
-        "static_analysis.h",
-        "vm.h",
-    ],
-    deps = [
-        ":common",
-        ":lexer",
-        ":parser",
-        "//include:libjsonnet",
-    ],
-    linkopts = ["-lm"],
-    includes = [".", "../include"],
-)
-
-cc_library(
-    name = "libjsonnet",
-    srcs = ["libjsonnet.cpp"],
-    deps = [
-        ":jsonnet-common",
-        "//include:libjsonnet",
-    ],
-    includes = [".", "../include"],
 )
 
 cc_test(
     name = "libjsonnet_test",
     srcs = ["libjsonnet_test.cpp"],
     deps = [
-        ":jsonnet-common",
+        ":libjsonnet",
         "//external:gtest_main",
     ],
 )
