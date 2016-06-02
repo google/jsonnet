@@ -209,8 +209,11 @@ struct HeapComprehensionObject : public HeapLeafObject {
      * For each field, holds the value that should be bound to id.  This is the corresponding
      * array element from the original array used to define this object.  This should not really
      * be a thunk, but it makes the implementation easier.
+     *
+     * It is convenient to make this non-const to allow building up the values one by one, so that
+     * the garbage collector can see them at each intermediate point.
      */
-    const std::map<const Identifier*, HeapThunk*> compValues;
+    std::map<const Identifier*, HeapThunk*> compValues;
 
     HeapComprehensionObject(const BindingFrame &up_values, const AST *value,
                             const Identifier *id,

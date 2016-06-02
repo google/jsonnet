@@ -17,22 +17,26 @@ limitations under the License.
 #ifndef JSONNET_JSON_H
 #define JSONNET_JSON_H
 
+#include <vector>
+#include <memory>
 #include <string>
 
 #include <libjsonnet.h>
 
 struct JsonnetJsonValue {
     enum Kind {
-        ARRAY,  // Not implemented yet.
+        ARRAY,
         BOOL,
         NULL_KIND,
         NUMBER,
-        OBJECT,  // Not implemented yet.
+        OBJECT,
         STRING,
     };
     Kind kind;
     std::string string;
-    double number;  // Also used for bool (0 and 1)
+    double number;  // Also used for bool (0.0 and 1.0)
+    std::vector<std::unique_ptr<JsonnetJsonValue>> elements;
+    std::map<std::string, std::unique_ptr<JsonnetJsonValue>> fields;
 };
 
 #endif

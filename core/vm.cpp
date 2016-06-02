@@ -451,6 +451,12 @@ class Interpreter {
     /** Used to "name" thunks created to execute invariants. */
     const Identifier *idInvariant;
 
+    /** Used to "name" thunks created to convert JSON to Jsonnet objects. */
+    const Identifier *idJsonObjVar;
+
+    /** Used to refer to idJsonObjVar. */
+    const AST *jsonObjVar;
+
     struct ImportCacheValue {
         std::string foundHere;
         std::string content;
@@ -779,6 +785,8 @@ class Interpreter {
         alloc(alloc),
         idArrayElement(alloc->makeIdentifier(U"array_element")),
         idInvariant(alloc->makeIdentifier(U"object_assert")),
+        idJsonObjVar(alloc->makeIdentifier(U"_")),
+        jsonObjVar(alloc->make<Var>(LocationRange(), Fodder{}, idJsonObjVar)),
         externalVars(ext_vars),
         nativeCallbacks(native_callbacks),
         importCallback(import_callback),
@@ -1261,6 +1269,52 @@ class Interpreter {
         scratch = makeNativeBuiltin(builtin_name, cb.params);
         return nullptr;
     } 
+
+    void jsonToHeap(const std::unique_ptr<JsonnetJsonValue> &v, Value &attach)
+    {
+        // In order to not anger the garbage collector, assign to attach immediately after
+        // making the heap object.
+        switch (v->kind) {
+            case JsonnetJsonValue::STRING:
+            attach = makeString(decode_utf8(v->string));
+            break;
+
+            case JsonnetJsonValue::BOOL:
+            attach = makeBoolean(v->number != 0.0);
+            break;
+
+            case JsonnetJsonValue::NUMBER:
+            attach = makeDouble(v->number);
+            break;
+
+            case JsonnetJsonValue::NULL_KIND:
+            attach = makeNull();
+            break;
+
+            case JsonnetJsonValue::ARRAY: {
+                attach = makeArray(std::vector<HeapThunk*>{});
+                auto *arr = static_cast<HeapArray*>(attach.v.h);
+                for (size_t i = 0; i < v->elements.size() ; ++i) {
+                    arr->elements.push_back(
+                        makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
+                    arr->elements[i]->filled = true;
+                    jsonToHeap(v->elements[i], arr->elements[i]->content);
+                }
+            } break;
+
+            case JsonnetJsonValue::OBJECT: {
+                attach = makeObject<HeapComprehensionObject>(
+                    BindingFrame{}, jsonObjVar, idJsonObjVar, BindingFrame{});
+                auto *obj = static_cast<HeapComprehensionObject*>(attach.v.h);
+                for (const auto &pair : v->fields) {
+                    auto *thunk = makeHeap<HeapThunk>(idJsonObjVar, nullptr, 0, nullptr);
+                    obj->compValues[alloc->makeIdentifier(decode_utf8(pair.first))] = thunk;
+                    thunk->filled = true;
+                    jsonToHeap(pair.second, thunk->content);
+                }
+            } break;
+        }
+    }
 
 
     String toString(const LocationRange &loc)
@@ -1983,6 +2037,8 @@ class Interpreter {
                                     JsonnetJsonValue::STRING,
                                     encode_utf8(static_cast<HeapString*>(arg.v.h)->value),
                                     0,
+                                    {},
+                                    {},
                                 });
                                 break;
 
@@ -1990,7 +2046,9 @@ class Interpreter {
                                 args2.push_back(JsonnetJsonValue{
                                     JsonnetJsonValue::BOOL,
                                     "",
-                                    arg.v.b ? 0.0 : 1.0,
+                                    arg.v.b ? 1.0 : 0.0,
+                                    {},
+                                    {},
                                 });
                                 break;
 
@@ -1999,6 +2057,8 @@ class Interpreter {
                                     JsonnetJsonValue::NUMBER,
                                     "",
                                     arg.v.d,
+                                    {},
+                                    {},
                                 });
                                 break;
 
@@ -2007,6 +2067,8 @@ class Interpreter {
                                     JsonnetJsonValue::NULL_KIND,
                                     "",
                                     0,
+                                    {},
+                                    {},
                                 });
                                 break;
 
@@ -2028,31 +2090,9 @@ class Interpreter {
 
                         int succ;
                         std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, &args3[0], &succ));
+
                         if (succ) {
-                            // TODO(dcunnin): Support arrays.
-                            // TODO(dcunnin): Support objects.
-                            switch (r->kind) {
-                                case JsonnetJsonValue::STRING:
-                                scratch = makeString(decode_utf8(r->string));
-                                break;
-
-                                case JsonnetJsonValue::BOOL:
-                                scratch = makeBoolean(r->number != 0.0);
-                                break;
-
-                                case JsonnetJsonValue::NUMBER:
-                                scratch = makeDouble(r->number);
-                                break;
-
-                                case JsonnetJsonValue::NULL_KIND:
-                                scratch = makeNull();
-                                break;
-
-                                default:
-                                throw makeError(ast.location,
-                                                "Native extensions can only return primitives.");
-                            }
-
+                            jsonToHeap(r, scratch);
                         } else {
                             if (r->kind != JsonnetJsonValue::STRING) {
                                 throw makeError(

@@ -104,6 +104,33 @@ struct JsonnetJsonValue *jsonnet_json_make_bool(struct JsonnetVm *vm, int v);
  */
 struct JsonnetJsonValue *jsonnet_json_make_null(struct JsonnetVm *vm);
 
+/** Make a JsonnetJsonValue representing an array.
+ *
+ * Assign elements with jsonnet_json_array_append.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_array(struct JsonnetVm *vm);
+
+/** Add v to the end of the array.
+ */
+void jsonnet_json_array_append(struct JsonnetVm *vm,
+                               struct JsonnetJsonValue *arr,
+                               struct JsonnetJsonValue *v);
+
+/** Make a JsonnetJsonValue representing an object with the given number of fields.
+ *
+ * Every index of the array must have a unique value assigned with jsonnet_json_array_element.
+ */
+struct JsonnetJsonValue *jsonnet_json_make_object(struct JsonnetVm *vm);
+
+/** Add the field f to the object, bound to v.
+ *
+ * This replaces any previous binding of the field.
+ */
+void jsonnet_json_object_append(struct JsonnetVm *vm,
+                                struct JsonnetJsonValue *obj,
+                                const char *f,
+                                struct JsonnetJsonValue *v);
+
 /** Callback to provide native extensions to Jsonnet.
  *
  * The returned JsonnetJsonValue* should be allocated with jsonnet_realloc.  It will be cleaned up
