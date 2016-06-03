@@ -21,7 +21,9 @@ limitations under the License.
 
 #include <libjsonnet.h>
 
-struct JsonnetJsonValue *native_concat(void *ctx, const struct JsonnetJsonValue * const *argv, int *succ)
+typedef struct JsonnetJsonValue JJV;
+
+static JJV *native_concat(void *ctx, const JJV * const *argv, int *succ)
 {
     struct JsonnetVm *vm = (struct JsonnetVm *)ctx;
     const char *a = jsonnet_json_extract_string(vm, argv[0]);
@@ -32,13 +34,13 @@ struct JsonnetJsonValue *native_concat(void *ctx, const struct JsonnetJsonValue 
     }
     char *str = malloc(strlen(a) + strlen(b) + 1);
     sprintf(str, "%s%s", a, b);
-    struct JsonnetJsonValue *r = jsonnet_json_make_string(vm, str);
+    JJV *r = jsonnet_json_make_string(vm, str);
     free(str);
     *succ = 1;
     return r;
 }
 
-struct JsonnetJsonValue *native_square(void *ctx, const struct JsonnetJsonValue * const *argv, int *succ)
+static JJV *native_square(void *ctx, const JJV * const *argv, int *succ)
 {
     struct JsonnetVm *vm = (struct JsonnetVm *)ctx;
     double a;
@@ -50,11 +52,44 @@ struct JsonnetJsonValue *native_square(void *ctx, const struct JsonnetJsonValue 
     return jsonnet_json_make_number(vm, a * a);
 }
 
+static JJV *native_build(void *ctx, const JJV * const *argv, int *succ)
+{
+    struct JsonnetVm *vm = (struct JsonnetVm *)ctx;
+    (void) argv;
+    JJV *obj_top = jsonnet_json_make_object(vm);
+    JJV *arr_top = jsonnet_json_make_array(vm);
+    JJV *arr1 = jsonnet_json_make_array(vm);
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_string(vm, "Test 1.1"));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_string(vm, "Test 1.2"));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_string(vm, "Test 1.3"));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_bool(vm, 1));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_number(vm, 42));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_null(vm));
+    jsonnet_json_array_append(vm, arr1, jsonnet_json_make_object(vm));
+    jsonnet_json_array_append(vm, arr_top, arr1);
+    JJV *arr2 = jsonnet_json_make_array(vm);
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_string(vm, "Test 2.1"));
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_string(vm, "Test 2.2"));
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_string(vm, "Test 2.3"));
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_bool(vm, 0));
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_number(vm, -42));
+    jsonnet_json_array_append(vm, arr2, jsonnet_json_make_null(vm));
+    JJV *little_obj = jsonnet_json_make_object(vm);
+    jsonnet_json_object_append(vm, little_obj, "f", jsonnet_json_make_string(vm, "foo"));
+    jsonnet_json_object_append(vm, little_obj, "g", jsonnet_json_make_string(vm, "bar"));
+    jsonnet_json_array_append(vm, arr2, little_obj);
+    jsonnet_json_array_append(vm, arr_top, arr2);
+    jsonnet_json_object_append(vm, obj_top, "field", arr_top);
+    *succ = 1;
+    return obj_top;
+}
+
 int main(int argc, const char **argv)
 {
     int error;
     char *output;
     struct JsonnetVm *vm;
+    const char *params0[] = {NULL};
     const char *params1[] = {"a", NULL};
     const char *params2[] = {"a", "b", NULL};
     if (argc != 2) {
@@ -64,6 +99,7 @@ int main(int argc, const char **argv)
     vm = jsonnet_make();
     jsonnet_native_callback(vm, "concat", native_concat, vm, params2);
     jsonnet_native_callback(vm, "square", native_square, vm, params1);
+    jsonnet_native_callback(vm, "build", native_build, vm, params0);
     output = jsonnet_evaluate_snippet(vm, "snippet", argv[1], &error);
     if (error) {
         fprintf(stderr, "%s", output);

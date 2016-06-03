@@ -116,6 +116,43 @@ JsonnetJsonValue *jsonnet_json_make_null(struct JsonnetVm *vm)
     return r;
 }
 
+JsonnetJsonValue *jsonnet_json_make_array(JsonnetVm *vm)
+{
+    (void) vm;
+    JsonnetJsonValue *r = new JsonnetJsonValue();
+    r->kind = JsonnetJsonValue::ARRAY;
+    return r;
+}
+
+void jsonnet_json_array_append(JsonnetVm *vm, JsonnetJsonValue *arr, JsonnetJsonValue *v)
+{
+    (void) vm;
+    assert(arr->kind == JsonnetJsonValue::ARRAY);
+    arr->elements.emplace_back(v);
+}
+
+JsonnetJsonValue *jsonnet_json_make_object(JsonnetVm *vm)
+{
+    (void) vm;
+    JsonnetJsonValue *r = new JsonnetJsonValue();
+    r->kind = JsonnetJsonValue::OBJECT;
+    return r;
+}
+
+void jsonnet_json_object_append(JsonnetVm *vm, JsonnetJsonValue *obj,
+                                const char *f, JsonnetJsonValue *v)
+{
+    (void) vm;
+    assert(obj->kind == JsonnetJsonValue::OBJECT);
+    obj->fields[std::string(f)] = std::unique_ptr<JsonnetJsonValue>(v);
+}
+
+void jsonnet_json_destroy(JsonnetVm *vm, JsonnetJsonValue *v)
+{
+    (void) vm;
+    delete v;
+}
+
 struct JsonnetVm {
     double gcGrowthTrigger;
     unsigned maxStack;
