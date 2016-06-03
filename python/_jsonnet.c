@@ -42,6 +42,72 @@ struct NativeCtx {
     size_t argc;
 };
 
+static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyObject *v,
+                                                       const char **err_msg)
+{
+    if (PyString_Check(v)) {
+        return jsonnet_json_make_string(vm, PyString_AsString(v));
+    } else if (PyUnicode_Check(v)) {
+        struct JsonnetJsonValue *r;
+        PyObject *str = PyUnicode_AsUTF8String(v);
+        r = jsonnet_json_make_string(vm, PyString_AsString(str));
+        Py_DECREF(str);
+        return r;
+    } else if (PyFloat_Check(v)) {
+        return jsonnet_json_make_number(vm, PyFloat_AsDouble(v));
+    } else if (PyInt_Check(v)) {
+        return jsonnet_json_make_number(vm, (double)(PyInt_AsLong(v)));
+    } else if (PyBool_Check(v)) {
+        return jsonnet_json_make_bool(vm, PyObject_IsTrue(v));
+    } else if (v == Py_None) {
+        return jsonnet_json_make_null(vm);
+    } else if (PySequence_Check(v)) {
+        Py_ssize_t len, i;
+        struct JsonnetJsonValue *arr;
+        // Convert it to a O(1) indexable form if necessary.
+        PyObject *fast = PySequence_Fast(v, "python_to_jsonnet_json internal error: not sequence");
+        len = PySequence_Fast_GET_SIZE(fast);
+        arr = jsonnet_json_make_array(vm);
+        for (i = 0; i < len; ++i) {
+            struct JsonnetJsonValue *json_el;
+            PyObject *el = PySequence_Fast_GET_ITEM(fast, i);
+            json_el = python_to_jsonnet_json(vm, el, err_msg);
+            if (json_el == NULL) {
+                Py_DECREF(fast);
+                jsonnet_json_destroy(vm, arr);
+                return NULL;
+            }
+            jsonnet_json_array_append(vm, arr, json_el);
+        }
+        Py_DECREF(fast);
+        return arr;
+    } else if (PyDict_Check(v)) {
+        struct JsonnetJsonValue *obj;
+        PyObject *key, *val;
+        Py_ssize_t pos = 0;
+        obj = jsonnet_json_make_object(vm);
+        while (PyDict_Next(v, &pos, &key, &val)) {
+            struct JsonnetJsonValue *json_val;
+            const char *key_ = PyString_AsString(key);
+            if (key_ == NULL) {
+                *err_msg = "Non-string key in dict returned from Python Jsonnet native extension.";
+                jsonnet_json_destroy(vm, obj);
+                return NULL;
+            }
+            json_val = python_to_jsonnet_json(vm, val, err_msg);
+            if (json_val == NULL) {
+                jsonnet_json_destroy(vm, obj);
+                return NULL;
+            }
+            jsonnet_json_object_append(vm, obj, key_, json_val);
+        }
+        return obj;
+    } else {
+        *err_msg = "Unrecognized type return from Python Jsonnet native extension.";
+        return NULL;
+    }
+}
+
 /* This function is bound for every native callback, but with a different 
  * context.
  */
@@ -62,14 +128,15 @@ static struct JsonnetJsonValue *cpython_native_callback(
         int param_null = jsonnet_json_extract_null(ctx->vm, argv[i]);
         int param_bool = jsonnet_json_extract_bool(ctx->vm, argv[i]);
         int param_num = jsonnet_json_extract_number(ctx->vm, argv[i], &d);
+        PyObject *pyobj;
         if (param_str != NULL) {
-            PyTuple_SetItem(arglist, i, PyString_FromString(param_str));
+            pyobj = PyString_FromString(param_str);
         } else if (param_null) {
-            PyTuple_SetItem(arglist, i, Py_None);
+            pyobj = Py_None;
         } else if (param_bool != 2) {
-            PyTuple_SetItem(arglist, i, PyBool_FromLong(param_bool));
+            pyobj = PyBool_FromLong(param_bool);
         } else if (param_num) {
-            PyTuple_SetItem(arglist, i, PyFloat_FromDouble(d));
+            pyobj = PyFloat_FromDouble(d);
         } else {
             // TODO(dcunnin): Support arrays (to tuples).
             // TODO(dcunnin): Support objects (to dicts).
@@ -77,6 +144,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
             *succ = 0;
             return jsonnet_json_make_string(ctx->vm, "Non-primitive param.");
         }
+        PyTuple_SetItem(arglist, i, pyobj);
     }
 
     // Call python function.
@@ -91,23 +159,14 @@ static struct JsonnetJsonValue *cpython_native_callback(
         return r;
     }
 
-    // TODO(dcunnin): Support arrays (from tuples).
-    // TODO(dcunnin): Support objects (from dicts).
-    struct JsonnetJsonValue *r;
+    const char *err_msg;
+    struct JsonnetJsonValue *r = python_to_jsonnet_json(ctx->vm, result, &err_msg);
+    if (r != NULL) {
         *succ = 1;
-    if (PyString_Check(result)) {
-        r = jsonnet_json_make_string(ctx->vm, PyString_AsString(result));
-    } else if (PyFloat_Check(result)) {
-        r = jsonnet_json_make_number(ctx->vm, PyFloat_AsDouble(result));
-    } else if (PyBool_Check(result)) {
-        r = jsonnet_json_make_bool(ctx->vm, PyObject_IsTrue(result));
-    } else if (result == Py_None) {
-        r = jsonnet_json_make_null(ctx->vm);
     } else {
-        r = jsonnet_json_make_string(ctx->vm, "Python function did not return primitive");
         *succ = 0;
+        r = jsonnet_json_make_string(ctx->vm, err_msg);
     }
-
     return r;
 }
 

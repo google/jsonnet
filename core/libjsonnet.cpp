@@ -147,6 +147,12 @@ void jsonnet_json_object_append(JsonnetVm *vm, JsonnetJsonValue *obj,
     obj->fields[std::string(f)] = std::unique_ptr<JsonnetJsonValue>(v);
 }
 
+void jsonnet_json_destroy(JsonnetVm *vm, JsonnetJsonValue *v)
+{
+    (void) vm;
+    delete v;
+}
+
 struct JsonnetVm {
     double gcGrowthTrigger;
     unsigned maxStack;

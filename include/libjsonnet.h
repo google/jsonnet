@@ -131,6 +131,12 @@ void jsonnet_json_object_append(struct JsonnetVm *vm,
                                 const char *f,
                                 struct JsonnetJsonValue *v);
 
+/** Clean up a JSON subtree.
+ *
+ * This is useful if you want to abort with an error mid-way through building a complex value.
+ */
+void jsonnet_json_destroy(struct JsonnetVm *vm, struct JsonnetJsonValue *v);
+
 /** Callback to provide native extensions to Jsonnet.
  *
  * The returned JsonnetJsonValue* should be allocated with jsonnet_realloc.  It will be cleaned up
