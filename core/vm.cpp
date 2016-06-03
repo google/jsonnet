@@ -2037,8 +2037,8 @@ class Interpreter {
                                     JsonnetJsonValue::STRING,
                                     encode_utf8(static_cast<HeapString*>(arg.v.h)->value),
                                     0,
-                                    {},
-                                    {},
+                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
+                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
                                 });
                                 break;
 
@@ -2047,8 +2047,8 @@ class Interpreter {
                                     JsonnetJsonValue::BOOL,
                                     "",
                                     arg.v.b ? 1.0 : 0.0,
-                                    {},
-                                    {},
+                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
+                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
                                 });
                                 break;
 
@@ -2057,8 +2057,8 @@ class Interpreter {
                                     JsonnetJsonValue::NUMBER,
                                     "",
                                     arg.v.d,
-                                    {},
-                                    {},
+                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
+                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
                                 });
                                 break;
 
@@ -2067,8 +2067,8 @@ class Interpreter {
                                     JsonnetJsonValue::NULL_KIND,
                                     "",
                                     0,
-                                    {},
-                                    {},
+                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
+                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
                                 });
                                 break;
 
