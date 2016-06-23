@@ -990,16 +990,16 @@ class EnforceStringStyle : public Pass {
             if (c == '\'') num_single++;
             if (c == '"') num_double++;
         }
-        if (num_single > 0 && num_double > 0) return;
-        char style = opts.stringStyle == 's';
+        if (num_single > 0 && num_double > 0) return;  // Don't change it.
+        bool use_single = opts.stringStyle == 's';
         if (num_single > 0)
-            style = 'd';
+            use_single = false;
         if (num_double > 0)
-            style = 's';
+            use_single = true;
 
-        // Change it
-        lit->value = jsonnet_string_escape(canonical, style == 's');
-        lit->tokenKind = style ? LiteralString::SINGLE : LiteralString::DOUBLE;
+        // Change it.
+        lit->value = jsonnet_string_escape(canonical, use_single);
+        lit->tokenKind = use_single ? LiteralString::SINGLE : LiteralString::DOUBLE;
     }
 };
 
