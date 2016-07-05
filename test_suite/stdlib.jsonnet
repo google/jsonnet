@@ -372,4 +372,6 @@ std.assertEqual(std.manifestJsonEx({
 |||
 ) &&
 
+std.assertEqual(std.parseInt("01234567890"), 1234567890) &&
+std.assertEqual(std.parseInt("-01234567890"), -1234567890) &&
 true
