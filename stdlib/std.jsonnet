@@ -53,6 +53,19 @@ limitations under the License.
 
     stringChars(str)::
         std.makeArray(std.length(str), function(i) str[i]),
+    
+    parseInt(str)::
+        local addDigit(aggregate, digit) =
+            if digit < 0 || digit > 9 then
+                error("parseInt got string which does not match regex [0-9]+")
+            else
+                10 * aggregate + digit;
+        local toDigits(str) =
+            [std.codepoint(char) - std.codepoint("0") for char in std.stringChars(str)];
+        if str[0] == "-" then
+            -std.foldl(addDigit, toDigits(str[1:]), 0)
+        else
+            std.foldl(addDigit, toDigits(str), 0),
 
     split(str, c)::
         if std.type(str) != "string" then
