@@ -47,8 +47,22 @@ def import_callback(dir, rel):
 def concat(a, b):
     return a + b
 
+def return_types():
+    return {
+        'a': [1, 2, 3, None, []],
+        'b': 1.0,
+        'c': True,
+        'd': None,
+        'e': {
+            'x': 1,
+            'y': 2,
+            'z': ['foo']
+        },
+    }
+
 native_callbacks = {
   'concat': (('a', 'b'), concat),
+  'return_types': ((), return_types),
 }
 
 json_str = _jsonnet.evaluate_file(
