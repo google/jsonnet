@@ -53,12 +53,12 @@ static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyO
         r = jsonnet_json_make_string(vm, PyString_AsString(str));
         Py_DECREF(str);
         return r;
+    } else if (PyBool_Check(v)) {
+        return jsonnet_json_make_bool(vm, PyObject_IsTrue(v));
     } else if (PyFloat_Check(v)) {
         return jsonnet_json_make_number(vm, PyFloat_AsDouble(v));
     } else if (PyInt_Check(v)) {
         return jsonnet_json_make_number(vm, (double)(PyInt_AsLong(v)));
-    } else if (PyBool_Check(v)) {
-        return jsonnet_json_make_bool(vm, PyObject_IsTrue(v));
     } else if (v == Py_None) {
         return jsonnet_json_make_null(vm);
     } else if (PySequence_Check(v)) {
