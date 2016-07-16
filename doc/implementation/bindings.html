@@ -15,9 +15,9 @@ classes, overloading, etc.  This makes it easier to bind to other languages, as 
 lowest common denominator across all systems.</p>
 
 <p>The API is documented in <a
-href="http://github.com/google/jsonnet/blob/master/include/libjsonnet.h">libjsonnet.h</a>.  It is built with
-'make libjsonnet.so'.  It is used by the python bindings, the Jsonnet commandline tool, as well as a
-couple of simpler tests.  Search for #include "libjsonnet.h".  </p>
+href="http://github.com/google/jsonnet/blob/master/include/libjsonnet.h">libjsonnet.h</a>.  It is
+built with 'make libjsonnet.so'.  It is used by the python bindings, the Jsonnet commandline tool,
+as well as a couple of simpler tests.  Search for #include "libjsonnet.h".  </p>
 
 <p>To use the API, create a JsonnetVM object, set various options, then tell it to evaluate a
 filename or snippet.  To avoid leaking memory, the result of execution (JSON or error message) and
