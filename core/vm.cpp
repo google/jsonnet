@@ -1270,47 +1270,51 @@ class Interpreter {
         return nullptr;
     } 
 
-    void jsonToHeap(const std::unique_ptr<JsonnetJsonValue> &v, Value &attach)
+    void jsonToHeap(const std::unique_ptr<JsonnetJsonValue> &v, bool &filled, Value &attach)
     {
         // In order to not anger the garbage collector, assign to attach immediately after
         // making the heap object.
         switch (v->kind) {
             case JsonnetJsonValue::STRING:
             attach = makeString(decode_utf8(v->string));
+            filled = true;
             break;
 
             case JsonnetJsonValue::BOOL:
             attach = makeBoolean(v->number != 0.0);
+            filled = true;
             break;
 
             case JsonnetJsonValue::NUMBER:
             attach = makeDouble(v->number);
+            filled = true;
             break;
 
             case JsonnetJsonValue::NULL_KIND:
             attach = makeNull();
+            filled = true;
             break;
 
             case JsonnetJsonValue::ARRAY: {
                 attach = makeArray(std::vector<HeapThunk*>{});
+                filled = true;
                 auto *arr = static_cast<HeapArray*>(attach.v.h);
                 for (size_t i = 0; i < v->elements.size() ; ++i) {
                     arr->elements.push_back(
                         makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
-                    arr->elements[i]->filled = true;
-                    jsonToHeap(v->elements[i], arr->elements[i]->content);
+                    jsonToHeap(v->elements[i], arr->elements[i]->filled, arr->elements[i]->content);
                 }
             } break;
 
             case JsonnetJsonValue::OBJECT: {
                 attach = makeObject<HeapComprehensionObject>(
                     BindingFrame{}, jsonObjVar, idJsonObjVar, BindingFrame{});
+                filled = true;
                 auto *obj = static_cast<HeapComprehensionObject*>(attach.v.h);
                 for (const auto &pair : v->fields) {
                     auto *thunk = makeHeap<HeapThunk>(idJsonObjVar, nullptr, 0, nullptr);
                     obj->compValues[alloc->makeIdentifier(decode_utf8(pair.first))] = thunk;
-                    thunk->filled = true;
-                    jsonToHeap(pair.second, thunk->content);
+                    jsonToHeap(pair.second, thunk->filled, thunk->content);
                 }
             } break;
         }
@@ -2092,7 +2096,8 @@ class Interpreter {
                         std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, &args3[0], &succ));
 
                         if (succ) {
-                            jsonToHeap(r, scratch);
+                            bool unused;
+                            jsonToHeap(r, unused, scratch);
                         } else {
                             if (r->kind != JsonnetJsonValue::STRING) {
                                 throw makeError(
