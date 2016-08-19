@@ -97,7 +97,8 @@ void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool 
 }
 
 /** A model of fodder_fill that just keeps track of the column counter. */
-static void fodder_count(unsigned &column, const Fodder &fodder, bool space_before, bool separate_token)
+static void fodder_count(unsigned &column, const Fodder &fodder, bool space_before,
+                         bool separate_token)
 {
     for (const auto &fod : fodder) {
         switch (fod.kind) {
@@ -1140,10 +1141,10 @@ class FixTrailingCommas : public Pass {
             if (!need_comma) {
                 // Remove it but keep fodder.
                 trailing_comma = false;
-                fodder_move_back(close_fodder, last_comma_fodder);
+                fodder_move_front(close_fodder, last_comma_fodder);
             } else if (contains_newline(last_comma_fodder)) {
                 // The comma is needed but currently is separated by a newline.
-                fodder_move_back(close_fodder, last_comma_fodder);
+                fodder_move_front(close_fodder, last_comma_fodder);
             }
         } else {
             if (need_comma) {
