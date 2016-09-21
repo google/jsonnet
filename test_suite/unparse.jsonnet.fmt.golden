@@ -27,6 +27,7 @@ limitations under the License.
     "false": false,
     "true": true,
     "null": null,
+    'with"quote': '"',
     hidden_field:: null,
     hidden_field2:: null,
 }

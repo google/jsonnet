@@ -10,5 +10,6 @@
    "string": "'foo\n bar\n\n\"bar\u0005\"'\t P\b\f\r\\",
    "string2": "\"foo\n bar\n\n'bar\u0005\"'\t P\b\f\r\\",
    "true": true,
+   "with\"quote": "\"",
    "zero": 0
 }
