@@ -2549,7 +2549,8 @@ class Interpreter {
                         // get GC'd.
                         scratch = stack.top().val;
                         stack.pop();
-                        ss << prefix << indent2 << U"\"" << f.first << U"\": " << vstr;
+                        ss << prefix << indent2 << jsonnet_string_unparse(f.first, false)
+                           << U": " << vstr;
                         prefix = multiline ? U",\n" : U", ";
                     }
                     ss << (multiline ? U"\n" : U"") << indent << U"}";
