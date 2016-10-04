@@ -460,11 +460,16 @@ class Interpreter {
     struct ImportCacheValue {
         std::string foundHere;
         std::string content;
+        /** Parsed desugared expression.
+         *
+         * Null if this file was only ever successfully imported with importstr.
+         */
+        AST *expr;
     };
 
     /** Cache for imported Jsonnet files. */
     std::map<std::pair<std::string, String>,
-             const ImportCacheValue *> cachedImports;
+             ImportCacheValue *> cachedImports;
 
     /** External variables for std.extVar. */
     ExtMap externalVars;
@@ -688,12 +693,16 @@ class Interpreter {
      */
     AST *import(const LocationRange &loc, const LiteralString *file)
     {
-        const ImportCacheValue *input = importString(loc, file);
-        Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
-        AST *expr = jsonnet_parse(alloc, tokens);
-        jsonnet_desugar(alloc, expr, nullptr);
-        jsonnet_static_analysis(expr);
-        return expr;
+        ImportCacheValue *input = importString(loc, file);
+        if (input->expr == nullptr) {
+            Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
+            AST *expr = jsonnet_parse(alloc, tokens);
+            jsonnet_desugar(alloc, expr, nullptr);
+            jsonnet_static_analysis(expr);
+            // If no errors then populate cache.
+            input->expr = expr;
+        }
+        return input->expr;
     }
 
     /** Import a file as a string.
@@ -705,14 +714,14 @@ class Interpreter {
      * \param file Path to the filename.
      * \param found_here If non-null, used to store the actual path of the file
      */
-    const ImportCacheValue *importString(const LocationRange &loc, const LiteralString *file)
+    ImportCacheValue *importString(const LocationRange &loc, const LiteralString *file)
     {
         std::string dir = dir_name(loc.file);
 
         const String &path = file->value;
 
         std::pair<std::string, String> key(dir, path);
-        const ImportCacheValue *cached_value = cachedImports[key];
+        ImportCacheValue *cached_value = cachedImports[key];
         if (cached_value != nullptr)
             return cached_value;
 
@@ -734,6 +743,7 @@ class Interpreter {
         auto *input_ptr = new ImportCacheValue();
         input_ptr->foundHere = found_here_cptr;
         input_ptr->content = input;
+        input_ptr->expr = nullptr;  // May be filled in later by import().
         ::free(found_here_cptr);
         cachedImports[key] = input_ptr;
         return input_ptr;
