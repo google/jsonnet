@@ -8,6 +8,7 @@ before_install:
 before_script:
 script: |
     set -e
+    rvm get head  # Workaround 'shell_session_update: command not found'
     make test
     python setup.py build
     sudo python setup.py install
