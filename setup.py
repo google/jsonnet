@@ -70,4 +70,5 @@ setup(name='jsonnet',
           'build_ext': BuildJsonnetExt,
       },
       ext_modules=[jsonnet_ext],
+      test_suite="python._jsonnet_test",
 )

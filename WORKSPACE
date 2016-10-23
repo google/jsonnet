@@ -14,3 +14,7 @@ bind(
     name = "gtest_main",
     actual = "@gmock_archive//:gtest_main",
 )
+
+load("//tools/build_defs:python_repo.bzl", "python_interpreter")
+
+python_interpreter(name = "default_python")

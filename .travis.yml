@@ -11,8 +11,7 @@ script: |
     rvm get head  # Workaround 'shell_session_update: command not found'
     make test
     python setup.py build
-    sudo python setup.py install
-    ( cd python ; ./run_tests.sh )
+    python setup.py test
 branches:
   only:
     - master
