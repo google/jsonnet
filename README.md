@@ -13,7 +13,7 @@ The GCC C++ (g++) compiler is required to build Jsonnet.
 
 ### Makefile
 
-Makefile builds are the easiest way to build . To build, run:
+To build jsonnet, run:
 
 ```
 make -j
