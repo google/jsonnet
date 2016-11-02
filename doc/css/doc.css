@@ -212,7 +212,7 @@ span.example-code {
 }
 
 pre > code.language-jsonnet {
-    font-size: 7.5pt;
+    font-size: 11.5pt;
 }
 
 pre.medium > code.language-jsonnet {
@@ -243,19 +243,6 @@ p.copyright {
 p {
     font-family: Arial, sans-serif;
     text-align: justify;
-}
-
-table.desugar {
-    font-size:8pt;
-    border-spacing: 20px;
-    background-color: #f0f0f0;
-}
-
-table.desugar code.language-jsonnet {
-    font-size: 8pt;
-}
-
-table.desugar tr {
 }
 
 li {
