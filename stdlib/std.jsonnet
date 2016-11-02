@@ -39,13 +39,13 @@ limitations under the License.
         else
             std.join("", std.makeArray(len, function(i) str[i + from])),
 
-    startsWith(a, b):
+    startsWith(a, b)::
         if std.length(a) < std.length(b) then
             false
         else
             std.substr(a, 0, std.length(b)) == b,
 
-    endsWith(a, b):
+    endsWith(a, b)::
         if std.length(a) < std.length(b) then
             false
         else
