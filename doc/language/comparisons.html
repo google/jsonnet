@@ -2,16 +2,16 @@
 layout: default
 ---
 
-<h1>Comparisons With Other Languages / Tools</h1>
+<h1 id="comparisons">Comparisons With Other Languages / Tools</h1>
 
-<h2>Comparison With JSON</h2>
+<h2 id="json">Comparison With JSON</h2>
 
 <p>JSON is used to describe data literally.  Jsonnet extends JSON.  Jsonnet has relaxed syntax and
 comments to make it easier for humans to write.  Jsonnet also adds constructs for generating,
 translating and refining data.  Because Jsonnet is an extension of JSON, valid JSON is also valid
 Jsonnet that just emits that JSON unchanged.</p>
 
-<h2>Comparison With YAML</h2>
+<h2 id="yaml">Comparison With YAML</h2>
 
 <p> YAML is also an extension of JSON that generates JSON.  Like Jsonnet, YAML is intended to
 improve the user experience when data is transfered over the human / machine boundary.  Its syntax
@@ -21,7 +21,7 @@ tightness of its syntax makes it hard to extend YAML to add these features.  In 
 Jsonnet disagree about what 1+1 should mean.  YAML already defines it to mean the string "1+1",
 whereas in Jsonnet we want it to be 2.  Jsonnet therefore builds from JSON and not YAML.</p>
 
-<h2>Comparison With Other Templating Languages</h2>
+<h2 id="templates">Comparison With Other Templating Languages</h2>
 
 <p>Jsonnet is a form of templating language as it generates data from programs that interleave
 verbatim data with computation constructs.  However other templating languages operate on plain
@@ -46,7 +46,7 @@ the HTML is correct.  The same is true when the target language is JSON.  Jsonne
 problems, as although it is limited to JSON output, it is guaranteed that the output will be valid
 JSON.</p>
 
-<h2>Comparison With Other Functional Languages</h2>
+<h2 id="functional">Comparison With Other Functional Languages</h2>
 
 <p>ML is a functional language like Jsonnet.  However ML is not pure, and also has strict
 evaluation.  Haskell is a pure lazy functional language, but unlike Jsonnet it has static type
@@ -62,7 +62,7 @@ Finally, the Nix expression language is an embedded part of the Nix package mana
 tools), whereas Jsonnet is a standalone evaluator that can sit in front of anything that accepts
 JSON.</p>  
 
-<h2>Comparison With Other Scripting Languages</h2>
+<h2 id="scripting">Comparison With Other Scripting Languages</h2>
 
 <p>Most scripting languages are dynamically typed languages, often with object-oriented
 features.</p>
@@ -91,7 +91,7 @@ where that makes sense (e.g. string formatting and comprehension constructs).</p
 <p>Finally, Jsonnet is a much smaller language than most general purpose scripting languages, yet
 despite this it has considerable expressive power.</p>
 
-<h2>Comparison With Other Configuration Languages</h2>
+<h2 id="configuration">Comparison With Other Configuration Languages</h2>
 
 <p> <a href="https://code.google.com/p/coil/">Coil</a> is a configuration language that is
 interpreted by a Python library.  Like Jsonnet, it has a JSON-like data model and some facilities
@@ -118,6 +118,6 @@ changes, let alone use late binding or the expressive power of mixins.</p>
 
 <p> Finally, there are a number of other configuration languages that have grown to be used by a
 range of applications.  For example <a href="http://en.wikipedia.org/wiki/INI_file">INI files</a> or
-<a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config files</a>.  Typically these
-offer few features beyond simple JSON and provide very little functionality when compared to
+<a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config files</a>.  Typically
+these offer few features beyond simple JSON and provide very little functionality when compared to
 Jsonnet.</p>

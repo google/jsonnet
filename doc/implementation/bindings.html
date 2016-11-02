@@ -2,13 +2,13 @@
 layout: default
 ---
 
-<h1>Libraries For Other Languages</h1>
+<h1 id="libraries_for_other_languages">Libraries For Other Languages</h1>
 
 <p> If you don't want to invoke the jsonnet commandline utility to evaluate Jsonnet, there are also
 libraries for Python and C.  In future we would like to support more languages by wrapping the C
 API in each case.</p>
 
-<h2>C API</h2>
+<h2 id="c_api">C API</h2>
 
 <p>The C API simply wraps the C++ implementation to hide C++ language features like templates,
 classes, overloading, etc.  This makes it easier to bind to other languages, as C is typically the
@@ -23,7 +23,7 @@ as well as a couple of simpler tests.  Search for #include "libjsonnet.h".  </p>
 filename or snippet.  To avoid leaking memory, the result of execution (JSON or error message) and
 the JsonnetVM object itself must be cleaned up using the corresponding functions.</p>
 
-<h2>Python API</h2>
+<h2 id="python_api">Python API</h2>
 
 <p>The Python API wraps the C API in a straightforward way.  It can be installed with <tt>pip
 install jsonnet</tt> or built directly with <tt>setup.py</tt>.</p>
@@ -71,7 +71,7 @@ for person_id, person in json_obj.iteritems():
 </pre>
 
 
-<h2>Unofficial Third Party APIs</h2>
+<h2 id="third_party_apis">Unofficial Third Party APIs</h2>
 
 <p>There are unofficial bindings available for other languages.  These are not supported by Google
 and may be some versions behind the latest release.</p>
