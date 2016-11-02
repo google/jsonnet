@@ -176,15 +176,20 @@ imported and contains useful functions for data manipulation, among other things
 
 <p>The first example below factors out some cocktails into a separate file.  This may be useful to
 allow concurrent modifications by different mixologists.  The <code>import</code> construct yields
-the content of the <tt>martinis.jsonnet</tt> file.  The <code>+</code> operator is object
+the content of the <tt>martinis.libsonnet</tt> file.  The <code>+</code> operator is object
 concatenation, which combines two objects to form a single object.  Note that the Cosmopolitan field
 is defined in both files, so the one on the right hand side is used.  This means that
-<tt>bar_menu.jsonnet</tt> has overridden the recipe from <tt>martinis.jsonnet</tt> with a different
+<tt>bar_menu.jsonnet</tt> has overridden the recipe from <tt>martinis.libsonnet</tt> with a different
 recipe (one that uses Cointreau instead of Triple Sec, among other changes).</p>
 
-<pre><code>{% include examples/martinis.jsonnet %}</code></pre>
+<pre><code>{% include examples/martinis.libsonnet %}</code></pre>
 
 <pre><code>{% include examples/bar_menu.6.jsonnet %}</code></pre>
+
+<p>By convention, Jsonnet code that is intended only for importing has a <tt>.libsonnet</tt>
+extension.  This is not enforced, it simply allows you to distinguish between the two kinds of files
+when listing a directory.  In fact, for files that are both imported and executed directly, it is
+better to keep the <tt>.jsonnet</tt> suffix.  A commonly occurring example of that is test cases.</p>
 
 <h3>Functions</h3>
 
@@ -197,7 +202,7 @@ the quantity, thus avoiding the exposure of implementation details.</p>
 <p>There is also an identity function defined.  This is there to demonstrate that function
 definitions are really just syntax sugar for closures that are assigned to a field.</p>
 
-<pre><code>{% include examples/bar_menu_utils.jsonnet %}</code></pre>
+<pre><code>{% include examples/bar_menu_utils.libsonnet %}</code></pre>
 
 <p>Finally, you may have noticed that two colons are used instead of one.  This marks the field as
 being <dfn>hidden</dfn>, i.e. it will not appear in the JSON output.  The field can still be

@@ -1,6 +1,6 @@
 // bar_menu.6.jsonnet
 {
-    cocktails: (import "martinis.jsonnet") + {
+    cocktails: (import "martinis.libsonnet") + {
         Manhattan: {
             ingredients: [
                 { kind: "Rye", qty: 2.5 },

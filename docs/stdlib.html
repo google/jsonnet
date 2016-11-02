@@ -178,6 +178,13 @@ The <code>%</code> operator can be used as a shorthand for this function.  </p>
 <p>Example: <code>"Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}</code> yields
 <code>"Hello Foo, age 25"</code>.  </p>
 
+<h4>std.parseInt(str)</h4>
+
+<p>Parses a signed decimal integer from the input string</p>
+
+<p>Example: <code>std.parseInt("123")</code> yields <code>123</code>.</p>
+
+<p>Example: <code>std.parseInt("-123")</code> yields <code>-123</code>.</p>
 
 <h4>std.escapeStringBash(str)</h4>
 
