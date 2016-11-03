@@ -2175,11 +2175,13 @@ class Interpreter {
 
                 case FRAME_ERROR: {
                     const auto &ast = *static_cast<const Error*>(f.ast);
-                    if (scratch.t != Value::STRING)
-                        throw makeError(ast.location, "Error message must be string, got " +
-                                                      type_str(scratch) + ".");
-                    std::string msg = encode_utf8(static_cast<HeapString*>(scratch.v.h)->value);
-                    throw makeError(ast.location, msg);
+                    String msg;
+                    if (scratch.t == Value::STRING) {
+                        msg = static_cast<HeapString*>(scratch.v.h)->value;
+                    } else {
+                        msg = toString(ast.location);
+                    }
+                    throw makeError(ast.location, encode_utf8(msg));
                 } break;
 
                 case FRAME_IF: {
