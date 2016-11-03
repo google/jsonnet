@@ -544,6 +544,7 @@ parser.</p>
 <li>The <code>+:</code>, <code>+::</code>, and <code>+:::</code> sugars are removed.</li>
 <li>Field lookup is only possible through <code>e[e]</code>.</li>
 <li>All conditionals must have an else branch.</li>
+<li>The keyword <code>super</code> can exist on its own.</li>
 </ul>
 
 <p>Commas are no-longer part of this abstract syntax but we may still write them in our notation to
@@ -697,10 +698,10 @@ desugar_{expr}(\{
 \{ bind_1 \ldots bind_n, \objlocal{$ = \self} \} &amp; \textrm{otherwise} \\
 \end{array}\right. \\
 \hspace{4mm}
-\textrm{in } \{ \\
+\textrm{in } \local{\texttt{\$outerself} = \self, \texttt{\$outersuper} = \super} {\{ \\
 \hspace{8mm} desugar_{assert}(assert_1, binds) \ldots desugar_{assert}(assert_m, binds), \\
 \hspace{8mm} desugar_{field}(field_1, binds) \ldots desugar_{field}(field_p, binds, b) \\
-\hspace{4mm} \}
+\hspace{4mm} \}}
 \] </div>
 
 <div class="desugar-rule"> \[
@@ -806,7 +807,7 @@ desugar_{assert}(\assert e), binds) = desugar_{assert}(\assert e : \texttt{"Asse
 
 <div class="desugar-rule"> \[
 desugar_{assert}(\assert e : e'), binds) =
-\assert{desugar(\local{binds}{\if{e}{\null}{\error{e'}}}, \true)}
+\assert{desugar_{expr}(\local{binds}{\if{e}{\null}{\error{e'}}}, \true)}
 \] </div>
 
 
@@ -816,63 +817,64 @@ Recall that <i>h</i> ranges over <code>:</code>, <code>::</code>,
 
 <div class="desugar-rule"> \[
 desugar_{field}(id \mathrel{h} e), binds, \_) =
-id \mathrel{h} desugar(\local{binds}{e}, \true)
+id \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}(id \mathrel{+h} e), binds, \_) =
-id \mathrel{h} desugar(\super.id + \local{binds}{e}, \true)
+id \mathrel{h} desugar_{expr}(\super.id + \local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}(id(argparams) \mathrel{h} e), binds, \_) =
-id \mathrel{h} desugar(\local{binds}{\function{argparams}e}, \true)
+id \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
 \] </div>
 
 
 <div class="desugar-rule"> \[
 desugar_{field}(string \mathrel{h} e), binds, \_) =
-string \mathrel{h} desugar(\local{binds}{e}, \true)
+string \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}(string \mathrel{+h} e), binds, \_) =
-string \mathrel{h} desugar(\super[string] + \local{binds}{e}, \true)
+string \mathrel{h} desugar_{expr}(\super[string] + \local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}(string(argparams) \mathrel{h} e), binds, \_) =
-string \mathrel{h} desugar(\local{binds}{\function{argparams}e}, \true)
+string \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
 \] </div>
 
 
 <div class="desugar-rule"> \[
 desugar_{field}([e] \mathrel{h} e'), binds, b) =
-[desugar(e, b)] \mathrel{h} desugar(\local{binds}{e}, \true)
+[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
 \] </div>
 
-<!-- TODO: This one is broken! -->
-<!-- Probably the best solution is to convert all [e] to [x] for fresh x before using this rule. -->
 <div class="desugar-rule"> \[
-desugar_{field}([e] \mathrel{+h} e'), binds, b) =
-[desugar(e, b)] \mathrel{h} desugar(\super[desugar(e, b)] + \local{binds}{e'}, \true)
+desugar_{field}([e] \mathrel{+h} e'), binds, b) = \\
+\hspace{4mm}
+[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(
+    \super[e[\texttt{\$outerself} / \self, \texttt{\$outersuper} / \super]] + \local{binds}{e'},          \true
+)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}([e](argparams) \mathrel{h} e'), binds, b) =
-[desugar(e, b)] \mathrel{h} desugar(\local{binds}{\function{argparams}e}, \true)
+[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
 \] </div>
 
 <p><i>desugar<sub>bind</sub></i>: (Field × Boolean) → Field.  This desugars local bindings.</p>
 
 <div class="desugar-rule"> \[
 desugar_{bind}(id \texttt{=} e, b) =
-id \texttt{=} desugar(e, b)
+id \texttt{=} desugar_{expr}(e, b)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{bind}(id(argparams) \texttt{=} e, b) =
-id \texttt{=} desugar(\function{argparams}e, b)
+id \texttt{=} desugar_{expr}(\function{argparams}e, b)
 \] </div>
 
 
