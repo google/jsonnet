@@ -116,7 +116,7 @@ some particular uses of Jsonnet within the configuration.  We'll gladly field sp
 the <a href="https://groups.google.com/forum/#!forum/jsonnet">mailing list</a>.</p>
 
 
-<h4>Packer And Application Configuration</h4>
+<h4 id="config_whirlwind_packer">Packer And Application Configuration</h4>
 
 <p>Each Packer configuration is, at its core, a list of imperative actions to be performed in
 sequence by a VM, after which the disk is frozen to create the desired image.  The actions are
@@ -212,7 +212,7 @@ provisioners (based on these or from scratch) in order to declaratively control 
 in new ways.</p>
 
 
-<h4>Terraform</h4>
+<h4 id="config_whirlwind_terraform">Terraform</h4>
 
 <p>The remainder of <a href="{{ page.service_jsonnet }}"><code>service/service.jsonnet</code></a> generates the Terraform configuration that defines all
 the cloud resources that are required to run the fractal web application.  That includes the

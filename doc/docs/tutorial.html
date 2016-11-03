@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1>Tutorial</h1>
+<h1 id="tutorial">Tutorial</h1>
 
 <p> This page is a guided tour through the Jsonnet language, from its most basic features to its
 powerful object model, punctuated with examples drawn from the world of cocktails.  These examples
@@ -18,7 +18,7 @@ to the given input.  The whitespace of the output has also been tweaked to make 
 on the page.  So, if you run these examples yourself, the output might be different (but
 equivalent).</p>
 
-<h2>Simple Syntax Improvements</h2>
+<h2 id="syntax_improvements">Simple Syntax Improvements</h2>
 
 <p> In Jsonnet, unlike JSON, sufficiently simple object fields (the strings to the left of the
 colon) do not need quotes if their names are valid identifiers (i.e. match the regular expression
@@ -41,7 +41,7 @@ extra commas are allowed but not required.  Jsonnet also allows both C and C++ s
 </tr>
 </table>
 
-<h2>References</h2>
+<h2 id="references">References</h2>
 
 <p> To avoid duplication, one part of the structure can refer to another part.  There is a keyword
 <code>self</code> that refers to the current object, i.e. the object whose braces we are immediately
@@ -77,9 +77,9 @@ object).</p>
 </tr>
 </table>
 
-<h2>Data Operations</h2>
+<h2 id="data_operations">Data Operations</h2>
 
-<h3>Arithmetic and Conditionals</h3>
+<h3 id="arith_cond">Arithmetic and Conditionals</h3>
 
 <p>Jsonnet has constructs for manipulating data.  There are the usual arithmetic operators on
 numbers (double precision floating point), booleans, and strings.  The + operator also concatenates
@@ -163,7 +163,7 @@ together to produce a single record for the "cocktails" field. </p>
 </table>
 
 
-<h2>Modularity and Encapsulation</h2>
+<h2 id="modularity">Modularity and Encapsulation</h2>
 
 <p>As the amount of JSON grows, its size makes it harder to manage.  Jsonnet has various constructs
 to help.  A file can be broken into parts, as one Jsonnet file can import other Jsonnet files (and
@@ -172,7 +172,7 @@ visible within their scopes.  Functions can be defined to factor out common desc
 statements can be used to validate inputs.  Jsonnet provides a standard library that is implicitly
 imported and contains useful functions for data manipulation, among other things.</p>
 
-<h3>Imports</h3>
+<h3 id="imports">Imports</h3>
 
 <p>The first example below factors out some cocktails into a separate file.  This may be useful to
 allow concurrent modifications by different mixologists.  The <code>import</code> construct yields
@@ -191,7 +191,7 @@ extension.  This is not enforced, it simply allows you to distinguish between th
 when listing a directory.  In fact, for files that are both imported and executed directly, it is
 better to keep the <tt>.jsonnet</tt> suffix.  A commonly occurring example of that is test cases.</p>
 
-<h3>Functions</h3>
+<h3 id="functions">Functions</h3>
 
 <p>The next example demonstrates functions (actually, closures).  We have a separate file holding a
 utility function to help with defining cocktails made from equal parts, such as the Bee's Knees and
@@ -210,7 +210,7 @@ accessed by Jsonnet code, so it is not like the private/protected modifier that 
 Hidden fields are convenient for functions, which cannot be manifestated in the JSON output.  It has
 other uses too, as we will see in the later section on object orientation.</p>
 
-<h3>Local Variables</h3>
+<h3 id="locals">Local Variables</h3>
 
 <p>Like most languages, Jsonnet has <dfn>variables</dfn>, which can be used to factor out
 expressions.  They are referenced using standard static <a
@@ -271,7 +271,7 @@ to a stashing <code>self</code> in a variable at the outermost object.</p>
 </table>
 
 
-<h3>Stack Traces</h3>
+<h3 id="stack_traces">Stack Traces</h3>
 
 <p> Jsonnet provides stack traces when an error is raised.  Here is an example, where we provide an
 empty list of ingredients to the <code>equal_parts</code> function.  </p>
@@ -291,7 +291,7 @@ empty list of ingredients to the <code>equal_parts</code> function.  </p>
 </tr>
 </table>
 
-<h2>Object-Orientation</h2>
+<h2 id="oo">Object-Orientation</h2>
 
 <p>Finally, we see how Jsonnet provides the abstraction mechanisms of object oriented programming,
 to allow the writing of base templates that can be extended for a variety of purposes.</p>
@@ -383,7 +383,7 @@ overrides the hidden status from <code>Base</code> to make the field visible in 
 </tr>
 </table>
 
-<h2>Computed and Optional Fields</h2>
+<h2 id="computed_optional_fields">Computed and Optional Fields</h2>
 
 <p>In order to support objects whose keys are unknown until run-time, Jsonnet has a syntax allowing
 the field name to be computed, or omitted entirely.  The syntax is similar to object comprehension,

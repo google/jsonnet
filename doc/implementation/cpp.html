@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1>C++ Implementation</h1>
+<h1 id="cpp_implementation">C++ Implementation</h1>
 
 <p> The engine that does the hard work of evaluating Jsonnet programs is written in C++11 (no
 dependencies) and is exposed by a C API.  It implements a handwritten lexer and recursive descent
@@ -27,7 +27,7 @@ Jsonnet virtual machine (e.g. to Java, .NET, etc.) should only need to reimpleme
 functions.  The other parts of the standard library can be implemented by re-using the Jsonnet
 implementations from the C++ implementation.  </p>
 
-<h2>Support</h2>
+<h2 id="support">Support</h2>
 
 <p>Currently supported are Linux and OSX.  However the code should be easy to compile on any system
 with a modern C++ compiler, as it has no dependencies.  The build has been tested on gcc and

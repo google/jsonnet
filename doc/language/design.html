@@ -2,9 +2,9 @@
 layout: default
 ---
 
-<h1>Language Design</h1>
+<h1 id="language_design">Language Design</h1>
 
-<h2>Objectives</h2>
+<h2 id="objectives">Objectives</h2>
 
 <p> <a href="http://www.json.org">JSON</a> has emerged as the defacto standard for communication of
 structured data, both between machines and at the human / machine boundary.  However, in large
@@ -55,7 +55,7 @@ implementation.  </li>
 the vast majority only satisfied one or two of them.</p>
 
 
-<h2>Rationale for extending JSON</h2>
+<h2 id="json">Rationale for extending JSON</h2>
 
 <p>Extending JSON means building a language that fits within the existing constraints of the JSON
 specification.  This means that all JSON data must behave the same in Jsonnet (i.e. be emitted
@@ -72,7 +72,7 @@ step to convert the Jsonnet to JSON.  If you want to be extra paranoid, you can 
 if the JSON parsing failed, but this is not actually necessary.</p>
 
 
-<h2>Rationale for Reflection</h2>
+<h2 id="reflection">Rationale for Reflection</h2>
 
 <p>In JSON, there is an object construct, that is used as a dictionary, and like an object.  Jsonnet
 is the same, the object construct is often used as a dictionary as well as a conventional object.
@@ -82,7 +82,7 @@ reflection.  So naturally, Jsonnet has reflection because objects and dictionari
 thing.</p>
 
 
-<h2>Rationale for Turing-Completeness</h2>
+<h2 id="turing_completeness">Rationale for Turing-Completeness</h2>
 
 <p>Jsonnet is Turing-complete as it is possible to write non-terminating programs.  Configurations
 should always terminate, so ideally we would consider non-termination as an error.  However, doing
@@ -102,7 +102,7 @@ actually solve the more practical problem of bounding resource consumption durin
 solve.</p>
 
 
-<h2>Rationale for Dynamic Typing</h2>
+<h2 id="dynamic_typing">Rationale for Dynamic Typing</h2>
 
 <p>Modern <a href="http://en.wikipedia.org/wiki/Type_system">type systems</a> typically either
 require annotations, use type inference, or are dynamic.  The former two approaches have two
@@ -122,7 +122,7 @@ simplicity is of the utmost importance.</p>
 more important than the minimal benefits of runtime efficiency and static error detection.</p>
 
 
-<h2>Rationale for Object-Oriented Semantics</h2>
+<h2 id="oo">Rationale for Object-Oriented Semantics</h2>
 
 <p>Object-oriented semantics (specifically, late binding), are ideal for deriving variants from
 existing data.  Most modern object-oriented languages distinguish between classes and objects.
@@ -142,7 +142,7 @@ by itself is given formally in the <a href="/language/spec.html">specification</
 restrict <code>super</code> in order to keep the language simple (fewer rules).</p>
 
 
-<h2>Rationale for Pure Functional Semantics</h2>
+<h2 id="functional">Rationale for Pure Functional Semantics</h2>
 
 <p>There are ideological and practical reasons for designing Jsonnet as a pure functional language.
 On the practical side, pure functional languages have no side-effects, which (together with
@@ -162,7 +162,7 @@ Ideologically speaking, functional programming language advocates have always cl
 functional languages are excellent at defining, translating, and refining structured data.</p>
 
 
-<h2>Rationale for Lazy Semantics</h2>
+<h2 id="lazy">Rationale for Lazy Semantics</h2>
 
 <p>The late binding from the object oriented semantics already embodies some of the features of a lazy
 language.  Errors do not occur unless a field is actually dereferenced, and cyclic structures can be
@@ -198,7 +198,7 @@ if x == 0 then 0 else if x &gt; 0 then r else -r
 </code></pre>
 
 
-<h2>Modularity and Encapsulation</h2>
+<h2 id="modularity">Modularity and Encapsulation</h2>
 
 <p>In Jsonnet, a <dfn>module</dfn> is typically a Jsonnet file that defines an object whose fields
 contain useful values, such as functions or objects that can specialized for a particular purpose
@@ -258,7 +258,7 @@ apathetically) exposed.  In the case of Jsonnet, backwards compatibility with JS
 design since in JSON everything is a visible field.</p>
 
 
-<h2>Miscellaneous Design Choices</h2>
+<h2 id="misc">Miscellaneous Design Choices</h2>
 
 <p>The language is designed to be implementable via desugaring, i.e. there is a simple core language
 and the other constructs are translated down to this core language before interpretation.  This
