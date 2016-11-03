@@ -13,9 +13,6 @@ do not yet have a library binding.</p>
 
 <p>The tool is self-documenting:</p>
 
-<!-- Updating the following?  This may help:
-jsonnet -h | sed -e 's/&/&amp/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' 
--->
 <pre>
 Jsonnet commandline interpreter v0.8.9
 Typical Usage:

@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1 id="documentation_for_users">Documentation for users</h1>
+<h1>Documentation for users</h1>
 
 <ul>
 <li> <a href="/docs/tutorial.html">Tutorial</a> </li>

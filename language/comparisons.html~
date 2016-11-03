@@ -118,6 +118,6 @@ changes, let alone use late binding or the expressive power of mixins.</p>
 
 <p> Finally, there are a number of other configuration languages that have grown to be used by a
 range of applications.  For example <a href="http://en.wikipedia.org/wiki/INI_file">INI files</a> or
-<a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config files</a>.  Typically
-these offer few features beyond simple JSON and provide very little functionality when compared to
+<a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config files</a>.  Typically these
+offer few features beyond simple JSON and provide very little functionality when compared to
 Jsonnet.</p>

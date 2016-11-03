@@ -85,7 +85,7 @@ MathJax.Hub.Config({
 \]
 </div>
 
-<h1>Specification</h1>
+<h1 id="specification">Specification</h1>
 
 <p> This page is the authority on what Jsonnet programs should do.  It defines Jsonnet lexing and
 syntax.  It describes which programs should be rejected statically (i.e. before execution).
@@ -100,7 +100,7 @@ href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational s
 that's not your cup of tea, then see the more discussive description of Jsonnet behavior in the <a
 href="/docs/tutorial.html">tutorial</a>.</p>
 
-<h2>Lexing</h2>
+<h2 id="lexing">Lexing</h2>
 
 <p>A Jsonnet program is UTF-8 encoded text.  The file is a sequence of tokens, separated by optional
 whitespace and comments.  Whitespace consists of space, tab, newline and carriage return.  Tokens
@@ -174,7 +174,7 @@ token:</p>
 
 
 
-<h2>Abstract Syntax</h2>
+<h2 id="abstract_syntax">Abstract Syntax</h2>
 
 <p> The notation used here is as follows: { } denotes zero or more repetitions of a sequence of tokens,
 and [ ] represents an optional sequence of tokens.  This is not to be confused with <code>{ }</code>
@@ -488,7 +488,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 </td></tr>
 </table>
 
-<h2>Associativity and Operator Precedence</h2>
+<h2 id="associativity_precedence">Associativity and Operator Precedence</h2>
 
 <p> The abstract syntax by itself cannot unambiguously parse a sequence of tokens.  Ambiguities are
 resolved according to the following rules, which can also be overridden by adding parenthesis
@@ -518,7 +518,7 @@ remaining ambiguities are resolved according to the following order of precedenc
 <li><code>||</code></li>
 </ol>
 
-<h2>Core Language Subset</h2>
+<h2 id="core">Core Language Subset</h2>
 
 <p>To make the specification of Jsonnet as simple as possible, many of the language features are
 represented as syntax sugar.  Below is defined the core syntax and the desugaring function from the
@@ -526,7 +526,7 @@ abstract syntax to the core syntax.  Both the static checking rules and the oper
 are defined at the level of the core language, so it is possible to implement the desugaring in the
 parser.</p>
 
-<h3>Core Syntax</h3>
+<h3 id="core_syntax">Core Syntax</h3>
 
 <p>The core language has the following simplifications:</p>
 
@@ -662,7 +662,7 @@ transparency is maintained.</p>
 </td></tr>
 </table>
 
-<h3>Desugaring</h3>
+<h3 id="desugaring">Desugaring</h3>
 
 <p>Desugaring removes constructs that are not in the core language by replacing them with constructs
 that are.  It is defined via the following functions, which proceed by syntax-directed recursion.
@@ -876,7 +876,7 @@ id \texttt{=} desugar(\function{argparams}e, b)
 \] </div>
 
 
-<h3>Static Checking</h3>
+<h3 id="static_checking">Static Checking</h3>
 
 <p> After the Jsonnet program is parsed and desugared, a syntax-directed algorithm is employed to
 reject programs that contain certain classes of errors.  This is presented like a static type
@@ -1015,7 +1015,7 @@ x ∈ Γ
 </div>
 
 
-<h3>Operational Semantics</h3>
+<h3 id="semantics">Operational Semantics</h3>
 
 <p> We present two sets of operational semantics rules.  The first defines the judgement \(e ↓ v\)
 which represents the execution of Jsonnet expressions into Jsonnet values.  The other defines the
@@ -1026,7 +1026,7 @@ are converted into JSON values.</p>
 errors (e.g. array bounds errors) as stuck execution.  Errors can occur both in the \(e ↓ v\)
 judgement and in the \(v ⇓ j\) judgement (because it is defined in terms of \(e ↓ v\)).</p>
 
-<h4>Jsonnet Values</h4>
+<h4 id="jsonnet_values">Jsonnet Values</h4>
 
 <p> When executed, Jsonnet expressions yield Jsonnet values.  These need to be manifested, an
 additional step, to get JSON values.  The differences between Jsonnet values and JSON values are:
@@ -1063,7 +1063,7 @@ assertions are re-ordered.  However this is not true of array elements or functi
 
 </table>
 
-<h4>Hidden status inheritance</h4>
+<h4 id="hidden_inheritance">Hidden status inheritance</h4>
 
 <p>The hidden status of fields is preserved over inheritance if the right hand side uses the
 <code>:</code> form.  This is codified with the following function:</p>
@@ -1081,7 +1081,7 @@ h_R &amp; \textrm{otherwise} \\
 
 </div>
 
-<h4>Capture-Avoiding Substitution</h4>
+<h4 id="substitution">Capture-Avoiding Substitution</h4>
 
 <p>The rules for capture-avoiding variable substitution [<i>e</i>/<i>id</i>] are an
 extension of those in the <a href="http://en.wikipedia.org/wiki/Lambda_calculus">lambda
@@ -1227,7 +1227,7 @@ of <i>e'</i>.
 </td></tr> </table>
 
 
-<h4>Execution</h4>
+<h4 id="execution">Execution</h4>
 
 <p>The following big step operational semantics rules define the execution of Jsonnet programs, i.e.
 the reduction of a Jsonnet program <i>e</i> into its Jsonnet value <em>v</em> via the judgement \(e
@@ -1465,7 +1465,7 @@ e ↓ n
 <div class="sequent-rule"> \[\rule{filter} {
 e' ↓ \array{e_0 \ldots e_{n - 1}}
 \\
-j_1 \ldots j_m = { i \ |\  e(e_i) ↓ \true }
+j_1 \ldots j_m = \{ i \ |\  e(e_i) ↓ \true \}
 } {
 \texttt{std.filter}(e, e') ↓ \array{e_{j_1} \ldots e_{j_m}}
 } \] </div>
@@ -1608,7 +1608,7 @@ by the user in a custom execution environment, thus its semantics cannot be form
 The function <code>std.extVar(x)</code> also takes a string and returns the value bound to that
 external variable (always a string) at the time the Jsonnet environment was created.</p>
 
-<h4>JSON Values</h4>
+<h4 id="json_values">JSON Values</h4>
 
 <p> After execution, the resulting Jsonnet value is manifested into a JSON value whose serialized
 form is the ultimate output.  The Manifestation process removes hidden fields, checks assertions,
@@ -1642,7 +1642,7 @@ re-ordered.  However this is not true of array elements whose ordering is strict
 
 <p>Note that <em>JValue</em> ⊂ <em>Value</em>.</p>
 
-<h4>Manifestation</h4>
+<h4 id="manifestation">Manifestation</h4>
 
 <p> Manifestation is the conversion of a Jsonnet value into a JSON value.  It is represented with
 the judgement \(v⇓j\).  The process requires executing arbitrary Jsonnet code fragments, so the two

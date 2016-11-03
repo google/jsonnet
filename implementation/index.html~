@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1 id="implementation">Implementation</h1>
+<h1>Implementation</h1>
 
 <ul>
 <li> <a href="/implementation/commandline.html">Cmdline Tool</a> </li>

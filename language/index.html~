@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1 id="language">Language</h1>
+<h1>Language</h1>
 
 <ul>
 <li> <a href="/language/design.html">Design</a> </li>

@@ -5,7 +5,7 @@ layout: default
 <script src="/js/libjsonnet.js">
 </script>
 
-<h1 id="online_demo">Jsonnet Online Demo</h1>
+<h1>Jsonnet Online Demo</h1>
 
 <p> This Javascript <a href="/implementation/javascript.html">build</a> of Jsonnet runs in your browser.
 There is no filesystem, so <code>import</code> will not find any files.  In most browsers, the textboxes can

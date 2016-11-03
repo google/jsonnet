@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<h1>Tutorial</h1>
+<h1 id="tutorial">Tutorial</h1>
 
 <p> This page is a guided tour through the Jsonnet language, from its most basic features to its
 powerful object model, punctuated with examples drawn from the world of cocktails.  These examples
@@ -18,7 +18,7 @@ to the given input.  The whitespace of the output has also been tweaked to make 
 on the page.  So, if you run these examples yourself, the output might be different (but
 equivalent).</p>
 
-<h2>Simple Syntax Improvements</h2>
+<h2 id="syntax_improvements">Simple Syntax Improvements</h2>
 
 <p> In Jsonnet, unlike JSON, sufficiently simple object fields (the strings to the left of the
 colon) do not need quotes if their names are valid identifiers (i.e. match the regular expression
@@ -41,7 +41,7 @@ extra commas are allowed but not required.  Jsonnet also allows both C and C++ s
 </tr>
 </table>
 
-<h2>References</h2>
+<h2 id="references">References</h2>
 
 <p> To avoid duplication, one part of the structure can refer to another part.  There is a keyword
 <code>self</code> that refers to the current object, i.e. the object whose braces we are immediately
@@ -77,9 +77,9 @@ object).</p>
 </tr>
 </table>
 
-<h2>Data Operations</h2>
+<h2 id="data_operations">Data Operations</h2>
 
-<h3>Arithmetic and Conditionals</h3>
+<h3 id="arith_cond">Arithmetic and Conditionals</h3>
 
 <p>Jsonnet has constructs for manipulating data.  There are the usual arithmetic operators on
 numbers (double precision floating point), booleans, and strings.  The + operator also concatenates
@@ -186,10 +186,10 @@ recipe (one that uses Cointreau instead of Triple Sec, among other changes).</p>
 
 <pre><code>{% include examples/bar_menu.6.jsonnet %}</code></pre>
 
-<p>By convention, Jsonnet code that is intended for importing only has a <tt>.libsonnet</tt>
+<p>By convention, Jsonnet code that is intended only for importing has a <tt>.libsonnet</tt>
 extension.  This is not enforced, it simply allows you to distinguish between the two kinds of files
 when listing a directory.  In fact, for files that are both imported and executed directly, it is
-better to keep the <tt>.jsonnet</tt> suffix.  A commonly occurring example of this is test cases.</p>
+better to keep the <tt>.jsonnet</tt> suffix.  A commonly occurring example of that is test cases.</p>
 
 <h3>Functions</h3>
 
