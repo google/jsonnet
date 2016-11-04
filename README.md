@@ -9,14 +9,15 @@ Visit our [discussion forum](https://groups.google.com/forum/#!forum/jsonnet).
 
 ## Building Jsonnet
 
-The GCC C++ (g++) compiler is required to build Jsonnet.
+The GCC C++ (g++) compiler is required to build Jsonnet. Clang is also
+supported.
 
 ### Makefile
 
-To build jsonnet, run:
+To build jsonnet with g++, run:
 
 ```
-make -j
+make
 ```
 
 To run the output binary, run:
@@ -32,7 +33,7 @@ Bazel builds are also supported.
 not installed already. Then, run the following command to build:
 
 ```
-bazel build //cmd:jsonnet
+bazel build -c opt //cmd:jsonnet
 ```
 
 This builds the `jsonnet` target defined in [cmd/BUILD](./cmd/BUILD) To run the
