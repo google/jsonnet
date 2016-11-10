@@ -210,7 +210,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>[</code>
 <i>expr</i>
 [ <code>,</code> ]
-<i>forspec</i> { <i>forspec</i> | <i>ifspec</i> }
+<i>forspec</i> <i>compspec</i>
 <code>]</code>
 
 <!-- object index (id) -->
@@ -350,7 +350,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>:</code>
 <i>expr</i>
 [ { <code>,</code> <i>objlocal</i> } [ <code>,</code> ] ]
-<i>forspec</i> { <i>forspec</i> | <i>ifspec</i> }
+<i>forspec</i> <i>compspec</i>
 
 <!-- member -->
 <tr><td><i>member</i></td><td>::=</td><td>
@@ -382,6 +382,11 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <!-- obj local -->
 </td></tr> <tr><td><i>objlocal</i></td><td>::=</td><td>
 <code>local</code> <i>bind</i>
+
+<!-- compspec (object comps) -->
+<tr><td><i>compspec ∈ CompSpec</i></td><td>::=</td><td>
+{ <i>forspec</i> | <i>ifspec</i> }
+</td></tr>
 
 <!-- for spec (object comps) -->
 <tr><td><i>forspec</i></td><td>::=</td><td>
@@ -686,8 +691,6 @@ desugar(e) = \\
 <p><i>desugar<sub>expr</sub></i>: (Expr × Boolean) → Core:  This desugars an expression.  The second
 parameter of the function tracks whether we are within an object.</p>
 
-<p>TODO: Add desugaring rules for object and array comprehensions.</p>
-
 <div class="desugar-rule"> \[
 desugar_{expr}(\{
     \objlocal{bind_1} \ldots \objlocal{bind_n}, assert_1 \ldots assert_m, field_1 \ldots field_p
@@ -703,6 +706,33 @@ desugar_{expr}(\{
 \hspace{8mm} desugar_{field}(field_1, binds) \ldots desugar_{field}(field_p, binds, b) \\
 \hspace{4mm} \}}
 \] </div>
+
+<div class="desugar-rule"> \[
+desugar_{expr}(\object{
+\objlocal{bind_1} \ldots \objlocal{bind_m},
+[e_f] : e_{body},
+\objlocal{bind_m+1} \ldots \objlocal{bind_n}
+forspec\ compspec
+}, b) = \\
+
+\hspace{4mm} \textrm{Let } arr \textrm{ fresh and } x_1 \ldots x_n \textrm{ be the sequence of
+variables defined in }forspec\ compspec \\
+
+\hspace{4mm} \object{ \\
+\hspace{8mm} [desugar_{expr}(\local{x_1=arr[1] \ldots x_n=arr[n]}{e_f}, b)]: \\
+\hspace{12mm} desugar_{expr}(
+    \local{x_1=arr[1] \ldots x_n=arr[n]}{
+        \local{bind_1 \ldots bind_n}{e_{body}}
+    }, true) \\
+\hspace{8mm} \textrm{ for } arr \textrm{ in }
+desugar_{expr}([ [x_1 \ldots x_n] forspec\ compspec, b): \\
+\hspace{4mm}}
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{expr}([e\ forspec\ compspec], b) = desugar_{arrcomp}(e, forspec\ compspec, b)
+\]
+</div>
 
 <div class="desugar-rule"> \[
 desugar_{expr}(\local {bind_1 \ldots bind_n} e, b) = \local {desugar_{bind}(bind_1, b) \ldots
@@ -865,6 +895,7 @@ desugar_{field}([e](argparams) \mathrel{h} e'), binds, b) =
 [desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
 \] </div>
 
+
 <p><i>desugar<sub>bind</sub></i>: (Field × Boolean) → Field.  This desugars local bindings.</p>
 
 <div class="desugar-rule"> \[
@@ -875,6 +906,48 @@ id \texttt{=} desugar_{expr}(e, b)
 <div class="desugar-rule"> \[
 desugar_{bind}(id(argparams) \texttt{=} e, b) =
 id \texttt{=} desugar_{expr}(\function{argparams}e, b)
+\] </div>
+
+
+<p><i>desugar<sub>arrcomp</sub></i>: (Expr × CompSpec × Boolean) → Field.  This desugars array
+comprehensions.</p>
+
+<div class="desugar-rule"> \[
+desugar_{arrcomp}(e, \textrm{if }e'\ compspec, b) =
+desugar_{expr}(\if{e'}{[desugar_{arrcomp}(e, compspec, b)]}{[]}, b)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{arrcomp}(e, \textrm{if }e', b) =
+desugar_{expr}(\if{e'}{[e]}{[]}, b)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e'\ compspec, b) = \\
+\hspace{4mm}\textrm{Let }arr, i\textrm{ fresh} \\
+\hspace{4mm}desugar_{expr}(
+    \local{arr = e'}{
+        \texttt{std.join}(\\\hspace{8mm}[], \texttt{std.makeArray}(
+            \texttt{std.length}(arr),
+            \function{i}{\local{x = arr[i]}{[desugar_{arrcomp}(e, compspec, b)]}}
+        ))
+    },
+    b
+)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e', b) = \\
+\hspace{4mm}\textrm{Let }arr, i\textrm{ fresh} \\
+\hspace{4mm}desugar_{expr}(
+    \local{arr = e'}{
+        \texttt{std.join}(\\\hspace{8mm}[], \texttt{std.makeArray}(
+            \texttt{std.length}(arr), 
+            \function{i}{\local{x = arr[i]}{[base]}}
+        ))
+    },
+    b
+)
 \] </div>
 
 
