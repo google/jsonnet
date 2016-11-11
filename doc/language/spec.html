@@ -697,14 +697,18 @@ desugar_{expr}(\{
 \}, b) = \\
 \hspace{4mm}
 \textrm{let }binds = \left\{\begin{array}{ll}
-\{ bind_1 \ldots bind_n \} &amp; \textrm{if }b \\
-\{ bind_1 \ldots bind_n, \objlocal{$ = \self} \} &amp; \textrm{otherwise} \\
+bind_1 \ldots bind_n &amp; \textrm{if }b \\
+bind_1 \ldots bind_n, \objlocal{$ = \self} &amp; \textrm{otherwise} \\
 \end{array}\right. \\
 \hspace{4mm}
-\textrm{in } \local{\texttt{\$outerself} = \self, \texttt{\$outersuper} = \super} {\{ \\
+\textrm{let } obj = \{ \\
 \hspace{8mm} desugar_{assert}(assert_1, binds) \ldots desugar_{assert}(assert_m, binds), \\
 \hspace{8mm} desugar_{field}(field_1, binds) \ldots desugar_{field}(field_p, binds, b) \\
-\hspace{4mm} \}}
+\hspace{4mm} \} \\
+\textrm{in } \left\{\begin{array}{ll}
+\local{\texttt{\$outerself} = \self, \texttt{\$outersuper} = \super} {obj} &amp; \textrm{if }b \\
+obj &amp; \textrm{otherwise} \\
+\end{array}\right. \\
 \] </div>
 
 <div class="desugar-rule"> \[
