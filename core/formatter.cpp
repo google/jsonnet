@@ -464,6 +464,30 @@ class Unparser {
                     }
                 }
                 o << ast->blockTermIndent << "|||";
+            } else if (ast->tokenKind == LiteralString::VERBATIM_DOUBLE) {
+                o << "@\"";
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
+                    if (*cp == U'"') {
+                        o << "\"\"";
+                    } else {
+                        std::string utf8;
+                        encode_utf8(*cp, utf8);
+                        o << utf8;
+                    }
+                }
+                o << "\"";
+            } else if (ast->tokenKind == LiteralString::VERBATIM_SINGLE) {
+                o << "@'";
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
+                    if (*cp == U'\'') {
+                        o << "''";
+                    } else {
+                        std::string utf8;
+                        encode_utf8(*cp, utf8);
+                        o << utf8;
+                    }
+                }
+                o << "'";
             }
 
         } else if (dynamic_cast<const LiteralNull*>(ast_)) {
@@ -613,6 +637,8 @@ class EnforceStringStyle : public FmtPass {
     void visit(LiteralString *lit)
     {
         if (lit->tokenKind == LiteralString::BLOCK) return;
+        if (lit->tokenKind == LiteralString::VERBATIM_DOUBLE) return;
+        if (lit->tokenKind == LiteralString::VERBATIM_SINGLE) return;
         String canonical = jsonnet_string_unescape(lit->location, lit->value);
         unsigned num_single = 0, num_double = 0;
         for (char32_t c : canonical) {

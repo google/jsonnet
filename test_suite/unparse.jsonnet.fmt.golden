@@ -22,6 +22,8 @@ limitations under the License.
     zero: 0,
     string: "'foo\n bar\n\n\"bar\u0005\"\'\t \u0050\b\f\r\\",
     string2: '"foo\n bar\n\n\'bar\u0005\"\'\t \u0050\b\f\r\\',
+    string3: @'"foo\n bar\n\n''bar\u0005\"''\t \u0050\b\f\r\\',
+    string4: @"'foo\n bar\n\n'bar\u0005""'\t \u0050\b\f\r\\",
     lit_field1: 1,
     lit_field2: 1,
     "false": false,

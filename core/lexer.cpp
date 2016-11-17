@@ -507,6 +507,38 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             }
             break;
 
+            // Verbatim string literals.
+            case '@': {
+                c++;
+                if (*c != '"' && *c != '\'') {
+                    std::stringstream ss;
+                    ss << "Couldn't lex verbatim string, junk after '@': " << *c;
+                    throw StaticError(filename, begin, ss.str());
+                }
+                const char quot = *c;
+                c++;  // Advance beyond the opening quote.
+                for (; ; ++c) {
+                    if (*c == '\0')  {
+                        throw StaticError(filename, begin, "Unterminated verbatim string");
+                    }
+                    if (*c == quot) {
+                        if (*(c+1) == quot) {
+                           c++;
+                       } else {
+                           break;
+                       }
+                    }
+                    data += *c;
+                }
+                c++;  // Advance beyond the closing quote.
+                if (quot == '"') {
+                    kind = Token::VERBATIM_STRING_DOUBLE;
+                } else {
+                    kind = Token::VERBATIM_STRING_SINGLE;
+                }
+            }
+            break;
+
             // Keywords
             default:
             if (is_identifier_first(*c)) {

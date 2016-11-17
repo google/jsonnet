@@ -140,6 +140,38 @@ TEST(Lexer, TestSingleStrings)
             "'hi", {}, "single string 'hi:1:1: Unterminated string");
 }
 
+TEST(Lexer, TestVerbatimDoubleStrings)
+{
+    testLex("verbatim double string @\"hi\"",
+            "@\"hi\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi")}, "");
+    testLex("verbatim double string @\"hi nl\"",
+            "@\"hi\n\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\n")}, "");
+    testLex("verbatim double string @\"hi\\\"",
+            "@\"hi\\\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\")}, "");
+    testLex("verbatim double string @\"hi\\\\\"",
+            "@\"hi\\\\\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\\\")}, "");
+    testLex("verbatim double string @\"hi\"\"\"",
+            "@\"hi\"\"\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\"")}, "");
+    testLex("verbatim double string @\"\"\"hi\"",
+            "@\"\"\"hi\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "\"hi")}, "");
+}
+
+TEST(Lexer, TestVerbatimSingleStrings)
+{
+    testLex("verbatim single string @'hi'",
+            "@'hi'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi")}, "");
+    testLex("verbatim single string @'hi nl'",
+            "@'hi\n'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\n")}, "");
+    testLex("verbatim single string @'hi\\'",
+            "@'hi\\'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\")}, "");
+    testLex("verbatim single string @'hi\\\\'",
+            "@'hi\\\\'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\\\")}, "");
+    testLex("verbatim single string @'hi'''",
+            "@'hi'''", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi'")}, "");
+    testLex("verbatim single string @'''hi'",
+            "@'''hi'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "'hi")}, "");
+}
+
 TEST(Lexer, TestBlockStringSpaces)
 {
     const char str[] =
