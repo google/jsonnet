@@ -40,7 +40,7 @@ cc_test(
     deps = [
         ":libjsonnet",
         # Note: On Ubuntu, apt-get install libgtest-dev google-mock
-        "//external:gtest_main",
+        "//external:googletest_main",
     ],
 )
 
@@ -49,7 +49,7 @@ cc_test(
     srcs = ["parser_test.cpp"],
     deps = [
         ":libjsonnet",
-        "//external:gtest_main",
+        "//external:googletest_main",
     ],
 )
 
@@ -58,6 +58,6 @@ cc_test(
     srcs = ["libjsonnet_test.cpp"],
     deps = [
         ":libjsonnet",
-        "//external:gtest_main",
+        "//external:googletest_main",
     ],
 )

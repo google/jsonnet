@@ -15,6 +15,6 @@ cc_test(
     data = ["//cpp/testdata"],
     deps = [
         ":libjsonnet++",
-        "//external:gtest_main",
+        "//external:googletest_main",
     ],
 )
