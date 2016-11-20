@@ -145,7 +145,7 @@ TEST(Parser, TestInvalidFunctionCall)
         "test:1:15: Expected a comma before next function parameter.");
     testParseError(
         "function(a, 1)",
-        "test:1:13: Expected an identifier but got a complex expression.");
+        "test:1:13: Could not parse parameter here.");
     testParseError("a b", R"(test:1:3: Did not expect: (IDENTIFIER, "b"))");
     testParseError(
         "foo(a, bar(a b))",

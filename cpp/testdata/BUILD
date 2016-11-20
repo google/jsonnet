@@ -1,16 +1,15 @@
 package(default_visibility = ["//visibility:public"])
 
 load(
-    "@bazel_tools//tools/build_defs/jsonnet:jsonnet.bzl",
+    "@io_bazel_rules_jsonnet//jsonnet:jsonnet.bzl",
     "jsonnet_to_json_test",
+    "jsonnet_library",
 )
 
 jsonnet_to_json_test(
     name = "example_test",
     src = "example.jsonnet",
     golden = "example_golden.json",
-    jsonnet = "//cmd:jsonnet",
-    std = "//stdlib",
 )
 
 jsonnet_to_json_test(
@@ -18,17 +17,22 @@ jsonnet_to_json_test(
     src = "importing.jsonnet",
     golden = "importing_golden.json",
     imports = ["."],
-    jsonnet = "//cmd:jsonnet",
-    std = "//stdlib",
+    deps = [":testlib"],
 )
 
 jsonnet_to_json_test(
     name = "invalid_test",
     src = "invalid.jsonnet",
-    golden = "invalid.out",
     error = 1,
-    jsonnet = "//cmd:jsonnet",
-    std = "//stdlib",
+    golden = "invalid.out",
+)
+
+jsonnet_library(
+    name = "testlib",
+    srcs = [
+        "example.jsonnet",
+        "importing.jsonnet",
+    ],
 )
 
 filegroup(

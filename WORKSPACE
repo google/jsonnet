@@ -1,18 +1,33 @@
-new_http_archive(
-    name = "gmock_archive",
-    url = "https://googlemock.googlecode.com/files/gmock-1.7.0.zip",
-    sha256 = "26fcbb5925b74ad5fc8c26b0495dfc96353f4d553492eb97e85a8a6d2f43095b",
+workspace(name = "jsonnet")
+
+# This local_repository looks silly but it makes io_bazel_rules_jsonnet use
+# _this_ jsonnet, not another downloaded copy.
+local_repository(
+    name = "jsonnet",
+    path = ".",
+)
+
+git_repository(
+    name = "io_bazel_rules_jsonnet",
+    commit = "4ef65ef89335fca9d105515053af083f8bd54965",
+    remote = "https://github.com/bazelbuild/rules_jsonnet.git",
+)
+
+new_git_repository(
+    name = "com_google_googletest",
+    remote = "https://github.com/google/googletest.git",
+    tag = "release-1.8.0",
     build_file = "gmock.BUILD",
 )
 
 bind(
-    name = "gtest",
-    actual = "@gmock_archive//:gtest",
+    name = "googletest",
+    actual = "@com_google_googletest//:googletest_no_main",
 )
 
 bind(
-    name = "gtest_main",
-    actual = "@gmock_archive//:gtest_main",
+    name = "googletest_main",
+    actual = "@com_google_googletest//:googletest",
 )
 
 load("//tools/build_defs:python_repo.bzl", "python_interpreter")
