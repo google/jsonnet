@@ -13,14 +13,12 @@
 # limitations under the License.
 
 import os
-import sys
+import unittest
 
 import _jsonnet
 
-if len(sys.argv) != 2:
-    raise Exception("Usage: <snippet>")
 
-# Returns content if worked, None if file not found, or throws an exception
+#  Returns content if worked, None if file not found, or throws an exception
 def try_path(dir, rel):
     if not rel:
         raise RuntimeError('Got invalid filename (empty string).')
@@ -43,9 +41,11 @@ def import_callback(dir, rel):
         return full_path, content
     raise RuntimeError('File not found')
 
+
 # Test native extensions
 def concat(a, b):
     return a + b
+
 
 def return_types():
     return {
@@ -61,14 +61,37 @@ def return_types():
     }
 
 native_callbacks = {
-  'concat': (('a', 'b'), concat),
-  'return_types': ((), return_types),
+    'concat': (('a', 'b'), concat),
+    'return_types': ((), return_types),
 }
 
-json_str = _jsonnet.evaluate_snippet(
-    "snippet",
-    sys.argv[1],
-    import_callback=import_callback,
-    native_callbacks=native_callbacks,
-)
-sys.stdout.write(json_str)
+
+class JsonnetTests(unittest.TestCase):
+    def setUp(self):
+        self.input_filename = os.path.join(
+            os.path.dirname(__file__),
+            "test.jsonnet",
+        )
+        self.expected_str = "true\n"
+        with open(self.input_filename, "r") as infile:
+            self.input_snippet = infile.read()
+
+    def test_evaluate_file(self):
+        json_str = _jsonnet.evaluate_file(
+            self.input_filename,
+            import_callback=import_callback,
+            native_callbacks=native_callbacks,
+        )
+        self.assertEqual(json_str, self.expected_str)
+
+    def test_evaluate_snippet(self):
+        json_str = _jsonnet.evaluate_snippet(
+            "snippet",
+            self.input_snippet,
+            import_callback=import_callback,
+            native_callbacks=native_callbacks,
+        )
+        self.assertEqual(json_str, self.expected_str)
+
+if __name__ == '__main__':
+    unittest.main()
