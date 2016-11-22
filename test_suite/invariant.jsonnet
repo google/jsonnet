@@ -57,4 +57,20 @@ local Template = {
 
 std.assertEqual(Template { x: 1, y: 2 }, { str: "1 2" }) &&
 
+std.assertEqual(std.type({ assert false }), 'object') &&
+
+std.assertEqual(std.length({ assert false }), 0) &&
+
+std.assertEqual(std.objectHas({ assert false, f: 3 }, 'f'), true) &&
+std.assertEqual(std.objectHas({ assert false, f: 3, g:: 3 }, 'g'), false) &&
+std.assertEqual(std.objectHas({ assert false, f: 3, g:: 3 }, 'h'), false) &&
+
+std.assertEqual(std.objectFields({ assert false, f: 3, g:: 3 }), ['f']) &&
+
+std.assertEqual(std.objectHasAll({ assert false, f: 3 }, 'f'), true) &&
+std.assertEqual(std.objectHasAll({ assert false, f: 3, g:: 3 }, 'g'), true) &&
+std.assertEqual(std.objectHasAll({ assert false, f: 3, g:: 3 }, 'h'), false) &&
+
+std.assertEqual(std.objectFieldsAll({ assert false, f: 3, g:: 3 }), ['f', 'g']) &&
+
 true
