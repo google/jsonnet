@@ -47,6 +47,7 @@ LIB_SRC = \
 	core/lexer.cpp \
 	core/libjsonnet.cpp \
 	core/parser.cpp \
+	core/pass.cpp \
 	core/static_analysis.cpp \
 	core/string_utils.cpp \
 	core/vm.cpp

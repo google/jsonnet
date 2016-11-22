@@ -750,6 +750,12 @@ class Allocator {
         allocated.push_back(r);
         return r;
     }
+
+    template <class T> T *clone(T * ast) {
+        auto r = new T(*ast);
+        allocated.push_back(r);
+        return r;
+    }
     /** Returns interned identifiers.
      *
      * The location used in the Identifier AST is that of the first one parsed.

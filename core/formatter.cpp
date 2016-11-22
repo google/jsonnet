@@ -16,8 +16,9 @@ limitations under the License.
 
 #include <typeinfo>
 
-#include "lexer.h"
 #include "formatter.h"
+#include "lexer.h"
+#include "pass.h"
 #include "string_utils.h"
 #include "unicode.h"
 
@@ -595,385 +596,20 @@ static void fodder_move_front(Fodder &a, Fodder &b)
 
 /** A generic Pass that does nothing but can be extended to easily define real passes.
  */
-class Pass {
-    public:
-
+class FmtPass : public CompilerPass {
     protected:
-    Allocator &alloc;
     FmtOpts opts;
 
     public:
-    Pass(Allocator &alloc, const FmtOpts &opts)
-     : alloc(alloc), opts(opts) { }
-
-    virtual void fodderElement(FodderElement &f)
-    {
-        (void) f;
-    }
-
-    virtual void fodder(Fodder &fodder)
-    {
-        for (auto &f : fodder)
-            fodderElement(f);
-    }
-
-    virtual void specs(std::vector<ComprehensionSpec> &specs)
-    {
-        for (auto &spec : specs) {
-            fodder(spec.openFodder);
-            switch (spec.kind) {
-                case ComprehensionSpec::FOR:
-                fodder(spec.varFodder);
-                fodder(spec.inFodder);
-                expr(spec.expr);
-                break;
-                case ComprehensionSpec::IF:
-                expr(spec.expr);
-                break;
-            }
-        }
-    }
-
-    virtual void params(Fodder &fodder_l, ArgParams &params, Fodder &fodder_r)
-    {
-        fodder(fodder_l);
-        for (auto &param : params) {
-            fodder(param.idFodder);
-            if (param.expr) {
-                fodder(param.eqFodder);
-                expr(param.expr);
-            }
-            fodder(param.commaFodder);
-        }
-        fodder(fodder_r);
-    }
-
-    virtual void fieldParams(ObjectField &field)
-    {
-        if (field.methodSugar) {
-            params(field.fodderL, field.params, field.fodderR);
-        }
-    }
-
-    virtual void fields(ObjectFields &fields)
-    {
-        for (auto &field : fields) {
-
-            switch (field.kind) {
-                case ObjectField::LOCAL: {
-                    fodder(field.fodder1);
-                    fodder(field.fodder2);
-                    fieldParams(field);
-                    fodder(field.opFodder);
-                    expr(field.expr2);
-                } break;
-
-                case ObjectField::FIELD_ID:
-                case ObjectField::FIELD_STR:
-                case ObjectField::FIELD_EXPR: {
-                    if (field.kind == ObjectField::FIELD_ID) {
-                        fodder(field.fodder1);
-
-                    } else if (field.kind == ObjectField::FIELD_STR) {
-                        expr(field.expr1);
-
-                    } else if (field.kind == ObjectField::FIELD_EXPR) {
-                        fodder(field.fodder1);
-                        expr(field.expr1);
-                        fodder(field.fodder2);
-                    }
-                    fieldParams(field);
-                    fodder(field.opFodder);
-                    expr(field.expr2);
-
-                } break;
-
-                case ObjectField::ASSERT: {
-                    fodder(field.fodder1);
-                    expr(field.expr2);
-                    if (field.expr3 != nullptr) {
-                        fodder(field.opFodder);
-                        expr(field.expr3);
-                    }
-                } break;
-            }
-
-            fodder(field.commaFodder);
-        }
-    }
-
-    virtual void expr(AST *&ast_)
-    {
-        fodder(ast_->openFodder);
-        visitExpr(ast_);
-    }
-
-    virtual void visit(Apply *ast)
-    {
-        expr(ast->target);
-        fodder(ast->fodderL);
-        for (auto &arg : ast->args) {
-            expr(arg.expr);
-            fodder(arg.commaFodder);
-        }
-        fodder(ast->fodderR);
-        if (ast->tailstrict) {
-            fodder(ast->tailstrictFodder);
-        }
-    }
-
-    virtual void visit(ApplyBrace *ast)
-    {
-        expr(ast->left);
-        expr(ast->right);
-    }
-
-    virtual void visit(Array *ast)
-    {
-        for (auto &element : ast->elements) {
-            expr(element.expr);
-            fodder(element.commaFodder);
-        }
-        fodder(ast->closeFodder);
-    }
-
-    virtual void visit(ArrayComprehension *ast)
-    {
-        expr(ast->body);
-        fodder(ast->commaFodder);
-        specs(ast->specs);
-        fodder(ast->closeFodder);
-    }
-
-    virtual void visit(Assert *ast)
-    {
-        expr(ast->cond);
-        if (ast->message != nullptr) {
-            fodder(ast->colonFodder);
-            expr(ast->message);
-        }
-        fodder(ast->semicolonFodder);
-        expr(ast->rest);
-    }
-
-    virtual void visit(Binary *ast)
-    {
-        expr(ast->left);
-        fodder(ast->opFodder);
-        expr(ast->right);
-    }
-
-    virtual void visit(BuiltinFunction *) { }
-
-    virtual void visit(Conditional *ast)
-    {
-        expr(ast->cond);
-        fodder(ast->thenFodder);
-        if (ast->branchFalse != nullptr) {
-            expr(ast->branchTrue);
-            fodder(ast->elseFodder);
-            expr(ast->branchFalse);
-        } else {
-            expr(ast->branchTrue);
-        }
-    }
-
-    virtual void visit(Dollar *) { }
-
-    virtual void visit(Error *ast)
-    {
-        expr(ast->expr);
-    }
-
-    virtual void visit(Function *ast)
-    {
-        params(ast->parenLeftFodder, ast->params, ast->parenRightFodder);
-        expr(ast->body);
-    }
-
-    virtual void visit(Import *ast)
-    {
-        visit(ast->file);
-    }
-
-    virtual void visit(Importstr *ast)
-    {
-        visit(ast->file);
-    }
-
-    virtual void visit(Index *ast)
-    {
-        expr(ast->target);
-        if (ast->id != nullptr) {
-        } else {
-            if (ast->isSlice) {
-                if (ast->index != nullptr)
-                    expr(ast->index);
-                if (ast->end != nullptr)
-                    expr(ast->end);
-                if (ast->step != nullptr)
-                    expr(ast->step);
-            } else {
-                expr(ast->index);
-            }
-        }
-    }
-
-    virtual void visit(Local *ast)
-    {
-        assert(ast->binds.size() > 0);
-        for (auto &bind : ast->binds) {
-            fodder(bind.varFodder);
-            if (bind.functionSugar) {
-                params(bind.parenLeftFodder, bind.params, bind.parenRightFodder);
-            } 
-            fodder(bind.opFodder);
-            expr(bind.body);
-            fodder(bind.closeFodder);
-        }
-        expr(ast->body);
-    }
-
-    virtual void visit(LiteralBoolean *) { }
-
-    virtual void visit(LiteralNumber *) { }
-
-    virtual void visit(LiteralString *) { }
-
-    virtual void visit(LiteralNull *) { }
-
-    virtual void visit(Object *ast)
-    {
-        fields(ast->fields);
-        fodder(ast->closeFodder);
-    }
-
-    virtual void visit(DesugaredObject *ast)
-    {
-        for (AST *assert : ast->asserts) {
-            expr(assert);
-        }
-        for (auto &field : ast->fields) {
-            expr(field.name);
-            expr(field.body);
-        }
-    }
-
-    virtual void visit(ObjectComprehension *ast)
-    {
-        fields(ast->fields);
-        specs(ast->specs);
-        fodder(ast->closeFodder);
-    }
-
-    virtual void visit(ObjectComprehensionSimple *ast)
-    {
-        expr(ast->field);
-        expr(ast->value);
-        expr(ast->array);
-    }
-
-    virtual void visit(Parens *ast)
-    {
-        expr(ast->expr);
-        fodder(ast->closeFodder);
-    }
-
-    virtual void visit(Self *) { }
-
-    virtual void visit(SuperIndex *ast)
-    {
-        if (ast->id != nullptr) {
-        } else {
-            expr(ast->index);
-        }
-    }
-
-    virtual void visit(Unary *ast)
-    {
-        expr(ast->expr);
-    }
-
-    virtual void visit(Var *) { }
-
-    virtual void visitExpr(AST *&ast_)
-    {
-        if (auto *ast = dynamic_cast<Apply*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<ApplyBrace*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Array*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<ArrayComprehension*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Assert*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Binary*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<BuiltinFunction*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Conditional*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Dollar*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Error*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Function*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Import*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Importstr*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Local*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<LiteralBoolean*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<LiteralNumber*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<LiteralString*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<LiteralNull*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Object*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<DesugaredObject*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Parens*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Self*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<SuperIndex*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Unary*>(ast_)) {
-            visit(ast);
-        } else if (auto *ast = dynamic_cast<Var*>(ast_)) {
-            visit(ast);
-
-        } else {
-            std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
-            std::abort();
-
-        }
-    }
-
-    virtual void file(AST *&body, Fodder &final_fodder)
-    {
-        expr(body);
-        fodder(final_fodder);
-    }
+    FmtPass(Allocator &alloc, const FmtOpts &opts)
+     : CompilerPass(alloc), opts(opts) { }
 };
 
 
-class EnforceStringStyle : public Pass {
-    using Pass::visit;
+class EnforceStringStyle : public FmtPass {
+    using FmtPass::visit;
     public:
-    EnforceStringStyle(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    EnforceStringStyle(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void visit(LiteralString *lit)
     {
         if (lit->tokenKind == LiteralString::BLOCK) return;
@@ -996,11 +632,11 @@ class EnforceStringStyle : public Pass {
     }
 };
 
-class EnforceCommentStyle : public Pass {
+class EnforceCommentStyle : public FmtPass {
     public:
     bool firstFodder;
     EnforceCommentStyle(Allocator &alloc, const FmtOpts &opts)
-      : Pass(alloc, opts), firstFodder(true)
+      : FmtPass(alloc, opts), firstFodder(true)
     { }
     /** Change the comment to match the given style, but don't break she-bang.
      *
@@ -1035,9 +671,9 @@ class EnforceCommentStyle : public Pass {
     }
 };
 
-class EnforceMaximumBlankLines : public Pass {
+class EnforceMaximumBlankLines : public FmtPass {
     public:
-    EnforceMaximumBlankLines(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    EnforceMaximumBlankLines(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void fodderElement(FodderElement &f)
     {
         if (f.kind != FodderElement::INTERSTITIAL)
@@ -1045,9 +681,9 @@ class EnforceMaximumBlankLines : public Pass {
     }
 };
 
-class StripComments : public Pass {
+class StripComments : public FmtPass {
     public:
-    StripComments(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    StripComments(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void fodder(Fodder &fodder)
     {
         Fodder copy = fodder;
@@ -1059,15 +695,15 @@ class StripComments : public Pass {
     }
 };
 
-class StripEverything : public Pass {
+class StripEverything : public FmtPass {
     public:
-    StripEverything(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    StripEverything(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void fodder(Fodder &fodder) { fodder.clear(); }
 };
 
-class StripAllButComments : public Pass {
+class StripAllButComments : public FmtPass {
     public:
-    StripAllButComments(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    StripAllButComments(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     Fodder comments;
     void fodder(Fodder &fodder)
     {
@@ -1119,10 +755,10 @@ bool contains_newline(const Fodder &fodder)
 }
 
 /* Commas should appear at the end of an object/array only if the closing token is on a new line. */
-class FixTrailingCommas : public Pass {
-    using Pass::visit;
+class FixTrailingCommas : public FmtPass {
+    using FmtPass::visit;
     public:
-    FixTrailingCommas(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    FixTrailingCommas(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     Fodder comments;
 
     // Generalized fix that works across a range of ASTs.
@@ -1164,13 +800,13 @@ class FixTrailingCommas : public Pass {
         }
 
         fix_comma(expr->elements.back().commaFodder, expr->trailingComma, expr->closeFodder);
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 
     void visit(ArrayComprehension *expr)
     {
         remove_comma(expr->commaFodder, expr->trailingComma, expr->specs[0].openFodder);
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 
     void visit(Object *expr)
@@ -1181,23 +817,23 @@ class FixTrailingCommas : public Pass {
         }
 
         fix_comma(expr->fields.back().commaFodder, expr->trailingComma, expr->closeFodder);
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 
     void visit(ObjectComprehension *expr)
     {
         remove_comma(expr->fields.back().commaFodder, expr->trailingComma, expr->closeFodder);
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 
 };
 
 
 /* Remove nested parens. */
-class FixParens : public Pass {
-    using Pass::visit;
+class FixParens : public FmtPass {
+    using FmtPass::visit;
     public:
-    FixParens(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    FixParens(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void visit(Parens *expr)
     {
         if (auto *body = dynamic_cast<Parens*>(expr->expr)) {
@@ -1206,17 +842,17 @@ class FixParens : public Pass {
             fodder_move_front(open_fodder(body->expr), body->openFodder);
             fodder_move_front(expr->closeFodder, body->closeFodder);
         }
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 };
 
 
 
 /* Ensure ApplyBrace syntax sugar is used in the case of A + { }. */
-class FixPlusObject : public Pass {
-    using Pass::visit;
+class FixPlusObject : public FmtPass {
+    using FmtPass::visit;
     public:
-    FixPlusObject(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    FixPlusObject(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
     void visitExpr(AST *&expr)
     {
         if (auto *bin_op = dynamic_cast<Binary*>(expr)) {
@@ -1232,17 +868,17 @@ class FixPlusObject : public Pass {
                 }
             }
         }
-        Pass::visitExpr(expr);
+        FmtPass::visitExpr(expr);
     }
 };
 
 
 
 /* Remove final colon in slices. */
-class NoRedundantSliceColon : public Pass {
-    using Pass::visit;
+class NoRedundantSliceColon : public FmtPass {
+    using FmtPass::visit;
     public:
-    NoRedundantSliceColon(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    NoRedundantSliceColon(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
 
     void visit(Index *expr)
     {
@@ -1253,15 +889,15 @@ class NoRedundantSliceColon : public Pass {
                 }
             }
         }
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 };
 
 /* Ensure syntax sugar is used where possible. */
-class PrettyFieldNames : public Pass {
-    using Pass::visit;
+class PrettyFieldNames : public FmtPass {
+    using FmtPass::visit;
     public:
-    PrettyFieldNames(Allocator &alloc, const FmtOpts &opts) : Pass(alloc, opts) { }
+    PrettyFieldNames(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) { }
 
     bool isIdentifier(const String &str) {
         bool first = true;
@@ -1293,7 +929,7 @@ class PrettyFieldNames : public Pass {
                 }
             }
         }
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 
     void visit(Object *expr)
@@ -1323,7 +959,7 @@ class PrettyFieldNames : public Pass {
                 }
             }
         }
-        Pass::visit(expr);
+        FmtPass::visit(expr);
     }
 };
 
