@@ -20,6 +20,7 @@ limitations under the License.
 #include "desugarer.h"
 #include "lexer.h"
 #include "parser.h"
+#include "pass.h"
 #include "string_utils.h"
 
 static const Fodder EF;  // Empty fodder.
@@ -199,7 +200,11 @@ class Desugarer {
         }
     }
 
-    void desugarFields(AST *ast, ObjectFields &fields, unsigned obj_level)
+    // For all occurrences, records the identifier that will replace super[e]
+    // If self occurs, also map the self identifier to nullptr.
+    typedef std::vector<std::pair<const Identifier *, AST *>> SuperVars;
+
+    SuperVars desugarFields(AST *ast, ObjectFields &fields, unsigned obj_level)
     {
         // Desugar children
         for (auto &field : fields) {
@@ -283,15 +288,59 @@ class Desugarer {
             }
         }
 
+        class SubstituteSelfSuper : public CompilerPass {
+            Desugarer *desugarer;
+            SuperVars &superVars;
+            unsigned &counter;
+            const Identifier *newSelf;
+            public:
+            SubstituteSelfSuper(Desugarer *desugarer, SuperVars &super_vars, unsigned &counter)
+              : CompilerPass(*desugarer->alloc), desugarer(desugarer), superVars(super_vars),
+                counter(counter), newSelf(nullptr)
+            {
+            }
+            void visitExpr(AST *&expr)
+            {
+                if (dynamic_cast<Self*>(expr)) {
+                    if (newSelf == nullptr) {
+                        newSelf = desugarer->id(U"$outer_self");
+                        superVars.emplace_back(newSelf, nullptr);
+                    }
+                    expr = alloc.make<Var>(expr->location, expr->openFodder, newSelf);
+                } else if (auto *super_index = dynamic_cast<SuperIndex*>(expr)) {
+                    StringStream ss;
+                    ss << "$outer_super" << (counter++);
+                    const Identifier *super_var = desugarer->id(ss.str());
+                    AST *index = super_index->index;
+                    // Desugaring of expr should already have occurred.
+                    assert(index != nullptr);
+                    // Re-use super_index since we're replacing it here.
+                    superVars.emplace_back(super_var, super_index);
+                    expr = alloc.make<Var>(expr->location, expr->openFodder, super_var);
+                }
+                CompilerPass::visitExpr(expr);
+            }
+        };
+
+        SuperVars super_vars;
+        unsigned counter;
+
         // Remove +:
         for (auto &field : fields) {
             if (!field.superSugar) continue;
-            AST *super_f = make<SuperIndex>(field.expr1->location, EF, EF, field.expr1, EF,
-                                                   nullptr);
-            field.expr2 = make<Binary>(ast->location, EF, super_f, EF, BOP_PLUS,
-                                              field.expr2);
+            // We have to bind self/super from expr1 outside the class, as we copy the expression
+            // into the field body.
+            AST *index = field.expr1;
+            // Clone it so that we maintain the AST as a tree.
+            ClonePass(*alloc).expr(index);
+            // This will remove self/super.
+            SubstituteSelfSuper(this, super_vars, counter).expr(index);
+            AST *super_f = make<SuperIndex>(field.expr1->location, EF, EF, index, EF, nullptr);
+            field.expr2 = make<Binary>(ast->location, EF, super_f, EF, BOP_PLUS, field.expr2);
             field.superSugar = false;
         }
+
+        return super_vars;
     }
 
     void desugar(AST *&ast_, unsigned obj_level)
@@ -305,7 +354,7 @@ class Desugarer {
             desugar(ast->left, obj_level);
             desugar(ast->right, obj_level);
             ast_ = make<Binary>(ast->location, ast->openFodder,
-                                       ast->left, EF, BOP_PLUS, ast->right);
+                                ast->left, EF, BOP_PLUS, ast->right);
 
         } else if (auto *ast = dynamic_cast<Array*>(ast_)) {
             for (auto &el : ast->elements)
@@ -406,11 +455,11 @@ class Desugarer {
                                     [[[...out...]]]
                                 else
                                     local [[[...var...]]] = $l[i_{i}];
-                                    [[[...in...]]];`
-                            if std.type($l) != "array" then
-                                error "In comprehension, can only iterate over array.."
+                                    [[[...in...]]];
+                            if std.type($l) == "array" then
+                                aux_{i}(0, $r) tailstrict
                             else
-                                aux_{i}(0, r) tailstrict;
+                                error "In comprehension, can only iterate over array..";
                         */
                         in = make<Local>(
                             ast->location,
@@ -635,7 +684,7 @@ class Desugarer {
                 ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
             }
 
-            desugarFields(ast, ast->fields, obj_level);
+            SuperVars svs = desugarFields(ast, ast->fields, obj_level);
 
             DesugaredObject::Fields new_fields;
             ASTs new_asserts;
@@ -650,6 +699,19 @@ class Desugarer {
                 }
             }
             ast_ = make<DesugaredObject>(ast->location, new_asserts, new_fields);
+            if (svs.size() > 0) {
+                Local::Binds binds;
+                for (const auto &pair : svs) {
+                    if (pair.second == nullptr) {
+                        // Self binding
+                        binds.push_back(bind(pair.first, make<Self>(E, EF)));
+                    } else {
+                        // Super binding
+                        binds.push_back(bind(pair.first, pair.second));
+                    }
+                }
+                ast_ = make<Local>(ast->location, EF, binds, ast_);
+            }
 
         } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
             // Hidden variable to allow outer/top binding.
@@ -659,7 +721,7 @@ class Desugarer {
                 ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
             }
 
-            desugarFields(ast, ast->fields, obj_level);
+            SuperVars svs = desugarFields(ast, ast->fields, obj_level);
 
             for (ComprehensionSpec &spec : ast->specs)
                 desugar(spec.expr, obj_level);

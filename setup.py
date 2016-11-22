@@ -25,6 +25,7 @@ LIB_OBJECTS = [
     'core/libjsonnet.o',
     'core/lexer.o',
     'core/parser.o',
+    'core/pass.o',
     'core/static_analysis.o',
     'core/string_utils.o',
     'core/vm.o'

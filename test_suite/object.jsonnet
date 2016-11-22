@@ -67,4 +67,11 @@ local obj = {
 };
 
 std.assertEqual(obj, { ["f" + x + y + z]: { x: x, y: y, z: z } for x in [1, 2, 3] for y in [1, 4, 6] if x + 2 < y for z in [true, false] }) &&
+
+std.assertEqual({ f: { foo: 7, bar: 1 } { [self.name] +: 3, name:: "foo"}, name:: "bar" },
+                { f: { foo: 7, bar: 4 } }) &&
+
+std.assertEqual({ name:: "supername"} { name:: "selfname", f: { wrongname: 7, supername: 1, name:: "wrongname" } { [super.name] +: 3}, },
+                { f: { wrongname: 7, supername: 4 } }) &&
+
 true
