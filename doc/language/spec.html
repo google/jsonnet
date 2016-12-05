@@ -253,7 +253,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 </td></tr> <tr><td></td><td> | </td><td>
 <i>expr</i>
 <code>(</code>
-[ <i>argparams</i> ]
+[ <i>args</i> ]
 <code>)</code>
 
 <!-- var -->
@@ -302,7 +302,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 </td></tr> <tr><td></td><td> | </td><td>
 <code>function</code>
 <code>(</code>
-[ <i>argparams</i> ]
+[ <i>params</i> ]
 <code>)</code>
 <i>expr</i>
 
@@ -368,7 +368,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <tr><td></td><td> | </td><td>
 <i>fieldname</i>
 <code>(</code>
-[ <i>argparams</i> ]
+[ <i>params</i> ]
 <code>)</code>
 [ <code>+</code> ] <i>h</i>
 <i>e</i>
@@ -433,7 +433,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <tr><td></td><td> | </td><td>
 <i>id</i>
 <code>(</code>
-[ <i>argparams</i> ]
+[ <i>params</i> ]
 <code>)</code>
 <code>=</code>
 <i>e</i>
@@ -443,10 +443,27 @@ set are currently parseable, the rest being reserved for possible future use.</p
 
 <p></p>
 
-<!-- argparams -->
+<!-- args -->
 <table>
 
-<tr><td><i>argparams</i></td><td>::=</td><td>
+<tr><td><i>args</i></td><td>::=</td><td>
+<i>e</i> { <code>,</code> <i>e</i> } { <code>,</code> <i>id</i> <code>=</code> <i>expr</i> }
+[ <code>,</code> ]
+</td></tr>
+
+<tr><td></td><td>|</td><td>
+<i>id</i> <code>=</code> <i>expr</i> { <code>,</code> <i>id</i> <code>=</code> <i>expr</i> }
+[ <code>,</code> ]
+</td></tr>
+
+</table>
+
+<p></p>
+
+<!-- params -->
+<table>
+
+<tr><td><i>params</i></td><td>::=</td><td>
 <i>id</i> { <code>,</code> <i>id</i> } { <code>,</code> <i>id</i> <code>=</code> <i>expr</i> }
 [ <code>,</code> ]
 </td></tr>
@@ -860,8 +877,8 @@ id \mathrel{h} desugar_{expr}(\super.id + \local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(id(argparams) \mathrel{h} e), binds, \_) =
-id \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
+desugar_{field}(id(params) \mathrel{h} e), binds, \_) =
+id \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
 \] </div>
 
 
@@ -876,8 +893,8 @@ string \mathrel{h} desugar_{expr}(\super[string] + \local{binds}{e}, \true)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(string(argparams) \mathrel{h} e), binds, \_) =
-string \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
+desugar_{field}(string(params) \mathrel{h} e), binds, \_) =
+string \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
 \] </div>
 
 
@@ -895,8 +912,8 @@ desugar_{field}([e] \mathrel{+h} e'), binds, b) = \\
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}([e](argparams) \mathrel{h} e'), binds, b) =
-[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{\function{argparams}e}, \true)
+desugar_{field}([e](params) \mathrel{h} e'), binds, b) =
+[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
 \] </div>
 
 
@@ -908,8 +925,8 @@ id \texttt{=} desugar_{expr}(e, b)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{bind}(id(argparams) \texttt{=} e, b) =
-id \texttt{=} desugar_{expr}(\function{argparams}e, b)
+desugar_{bind}(id(params) \texttt{=} e, b) =
+id \texttt{=} desugar_{expr}(\function{params}e, b)
 \] </div>
 
 
