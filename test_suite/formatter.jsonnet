@@ -279,5 +279,9 @@ limitations under the License.
         'identifier': true,
         "not identifier": true,
         "function": true,  // Test keyword.
-    }
+    },
+
+    field: 1,
+
+    dollarUnary: - $.field,
 }

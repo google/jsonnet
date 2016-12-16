@@ -1,4 +1,6 @@
 {
+   "dollarUnary": -1,
+   "field": 1,
    "func": null,
    "prettyFields": {
       "function": true,
