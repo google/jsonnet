@@ -97,7 +97,7 @@ static void lex_ws(const char *&c, unsigned &new_lines, unsigned &indent, const 
 }
 
 
-/** 
+/**
 # Consume all text until the end of the line, return number of newlines after that and indent
 */
 static void lex_until_newline(const char *&c, std::string &text, unsigned &blanks, unsigned &indent,
@@ -508,6 +508,11 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             break;
 
             // Verbatim string literals.
+            // ' and " quoting is interpreted here, unlike non-verbatim strings
+            // where it is done later by jsonnet_string_unescape.  This is OK
+            // in this case because no information is lost by resoving the
+            // repeated quote into a single quote, so we can go back to the
+            // original form in the formatter.
             case '@': {
                 c++;
                 if (*c != '"' && *c != '\'') {
@@ -566,7 +571,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                 if (*c == '/' && *(c+1) == '*') {
 
                     unsigned margin = c - line_start;
- 
+
                     const char *initial_c = c;
                     c += 2;  // Avoid matching /*/: skip the /* before starting the search for */.
 
