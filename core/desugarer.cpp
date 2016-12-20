@@ -658,7 +658,9 @@ class Desugarer {
             // Nothing to do.
 
         } else if (auto *ast = dynamic_cast<LiteralString*>(ast_)) {
-            if (ast->tokenKind != LiteralString::BLOCK) {
+            if ((ast->tokenKind != LiteralString::BLOCK) &&
+                (ast->tokenKind != LiteralString::VERBATIM_DOUBLE) &&
+                (ast->tokenKind != LiteralString::VERBATIM_SINGLE)) {
                 ast->value = jsonnet_string_unescape(ast->location, ast->value);
             }
             ast->tokenKind = LiteralString::DOUBLE;

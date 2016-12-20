@@ -32,5 +32,7 @@ local test_chinese = "肉";  // Meat.
 std.assertEqual(std.length(test_chinese), 1) &&
 
 std.assertEqual("\u0100", "Ā") &&
+std.assertEqual(@"\u0100", "\\u0100") &&
+std.assertEqual(@"Ā", "Ā") &&
 
 true

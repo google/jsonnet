@@ -634,6 +634,13 @@ class Parser {
             return alloc->make<LiteralString>(
                 span(tok), tok.fodder, tok.data32(), LiteralString::BLOCK,
                 tok.stringBlockIndent, tok.stringBlockTermIndent);
+            case Token::VERBATIM_STRING_SINGLE:
+            return alloc->make<LiteralString>(
+                span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_SINGLE, "", "");
+            case Token::VERBATIM_STRING_DOUBLE:
+            return alloc->make<LiteralString>(
+                span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_DOUBLE, "", "");
+
 
             case Token::FALSE:
             return alloc->make<LiteralBoolean>(span(tok), tok.fodder, false);

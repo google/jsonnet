@@ -427,7 +427,7 @@ class Unparser {
                 if (bind.functionSugar) {
                     unparseParams(bind.parenLeftFodder, bind.params, bind.trailingComma,
                                   bind.parenRightFodder);
-                } 
+                }
                 fill(bind.opFodder, true, true);
                 o << "=";
                 unparse(bind.body, true);
@@ -464,6 +464,30 @@ class Unparser {
                     }
                 }
                 o << ast->blockTermIndent << "|||";
+            } else if (ast->tokenKind == LiteralString::VERBATIM_DOUBLE) {
+                o << "@\"";
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
+                    if (*cp == U'"') {
+                        o << "\"\"";
+                    } else {
+                        std::string utf8;
+                        encode_utf8(*cp, utf8);
+                        o << utf8;
+                    }
+                }
+                o << "\"";
+            } else if (ast->tokenKind == LiteralString::VERBATIM_SINGLE) {
+                o << "@'";
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
+                    if (*cp == U'\'') {
+                        o << "''";
+                    } else {
+                        std::string utf8;
+                        encode_utf8(*cp, utf8);
+                        o << utf8;
+                    }
+                }
+                o << "'";
             }
 
         } else if (dynamic_cast<const LiteralNull*>(ast_)) {
@@ -617,6 +641,8 @@ class EnforceStringStyle : public FmtPass {
     void visit(LiteralString *lit)
     {
         if (lit->tokenKind == LiteralString::BLOCK) return;
+        if (lit->tokenKind == LiteralString::VERBATIM_DOUBLE) return;
+        if (lit->tokenKind == LiteralString::VERBATIM_SINGLE) return;
         String canonical = jsonnet_string_unescape(lit->location, lit->value);
         unsigned num_single = 0, num_double = 0;
         for (char32_t c : canonical) {
@@ -1302,7 +1328,7 @@ class FixIndentation {
             Indent new_indent = strong_indent
                                 ? newIndentStrong(first_fodder, indent, new_column)
                                 : newIndent(first_fodder, indent, new_column);
-                
+
             first = true;
             for (auto &element : ast->elements) {
                 if (!first) column++;
@@ -1430,7 +1456,7 @@ class FixIndentation {
                 if (bind.functionSugar) {
                     params(bind.parenLeftFodder, bind.params, bind.trailingComma,
                            bind.parenRightFodder, new_indent);
-                } 
+                }
                 fill(bind.opFodder, true, true, new_indent.lineUp);
                 column++;  // '='
                 Indent new_indent2 = newIndent(open_fodder(bind.body), new_indent, column + 1);
@@ -1456,6 +1482,24 @@ class FixIndentation {
                 ast->blockTermIndent = std::string(indent.base, ' ');
                 column = indent.base;  // blockTermIndent
                 column += 3;  // "|||"
+            } else if (ast->tokenKind == LiteralString::VERBATIM_SINGLE) {
+                column += 2;  // Include start and end quotes
+                for (const char32_t *cp = ast->value.c_str() ; ; ++cp) {
+                    if (*cp == U'\'') {
+                        column += 2;
+                    } else {
+                        column += 1;
+                    }
+                }
+            } else if (ast->tokenKind == LiteralString::VERBATIM_DOUBLE) {
+                column += 2;  // Include start and end quotes
+                for (const char32_t *cp = ast->value.c_str() ; ; ++cp) {
+                    if (*cp == U'"') {
+                        column += 2;
+                    } else {
+                        column += 1;
+                    }
+                }
             }
 
         } else if (dynamic_cast<LiteralNull*>(ast_)) {

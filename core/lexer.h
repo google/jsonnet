@@ -102,6 +102,8 @@ struct Token {
         STRING_DOUBLE,
         STRING_SINGLE,
         STRING_BLOCK,
+        VERBATIM_STRING_SINGLE,
+        VERBATIM_STRING_DOUBLE,
 
         // Keywords
         ASSERT,
@@ -176,6 +178,8 @@ struct Token {
             case OPERATOR: return "OPERATOR";
             case STRING_SINGLE: return "STRING_SINGLE";
             case STRING_DOUBLE: return "STRING_DOUBLE";
+            case VERBATIM_STRING_SINGLE: return "VERBATIM_STRING_SINGLE";
+            case VERBATIM_STRING_DOUBLE: return "VERBATIM_STRING_DOUBLE";
             case STRING_BLOCK: return "STRING_BLOCK";
 
             case ASSERT: return "assert";
