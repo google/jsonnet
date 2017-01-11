@@ -91,6 +91,6 @@ local cases = [
 
 local results =
     [std.assertEqual(std.mergePatch(case.target, case.patch), case.expect)
-      for case in cases];
+     for case in cases];
 
 std.foldl(function(a, b) a && b, results, true)
