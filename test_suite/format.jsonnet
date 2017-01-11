@@ -270,7 +270,7 @@ local text = |||
     porttitor eu vel nisl. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut vitae sapien
     vel eros ultricies iaculis. Pellentesque et metus libero. Proin nec rhoncus est. Vivamus a
     aliquam ipsum, ut vehicula nibh. Sed ac posuere dolor.
-  ||| % { a: "a" };
+||| % { a: "a" };
 
 std.assertEqual(std.length(text), 1244) &&
 

@@ -15,6 +15,6 @@ limitations under the License.
 */
 
 local f(n) =
-        f(n) + f(n);
+    f(n) + f(n);
 
 f(42)
