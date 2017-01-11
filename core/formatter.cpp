@@ -1483,8 +1483,8 @@ class FixIndentation {
                 column = indent.base;  // blockTermIndent
                 column += 3;  // "|||"
             } else if (ast->tokenKind == LiteralString::VERBATIM_SINGLE) {
-                column += 2;  // Include start and end quotes
-                for (const char32_t *cp = ast->value.c_str() ; ; ++cp) {
+                column += 3;  // Include @, start and end quotes
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
                     if (*cp == U'\'') {
                         column += 2;
                     } else {
@@ -1492,8 +1492,8 @@ class FixIndentation {
                     }
                 }
             } else if (ast->tokenKind == LiteralString::VERBATIM_DOUBLE) {
-                column += 2;  // Include start and end quotes
-                for (const char32_t *cp = ast->value.c_str() ; ; ++cp) {
+                column += 3;  // Include @, start and end quotes
+                for (const char32_t *cp = ast->value.c_str() ; *cp != U'\0' ; ++cp) {
                     if (*cp == U'"') {
                         column += 2;
                     } else {
