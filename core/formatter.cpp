@@ -1461,15 +1461,44 @@ class FixIndentation {
             fill(ast->dotFodder, false, false, indent.lineUp);
             if (ast->id != nullptr) {
                 Indent new_indent = newIndent(ast->idFodder, indent, column);
-                column++;  // ".";
+                column++;  // "."
                 fill(ast->idFodder, false, false, new_indent.lineUp);
                 column += ast->id->name.length();
             } else {
-                column++;  // "[";
-                Indent new_indent = newIndent(open_fodder(ast->index), indent, column);
-                expr(ast->index, new_indent, false);
-                fill(ast->idFodder, false, false, new_indent.lineUp, indent.base);
-                column++;  // "]";
+                column++;  // "["
+                if (ast->isSlice) {
+                    Indent new_indent(0, 0);
+                    if (ast->index != nullptr) {
+                        new_indent = newIndent(open_fodder(ast->index), indent, column);
+                        expr(ast->index, new_indent, false);
+                    }
+                    if (ast->end != nullptr) {
+                        new_indent = newIndent(ast->endColonFodder, indent, column);
+                        fill(ast->endColonFodder, false, false, new_indent.lineUp);
+                        column++;  // ":"
+                        expr(ast->end, new_indent, false);
+                    }
+                    if (ast->step != nullptr) {
+                        if (ast->end == nullptr) {
+                            new_indent = newIndent(ast->endColonFodder, indent, column);
+                            fill(ast->endColonFodder, false, false, new_indent.lineUp);
+                            column++;  // ":"
+                        }
+                        fill(ast->stepColonFodder, false, false, new_indent.lineUp);
+                        column++;  // ":"
+                        expr(ast->step, new_indent, false);
+                    }
+                    if (ast->index == nullptr && ast->end == nullptr && ast->step == nullptr) {
+                        new_indent = newIndent(ast->endColonFodder, indent, column);
+                        fill(ast->endColonFodder, false, false, new_indent.lineUp);
+                        column++;  // ":"
+                    }
+                } else {
+                    Indent new_indent = newIndent(open_fodder(ast->index), indent, column);
+                    expr(ast->index, new_indent, false);
+                    fill(ast->idFodder, false, false, new_indent.lineUp, indent.base);
+                }
+                column++;  // "]"
             }
 
         } else if (auto *ast = dynamic_cast<Local*>(ast_)) {

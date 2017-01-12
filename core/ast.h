@@ -405,7 +405,7 @@ struct Index : public AST {
       : AST(lr, AST_INDEX, open_fodder), target(target), dotFodder(dot_fodder), isSlice(false),
         index(nullptr), end(nullptr), step(nullptr), idFodder(id_fodder), id(id)
     { }
-    // Use this constructor for e[x:y:z] with nullptr for end or step if not present. 
+    // Use this constructor for e[x:y:z] with nullptr for index, end or step if not present. 
     Index(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &dot_fodder,
           bool is_slice, AST *index, const Fodder &end_colon_fodder, AST *end,
           const Fodder &step_colon_fodder, AST *step, const Fodder &id_fodder)
