@@ -37,67 +37,67 @@ std.assertEqual(bash_golden, bash_soft) &&
 
 // Hard tabs
 local bash_hard = |||
-	#!/bin/bash
-	if [ $# -lt 1 ] ; then
-	    echo "No arguments!"
-	else
-	    echo "$# arguments!"
-	fi
+    #!/bin/bash
+    if [ $# -lt 1 ] ; then
+        echo "No arguments!"
+    else
+        echo "$# arguments!"
+    fi
 |||;
 std.assertEqual(bash_golden, bash_hard) &&
 
 // Mixed tabs
 local bash_mixed = |||
-  	#!/bin/bash
-  	if [ $# -lt 1 ] ; then
-  	    echo "No arguments!"
-  	else
-  	    echo "$# arguments!"
-  	fi
+    #!/bin/bash
+    if [ $# -lt 1 ] ; then
+        echo "No arguments!"
+    else
+        echo "$# arguments!"
+    fi
 |||;
 std.assertEqual(bash_golden, bash_mixed) &&
 
 
 // More indent
 local str1 = |||
-        text
-    |||;
+    text
+|||;
 
 std.assertEqual(str1, "text\n") &&
 
 
 // Escape chars
 local str1 = |||
-        \n
-    |||;
+    \n
+|||;
 
 std.assertEqual(str1, "\\n\n") &&
 
 
 // Blank line with trailing whitespace
 local blank_line1 = |||
-        foo
+    foo
 
-        bar
-    |||;
+    bar
+|||;
 
 std.assertEqual(blank_line1, "foo\n\nbar\n") &&
 
 
 // Blank line no trailing whitespace
 local blank_line2 = |||
-        foo
+    foo
 
-        bar
-    |||;
+    bar
+|||;
 
 std.assertEqual(blank_line2, "foo\n\nbar\n") &&
 
 // Initial blank line
 local blank_line3 = |||
 
-        foo
-    |||;
+    foo
+|||;
 
 // Interaction with operators (1)
 local op1 = "foo" + |||
