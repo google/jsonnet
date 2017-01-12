@@ -49,7 +49,7 @@ static const AST *left_recursive(const AST *ast_)
  *
  * \param fodder The fodder to print
  * \param space_before Whether a space should be printed before any other output.
- * \param separate_token If a space should separate the token from any interstitials.
+ * \param separate_token If the last fodder was an interstitial, whether a space should follow it.
  */
 void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token)
 {
@@ -999,8 +999,16 @@ class FixIndentation {
     unsigned column;
 
     public:
-    FixIndentation(const FmtOpts &opts) : opts(opts) { }
+    FixIndentation(const FmtOpts &opts) : opts(opts), column(0) { }
 
+    /* Set the indentation on the fodder elements, adjust column counter as if it was printed.
+     * \param fodder The fodder to pretend to print.
+     * \param space_before Whether a space should be printed before any other output.
+     * \param separate_token If the last fodder was an interstitial, whether a space should follow
+     * it.
+     * \param all_but_last_indent New indentation value for all but final fodder element.
+     * \param last_indent New indentation value for but final fodder element.
+     */
     void fill(Fodder &fodder, bool space_before, bool separate_token,
               unsigned all_but_last_indent, unsigned last_indent)
     {
@@ -1013,6 +1021,16 @@ class FixIndentation {
         fill(fodder, space_before, separate_token, indent, indent);
     }
 
+    /* This struct is the representation of the indentation level.  The field lineUp is what is
+     * generally used to indent after a new line.  The field base is used to help derive a new
+     * Indent struct when the indentation level increases.  lineUp is generally > base.
+     *
+     * In the following case (where spaces are replaced with underscores):
+     * ____foobar(1,
+     * ___________2)
+     *
+     * At the AST representing the 2, the indent has base == 4 and lineUp == 11.
+     */
     struct Indent {
         unsigned base;
         unsigned lineUp;
@@ -1040,7 +1058,6 @@ class FixIndentation {
      * If the first sub-expression is on the same line as the current node, then subsequent
      * ones will be lined up and further indentations in their subexpressions will be based from
      * this column.
-     * by 'indent'.
      */
     Indent newIndentStrong(const Fodder &first_fodder, const Indent &old, unsigned line_up)
     {
@@ -1052,6 +1069,12 @@ class FixIndentation {
         }
     }
 
+    /** Calculate the indentation of sub-expressions.
+     *
+     * If the first sub-expression is on the same line as the current node, then subsequent
+     * ones will be lined up, otherwise subseqeuent ones will be on the next line with no
+     * additional indent.
+     */
     Indent align(const Fodder &first_fodder, const Indent &old, unsigned line_up)
     {
         if (first_fodder.size() == 0 || first_fodder[0].kind == FodderElement::INTERSTITIAL) {
@@ -1062,6 +1085,10 @@ class FixIndentation {
         }
     }
 
+    /* Set indentation values within the fodder elements.
+     *
+     * The last one gets a special indentation value, all the others are set to the same thing.
+     */
     void setIndents(Fodder &fodder, unsigned all_but_last_indent, unsigned last_indent)
     {
         // First count how many there are.
@@ -1070,7 +1097,7 @@ class FixIndentation {
             if (f.kind != FodderElement::INTERSTITIAL)
                 count++;
         }
-        // Now set the indent on the right ones.
+        // Now set the indents.
         unsigned i = 0;
         for (auto &f : fodder) {
             if (f.kind != FodderElement::INTERSTITIAL) {
@@ -1214,11 +1241,13 @@ class FixIndentation {
 
                     fill(field.fodder1, !first || space_before, true, new_indent);
                     column += 6;  // assert
+                    // + 1 for the space after the assert
+                    Indent new_indent2 = newIndent(open_fodder(field.expr2), indent, column + 1);
                     expr(field.expr2, indent, true);
                     if (field.expr3 != nullptr) {
-                        fill(field.opFodder, true, true, new_indent);
+                        fill(field.opFodder, true, true, new_indent2.lineUp);
                         column++;  // ":"
-                        expr(field.expr3, indent, true);
+                        expr(field.expr3, new_indent2, true);
                     }
                 } break;
             }
@@ -1228,6 +1257,7 @@ class FixIndentation {
         }
     }
 
+    /** Does the given fodder contain at least one new line? */
     bool hasNewLines(const Fodder &fodder)
     {
         for (const auto &f : fodder) {
@@ -1237,6 +1267,7 @@ class FixIndentation {
         return false;
     }
 
+    /** Will at least one new line precede this AST? */
     bool hasNewLines(const AST *expr)
     {
         return hasNewLines(open_fodder(expr));
@@ -1246,7 +1277,6 @@ class FixIndentation {
      *
      * \param ast_ The ast to reindent.
      * \param indent Beginning of the line.
-     * \param line_up Line up to here.
      * \param space_before As defined in the pretty-printer.
      */
     void expr(AST *ast_, const Indent &indent, bool space_before)
@@ -1362,7 +1392,7 @@ class FixIndentation {
             if (ast->message != nullptr) {
                 fill(ast->colonFodder, true, true, new_indent.lineUp);
                 column++;  // ":"
-                expr(ast->message, indent, true);
+                expr(ast->message, new_indent, true);
             }
             fill(ast->semicolonFodder, false, false, new_indent.lineUp);
             column++;  // ";"
