@@ -762,10 +762,6 @@ static Fodder &open_fodder(AST *ast_)
     AST *left = left_recursive(ast_);
     return left != nullptr ? open_fodder(left) : ast_->openFodder;
 }
-static const Fodder &open_fodder(const AST *ast_)
-{
-    return open_fodder(const_cast<AST*>(ast_));
-}
 
 /** Strip blank lines from the top of the file. */
 void remove_initial_newlines(AST *ast)
@@ -1267,10 +1263,11 @@ class FixIndentation {
         return false;
     }
 
-    /** Will at least one new line precede this AST? */
-    bool hasNewLines(const AST *expr)
+    /** Get the first fodder from an ArgParam. */
+    const Fodder &argParamFirstFodder(const ArgParam &ap)
     {
-        return hasNewLines(open_fodder(expr));
+        if (ap.id != nullptr) return ap.idFodder;
+        return open_fodder(ap.expr);
     }
 
     /** Reindent an expression.
@@ -1290,18 +1287,19 @@ class FixIndentation {
             expr(ast->target, new_indent, space_before);
             fill(ast->fodderL, false, false, new_indent.lineUp);
             column++;  // (
-            const Fodder &first_fodder = ast->args.size() == 0
-                                         ? ast->fodderR
-                                         : open_fodder(ast->args[0].expr);
+            const Fodder &first_fodder = ast->args.size() == 0 ? ast->fodderR : argParamFirstFodder(ast->args[0]);
             bool strong_indent = false;
-            // Need to use strong indent if there are not newlines before any of the sub-expressions
+            // Need to use strong indent if any of the
+            // arguments (except the first) are preceded by newlines.
             bool first = true;
             for (auto &arg : ast->args) {
                 if (first) {
+                    // Skip first element.
                     first = false;
                     continue;
                 }
-                if (hasNewLines(arg.expr)) strong_indent = true;
+                if (hasNewLines(argParamFirstFodder(arg)))
+                    strong_indent = true;
             }
 
             Indent arg_indent = strong_indent
@@ -1352,7 +1350,8 @@ class FixIndentation {
                     first = false;
                     continue;
                 }
-                if (hasNewLines(el.expr)) strong_indent = true;
+                if (hasNewLines(open_fodder(el.expr)))
+                    strong_indent = true;
             }
 
             Indent new_indent = strong_indent
