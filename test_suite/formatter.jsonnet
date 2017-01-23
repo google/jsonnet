@@ -284,4 +284,22 @@ limitations under the License.
     field: 1,
 
     dollarUnary: - $.field,
+
+    objects1():: ['something']
+                 + if true then ['something']
+                 else [],
+
+    objects2():: ['something']
+                 + if true then
+                     ['something']
+                 else [],
+
+    objects3():: ['something'] + if true then
+        ['something']
+    else [],
+
+    user4: std.toString(
+        a='value1',
+    ),
 }
+
