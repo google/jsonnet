@@ -842,6 +842,7 @@ class Interpreter {
         builtins["extVar"] = &Interpreter::builtinExtVar;
         builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
         builtins["native"] = &Interpreter::builtinNative;
+        builtins["extVarOrNull"] = &Interpreter::builtinExtVarOrNull;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1208,16 +1209,32 @@ class Interpreter {
         return nullptr;
     } 
 
+    const AST *builtinExtVarOrNull(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "extVarOrNull", args, {Value::STRING});
+        return builtinExtVarBase(loc, args, true);
+    }
+
     const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
+        return builtinExtVarBase(loc, args, false);
+    }
+
+    const AST *builtinExtVarBase(const LocationRange &loc, const std::vector<Value> &args, bool allowNull)
+    {
         const String &var =
             static_cast<HeapString*>(args[0].v.h)->value;
         std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
-            std::string msg = "Undefined external variable: " + var8;
-            throw makeError(loc, msg);
+            if (allowNull) {
+                scratch = makeNull();
+                return nullptr;
+            } else {
+                std::string msg = "Undefined external variable: " + var8;
+                throw makeError(loc, msg);
+            }
         }
         const VmExt &ext = it->second;
         if (ext.isCode) {

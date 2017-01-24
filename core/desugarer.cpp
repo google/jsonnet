@@ -32,7 +32,7 @@ struct BuiltinDecl {
     std::vector<String> params;
 };
 
-static unsigned long max_builtin = 25;
+static unsigned long max_builtin = 26;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -62,6 +62,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 23: return {U"extVar", {U"x"}};
         case 24: return {U"primitiveEquals", {U"a", U"b"}};
         case 25: return {U"native", {U"name"}};
+        case 26: return {U"extVarOrNull", {U"x"}};
         default:
         std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
         std::abort();

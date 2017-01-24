@@ -1004,4 +1004,7 @@ in range])
         local arr = std.split(f, "/");
         std.join("/", std.makeArray(std.length(arr)-1, function(i)arr[i]) + [r]),
 
+    extVarOrEmpty(v)::
+        local val = std.extVarOrNull(v);
+        if std.type(val) == "null" then {} else val,
 }
