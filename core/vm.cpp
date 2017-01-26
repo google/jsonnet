@@ -24,6 +24,7 @@ limitations under the License.
 
 #include "desugarer.h"
 #include "json.h"
+#include "md5.h"
 #include "parser.h"
 #include "state.h"
 #include "static_analysis.h"
@@ -842,6 +843,7 @@ class Interpreter {
         builtins["extVar"] = &Interpreter::builtinExtVar;
         builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
         builtins["native"] = &Interpreter::builtinNative;
+        builtins["md5"] = &Interpreter::builtinMd5;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1292,6 +1294,16 @@ class Interpreter {
         scratch = makeNativeBuiltin(builtin_name, cb.params);
         return nullptr;
     } 
+
+    const AST *builtinMd5(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "md5", args, {Value::STRING});
+
+        std::string value = encode_utf8(static_cast<HeapString*>(args[0].v.h)->value);
+
+	scratch = makeString(decode_utf8(md5(value)));
+        return nullptr;
+    }
 
     void jsonToHeap(const std::unique_ptr<JsonnetJsonValue> &v, bool &filled, Value &attach)
     {

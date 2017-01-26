@@ -31,6 +31,7 @@ cc_library(
     deps = [
         "//include:libjsonnet",
         "//stdlib:std",
+        "//third_party/md5:libmd5",
     ],
     linkopts = ["-lm"],
     includes = ["."],
