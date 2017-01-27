@@ -1632,7 +1632,7 @@ class FixIndentation {
 
         } else if (auto *ast = dynamic_cast<Parens*>(ast_)) {
             column++;  // (
-            Indent new_indent = newIndent(open_fodder(ast->expr), indent, column);
+            Indent new_indent = newIndentStrong(open_fodder(ast->expr), indent, column);
             expr(ast->expr, new_indent, false);
             fill(ast->closeFodder, false, false, new_indent.lineUp, indent.base);
             column++;  // )
