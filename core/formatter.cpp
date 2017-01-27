@@ -1081,6 +1081,23 @@ class FixIndentation {
         }
     }
 
+    /** Calculate the indentation of sub-expressions.
+     *
+     * If the first sub-expression is on the same line as the current node, then subsequent
+     * ones will be lined up and further indentations in their subexpresssions will be based from
+     * this column.  Otherwise, subseqeuent ones will be on the next line with no
+     * additional indent.
+     */
+    Indent alignStrong(const Fodder &first_fodder, const Indent &old, unsigned line_up)
+    {
+        if (first_fodder.size() == 0 || first_fodder[0].kind == FodderElement::INTERSTITIAL) {
+            return Indent(line_up, line_up);
+        } else {
+            // Reset
+            return old;
+        }
+    }
+
     /* Set indentation values within the fodder elements.
      *
      * The last one gets a special indentation value, all the others are set to the same thing.
@@ -1399,8 +1416,21 @@ class FixIndentation {
 
         } else if (auto *ast = dynamic_cast<Binary*>(ast_)) {
             const Fodder &first_fodder = open_fodder(ast->left);
-            Indent new_indent = align(first_fodder, indent,
-                                      column + (space_before ? 1 : 0));
+
+            // Need to use strong indent in the case of
+            /*
+            A
+            + B
+            or
+            A +
+            B
+            */
+            bool strong_indent = hasNewLines(ast->opFodder) || hasNewLines(open_fodder(ast->right));
+
+            unsigned inner_column = column + (space_before ? 1 : 0);
+            Indent new_indent = strong_indent
+                                ? alignStrong(first_fodder, indent, inner_column)
+                                : align(first_fodder, indent, inner_column);
             expr(ast->left, new_indent, space_before);
             fill(ast->opFodder, true, true, new_indent.lineUp);
             column += bop_string(ast->op).length();

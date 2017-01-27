@@ -201,8 +201,8 @@ limitations under the License.
     ),
 
     test_field11c: ([
-        "foo",
-    ]),
+                        "foo",
+                    ]),
 
     test_field12: [
         1,
@@ -297,6 +297,62 @@ limitations under the License.
     objects3():: ['something'] + if true then
         ['something']
     else [],
+
+    strongIndent:: {
+        foo: ["foo"]
+             + if true then [
+                 "baz"
+             ] else [],
+
+        bar: ["foo"]
+             + if true then
+                 ["baz"]
+             else [],
+
+        fow: ["foo"] +
+             if true then [
+                 "baz"
+             ] else [],
+
+        baw: ["foo"] +
+             if true then
+                 ["baz"]
+             else [],
+
+        fox: std.equals(["foo"],
+                         if true then [
+                             "baz"
+                         ] else [],
+             ),
+
+        bax: std.equals(["foo"],
+                         if true then
+                             ["baz"]
+                         else [],
+             ),
+
+        foy: [["foo"],
+              if true then [
+                  "baz"
+              ] else [],
+             ],
+
+        bay: [["foo"],
+              if true then
+                  ["baz"]
+              else [],
+             ],
+
+        foz: (["foo"]
+              + if true then [
+                  "baz"
+              ] else []),
+
+        baz: (["foo"]
+              + if true then
+                  ["baz"]
+              else []),
+    },
 
     user4: std.toString(
         a='value1',
