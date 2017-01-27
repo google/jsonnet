@@ -1301,7 +1301,7 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString*>(args[0].v.h)->value);
 
-	scratch = makeString(decode_utf8(md5(value)));
+        scratch = makeString(decode_utf8(md5(value)));
         return nullptr;
     }
 

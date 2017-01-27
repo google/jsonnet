@@ -23,9 +23,9 @@ String jsonnet_string_unparse(const String &str, bool single)
 {
     StringStream ss;
     ss << (single ? U'\'' : U'\"');
-	ss << jsonnet_string_escape(str, single);
+    ss << jsonnet_string_escape(str, single);
     ss << (single ? U'\'' : U'\"');
-	return ss.str();
+    return ss.str();
 }
 
 String jsonnet_string_escape(const String &str, bool single)

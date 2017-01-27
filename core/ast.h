@@ -323,9 +323,9 @@ struct BuiltinFunction : public AST {
  */
 struct Conditional : public AST {
     AST *cond;
-	Fodder thenFodder;
+    Fodder thenFodder;
     AST *branchTrue;
-	Fodder elseFodder;
+    Fodder elseFodder;
     AST *branchFalse;
     Conditional(const LocationRange &lr, const Fodder &open_fodder, AST *cond,
                 const Fodder &then_fodder, AST *branch_true, const Fodder &else_fodder,
