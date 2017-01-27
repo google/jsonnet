@@ -28,7 +28,8 @@ LIB_OBJECTS = [
     'core/pass.o',
     'core/static_analysis.o',
     'core/string_utils.o',
-    'core/vm.o'
+    'core/vm.o',
+    'third_party/md5/md5.o'
 ]
 
 MODULE_SOURCES = ['python/_jsonnet.c']

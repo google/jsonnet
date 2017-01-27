@@ -29,7 +29,7 @@ OD ?= od
 
 OPT ?= -O3
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
@@ -50,7 +50,8 @@ LIB_SRC = \
 	core/pass.cpp \
 	core/static_analysis.cpp \
 	core/string_utils.cpp \
-	core/vm.cpp
+	core/vm.cpp \
+	third_party/md5/md5.cpp
 
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
@@ -82,7 +83,8 @@ ALL_HEADERS = \
 	core/vm.h \
 	core/std.jsonnet.h \
 	include/libjsonnet.h \
-	include/libjsonnet++.h
+	include/libjsonnet++.h \
+	third_party/md5.h
 
 default: jsonnet
 

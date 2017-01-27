@@ -6,6 +6,7 @@
 **/.*.swp
 **/.*.swo
 **/*.o
+*.dSYM
 
 jsonnet
 _jsonnet.so
