@@ -473,6 +473,7 @@ static bool read_input(JsonnetConfig* config, std::string* input) {
         *input = config->inputFile;
         config->inputFile = "<cmdline>";
     } else {
+        // Input file "-" tell Jsonnet to read stdin.
         if (config->inputFile == "-") {
             config->inputFile = "<stdin>";
             input->assign(std::istreambuf_iterator<char>(std::cin),
