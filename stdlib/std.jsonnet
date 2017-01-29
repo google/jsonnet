@@ -53,11 +53,11 @@ limitations under the License.
 
     stringChars(str)::
         std.makeArray(std.length(str), function(i) str[i]),
-    
+
     parseInt(str)::
         local addDigit(aggregate, digit) =
             if digit < 0 || digit > 9 then
-                error("parseInt got string which does not match regex [0-9]+")
+                error ("parseInt got string which does not match regex [0-9]+")
             else
                 10 * aggregate + digit;
         local toDigits(str) =
@@ -102,29 +102,30 @@ limitations under the License.
         std.makeArray(to - from + 1, function(i) i + from),
 
     slice(indexable, index, end, step)::
-        if (index != null && index < 0) || (end != null && end < 0) || (step != null && step < 0) then
-            error("got [%s:%s:%s] but negative index, end, and steps are not supported" % [index, end, step])
+        local invar =
+            // loop invariant with defaults applied
+            {
+                indexable: indexable,
+                index:
+                    if index == null then 0
+                    else index,
+                end:
+                    if end == null then std.length(indexable)
+                    else end,
+                step:
+                    if step == null then 1
+                    else step,
+                length: std.length(indexable),
+                type: std.type(indexable),
+            };
+        if invar.index < 0 || invar.end < 0 || invar.step < 0 then
+            error ("got [%s:%s:%s] but negative index, end, and steps are not supported"
+                   % [invar.index, invar.end, invar.step])
         else if step == 0 then
-            error("got %s but step must be greater than 0" % step)
+            error ("got %s but step must be greater than 0" % step)
         else if std.type(indexable) != "string" && std.type(indexable) != "array" then
-            error("std.slice accepts a string or an array, but got: %s" % std.type(indexable))
+            error ("std.slice accepts a string or an array, but got: %s" % std.type(indexable))
         else
-            local invar =
-                // loop invariant with defaults applied
-                {
-                    indexable: indexable,
-                    index:
-                        if index == null then 0
-                        else index,
-                    end:
-                        if end == null then std.length(indexable)
-                        else end,
-                    step:
-                        if step == null then 1
-                        else step,
-                    length: std.length(indexable),
-                    type: std.type(indexable)
-                };
             local build(slice, cur) =
                 if cur >= invar.end || cur >= invar.length then
                     slice
@@ -133,12 +134,12 @@ limitations under the License.
                         if invar.type == "string" then
                             slice + invar.indexable[cur]
                         else
-                            slice + [ invar.indexable[cur] ],
+                            slice + [invar.indexable[cur]],
                         cur + invar.step
                     ) tailstrict;
             build(if invar.type == "string" then "" else [], invar.index),
 
-    count(arr, x):: std.length(std.filter(function(v) v==x, arr)),
+    count(arr, x):: std.length(std.filter(function(v) v == x, arr)),
 
     mod(a, b)::
         if std.type(a) == "number" && std.type(b) == "number" then
@@ -150,9 +151,9 @@ limitations under the License.
 
     map(func, arr)::
         if std.type(func) != "function" then
-            error("std.map first param must be function, got " + std.type(func))
+            error ("std.map first param must be function, got " + std.type(func))
         else if std.type(arr) != "array" && std.type(arr) != "string" then
-            error("std.map second param must be array / string, got " + std.type(arr))
+            error ("std.map second param must be array / string, got " + std.type(arr))
         else
             std.makeArray(std.length(arr), function(i) func(arr[i])),
 
@@ -210,22 +211,22 @@ limitations under the License.
                 else
                     local c = str[j];
                     if c == "#" then
-                        consume(str, j + 1, v + { alt: true })
+                        consume(str, j + 1, v { alt: true })
                     else if c == "0" then
-                        consume(str, j + 1, v + { zero: true })
+                        consume(str, j + 1, v { zero: true })
                     else if c == "-" then
-                        consume(str, j + 1, v + { left: true })
+                        consume(str, j + 1, v { left: true })
                     else if c == " " then
-                        consume(str, j + 1, v + { blank: true })
+                        consume(str, j + 1, v { blank: true })
                     else if c == "+" then
-                        consume(str, j + 1, v + { sign: true })
+                        consume(str, j + 1, v { sign: true })
                     else
                         { i: j, v: v };
-            consume(str, i, { alt: false, zero: false, left: false, blank: false, sign: false});
+            consume(str, i, { alt: false, zero: false, left: false, blank: false, sign: false });
 
         local try_parse_field_width(str, i) =
             if i < std.length(str) && str[i] == "*" then
-                { i: i+1, v: "*" }
+                { i: i + 1, v: "*" }
             else
                 local consume(str, j, v) =
                     if j >= std.length(str) then
@@ -332,7 +333,7 @@ limitations under the License.
                         prec: prec.v,
                         ctype: ctype.v,
                         caps: ctype.caps,
-                    }
+                    },
                 };
 
         // Parse a format string (containing none or more % format tags).
@@ -390,7 +391,7 @@ limitations under the License.
         local render_hex(n__, min_chars, min_digits, blank, sign, add_zerox, capitals) =
             local numerals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                              + if capitals then ["A", "B", "C", "D", "E", "F"]
-                                           else ["a", "b", "c", "d", "e", "f"];
+                             else ["a", "b", "c", "d", "e", "f"];
             local n_ = std.abs(n__);
             local aux(n) =
                 if n == 0 then
@@ -400,7 +401,7 @@ limitations under the License.
             local hex = if std.floor(n_) == 0 then "0" else aux(std.floor(n_));
             local neg = n__ < 0;
             local zp = min_chars - (if neg || blank || sign then 1 else 0)
-                                 - (if add_zerox then 2 else 0);
+                       - (if add_zerox then 2 else 0);
             local zp2 = std.max(zp, min_digits);
             local hex2 = (if add_zerox then (if capitals then "0X" else "0x") else "")
                          + pad_left(hex, zp2, "0");
@@ -490,12 +491,12 @@ limitations under the License.
                     error "Format required number at "
                           + i + ", got " + std.type(val)
                 else
-                    local exponent = std.floor(std.log(std.abs(val))/std.log(10));
+                    local exponent = std.floor(std.log(std.abs(val)) / std.log(10));
                     if exponent < -4 || exponent >= fpprec then
                         render_float_sci(val, zp, cflags.blank, cflags.sign, cflags.alt,
                                          cflags.alt, code.caps, fpprec - 1)
                     else
-                        local digits_before_pt = std.max(1, exponent+1);
+                        local digits_before_pt = std.max(1, exponent + 1);
                         render_float_dec(val, zp, cflags.blank, cflags.sign, cflags.alt,
                                          cflags.alt, fpprec - digits_before_pt)
             else if code.ctype == "c" then
@@ -515,7 +516,7 @@ limitations under the License.
         local format_codes_arr(codes, arr, i, j, v) =
             if i >= std.length(codes) then
                 if j < std.length(arr) then
-                    error("Too many values to format: " + std.length(arr) + ", expected " + j)
+                    error ("Too many values to format: " + std.length(arr) + ", expected " + j)
                 else
                     v
             else
@@ -526,9 +527,9 @@ limitations under the License.
                     local tmp = if code.fw == "*" then {
                         j: j + 1,
                         fw: if j >= std.length(arr) then
-                                error "Not enough values to format: " + std.length(arr)
-                            else
-                                arr[j]
+                            error "Not enough values to format: " + std.length(arr)
+                        else
+                            arr[j],
                     } else {
                         j: j,
                         fw: code.fw,
@@ -536,9 +537,9 @@ limitations under the License.
                     local tmp2 = if code.prec == "*" then {
                         j: tmp.j + 1,
                         prec: if tmp.j >= std.length(arr) then
-                                error "Not enough values to format: " + std.length(arr)
-                            else
-                                arr[tmp.j]
+                            error "Not enough values to format: " + std.length(arr)
+                        else
+                            arr[tmp.j],
                     } else {
                         j: tmp.j,
                         prec: code.prec,
@@ -547,7 +548,7 @@ limitations under the License.
                     local val =
                         if j2 < std.length(arr) then
                             arr[j2]
-                        else 
+                        else
                             error "Not enough values to format, got " + std.length(arr);
                     local s =
                         if code.ctype == "%" then
@@ -590,7 +591,7 @@ limitations under the License.
                             error "Cannot use * precision with object."
                         else
                             code.prec;
-                    local val = 
+                    local val =
                         if std.objectHasAll(obj, f) then
                             obj[f]
                         else
@@ -633,11 +634,11 @@ limitations under the License.
 
     filterMap(filter_func, map_func, arr)::
         if std.type(filter_func) != "function" then
-            error("std.filterMap first param must be function, got " + std.type(filter_func))
+            error ("std.filterMap first param must be function, got " + std.type(filter_func))
         else if std.type(map_func) != "function" then
-            error("std.filterMap second param must be function, got " + std.type(map_func))
+            error ("std.filterMap second param must be function, got " + std.type(map_func))
         else if std.type(arr) != "array" then
-            error("std.filterMap third param must be array, got " + std.type(arr))
+            error ("std.filterMap third param must be array, got " + std.type(arr))
         else
             std.map(map_func, std.filter(filter_func, arr)),
 
@@ -670,11 +671,11 @@ limitations under the License.
             if a < b then a else b,
 
     flattenArrays(arrs)::
-        std.foldl(function(a,b) a + b, arrs, []),
+        std.foldl(function(a, b) a + b, arrs, []),
 
     manifestIni(ini)::
-        local body_lines(body) = [ "%s = %s" % [k, body[k]] for k in std.objectFields(body) ],
-              section_lines(sname, sbody) = [ "[%s]" % [sname] ] + body_lines(sbody),
+        local body_lines(body) = ["%s = %s" % [k, body[k]] for k in std.objectFields(body)],
+              section_lines(sname, sbody) = ["[%s]" % [sname]] + body_lines(sbody),
               main_body = if std.objectHas(ini, "main") then body_lines(ini.main) else [],
               all_sections = [section_lines(k, ini.sections[k])
                               for k in std.objectFields(ini.sections)];
@@ -728,7 +729,7 @@ limitations under the License.
 
     manifestJson(value):: std.manifestJsonEx(value, "    "),
 
-    manifestJsonEx(value, indent):: 
+    manifestJsonEx(value, indent)::
         local aux(v, path, cindent) =
             if v == true then
                 "true"
@@ -744,10 +745,11 @@ limitations under the License.
                 error "Tried to manifest function at " + path
             else if std.type(v) == "array" then
                 local range = std.range(0, std.length(v) - 1);
+                local new_indent = cindent + indent;
                 local lines = ["[\n"]
                               + std.join([",\n"],
-                                         [[cindent + indent + aux(v[i], path + [i], cindent + indent)] for i
-in range])                
+                                         [[new_indent + aux(v[i], path + [i], new_indent)]
+                                          for i in range])
                               + ["\n" + cindent + "]"];
                 std.join("", lines)
             else if std.type(v) == "object" then
@@ -793,7 +795,7 @@ in range])
 
 
     local base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-    local base64_inv = {[base64_table[i]]: i for i in std.range(0, 63)},
+    local base64_inv = { [base64_table[i]]: i for i in std.range(0, 63) },
 
     base64(input)::
         local bytes =
@@ -814,25 +816,25 @@ in range])
                     "==";
                 aux(arr, i + 3, r + str) tailstrict
             else if i + 2 >= std.length(arr) then
-                local str = 
-                    // 6 MSB of i 
+                local str =
+                    // 6 MSB of i
                     base64_table[(arr[i] & 252) >> 2] +
                     // 2 LSB of i, 4 MSB of i+1
-                    base64_table[(arr[i] & 3) << 4 | (arr[i+1] & 240) >> 4] +
-                    // 4 LSB of i+1 
-                    base64_table[(arr[i+1] & 15) << 2] +
-                    "="; 
+                    base64_table[(arr[i] & 3) << 4 | (arr[i + 1] & 240) >> 4] +
+                    // 4 LSB of i+1
+                    base64_table[(arr[i + 1] & 15) << 2] +
+                    "=";
                 aux(arr, i + 3, r + str) tailstrict
             else
-                local str = 
-                    // 6 MSB of i 
+                local str =
+                    // 6 MSB of i
                     base64_table[(arr[i] & 252) >> 2] +
                     // 2 LSB of i, 4 MSB of i+1
-                    base64_table[(arr[i] & 3) << 4 | (arr[i+1] & 240) >> 4] +
+                    base64_table[(arr[i] & 3) << 4 | (arr[i + 1] & 240) >> 4] +
                     // 4 LSB of i+1, 2 MSB of i+2
-                    base64_table[(arr[i+1] & 15) << 2 | (arr[i+2] & 192) >> 6] +
-                    // 6 LSB of i+2 
-                    base64_table[(arr[i+2] & 63)];
+                    base64_table[(arr[i + 1] & 15) << 2 | (arr[i + 2] & 192) >> 6] +
+                    // 6 LSB of i+2
+                    base64_table[(arr[i + 2] & 63)];
                 aux(arr, i + 3, r + str) tailstrict;
 
         local sanity = std.foldl(function(r, a) r && (a < 256), bytes, true);
@@ -849,18 +851,18 @@ in range])
             local aux(str, i, r) =
                 if i >= std.length(str) then
                     r
-                else 
-                    // all 6 bits of i, 2 MSB of i+1 
-                    local n1 = [base64_inv[str[i]] << 2 | (base64_inv[str[i+1]] >> 4)];
+                else
+                    // all 6 bits of i, 2 MSB of i+1
+                    local n1 = [base64_inv[str[i]] << 2 | (base64_inv[str[i + 1]] >> 4)];
                     // 4 LSB of i+1, 4MSB of i+2
                     local n2 =
-                        if str[i+2] == "=" then [] 
-                        else [(base64_inv[str[i+1]] & 15) << 4 | (base64_inv[str[i+2]] >> 2)];
+                        if str[i + 2] == "=" then []
+                        else [(base64_inv[str[i + 1]] & 15) << 4 | (base64_inv[str[i + 2]] >> 2)];
                     // 2 LSB of i+2, all 6 bits of i+3
                     local n3 =
-                        if str[i+3] == "=" then []
-                        else [(base64_inv[str[i+2]] & 3) << 6 | base64_inv[str[i+3]]];
-                    aux(str, i+4, r + n1 + n2 + n3) tailstrict;
+                        if str[i + 3] == "=" then []
+                        else [(base64_inv[str[i + 2]] & 3) << 6 | base64_inv[str[i + 3]]];
+                    aux(str, i + 4, r + n1 + n2 + n3) tailstrict;
             aux(str, 0, []),
 
     base64Decode(str)::
@@ -887,7 +889,7 @@ in range])
                 a
             else
                 a + [b];
-        std.foldl(f , arr, []),
+        std.foldl(f, arr, []),
 
     set(arr)::
         std.uniq(std.sort(arr)),
@@ -1002,6 +1004,6 @@ in range])
 
     resolvePath(f, r)::
         local arr = std.split(f, "/");
-        std.join("/", std.makeArray(std.length(arr)-1, function(i)arr[i]) + [r]),
+        std.join("/", std.makeArray(std.length(arr) - 1, function(i) arr[i]) + [r]),
 
 }
