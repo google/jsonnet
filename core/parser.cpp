@@ -849,6 +849,12 @@ class Parser {
                         // to the parsing of the actual assert AST.
                         return lhs;
                     }
+                    if (peek().data == "::") {
+                        // Special case for [e::]
+                        // We need to stop parsing e when we see the :: and
+                        // avoid tripping the op_is_binary test below.
+                        return lhs;
+                    }
                     if (!op_is_binary(peek().data, bop)) {
                         std::stringstream ss;
                         ss << "Not a binary operator: " << peek().data;
@@ -879,25 +885,20 @@ class Parser {
                     if (peek().kind == Token::BRACKET_R)
                         throw unexpected(pop(), "parsing index");
 
-                    // break up "::" into ":", ":" before we start parsing.
-                    if (peek().kind == Token::OPERATOR && peek().data == "::") {
-                        Token joined = pop();
-                        push(Token(Token::OPERATOR, joined.fodder, ":", "", "", joined.location));
-                        push(Token(Token::OPERATOR, Fodder{}, ":", "", "", joined.location));
-                    }
-
-                    Token first_token = pop();
-                    if (peek().kind == Token::OPERATOR && peek().data == "::") {
-                        Token joined = pop();
-                        push(Token(Token::OPERATOR, joined.fodder, ":", "", "", joined.location));
-                        push(Token(Token::OPERATOR, Fodder{}, ":", "", "", joined.location));
-                    }
-                    push(first_token);
-
-                    if (peek().data != ":")
+                    if (peek().data != ":" && peek().data != "::") {
                         first = parse(MAX_PRECEDENCE);
+                    }
 
-                    if (peek().kind != Token::BRACKET_R) {
+                    if (peek().kind == Token::OPERATOR && peek().data == "::") {
+                        // Handle ::
+                        is_slice = true;
+                        Token joined = pop();
+                        second_fodder = joined.fodder;
+
+                        if (peek().kind != Token::BRACKET_R)
+                            third = parse(MAX_PRECEDENCE);
+
+                    } else if (peek().kind != Token::BRACKET_R) {
                         is_slice = true;
                         Token delim = pop();
                         if (delim.data != ":")
@@ -916,7 +917,7 @@ class Parser {
                             third_fodder = delim.fodder;
 
                             if (peek().kind != Token::BRACKET_R)
-                                third= parse(MAX_PRECEDENCE);
+                                third = parse(MAX_PRECEDENCE);
                         }
                     } else {
                         is_slice = false;

@@ -53,7 +53,15 @@ local arrCases = [
         output: [1, 2, 3, 4, 5],
     },
     {
+        input: arr[(1)::],
+        output: [1, 2, 3, 4, 5],
+    },
+    {
         input: arr[1::2],
+        output: [1, 3, 5],
+    },
+    {
+        input: arr[(1)::2],
         output: [1, 3, 5],
     },
     {
@@ -62,6 +70,10 @@ local arrCases = [
     },
     {
         input: arr[:0:],
+        output: [],
+    },
+    {
+        input: arr[:(0):],
         output: [],
     },
     {
@@ -117,7 +129,15 @@ local strCases = [
         output: "12345",
     },
     {
+        input: str[(1)::],
+        output: "12345",
+    },
+    {
         input: str[1::2],
+        output: "135",
+    },
+    {
+        input: str[(1)::2],
         output: "135",
     },
     {
@@ -126,6 +146,10 @@ local strCases = [
     },
     {
         input: str[:0:],
+        output: "",
+    },
+    {
+        input: str[:(0):],
         output: "",
     },
     {
