@@ -242,7 +242,7 @@ static bool process_args(int argc,
             std::string output_file = next_arg(i, args);
             if (output_file.length() == 0) {
                 std::cerr << "ERROR: -o argument was empty string" << std::endl;
-                return EXIT_FAILURE;
+                return false;
             }
             config->outputFile = output_file;
         } else if (arg == "--") {
@@ -275,45 +275,45 @@ static bool process_args(int argc,
                        || arg == "--var" || arg == "--env" || arg == "-E") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
             // TODO(dcunnin): Remove deprecated --file and -F
             } else if (arg == "--ext-str-file" || arg == "--file" || arg == "-F") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
             // TODO(dcunnin): Remove deprecated --code-var, --code-env
             } else if (arg == "--ext-code" || arg == "--code-var" || arg == "--code-env") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
             // TODO(dcunnin): Remove deprecated --code-file
             } else if (arg == "--ext-code-file" || arg == "--code-file") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "-A" || arg == "--tla-str") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_tla_var(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-str-file") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_tla_var(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-code") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_tla_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-code-file") {
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), var, val))
-                    return EXIT_FAILURE;
+                    return false;
                 jsonnet_tla_code(vm, var.c_str(), val.c_str());
 
             } else if (arg == "--gc-min-objects") {
@@ -322,7 +322,7 @@ static bool process_args(int argc,
                     std::cerr << "ERROR: Invalid --gc-min-objects value: " << l
                               << std::endl;
                     usage(std::cerr);
-                    return EXIT_FAILURE;
+                    return false;
                 }
                 jsonnet_gc_min_objects(vm, l);
             } else if (arg == "-t" || arg == "--max-trace") {
@@ -331,7 +331,7 @@ static bool process_args(int argc,
                     std::cerr << "ERROR: Invalid --max-trace value: " << l
                               << std::endl;
                     usage(std::cerr);
-                    return EXIT_FAILURE;
+                    return false;
                 }
                 jsonnet_max_trace(vm, l);
             } else if (arg == "--gc-growth-trigger") {
@@ -342,13 +342,13 @@ static bool process_args(int argc,
                     std::cerr << "ERROR: Invalid number \"" << arg << "\""
                               << std::endl;
                     usage(std::cerr);
-                    return EXIT_FAILURE;
+                    return false;
                 }
                 if (v < 0) {
                     std::cerr << "ERROR: Invalid --gc-growth-trigger \""
                               << arg << "\"\n" << std::endl;
                     usage(std::cerr);
-                    return EXIT_FAILURE;
+                    return false;
                 }
                 jsonnet_gc_growth_trigger(vm, v);
             } else if (arg == "-m" || arg == "--multi") {
@@ -356,7 +356,7 @@ static bool process_args(int argc,
                 std::string output_dir = next_arg(i, args);
                 if (output_dir.length() == 0) {
                     std::cerr << "ERROR: -m argument was empty string" << std::endl;
-                    return EXIT_FAILURE;
+                    return false;
                 }
                 if (output_dir[output_dir.length() - 1] != '/') {
                     output_dir += '/';
@@ -368,7 +368,7 @@ static bool process_args(int argc,
                 jsonnet_string_output(vm, 1);
             } else if (arg.length() > 1 && arg[0] == '-') {
                 std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
-                return EXIT_FAILURE;
+                return false;
             } else {
                 remaining_args.push_back(args[i]);
             }
@@ -441,7 +441,7 @@ static bool process_args(int argc,
                 jsonnet_fmt_debug_desugaring(vm, true);
             } else if (arg.length() > 1 && arg[0] == '-') {
                 std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
-                return EXIT_FAILURE;
+                return false;
             } else {
                 remaining_args.push_back(args[i]);
             }
@@ -614,12 +614,14 @@ int main(int argc, const char **argv)
         JsonnetVm *vm = jsonnet_make();
         JsonnetConfig config;
         if (!process_args(argc, argv, &config, vm)) {
+            jsonnet_destroy(vm);
             return EXIT_FAILURE;
         }
 
         // Read input files.
         std::string input;
         if (!read_input(&config, &input)) {
+            jsonnet_destroy(vm);
             return EXIT_FAILURE;
         }
 
@@ -650,10 +652,12 @@ int main(int argc, const char **argv)
                 // Write output JSON.
                 if (config.evalMulti) {
                     if (!write_multi_output_files(vm, output, config.evalMultiOutputDir)) {
+                        jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
                 } else if (config.evalStream) {
                     if (!write_output_stream(vm, output)) {
+                        jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
                 } else {
