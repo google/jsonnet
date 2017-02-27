@@ -1,6 +1,5 @@
-# This file was tested with CMake 3.8.0-rc1. The CMake required version is just
-# a guess.
-cmake_minimum_required(VERSION 3.0)
+# Travis CI runs CMake 2.8.7 so we are pinned to that verison.
+cmake_minimum_required(VERSION 2.8.7)
 include(ExternalProject)
 
 # User-configurable options.
