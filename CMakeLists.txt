@@ -1,13 +1,13 @@
 # This file was tested with CMake 3.8.0-rc1. The CMake required version is just
 # a guess.
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.0)
 include(ExternalProject)
 
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
-option(GLOBAL_OUTPUT_PATH "Output artifacts directory."
-       "${PROJECT_BINARY_DIR}/bin")
+set(GLOBAL_OUTPUT_PATH_SUFFIX "bin" CACHE STRING
+    "Output artifacts directory.")
 
 project(jsonnet)
 
@@ -23,6 +23,7 @@ endif()
 set(CMAKE_MACOSX_RPATH 1)  
 
 # Set output paths.
+set(GLOBAL_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${GLOBAL_OUTPUT_PATH_SUFFIX}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
