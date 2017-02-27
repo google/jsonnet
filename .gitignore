@@ -45,3 +45,5 @@ Testing/
 # Ignore auto-generated makefiles from CMake.
 **/Makefile
 ^Makefile/
+
+**/.DS_Store
