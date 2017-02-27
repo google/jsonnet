@@ -6,6 +6,8 @@
 **/.*.swp
 **/.*.swo
 **/*.o
+**/*.a
+**/*.dylib
 *.dSYM
 
 jsonnet
@@ -27,6 +29,19 @@ bazel-*
 **/*.tfstate.backup
 
 build/
+external/
 dist/
 jsonnet.egg-info/
 
+# Cmake
+**/CMakeCache.txt
+**/CMakeFiles
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+tags
+bin/
+Testing/
+
+# Ignore auto-generated makefiles from CMake.
+**/Makefile
+^Makefile/
