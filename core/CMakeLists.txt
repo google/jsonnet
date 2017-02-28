@@ -13,7 +13,7 @@ set(LIBJSONNET_SOURCE
     vm.cpp)
 
 add_library(libjsonnet SHARED ${LIBJSONNET_SOURCE})
-add_dependencies(libjsonnet md5)
+add_dependencies(libjsonnet md5 stdlib)
 target_link_libraries(libjsonnet md5)
 
 # CMake prepends CMAKE_SHARED_LIBRARY_PREFIX to shared libraries, so without
@@ -39,7 +39,7 @@ function(add_test_executable test_name)
 
     add_dependencies(${test_name} libjsonnet_static googletest)
     target_link_libraries(
-        ${test_name} ${GTEST_LIBRARY} ${GTEST_MAIN_LIBRARY} libjsonnet_static)
+        ${test_name} gtest gtest_main libjsonnet_static)
 endfunction()
 
 if (BUILD_TESTS)
