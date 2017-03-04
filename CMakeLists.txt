@@ -5,10 +5,10 @@ include(ExternalProject)
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
-set(GLOBAL_OUTPUT_PATH_SUFFIX "bin" CACHE STRING
+set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
     "Output artifacts directory.")
 
-project(jsonnet)
+project(jsonnet C CXX)
 
 # Discourage in-source builds because they overwrite the hand-written Makefile.
 # Use `cmake . -B<dir>` or the CMake GUI to do an out-of-source build.
@@ -17,9 +17,8 @@ if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR} AND
     message(WARNING "In-source builds with the a makefile generator overwrite the handwritten Makefile. Out-of-source builds are recommended for this project.")
 endif()
 
-
 # Disable CMake >3.0 warnings.
-set(CMAKE_MACOSX_RPATH 1)  
+set(CMAKE_MACOSX_RPATH 1)
 
 # Set output paths.
 set(GLOBAL_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${GLOBAL_OUTPUT_PATH_SUFFIX}")
@@ -29,43 +28,38 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 
 # Include external googletest project.
 if (BUILD_TESTS)
-    enable_testing()
+	enable_testing()
 
-    # TODO: Support manual googletest path.
-    # Download googletest library source.
-    set(GOOGLETEST_OUTPUT_DIR ${GLOBAL_OUTPUT_PATH}/googletest)
-    ExternalProject_Add(
-        googletest
+	# Generate and download googletest project.
+	set(GOOGLETEST_DIR ${GLOBAL_OUTPUT_PATH}/googletest-download)
+	configure_file(CMakeLists.txt.in ${GOOGLETEST_DIR}/CMakeLists.txt)
+	execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+			RESULT_VARIABLE result
+			WORKING_DIRECTORY ${GOOGLETEST_DIR}
+	)
+	if(result)
+		message(FATAL_ERROR "googletest download failed: ${result}")
+	endif()
 
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG "release-1.8.0"
+	# Build googletest.
+	execute_process(COMMAND ${CMAKE_COMMAND} --build .
+		RESULT_VARIABLE result
+		WORKING_DIRECTORY ${GOOGLETEST_DIR})
+	if(result)
+		message(FATAL_ERROR "Build step for googletest failed: ${result}")
+	endif()
 
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        TEST_COMMAND ""
+	# Prevent overriding the parent project's compiler/linker
+	# settings on Windows
+	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-        PREFIX ${PROJECT_SOURCE_DIR}/external/googletest
-        CMAKE_ARGS -DBUILD_GTEST=ON -DBUILD_GMOCK=OFF
-                -DCMAKE_INSTALL_PREFIX=${GOOGLETEST_OUTPUT_DIR}
-    )
+	# Add googletest directly to our build. This defines
+	# the gtest and gtest_main targets.
+	add_subdirectory(${GLOBAL_OUTPUT_PATH}/googletest-src
+									 ${GLOBAL_OUTPUT_PATH}/googletest-build)
 
-    # Copy googletest build outputs to global output path.
-    ExternalProject_Add_Step(
-        googletest copy_to_bin
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${GOOGLETEST_OUTPUT_DIR}/lib ${GLOBAL_OUTPUT_PATH}
-        DEPENDEES install
-    )
-
-    include_directories(${GOOGLETEST_OUTPUT_DIR}/include)
-    set(
-        GTEST_LIBRARY
-        ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
-    )
-    set(
-        GTEST_MAIN_LIBRARY
-        ${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}
-    )
+	# Include googletest headers.
+	include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
 # Compiler flags.
@@ -90,6 +84,7 @@ include_directories(
 
 install(DIRECTORY include DESTINATION include)
 
+add_subdirectory(stdlib)
 add_subdirectory(third_party/md5)
 add_subdirectory(core)
 add_subdirectory(cmd)
