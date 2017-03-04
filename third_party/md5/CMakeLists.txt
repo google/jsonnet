@@ -1,1 +1,1 @@
-add_library(md5 STATIC md5.cpp)
+add_library(md5 STATIC md5.cpp md5.h)

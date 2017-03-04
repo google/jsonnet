@@ -1,6 +1,22 @@
 # libjsonnet
 
 # Remember to update Bazel and Makefile builds when updating this list! 
+set(LIBJSONNET_HEADERS
+    ast.h
+    desugarer.h
+    formatter.h
+    lexer.h
+    ../include/libjsonnet.h
+    parser.h
+    pass.h
+    state.h
+    static_analysis.h
+    static_error.h
+    std.jsonnet.h
+    string_utils.h
+    unicode.h
+    vm.h)
+
 set(LIBJSONNET_SOURCE
     desugarer.cpp
     formatter.cpp
@@ -12,7 +28,7 @@ set(LIBJSONNET_SOURCE
     string_utils.cpp
     vm.cpp)
 
-add_library(libjsonnet SHARED ${LIBJSONNET_SOURCE})
+add_library(libjsonnet SHARED ${LIBJSONNET_HEADERS} ${LIBJSONNET_SOURCE})
 add_dependencies(libjsonnet md5)
 target_link_libraries(libjsonnet md5)
 
