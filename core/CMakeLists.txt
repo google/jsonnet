@@ -53,7 +53,7 @@ function(add_test_executable test_name)
     endif()
     add_executable(${test_name} ${test_name}.${TEST_EXT})
 
-    add_dependencies(${test_name} libjsonnet_static googletest)
+    add_dependencies(${test_name} libjsonnet_static gtest_main)
     target_link_libraries(
         ${test_name} gtest gtest_main libjsonnet_static)
 endfunction()
