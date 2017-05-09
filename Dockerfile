@@ -1,12 +1,14 @@
-FROM ubuntu:latest
+FROM alpine:latest
+
+RUN apk -U add build-base
 
 WORKDIR /opt
 
-RUN apt-get update && \
-    apt-get install -y git build-essential autoconf libtool make
+COPY . /opt/jsonnet
 
-# Install jsonnet
-RUN git clone https://github.com/google/jsonnet && \
-    cd jsonnet && \
+RUN cd jsonnet && \
     make && \
-    cd ..
+    mv jsonnet /usr/local/bin && \
+    rm -rf /opt/jsonnet
+
+ENTRYPOINT ["/usr/local/bin/jsonnet"]
