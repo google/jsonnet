@@ -179,7 +179,7 @@ struct HeapSimpleObject : public HeapLeafObject {
     { }
 };
 
-/** Objects created by the extendby construct. */
+/** Objects created by the + construct. */
 struct HeapExtendedObject : public HeapObject {
     /** The left hand side of the construct. */
     HeapObject *left;

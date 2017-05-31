@@ -776,7 +776,7 @@ class Interpreter {
     /** Count the number of leaves in the tree.
      *
      * \param obj The root of the tree.
-     * \param counter Initialize to 0, returns the number of leaves.
+     * \returns The number of leaves.
      */
     unsigned countLeaves(HeapObject *obj)
     {
