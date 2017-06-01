@@ -107,7 +107,8 @@ MAKEDEPEND_SRCS = \
 	core/libjsonnet_test_file.c
 
 depend:
-	makedepend $(MAKEDEPENDFLAGS) -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
+	rm -f Makefile.depend
+	for FILE in $(LIB_SRC) $(MAKEDEPEND_SRCS) ; do $(CXX) -MM $(CXXFLAGS) $$FILE -MT $$(dirname $$FILE)/$$(basename $$FILE .cpp).o >> Makefile.depend ; done
 
 core/desugarer.cpp: core/std.jsonnet.h
 
