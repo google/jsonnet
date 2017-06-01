@@ -60,24 +60,28 @@ hidden fields.</p>
 
 <p>As <code>std.objectFields</code> but also includes hidden fields.</p>
 
+<h4 id="prune">std.prune(x)</h4>
+
+<p>Recursively remove all "empty" members of `x`.  "Empty" is defined as zero
+length `arrays`, zero length `objects`, or `null` values.</p>
 
 <h3 id="math">Mathematical Utilities</h3>
 
 <p>The following mathematical functions are available:
-<code>std.abs(n)</code>, 
-<code>std.max(a, b)</code>, 
-<code>std.min(a, b)</code>, 
-<code>std.pow(x, n)</code>, 
-<code>std.exp(x)</code>, 
-<code>std.exponent(x)</code>, 
-<code>std.mantissa(x)</code>, 
-<code>std.floor(x)</code>, 
-<code>std.ceil(x)</code>, 
-<code>std.sqrt(x)</code>, 
-<code>std.sin(x)</code>, 
-<code>std.cos(x)</code>, 
-<code>std.tan(x)</code>, 
-<code>std.asin(x)</code>, 
+<code>std.abs(n)</code>,
+<code>std.max(a, b)</code>,
+<code>std.min(a, b)</code>,
+<code>std.pow(x, n)</code>,
+<code>std.exp(x)</code>,
+<code>std.exponent(x)</code>,
+<code>std.mantissa(x)</code>,
+<code>std.floor(x)</code>,
+<code>std.ceil(x)</code>,
+<code>std.sqrt(x)</code>,
+<code>std.sin(x)</code>,
+<code>std.cos(x)</code>,
+<code>std.tan(x)</code>,
+<code>std.asin(x)</code>,
 <code>std.acos(x)</code>, and
 <code>std.atan(x)</code>.</p>
 
@@ -246,7 +250,7 @@ y = 22
 z = 33
 [s2]
 p = yes
-q = 
+q =
 </code>
 
 
@@ -319,13 +323,13 @@ it should initialize.</p>
 <p>This is primarily used to desugar array comprehension syntax.  It first filters, then maps thte
 given array, using the two functions provided.</p>
 
- 
+
 <h4 id="filter">std.filter(func, arr)</h4>
 
 <p>Return a new array containing all the elements of <code>arr</code> for which the
 <code>func</code> function returns true.</p>
 
- 
+
 <h4 id="foldl">std.foldl(func, arr, init)</h4>
 
 <p>Classic foldl function.  Calls the function on the result of the previous function call and each
