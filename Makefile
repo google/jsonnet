@@ -31,6 +31,7 @@ OPT ?= -O3
 
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
+MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
@@ -84,7 +85,7 @@ ALL_HEADERS = \
 	core/std.jsonnet.h \
 	include/libjsonnet.h \
 	include/libjsonnet++.h \
-	third_party/md5.h
+	third_party/md5/md5.h
 
 default: jsonnet
 
@@ -106,7 +107,7 @@ MAKEDEPEND_SRCS = \
 	core/libjsonnet_test_file.c
 
 depend:
-	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
+	makedepend $(MAKEDEPENDFLAGS) -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
 
 core/desugarer.cpp: core/std.jsonnet.h
 
@@ -161,6 +162,6 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Make.depend
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend
 
 -include Makefile.depend
