@@ -68,10 +68,34 @@ local obj = {
 
 std.assertEqual(obj, { ["f" + x + y + z]: { x: x, y: y, z: z } for x in [1, 2, 3] for y in [1, 4, 6] if x + 2 < y for z in [true, false] }) &&
 
-std.assertEqual({ f: { foo: 7, bar: 1 } { [self.name] +: 3, name:: "foo"}, name:: "bar" },
+std.assertEqual({ f: { foo: 7, bar: 1 } { [self.name]+: 3, name:: "foo" }, name:: "bar" },
                 { f: { foo: 7, bar: 4 } }) &&
 
-std.assertEqual({ name:: "supername"} { name:: "selfname", f: { wrongname: 7, supername: 1, name:: "wrongname" } { [super.name] +: 3}, },
+std.assertEqual({ name:: "supername" } { name:: "selfname", f: { wrongname: 7, supername: 1, name:: "wrongname" } { [super.name]+: 3 } },
                 { f: { wrongname: 7, supername: 4 } }) &&
+
+std.assertEqual({} + { f+: 3 }, { f: 3 }) &&
+std.assertEqual({} + { f+: { g+: "foo" } }, { f: { g: "foo" } }) &&
+std.assertEqual({} + { f+: [3] }, { f: [3] }) &&
+
+std.assertEqual({ f+: 3 }, { f: 3 }) &&
+std.assertEqual({ f+: { g+: "foo" } }, { f: { g: "foo" } }) &&
+std.assertEqual({ f+: [3] }, { f: [3] }) &&
+
+// Ensure that e in super is handled correctly during the +: desugaring, because it moves
+// into a different object scope:
+std.assertEqual(
+    { opt:: true, f: { y: 5 } } + { f+: { [if "opt" in super then "x" else "y"]+: 3 } },
+    { f: { x: 3, y: 5 } }) &&
+
+std.assertEqual({ x: 1 } + { a: "x" in super, b: "y" in super }, { x: 1, a: true, b: false }) &&
+std.assertEqual({ x:: 1 } + { a: "x" in super, b: "y" in super }, { a: true, b: false }) &&
+
+std.assertEqual("x" in { x: 3 }, true) &&
+std.assertEqual("x" in { y: 3 }, false) &&
+
+std.assertEqual({ x: 1, a: "x" in self, b: "y" in self }, { x: 1, a: true, b: false }) &&
+std.assertEqual({ x:: 1, a: "x" in self, b: "y" in self }, { a: true, b: false }) &&
+std.assertEqual({ f: "f" in self }, { f: true }) &&
 
 true

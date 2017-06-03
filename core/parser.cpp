@@ -840,6 +840,7 @@ class Parser {
                 // lhs and let lower levels deal with the operator.
                 switch (peek().kind) {
                     // Logical / arithmetic binary operator.
+                    case Token::IN:
                     case Token::OPERATOR:
                     if (peek().data == ":") {
                         // Special case for the colons in assert.
@@ -952,6 +953,17 @@ class Parser {
                     AST *obj;
                     Token end = parseObjectRemainder(obj, op);
                     lhs = alloc->make<ApplyBrace>(span(begin, end), begin_fodder, lhs, obj);
+
+                } else if (op.kind == Token::IN) {
+                    if (peek().kind == Token::SUPER) {
+                        Token super = pop();
+                        lhs = alloc->make<InSuper>(
+                            span(begin, super), begin_fodder, lhs, op.fodder, super.fodder);
+                    } else {
+                        AST *rhs = parse(precedence - 1);
+                        lhs = alloc->make<Binary>(
+                            span(begin, rhs), begin_fodder, lhs, op.fodder, bop, rhs);
+                    }
 
                 } else {
                     // Logical / arithmetic binary operator.
