@@ -324,7 +324,7 @@ class Desugarer {
         };
 
         SuperVars super_vars;
-        unsigned counter;
+        unsigned counter = 0;
 
         // Remove +:
         for (auto &field : fields) {
