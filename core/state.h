@@ -259,8 +259,8 @@ struct HeapClosure : public HeapEntity {
 
 /** Stores a simple string on the heap. */
 struct HeapString : public HeapEntity {
-    const String value;
-    HeapString(const String &value)
+    const UString value;
+    HeapString(const UString &value)
       : value(value)
     { }
 };

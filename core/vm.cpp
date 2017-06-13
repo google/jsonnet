@@ -473,7 +473,7 @@ class Interpreter {
     };
 
     /** Cache for imported Jsonnet files. */
-    std::map<std::pair<std::string, String>, ImportCacheValue *> cachedImports;
+    std::map<std::pair<std::string, UString>, ImportCacheValue *> cachedImports;
 
     /** External variables for std.extVar. */
     ExtMap externalVars;
@@ -606,7 +606,7 @@ class Interpreter {
         return r;
     }
 
-    Value makeString(const String &v)
+    Value makeString(const UString &v)
     {
         Value r;
         r.t = Value::STRING;
@@ -731,9 +731,9 @@ class Interpreter {
     {
         std::string dir = dir_name(loc.file);
 
-        const String &path = file->value;
+        const UString &path = file->value;
 
-        std::pair<std::string, String> key(dir, path);
+        std::pair<std::string, UString> key(dir, path);
         ImportCacheValue *cached_value = cachedImports[key];
         if (cached_value != nullptr)
             return cached_value;
@@ -1118,7 +1118,7 @@ class Interpreter {
         const auto *obj = static_cast<HeapObject*>(args[0].v.h);
         bool include_hidden = args[1].v.b;
         // Stash in a set first to sort them.
-        std::set<String> fields;
+        std::set<UString> fields;
         for (const auto &field : objectFields(obj, !include_hidden)) {
             fields.insert(field->name);
         }
@@ -1135,7 +1135,7 @@ class Interpreter {
     const AST *builtinCodepoint(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "codepoint", args, {Value::STRING});
-        const String &str =
+        const UString &str =
             static_cast<HeapString*>(args[0].v.h)->value;
         if (str.length() != 1) {
             std::stringstream ss;
@@ -1163,7 +1163,7 @@ class Interpreter {
             throw makeError(loc, ss.str());
         }
         char32_t c = l;
-        scratch = makeString(String(&c, 1));
+        scratch = makeString(UString(&c, 1));
         return nullptr;
     } 
 
@@ -1213,7 +1213,7 @@ class Interpreter {
     const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
-        const String &var =
+        const UString &var =
             static_cast<HeapString*>(args[0].v.h)->value;
         std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
@@ -1356,7 +1356,7 @@ class Interpreter {
     }
 
 
-    String toString(const LocationRange &loc)
+    UString toString(const LocationRange &loc)
     {
         return manifestJson(loc, false, U"");
     }
@@ -1989,9 +1989,9 @@ class Interpreter {
                         break;
 
                         case Value::STRING: {
-                            const String &lhs_str =
+                            const UString &lhs_str =
                                 static_cast<HeapString*>(lhs.v.h)->value;
-                            const String &rhs_str =
+                            const UString &rhs_str =
                                 static_cast<HeapString*>(rhs.v.h)->value;
                             switch (ast.op) {
                                 case BOP_PLUS:
@@ -2187,7 +2187,7 @@ class Interpreter {
 
                 case FRAME_ERROR: {
                     const auto &ast = *static_cast<const Error*>(f.ast);
-                    String msg;
+                    UString msg;
                     if (scratch.t == Value::STRING) {
                         msg = static_cast<HeapString*>(scratch.v.h)->value;
                     } else {
@@ -2223,7 +2223,7 @@ class Interpreter {
                                         + type_str(scratch) + ".");
                     }
 
-                    const String &index_name =
+                    const UString &index_name =
                         static_cast<HeapString*>(scratch.v.h)->value;
                     auto *fid = alloc->makeIdentifier(index_name);
                     stack.pop();
@@ -2266,7 +2266,7 @@ class Interpreter {
                                             "Object index must be string, got "
                                             + type_str(scratch) + ".");
                         }
-                        const String &index_name =
+                        const UString &index_name =
                             static_cast<HeapString*>(scratch.v.h)->value;
                         auto *fid = alloc->makeIdentifier(index_name);
                         stack.pop();
@@ -2277,14 +2277,14 @@ class Interpreter {
                         assert(obj != nullptr);
                         if (scratch.t != Value::DOUBLE) {
                             throw makeError(ast.location,
-                                            "String index must be a number, got "
+                                            "UString index must be a number, got "
                                             + type_str(scratch) + ".");
                         }
                         long sz = obj->value.length();
                         long i = (long)scratch.v.d;
                         if (i < 0 || i >= sz) {
                             std::stringstream ss;
-                            ss << "String bounds error: " << i
+                            ss << "UString bounds error: " << i
                                << " not within [0, " << sz << ")";
                             throw makeError(ast.location, ss.str());
                         }
@@ -2433,7 +2433,7 @@ class Interpreter {
                     const auto &ast = *static_cast<const Binary*>(f.ast);
                     const Value &lhs = stack.top().val;
                     const Value &rhs = stack.top().val2;
-                    String output;
+                    UString output;
                     if (lhs.t == Value::STRING) {
                         output.append(static_cast<const HeapString*>(lhs.v.h)->value);
                     } else {
@@ -2510,12 +2510,12 @@ class Interpreter {
      *
      * \param multiline If true, will print objects and arrays in an indented fashion.
      */
-    String manifestJson(const LocationRange &loc, bool multiline, const String &indent)
+    UString manifestJson(const LocationRange &loc, bool multiline, const UString &indent)
     {
         // Printing fields means evaluating and binding them, which can trigger
         // garbage collection.
 
-        StringStream ss;
+        UStringStream ss;
         switch (scratch.t) {
             case Value::ARRAY: {
                 HeapArray *arr = static_cast<HeapArray*>(scratch.v.h);
@@ -2523,7 +2523,7 @@ class Interpreter {
                     ss << U"[ ]";
                 } else {
                     const char32_t *prefix = multiline ? U"[\n" : U"[";
-                    String indent2 = multiline ? indent + U"   " : indent;
+                    UString indent2 = multiline ? indent + U"   " : indent;
                     for (auto *thunk : arr->elements) {
                         LocationRange tloc = thunk->body == nullptr
                                            ? loc
@@ -2571,14 +2571,14 @@ class Interpreter {
                 runInvariants(loc, obj);
                 // Using std::map has the useful side-effect of ordering the fields
                 // alphabetically.
-                std::map<String, const Identifier*> fields;
+                std::map<UString, const Identifier*> fields;
                 for (const auto &f : objectFields(obj, true)) {
                     fields[f->name] = f;
                 }
                 if (fields.size() == 0) {
                     ss << U"{ }";
                 } else {
-                    String indent2 = multiline ? indent + U"   " : indent;
+                    UString indent2 = multiline ? indent + U"   " : indent;
                     const char32_t *prefix = multiline ? U"{\n" : U"{";
                     for (const auto &f : fields) {
                         // pushes FRAME_CALL
@@ -2600,7 +2600,7 @@ class Interpreter {
             break;
 
             case Value::STRING: {
-                const String &str = static_cast<HeapString*>(scratch.v.h)->value;
+                const UString &str = static_cast<HeapString*>(scratch.v.h)->value;
                 ss << jsonnet_string_unparse(str, false);
             }
             break;
@@ -2608,7 +2608,7 @@ class Interpreter {
         return ss.str();
     }
 
-    String manifestString(const LocationRange &loc)
+    UString manifestString(const LocationRange &loc)
     {
         if (scratch.t != Value::STRING) {
             std::stringstream ss;
@@ -2631,7 +2631,7 @@ class Interpreter {
         }
         auto *obj = static_cast<HeapObject*>(scratch.v.h);
         runInvariants(loc, obj);
-        std::map<String, const Identifier*> fields;
+        std::map<UString, const Identifier*> fields;
         for (const auto &f : objectFields(obj, true)) {
             fields[f->name] = f;
         }
@@ -2678,7 +2678,7 @@ class Interpreter {
                 stack.top().val = scratch;
                 evaluate(thunk->body, stack.size());
             }
-            String element = manifestJson(tloc, true, U"");
+            UString element = manifestJson(tloc, true, U"");
             scratch = stack.top().val;
             stack.pop();
             r.push_back(encode_utf8(element));
