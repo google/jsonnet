@@ -1304,7 +1304,8 @@ class FixIndentation {
             expr(ast->target, new_indent, space_before);
             fill(ast->fodderL, false, false, new_indent.lineUp);
             column++;  // (
-            const Fodder &first_fodder = ast->args.size() == 0 ? ast->fodderR : argParamFirstFodder(ast->args[0]);
+            const Fodder &first_fodder = ast->args.size() == 0
+                                         ? ast->fodderR : argParamFirstFodder(ast->args[0]);
             bool strong_indent = false;
             // Need to use strong indent if any of the
             // arguments (except the first) are preceded by newlines.

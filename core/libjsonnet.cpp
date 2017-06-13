@@ -583,7 +583,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename,
     return nullptr;  // Quiet, compiler.
 }
 
-static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int *error, EvalKind kind)
+static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int *error,
+                                       EvalKind kind)
 {
     std::ifstream f;
     f.open(filename);

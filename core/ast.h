@@ -661,7 +661,8 @@ struct ObjectComprehensionSimple : public AST {
     AST *array;
     ObjectComprehensionSimple(const LocationRange &lr, AST *field, AST *value,
                               const Identifier *id, AST *array)
-      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}), field(field), value(value), id(id), array(array)
+      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}), field(field), value(value), id(id),
+        array(array)
     { }
 };
 
