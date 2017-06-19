@@ -335,6 +335,10 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>error</code>
 <i>expr</i>
 
+<!-- super in e -->
+</td></tr> <tr><td></td><td> | </td><td>
+<code>super</code> <code>in</code> <i>expr</i>
+
 </td></tr>
 </table>
 
@@ -502,6 +506,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>&gt;=</code> |
 <code>==</code> |
 <code>!=</code> |
+<code>in</code> |
 <code>&amp;</code> |
 <code>^</code> |
 <code>|</code> |
@@ -541,7 +546,7 @@ remaining ambiguities are resolved according to the following order of precedenc
 &nbsp;&nbsp;(these, and the remainder below, are binary operators)</li>
 <li><code>+</code> <code>-</code></li>
 <li><code>&lt;&lt;</code> <code>&gt;&gt;</code></li>
-<li><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></li>
+<li><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>in</code></li>
 <li><code>==</code> <code>!=</code></li>
 <li><code>&amp;</code></li>
 <li><code>^</code></li>
@@ -567,8 +572,8 @@ parser.</p>
 
 <ul>
 <li>The set of identifiers now includes <code>$</code>, which is no-longer a special keyword.</li>
-<li>The following binary operators are removed: <code>!=</code>, <code>==</code>, 
-    <code>%</code>.</li>
+<li>The following binary operators are removed: <code>!=</code> <code>==</code> 
+    <code>%</code> <code>in</code></li>
 <li>Array slices <code>[::]</code> are removed.</li>
 <li>Array and object comprehensions are replaced with a simple object comprehension construct.</li>
 <li>Expression-level asserts are removed.</li>
@@ -867,6 +872,16 @@ desugar_{expr}(e \mathop{==} e', b) = desugar_{expr}(\texttt{std.equals}(e, e'),
 
 <div class="desugar-rule"> \[
 desugar_{expr}(e \mathop{\%} e', b) = desugar_{expr}(\texttt{std.mod}(e, e'), b)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{expr}(e \mathop{\texttt{in}} e', b)
+= desugar_{expr}(\texttt{std.objectHasEx}(e', e, \texttt{true}), b)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{expr}(e \mathop{\texttt{in}} \texttt{super}, b)
+= desugar_{expr}(\texttt{std.objectHasEx}(\texttt{super}, e, \texttt{true}), b)
 \] </div>
 
 </div>
