@@ -7,6 +7,7 @@
    "fmt2": "The word horse has 5 letters.  Go horse!",
    "array": [1, 2, 3, 4],
    "obj": {"a": 1, "b": 3, "c": 4},
+   "obj_member": true,
    "equality": false,
    "multiline_string": "1\n2\n3\n",
    "multiline_string_fmt": "foo = 3\nbar = 6\n"
