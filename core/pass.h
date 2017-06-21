@@ -70,6 +70,8 @@ class CompilerPass {
 
     virtual void visit(Importstr *ast);
 
+    virtual void visit(InSuper *ast);
+
     virtual void visit(Index *ast);
 
     virtual void visit(Local *ast);
@@ -106,10 +108,10 @@ class CompilerPass {
 };
 
 
-/** A pass that clones the AST it is given. */
-class ClonePass : public CompilerPass {
-    public:
-    ClonePass(Allocator &alloc) : CompilerPass(alloc) { }
-    virtual void expr(AST *&ast);
-};
+/** Return an equivalent AST that can be modified without affecting the original.
+ *
+ * This is a deep copy.
+ */
+AST *clone_ast(Allocator &alloc, AST *ast);
+
 #endif

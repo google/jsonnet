@@ -202,6 +202,11 @@ void CompilerPass::visit(Importstr *ast)
     visit(ast->file);
 }
 
+void CompilerPass::visit(InSuper *ast)
+{
+    expr(ast->element);
+}
+
 void CompilerPass::visit(Index *ast)
 {
     expr(ast->target);
@@ -313,6 +318,8 @@ void CompilerPass::visitExpr(AST *&ast_)
         visit(ast);
     } else if (auto *ast = dynamic_cast<Importstr*>(ast_)) {
         visit(ast);
+    } else if (auto *ast = dynamic_cast<InSuper*>(ast_)) {
+        visit(ast);
     } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
         visit(ast);
     } else if (auto *ast = dynamic_cast<Local*>(ast_)) {
@@ -357,6 +364,13 @@ void CompilerPass::file(AST *&body, Fodder &final_fodder)
     fodder(final_fodder);
 }
 
+/** A pass that clones the AST it is given. */
+class ClonePass : public CompilerPass {
+    public:
+    ClonePass(Allocator &alloc) : CompilerPass(alloc) { }
+    virtual void expr(AST *&ast);
+};
+
 void ClonePass::expr(AST *&ast_)
 {
     if (auto *ast = dynamic_cast<Apply*>(ast_)) {
@@ -384,6 +398,8 @@ void ClonePass::expr(AST *&ast_)
     } else if (auto *ast = dynamic_cast<Import*>(ast_)) {
         ast_ = alloc.clone(ast);
     } else if (auto *ast = dynamic_cast<Importstr*>(ast_)) {
+        ast_ = alloc.clone(ast);
+    } else if (auto *ast = dynamic_cast<InSuper*>(ast_)) {
         ast_ = alloc.clone(ast);
     } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
         ast_ = alloc.clone(ast);
@@ -423,4 +439,11 @@ void ClonePass::expr(AST *&ast_)
     }
 
     CompilerPass::expr(ast_);
+}
+
+AST *clone_ast(Allocator &alloc, AST *ast)
+{
+    AST *r = ast;
+    ClonePass(alloc).expr(r);
+    return r;
 }

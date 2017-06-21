@@ -58,6 +58,7 @@ enum FrameKind {
     FRAME_CALL,  // Used any time we have switched location in user code.
     FRAME_ERROR,  // e in error e
     FRAME_IF,  // e in if e then a else b
+    FRAME_IN_SUPER_ELEMENT,  // e in 'e in super'
     FRAME_INDEX_TARGET,  // e in e[x]
     FRAME_INDEX_INDEX,  // e in x[e]
     FRAME_INVARIANTS,  // Caches the thunks that need to be executed one at a time.
@@ -783,6 +784,7 @@ class Interpreter {
         if (auto *ext = dynamic_cast<HeapExtendedObject*>(obj)) {
             return countLeaves(ext->left) + countLeaves(ext->right);
         } else {
+            // Must be a HeapLeafObject.
             return 1;
         }
     }
@@ -1543,6 +1545,13 @@ class Interpreter {
                 scratch = makeString(decode_utf8(value->content));
             } break;
 
+            case AST_IN_SUPER: {
+                const auto &ast = *static_cast<const InSuper*>(ast_);
+                stack.newFrame(FRAME_IN_SUPER_ELEMENT, ast_);
+                ast_ = ast.element;
+                goto recurse;
+            } break;
+
             case AST_INDEX: {
                 const auto &ast = *static_cast<const Index*>(ast_);
                 stack.newFrame(FRAME_INDEX_TARGET, ast_);
@@ -1831,6 +1840,8 @@ class Interpreter {
                     const auto &ast = *static_cast<const Binary*>(f.ast);
                     const Value &lhs = stack.top().val;
                     const Value &rhs = scratch;
+
+                    // Handle cases where the LHS and RHS are not the same type.
                     if (lhs.t == Value::STRING || rhs.t == Value::STRING) {
                         if (ast.op == BOP_PLUS) {
                             // Handle co-ercions for string processing.
@@ -1839,15 +1850,41 @@ class Interpreter {
                             goto replaceframe;
                         }
                     }
-                    // Equality can be used when the types don't match.
                     switch (ast.op) {
+                        // Equality can be used when the types don't match.
                         case BOP_MANIFEST_EQUAL:
                         std::cerr << "INTERNAL ERROR: Equals not desugared" << std::endl;
                         abort();
 
+                        // Equality can be used when the types don't match.
                         case BOP_MANIFEST_UNEQUAL:
                         std::cerr << "INTERNAL ERROR: Notequals not desugared" << std::endl;
                         abort();
+
+                        // e in e
+                        case BOP_IN: {
+                            if (lhs.t != Value::STRING) {
+                                throw makeError(ast.location,
+                                                "The left hand side of the 'in' operator should be "
+                                                "a string,  got " + type_str(lhs));
+                            }
+                            auto *field = static_cast<HeapString*>(lhs.v.h);
+                            switch (rhs.t) {
+                                case Value::OBJECT: {
+                                    auto *obj = static_cast<HeapObject*>(rhs.v.h);
+                                    auto *fid = alloc->makeIdentifier(field->value);
+                                    unsigned unused_found_at = 0;
+                                    bool in = findObject(fid, obj, 0, unused_found_at);
+                                    scratch = makeBoolean(in);
+                                } break;
+  
+                                default:
+                                throw makeError(ast.location,
+                                                "The right hand side of the 'in' operator should be"
+                                                " an object, got " + type_str(rhs));
+                            }
+                            goto popframe;
+                        }
 
                         default:;
                     }
@@ -2229,6 +2266,30 @@ class Interpreter {
                     stack.pop();
                     ast_ = objectIndex(ast.location, self, fid, offset);
                     goto recurse;
+                } break;
+
+                case FRAME_IN_SUPER_ELEMENT: {
+                    const auto &ast = *static_cast<const InSuper*>(f.ast);
+                    HeapObject *self;
+                    unsigned offset;
+                    stack.getSelfBinding(self, offset);
+                    offset++;
+                    if (scratch.t != Value::STRING) {
+                        throw makeError(ast.location,
+                                        "Left hand side of e in super must be string, got "
+                                        + type_str(scratch) + ".");
+                    }
+                    if (offset >= countLeaves(self)) {
+                        // There is no super object.
+                        scratch = makeBoolean(false);
+                    } else {
+                        const UString &element_name =
+                            static_cast<HeapString*>(scratch.v.h)->value;
+                        auto *fid = alloc->makeIdentifier(element_name);
+                        unsigned unused_found_at = 0;
+                        bool in = findObject(fid, self, offset, unused_found_at);
+                        scratch = makeBoolean(in);
+                    }
                 } break;
 
                 case FRAME_INDEX_INDEX: {

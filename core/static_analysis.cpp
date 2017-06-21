@@ -90,6 +90,11 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     } else if (dynamic_cast<const Importstr*>(ast_)) {
         // Nothing to do.
 
+    } else if (auto *ast = dynamic_cast<const InSuper*>(ast_)) {
+        if (!in_object)
+            throw StaticError(ast_->location, "Can't use super outside of an object.");
+        append(r, static_analysis(ast->element, in_object, vars));
+
     } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
         append(r, static_analysis(ast->target, in_object, vars));
         append(r, static_analysis(ast->index, in_object, vars));

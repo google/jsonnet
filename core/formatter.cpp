@@ -38,6 +38,8 @@ static AST *left_recursive(AST *ast_)
         return ast->left;
     if (auto *ast = dynamic_cast<Index*>(ast_))
         return ast->target;
+    if (auto *ast = dynamic_cast<InSuper*>(ast_))
+        return ast->element;
     return nullptr;
 }
 static const AST *left_recursive(const AST *ast_)
@@ -381,6 +383,13 @@ class Unparser {
         } else if (auto *ast = dynamic_cast<const Importstr*>(ast_)) {
             o << "importstr";
             unparse(ast->file, true);
+
+        } else if (auto *ast = dynamic_cast<const InSuper*>(ast_)) {
+            unparse(ast->element, true);
+            fill(ast->inFodder, true, true);
+            o << "in";
+            fill(ast->superFodder, true, true);
+            o << "super";
 
         } else if (auto *ast = dynamic_cast<const Index*>(ast_)) {
             unparse(ast->target, space_before);
@@ -1485,6 +1494,13 @@ class FixIndentation {
             column += 9;  // importstr
             Indent new_indent = newIndent(open_fodder(ast->file), indent, column + 1);
             expr(ast->file, new_indent, true);
+
+        } else if (auto *ast = dynamic_cast<InSuper*>(ast_)) {
+            expr(ast->element, indent, space_before);
+            fill(ast->inFodder, true, true, indent.lineUp);
+            column += 2;  // in
+            fill(ast->superFodder, true, true, indent.lineUp);
+            column += 5;  // super
 
         } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
             expr(ast->target, indent, space_before);

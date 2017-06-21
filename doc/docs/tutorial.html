@@ -82,10 +82,10 @@ object).</p>
 <h3 id="arith_cond">Arithmetic and Conditionals</h3>
 
 <p>Jsonnet has constructs for manipulating data.  There are the usual arithmetic operators on
-numbers (double precision floating point), booleans, and strings.  The + operator also concatenates
-arrays and strings.  On objects, it fuses the two objects preferring the right hand side when fields
-conflict.  The <code>%</code> operator is compatible with Python's <code>%</code> operator and is
-used for string formatting.</p>
+numbers (double precision floating point), booleans, and strings.  The <code>+</code> operator also
+concatenates arrays and strings.  On objects, it fuses the two objects preferring the right hand
+side when fields conflict.  The <code>%</code> operator is compatible with Python's <code>%</code>
+operator and is used for string formatting.</p>
 
 <p>There is an <code>if</code> construct for conditional code.  Since Jsonnet is an expression
 language, the conditional behaves more like the ternary "?:" operator in C, or the "a if b else c"
@@ -144,8 +144,8 @@ also computed as 4/3 instead of being given as 1.3333...</p>
 
 <p>After the +, object comprehension is used to create two more cocktails.  In this case, the prefix
 in front of "Screwdriver" and the kind of fruit juice is what differs each time.  Note also the use
-of <code>null</code>, which is a special value that we have inherited from JSON.  The + fuses the two objects
-together to produce a single record for the "cocktails" field. </p>
+of <code>null</code>, which is a special value that we have inherited from JSON.  The <code>+</code>
+fuses the two objects together to produce a single record for the "cocktails" field. </p>
 
 <table>
 <tr>
@@ -338,9 +338,10 @@ brace, so in fact this same simplification could have also been made in all of t
 utilizing the object concatenation operator <code>+</code>.  The second syntax sugar is the
 
 <code>f +: e</code> operator, which is a little like the += operator from other languages.  Its
-behavior is the same as saying <code>f: super.f + e</code>.  This works not just for <code>+</code>
-when used for inheritance, but also for string concatenation, list concatenation, and arithmetic
-addition, so it could also have been used in the previous example to add the egg white.</p>
+behavior is the same as saying <code>f: if "f" in super then super.f + e else e</code>.  This works
+not just for <code>+</code> when used for inheritance, but also for string concatenation, list
+concatenation, and arithmetic addition, so it could also have been used in the previous example to
+add the egg white.</p>
 
 <table>
 <tr>
