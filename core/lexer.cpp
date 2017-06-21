@@ -459,7 +459,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             data = lex_number(c, filename, begin);
             break;
 
-            // String literals.
+            // UString literals.
             case '"': {
                 c++;
                 for (; ; ++c) {
@@ -485,7 +485,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             }
             break;
 
-            // String literals.
+            // UString literals.
             case '\'': {
                 c++;
                 for (; ; ++c) {

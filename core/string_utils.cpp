@@ -19,18 +19,18 @@ limitations under the License.
 #include "string_utils.h"
 #include "static_error.h"
 
-String jsonnet_string_unparse(const String &str, bool single)
+UString jsonnet_string_unparse(const UString &str, bool single)
 {
-    StringStream ss;
+    UStringStream ss;
     ss << (single ? U'\'' : U'\"');
     ss << jsonnet_string_escape(str, single);
     ss << (single ? U'\'' : U'\"');
     return ss.str();
 }
 
-String jsonnet_string_escape(const String &str, bool single)
+UString jsonnet_string_escape(const UString &str, bool single)
 {
-    StringStream ss;
+    UStringStream ss;
     for (std::size_t i=0 ; i<str.length() ; ++i) {
         char32_t c = str[i];
         switch (c) {
@@ -61,9 +61,9 @@ String jsonnet_string_escape(const String &str, bool single)
 }
 
 
-String jsonnet_string_unescape(const LocationRange &loc, const String &s)
+UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
 {
-    String r;
+    UString r;
     const char32_t *s_ptr = s.c_str();
     for (const char32_t *c = s_ptr; *c != U'\0' ; ++c) {
         switch (*c) {

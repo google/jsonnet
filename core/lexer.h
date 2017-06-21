@@ -144,7 +144,7 @@ struct Token {
      */
     std::string stringBlockTermIndent;
 
-    String data32(void) { return decode_utf8(data); }
+    UString data32(void) { return decode_utf8(data); }
 
     LocationRange location;
 

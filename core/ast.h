@@ -61,8 +61,8 @@ enum ASTType {
 
 /** Represents a variable / parameter / field name. */
 struct Identifier {
-    String name;
-    Identifier(const String &name)
+    UString name;
+    Identifier(const UString &name)
       : name(name)
     { }
 };
@@ -472,12 +472,12 @@ struct LiteralNumber : public AST {
 
 /** Represents JSON strings. */
 struct LiteralString : public AST {
-    String value;
+    UString value;
     enum TokenKind { SINGLE, DOUBLE, BLOCK, VERBATIM_SINGLE, VERBATIM_DOUBLE };
     TokenKind tokenKind;
     std::string blockIndent;  // Only contains ' ' and '\t'.
     std::string blockTermIndent;  // Only contains ' ' and '\t'.
-    LiteralString(const LocationRange &lr, const Fodder &open_fodder, const String &value,
+    LiteralString(const LocationRange &lr, const Fodder &open_fodder, const UString &value,
                   TokenKind token_kind, const std::string &block_indent,
                   const std::string &block_term_indent)
       : AST(lr, AST_LITERAL_STRING, open_fodder), value(value), tokenKind(token_kind),
@@ -661,7 +661,8 @@ struct ObjectComprehensionSimple : public AST {
     AST *array;
     ObjectComprehensionSimple(const LocationRange &lr, AST *field, AST *value,
                               const Identifier *id, AST *array)
-      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}), field(field), value(value), id(id), array(array)
+      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}), field(field), value(value), id(id),
+        array(array)
     { }
 };
 
@@ -741,7 +742,7 @@ struct Var : public AST {
 /** Allocates ASTs on demand, frees them in its destructor.
  */
 class Allocator {
-    std::map<String, const Identifier*> internedIdentifiers;
+    std::map<UString, const Identifier*> internedIdentifiers;
     ASTs allocated;
     public:
     template <class T, class... Args> T* make(Args&&... args)
@@ -760,7 +761,7 @@ class Allocator {
      *
      * The location used in the Identifier AST is that of the first one parsed.
      */
-    const Identifier *makeIdentifier(const String &name)
+    const Identifier *makeIdentifier(const UString &name)
     {
         auto it = internedIdentifiers.find(name);
         if (it != internedIdentifiers.end()) {

@@ -119,25 +119,25 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
 }
 
 /** A string class capable of holding unicode codepoints. */
-typedef std::basic_string<char32_t> String;
+typedef std::basic_string<char32_t> UString;
 
   
-static inline void encode_utf8(const String &s, std::string &r)
+static inline void encode_utf8(const UString &s, std::string &r)
 {
     for (char32_t cp : s)
         encode_utf8(cp, r);
 }
 
-static inline std::string encode_utf8(const String &s)
+static inline std::string encode_utf8(const UString &s)
 {
     std::string r;
     encode_utf8(s, r);
     return r;
 }
 
-static inline String decode_utf8(const std::string &s)
+static inline UString decode_utf8(const std::string &s)
 {
-    String r;
+    UString r;
     for (size_t i = 0; i < s.length(); ++i) 
         r.push_back(decode_utf8(s, i));
     return r;
@@ -146,13 +146,13 @@ static inline String decode_utf8(const std::string &s)
 /** A stringstream-like class capable of holding unicode codepoints. 
  * The C++ standard does not support std::basic_stringstream<char32_t.
  */
-class StringStream {
-    String buf;
+class UStringStream {
+    UString buf;
     public:
-    StringStream &operator << (const String &s) { buf.append(s); return *this; }
-    StringStream &operator << (const char32_t *s) { buf.append(s); return *this; }
-    StringStream &operator << (char32_t c) { buf.push_back(c); return *this; }
-    template<class T> StringStream &operator << (T c)
+    UStringStream &operator << (const UString &s) { buf.append(s); return *this; }
+    UStringStream &operator << (const char32_t *s) { buf.append(s); return *this; }
+    UStringStream &operator << (char32_t c) { buf.push_back(c); return *this; }
+    template<class T> UStringStream &operator << (T c)
     {
         std::stringstream ss;
         ss << c;
@@ -160,7 +160,7 @@ class StringStream {
             buf.push_back(char32_t(c));
         return *this;
     }
-    String str() { return buf; }
+    UString str() { return buf; }
 };
 
 #endif  // JSONNET_UNICODE_H

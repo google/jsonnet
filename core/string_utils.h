@@ -20,12 +20,12 @@ limitations under the License.
 #include "lexer.h"
 
 /** Unparse the string. */
-String jsonnet_string_unparse(const String &str, bool single);
+UString jsonnet_string_unparse(const UString &str, bool single);
 
 /** Escape special characters. */
-String jsonnet_string_escape(const String &str, bool single);
+UString jsonnet_string_escape(const UString &str, bool single);
 
 /** Resolve escape chracters in the string. */
-String jsonnet_string_unescape(const LocationRange &loc, const String &s);
+UString jsonnet_string_unescape(const LocationRange &loc, const UString &s);
 
 #endif
