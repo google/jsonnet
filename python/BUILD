@@ -1,23 +1,26 @@
-cc_binary(
-    name = "_jsonnet.so",
-    srcs = ["_jsonnet.c"],
-    linkshared = 1,
-    deps = [
-        "//core:libjsonnet",
-        "@default_python//:headers",
-    ],
-)
+# TODO(dcunnin): Re-enable the following by fixing this error:
+# ERROR: /home/dcunnin/jsonnet/python/BUILD:1:1: no such package '@default_python//': Failed to locate Python headers:
 
-py_library(
-    name = "_jsonnet",
-    data = [":_jsonnet.so"],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-)
+# cc_binary(
+#     name = "_jsonnet.so",
+#     srcs = ["_jsonnet.c"],
+#     linkshared = 1,
+#     deps = [
+#         "//core:libjsonnet",
+#         "@default_python//:headers",
+#     ],
+# )
 
-py_test(
-    name = "_jsonnet_test",
-    srcs = ["_jsonnet_test.py"],
-    data = ["test.jsonnet"],
-    deps = [":_jsonnet"],
-)
+# py_library(
+#     name = "_jsonnet",
+#     data = [":_jsonnet.so"],
+#     imports = ["."],
+#     visibility = ["//visibility:public"],
+# )
+
+# py_test(
+#     name = "_jsonnet_test",
+#     srcs = ["_jsonnet_test.py"],
+#     data = ["test.jsonnet"],
+#     deps = [":_jsonnet"],
+# )
