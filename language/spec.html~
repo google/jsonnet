@@ -951,7 +951,7 @@ desugar_{field}([e] \mathrel{+h} e'), binds, b) = \\
 \hspace{10mm}
 \textrm{let } e'' = e[\texttt{\$outerself} / \self, \texttt{\$outersuper} / \super] \\
 \hspace{10mm}
-\textrm{let } e''' = \if{e'' in \super}{\super[e''] + {e'}}{e'} \\
+\textrm{let } e''' = \if{e''\mathrel{\texttt{in}} \super}{\super[e''] + {e'}}{e'} \\
 \hspace{10mm}
 \textrm{in } desugar_{field}([e] \mathrel{h} e''', binds, b)
 \] </div>
