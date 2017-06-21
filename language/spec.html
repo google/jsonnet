@@ -37,6 +37,10 @@ div.desugar-rule {
     font-size:75%;
 }
 
+div.desugar-rule-group {
+    padding-bottom: 6px;
+}
+
 div.sequent-rule {
     margin:10px;
     float:left;
@@ -49,13 +53,6 @@ div.rules {
     width:100%
 }
 </style>
-
-<script>
-MathJax.Hub.Config({
-    jax: ["input/TeX","output/HTML-CSS"],
-    displayAlign: "left"
-});
-</script>
 
 <div style="display:none">
 \[
@@ -99,6 +96,8 @@ href="http://en.wikipedia.org/wiki/Type_systems">type systems</a> and <a
 href="http://en.wikipedia.org/wiki/Operational_semantics">big step operational semantics</a>.  If
 that's not your cup of tea, then see the more discussive description of Jsonnet behavior in the <a
 href="/docs/tutorial.html">tutorial</a>.</p>
+
+
 
 <h2 id="lexing">Lexing</h2>
 
@@ -336,6 +335,10 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>error</code>
 <i>expr</i>
 
+<!-- super in e -->
+</td></tr> <tr><td></td><td> | </td><td>
+<code>super</code> <code>in</code> <i>expr</i>
+
 </td></tr>
 </table>
 
@@ -503,6 +506,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>&gt;=</code> |
 <code>==</code> |
 <code>!=</code> |
+<code>in</code> |
 <code>&amp;</code> |
 <code>^</code> |
 <code>|</code> |
@@ -518,6 +522,8 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>~</code> 
 </td></tr>
 </table>
+
+
 
 <h2 id="associativity_precedence">Associativity and Operator Precedence</h2>
 
@@ -540,7 +546,7 @@ remaining ambiguities are resolved according to the following order of precedenc
 &nbsp;&nbsp;(these, and the remainder below, are binary operators)</li>
 <li><code>+</code> <code>-</code></li>
 <li><code>&lt;&lt;</code> <code>&gt;&gt;</code></li>
-<li><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></li>
+<li><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>in</code></li>
 <li><code>==</code> <code>!=</code></li>
 <li><code>&amp;</code></li>
 <li><code>^</code></li>
@@ -548,6 +554,8 @@ remaining ambiguities are resolved according to the following order of precedenc
 <li><code>&amp;&amp;</code></li>
 <li><code>||</code></li>
 </ol>
+
+
 
 <h2 id="core">Core Language Subset</h2>
 
@@ -557,13 +565,15 @@ abstract syntax to the core syntax.  Both the static checking rules and the oper
 are defined at the level of the core language, so it is possible to implement the desugaring in the
 parser.</p>
 
+
 <h3 id="core_syntax">Core Syntax</h3>
 
 <p>The core language has the following simplifications:</p>
 
 <ul>
 <li>The set of identifiers now includes <code>$</code>, which is no-longer a special keyword.</li>
-<li>The follow binary operators are removed: <code>!=</code>, <code>==</code>, <code>%</code>.</li>
+<li>The following binary operators are removed: <code>!=</code> <code>==</code> 
+    <code>%</code> <code>in</code></li>
 <li>Array slices <code>[::]</code> are removed.</li>
 <li>Array and object comprehensions are replaced with a simple object comprehension construct.</li>
 <li>Expression-level asserts are removed.</li>
@@ -694,6 +704,7 @@ transparency is maintained.</p>
 </td></tr>
 </table>
 
+
 <h3 id="desugaring">Desugaring</h3>
 
 <p>Desugaring removes constructs that are not in the core language by replacing them with constructs
@@ -709,10 +720,15 @@ with the rest of the core language constructs.</p>
 content of <a href="https://github.com/google/jsonnet/blob/master/stdlib/std.jsonnet">
 <tt>std.jsonnet</tt></a>.</p>
 
+<div class="desugar-rule-group">
+
 <div class="desugar-rule"> \[
-desugar(e) = \\
-\hspace{4mm} desugar_{expr}(\local{\texttt{std} = e_{std}}{e}, false)
+desugar(e) =  desugar_{expr}(\local{\texttt{std} = e_{std}}{e}, false)
 \] </div>
+
+</div>
+
+<div class="desugar-rule-group">
 
 <p><i>desugar<sub>expr</sub></i>: (Expr × Boolean) → Core:  This desugars an expression.  The second
 parameter of the function tracks whether we are within an object.</p>
@@ -721,17 +737,17 @@ parameter of the function tracks whether we are within an object.</p>
 desugar_{expr}(\{
     \objlocal{bind_1} \ldots \objlocal{bind_n}, assert_1 \ldots assert_m, field_1 \ldots field_p
 \}, b) = \\
-\hspace{4mm}
+\hspace{10mm}
 \textrm{let }binds = \left\{\begin{array}{ll}
 bind_1 \ldots bind_n &amp; \textrm{if }b \\
 bind_1 \ldots bind_n, \objlocal{$ = \self} &amp; \textrm{otherwise} \\
 \end{array}\right. \\
-\hspace{4mm}
+\hspace{10mm}
 \textrm{let } obj = \{ \\
-\hspace{8mm} desugar_{assert}(assert_1, binds) \ldots desugar_{assert}(assert_m, binds), \\
-\hspace{8mm} desugar_{field}(field_1, binds) \ldots desugar_{field}(field_p, binds, b) \\
-\hspace{4mm} \} \\
-\textrm{in } \left\{\begin{array}{ll}
+\hspace{20mm} desugar_{assert}(assert_1, binds) \ldots desugar_{assert}(assert_m, binds), \\
+\hspace{20mm} desugar_{field}(field_1, binds) \ldots desugar_{field}(field_p, binds, b) \\
+\hspace{10mm} \} \\
+\hspace{10mm} \textrm{in } \left\{\begin{array}{ll}
 \local{\texttt{\$outerself} = \self, \texttt{\$outersuper} = \super} {obj} &amp; \textrm{if }b \\
 obj &amp; \textrm{otherwise} \\
 \end{array}\right. \\
@@ -745,18 +761,18 @@ desugar_{expr}(\object{
 forspec\ compspec
 }, b) = \\
 
-\hspace{4mm} \textrm{Let } arr \textrm{ fresh and } x_1 \ldots x_n \textrm{ be the sequence of
+\hspace{10mm} \textrm{Let } arr \textrm{ fresh and } x_1 \ldots x_n \textrm{ be the sequence of
 variables defined in }forspec\ compspec \\
 
-\hspace{4mm} \object{ \\
-\hspace{8mm} [desugar_{expr}(\local{x_1=arr[1] \ldots x_n=arr[n]}{e_f}, b)]: \\
-\hspace{12mm} desugar_{expr}(
+\hspace{10mm} \object{ \\
+\hspace{20mm} [desugar_{expr}(\local{x_1=arr[1] \ldots x_n=arr[n]}{e_f}, b)]: \\
+\hspace{30mm} desugar_{expr}(
     \local{x_1=arr[1] \ldots x_n=arr[n]}{
         \local{bind_1 \ldots bind_n}{e_{body}}
     }, true) \\
-\hspace{8mm} \textrm{ for } arr \textrm{ in }
+\hspace{20mm} \textrm{ for } arr \textrm{ in }
 desugar_{expr}([ [x_1 \ldots x_n] forspec\ compspec, b): \\
-\hspace{4mm}}
+\hspace{10mm}}
 \] </div>
 
 <div class="desugar-rule"> \[
@@ -858,6 +874,20 @@ desugar_{expr}(e \mathop{==} e', b) = desugar_{expr}(\texttt{std.equals}(e, e'),
 desugar_{expr}(e \mathop{\%} e', b) = desugar_{expr}(\texttt{std.mod}(e, e'), b)
 \] </div>
 
+<div class="desugar-rule"> \[
+desugar_{expr}(e \mathop{\texttt{in}} e', b)
+= desugar_{expr}(\texttt{std.objectHasEx}(e', e, \texttt{true}), b)
+\] </div>
+
+<div class="desugar-rule"> \[
+desugar_{expr}(e \mathop{\texttt{in}} \texttt{super}, b)
+= desugar_{expr}(\texttt{std.objectHasEx}(\texttt{super}, e, \texttt{true}), b)
+\] </div>
+
+</div>
+
+<div class="desugar-rule-group">
+
 
 <p><i>desugar<sub>assert</sub></i>: (Field × Boolean) → Field.  This desugars object assertions.</p>
 
@@ -870,40 +900,44 @@ desugar_{assert}(\assert e : e'), binds) =
 \assert{desugar_{expr}(\local{binds}{\if{e}{\null}{\error{e'}}}, \true)}
 \] </div>
 
+</div>
 
-<p><i>desugar<sub>field</sub></i>: (Field × Boolean) → Field.  This desugars object fields. 
-Recall that <i>h</i> ranges over <code>:</code>, <code>::</code>,
-<code>:::</code>.</p>
+<div class="desugar-rule-group">
+
+<p><i>desugar<sub>field</sub></i>: (Field × Boolean) → Field.  This desugars object fields.  Recall
+that <i>h</i> ranges over <code>:</code>, <code>::</code>, <code>:::</code>.  The boolean records
+whether the object containing this field is itself in another object.  The notation
+<i>string(id)</i> means converting the identifier token to a string literal.</p>
 
 <div class="desugar-rule"> \[
-desugar_{field}(id \mathrel{h} e), binds, \_) =
-id \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
+desugar_{field}(id \mathrel{h} e), binds, b) =
+desugar_{field}([string(id)] \mathrel{h} e), binds, b)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(id \mathrel{+h} e), binds, \_) =
-id \mathrel{h} desugar_{expr}(\super.id + \local{binds}{e}, \true)
+desugar_{field}(id \mathrel{+h} e), binds, b) =
+desugar_{field}([string(id)] \mathrel{+h} e), binds, b)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(id(params) \mathrel{h} e), binds, \_) =
-id \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
+desugar_{field}(id(params) \mathrel{h} e), binds, b) =
+desugar_{field}([string(id)](params) \mathrel{h} e), binds, b)
 \] </div>
 
 
 <div class="desugar-rule"> \[
-desugar_{field}(string \mathrel{h} e), binds, \_) =
-string \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
+desugar_{field}(string \mathrel{h} e), binds, b) =
+desugar_{field}([string] \mathrel{h} e), binds, b) 
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(string \mathrel{+h} e), binds, \_) =
-string \mathrel{h} desugar_{expr}(\super[string] + \local{binds}{e}, \true)
+desugar_{field}(string \mathrel{+h} e), binds, b) =
+desugar_{field}([string] \mathrel{+h} e), binds, b)
 \] </div>
 
 <div class="desugar-rule"> \[
-desugar_{field}(string(params) \mathrel{h} e), binds, \_) =
-string \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
+desugar_{field}(string(params) \mathrel{h} e), binds, b) =
+desugar_{field}([string](params) \mathrel{h} e), binds, b)
 \] </div>
 
 
@@ -914,17 +948,22 @@ desugar_{field}([e] \mathrel{h} e'), binds, b) =
 
 <div class="desugar-rule"> \[
 desugar_{field}([e] \mathrel{+h} e'), binds, b) = \\
-\hspace{4mm}
-[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(
-    \super[e[\texttt{\$outerself} / \self, \texttt{\$outersuper} / \super]] + \local{binds}{e'},          \true
-)
+\hspace{10mm}
+\textrm{let } e'' = e[\texttt{\$outerself} / \self, \texttt{\$outersuper} / \super] \\
+\hspace{10mm}
+\textrm{let } e''' = \if{e''\mathrel{\texttt{in}} \super}{\super[e''] + {e'}}{e'} \\
+\hspace{10mm}
+\textrm{in } desugar_{field}([e] \mathrel{h} e''', binds, b)
 \] </div>
 
 <div class="desugar-rule"> \[
 desugar_{field}([e](params) \mathrel{h} e'), binds, b) =
-[desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{\function{params}e}, \true)
+desugar_{field}([e] \mathrel{h} \function{params}{e'}, binds, b)
 \] </div>
 
+</div>
+
+<div class="desugar-rule-group">
 
 <p><i>desugar<sub>bind</sub></i>: (Field × Boolean) → Field.  This desugars local bindings.</p>
 
@@ -938,6 +977,9 @@ desugar_{bind}(id(params) \texttt{=} e, b) =
 id \texttt{=} desugar_{expr}(\function{params}e, b)
 \] </div>
 
+</div>
+
+<div class="desugar-rule-group">
 
 <p><i>desugar<sub>arrcomp</sub></i>: (Expr × CompSpec × Boolean) → Field.  This desugars array
 comprehensions.</p>
@@ -954,10 +996,10 @@ desugar_{expr}(\if{e'}{[e]}{[]}, b)
 
 <div class="desugar-rule"> \[
 desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e'\ compspec, b) = \\
-\hspace{4mm}\textrm{Let }arr, i\textrm{ fresh} \\
-\hspace{4mm}desugar_{expr}(
+\hspace{10mm}\textrm{Let }arr, i\textrm{ fresh} \\
+\hspace{10mm}desugar_{expr}(
     \local{arr = e'}{
-        \texttt{std.join}(\\\hspace{8mm}[], \texttt{std.makeArray}(
+        \texttt{std.join}(\\\hspace{20mm}[], \texttt{std.makeArray}(
             \texttt{std.length}(arr),
             \function{i}{\local{x = arr[i]}{[desugar_{arrcomp}(e, compspec, b)]}}
         ))
@@ -968,10 +1010,10 @@ desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e'\ compspec, b) = \\
 
 <div class="desugar-rule"> \[
 desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e', b) = \\
-\hspace{4mm}\textrm{Let }arr, i\textrm{ fresh} \\
-\hspace{4mm}desugar_{expr}(
+\hspace{10mm}\textrm{Let }arr, i\textrm{ fresh} \\
+\hspace{10mm}desugar_{expr}(
     \local{arr = e'}{
-        \texttt{std.join}(\\\hspace{8mm}[], \texttt{std.makeArray}(
+        \texttt{std.join}(\\\hspace{20mm}[], \texttt{std.makeArray}(
             \texttt{std.length}(arr), 
             \function{i}{\local{x = arr[i]}{[base]}}
         ))

@@ -12,6 +12,7 @@
     array: [1, 2, 3] + [4],
     obj: { a: 1, b: 2 } + { b: 3, c: 4 },
     equality: 1 == "1",
+    obj_member: "foo" in { foo: 1 },
     multiline_string: |||
         1
         2
