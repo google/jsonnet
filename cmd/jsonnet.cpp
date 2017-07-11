@@ -72,9 +72,15 @@ void version(std::ostream &o)
 void usage(std::ostream &o)
 {
     version(o);
-    o << "Typical Usage:\n";
-    o << "jsonnet [<cmd>] {<option>} <filename>\n";
-    o << "Where <cmd> is one of {eval, fmt} and defaults to eval.\n";
+    o << "\n";
+    o << "General commandline:\n";
+    o << "jsonnet [<cmd>] {<option>} { <filename> }\n";
+    o << "Note: <cmd> defaults to \"eval\"\n";
+    o << "\n";
+    o << "The eval command:\n";
+    o << "jsonnet eval {<option>} <filename>\n";
+    o << "Note: Only one filename is supported\n";
+    o << "\n";
     o << "Available eval options:\n";
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code\n";
@@ -95,7 +101,6 @@ void usage(std::ostream &o)
     o << "Provide a value as Jsonnet code:\n";
     o << "  --ext-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
     o << "  --ext-code-file <var>=<file> Read the code from the file\n";
-    o << "\n";
     o << "Available options for specifying values of 'top-level arguments':\n";
     o << "Provide the value as a string:\n";
     o << "  -A / --tla-str <var>[=<val>]     If <val> is omitted, get from environment var <var>\n";
@@ -104,14 +109,16 @@ void usage(std::ostream &o)
     o << "  --tla-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
     o << "  --tla-code-file <var>=<file> Read the code from the file\n";
     o << "\n";
+    o << "The fmt command:\n";
+    o << "jsonnet fmt {<option>} { <filename> }\n";
+    o << "Note: Some options do not support multiple filenames\n";
+    o << "\n";
     o << "Available fmt options:\n";
-    o << "jsonnet fmt {<option>} <filename>\n";
-    o << "and <option> can be:\n";
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code\n";
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
-    o << "  -i / --in-place         Update the Jsonnet file in place.  Same as -o <filename>\n";
-    o << "  --test                  Exit with failure if reformatting changed the file.\n";
+    o << "  -i / --in-place         Update the Jsonnet file(s) in place.\n";
+    o << "  --test                  Exit with failure if reformatting changed the file(s).\n";
     o << "  -n / --indent <n>       Number of spaces to indent by (default 0, means no change)\n";
     o << "  --max-blank-lines <n>   Max vertical spacing, 0 means no change (default 2)\n";
     o << "  --string-style <d|s|l>  Enforce double, single quotes or 'leave' (the default)\n";
@@ -152,7 +159,7 @@ enum Command {
 /** Class for representing configuration read from command line flags.  */
 struct JsonnetConfig {
     Command cmd;
-    std::string inputFile;
+    std::vector<std::string> inputFiles;
     std::string outputFile;
     bool filenameIsCode;
 
@@ -455,47 +462,70 @@ static bool process_args(int argc,
         return false;
     }
 
-    std::string filename = remaining_args[0];
-    if (remaining_args.size() > 1) {
-        std::cerr << "ERROR: Already specified " << want
-                  << " as \"" << filename << "\"\n"
-                  << std::endl;
-        usage(std::cerr);
-        return false;
+    bool multiple_files_allowed = config->cmd == FMT &&
+                                  (config->fmtTest || config->fmtInPlace);
+    if (!multiple_files_allowed) {
+        std::string filename = remaining_args[0];
+        if (remaining_args.size() > 1) {
+            std::cerr << "ERROR: Already specified " << want
+                      << " as \"" << filename << "\"\n"
+                      << std::endl;
+            usage(std::cerr);
+            return false;
+        }
     }
-    config->inputFile = filename;
+    config->inputFiles = remaining_args;
     return true;
 }
 
-/** Reads Jsonnet code from the input file or stdin into the input buffer. */
-static bool read_input(JsonnetConfig* config, std::string* input) {
-    if (config->filenameIsCode) {
-        *input = config->inputFile;
-        config->inputFile = "<cmdline>";
+/** Reads from the input file or stdin into the input buffer. */
+static bool read_input_content(std::string filename, std::string *input) {
+    // Input file "-" tells Jsonnet to read stdin.
+    if (filename == "-") {
+        input->assign(std::istreambuf_iterator<char>(std::cin),
+                      std::istreambuf_iterator<char>());
     } else {
-        // Input file "-" tell Jsonnet to read stdin.
-        if (config->inputFile == "-") {
-            config->inputFile = "<stdin>";
-            input->assign(std::istreambuf_iterator<char>(std::cin),
-                          std::istreambuf_iterator<char>());
-        } else {
-            std::ifstream f;
-            f.open(config->inputFile.c_str());
-            if (!f.good()) {
-                std::string msg = "Opening input file: " + config->inputFile;
-                perror(msg.c_str());
-                return false;
-            }
-            input->assign(std::istreambuf_iterator<char>(f),
-                          std::istreambuf_iterator<char>());
-            if (!f.good()) {
-                std::string msg = "Reading input file: " + config->inputFile;
-                perror(msg.c_str());
-                return false;
-            }
+        std::ifstream f;
+        f.open(filename);
+        if (!f.good()) {
+            std::string msg = "Opening input file: " + filename;
+            perror(msg.c_str());
+            return false;
+        }
+        input->assign(std::istreambuf_iterator<char>(f),
+                    std::istreambuf_iterator<char>());
+        if (!f.good()) {
+            std::string msg = "Reading input file: " + filename;
+            perror(msg.c_str());
+            return false;
         }
     }
     return true;
+}
+
+void change_special_filename(JsonnetConfig *config, std::string *filename) {
+    if (config->filenameIsCode) {
+        *filename = "<cmdline>";
+    } else if (*filename == "-") {
+        *filename = "<stdin>";
+    }
+}
+
+/** Gets Jsonnet code from any source into the input buffer and changes
+  * the filename if it's not an actual filename (e.g. "-"). */
+static bool read_input(JsonnetConfig* config, std::string *filename,
+                       std::string* input) {
+    bool ok;
+    if (config->filenameIsCode) {
+        *input = *filename;
+        ok = true;
+    } else {
+        ok = read_input_content(*filename, input);
+    }
+    // Let's change the filename to something we can show the user
+    // if it is not a real filename.
+    change_special_filename(config, filename);
+    return ok;
 }
 
 /** Writes output files for multiple file output */
@@ -618,32 +648,33 @@ int main(int argc, const char **argv)
             return EXIT_FAILURE;
         }
 
-        // Read input files.
-        std::string input;
-        if (!read_input(&config, &input)) {
-            jsonnet_destroy(vm);
-            return EXIT_FAILURE;
-        }
-
         // Evaluate input Jsonnet and handle any errors from Jsonnet VM.
         int error;
         char *output;
         switch (config.cmd) {
             case EVAL: {
+                assert(config.inputFiles.size() == 1);
+
+                // Read input file.
+                std::string input;
+                if (!read_input(&config, &config.inputFiles[0], &input)) {
+                    jsonnet_destroy(vm);
+                    return EXIT_FAILURE;
+                }
+
                 if (config.evalMulti) {
                     output = jsonnet_evaluate_snippet_multi(
-                        vm, config.inputFile.c_str(), input.c_str(), &error);
+                        vm, config.inputFiles[0].c_str(), input.c_str(), &error);
                 } else if (config.evalStream) {
                     output = jsonnet_evaluate_snippet_stream(
-                        vm, config.inputFile.c_str(), input.c_str(), &error);
+                        vm, config.inputFiles[0].c_str(), input.c_str(), &error);
                 } else {
                     output = jsonnet_evaluate_snippet(
-                        vm, config.inputFile.c_str(), input.c_str(), &error);
+                        vm, config.inputFiles[0].c_str(), input.c_str(), &error);
                 }
 
                 if (error) {
                     std::cerr << output;
-                    std::cerr.flush();
                     jsonnet_realloc(vm, output, 0);
                     jsonnet_destroy(vm);
                     return EXIT_FAILURE;
@@ -673,38 +704,76 @@ int main(int argc, const char **argv)
 
             case FMT: {
                 std::string output_file = config.outputFile;
-                if (config.fmtInPlace) {
-                    if (config.inputFile == "-") {
-                        std::cerr << "ERROR: Cannot use --in-place with stdin" << std::endl;
-                        jsonnet_destroy(vm);
-                        return EXIT_FAILURE;
+
+                if (config.fmtInPlace || config.fmtTest) {
+                    assert(config.inputFiles.size() >= 1);
+                    for (std::string &inputFile: config.inputFiles) {
+                        if (config.fmtInPlace) {
+                            output_file = inputFile;
+
+                            if (inputFile == "-") {
+                                std::cerr << "ERROR: Cannot use --in-place with stdin" << std::endl;
+                                jsonnet_destroy(vm);
+                                return EXIT_FAILURE;
+                            }
+                            if (config.filenameIsCode) {
+                                std::cerr << "ERROR: Cannot use --in-place with --exec" << std::endl;
+                                jsonnet_destroy(vm);
+                                return EXIT_FAILURE;
+                            }
+                        }
+
+                        std::string input;
+                        if (!read_input(&config, &inputFile, &input)) {
+                            jsonnet_destroy(vm);
+                            return EXIT_FAILURE;
+                        }
+
+                        output = jsonnet_fmt_snippet(vm, inputFile.c_str(), input.c_str(), &error);
+
+                        if (error) {
+                            std::cerr << output;
+                            jsonnet_realloc(vm, output, 0);
+                            jsonnet_destroy(vm);
+                            return EXIT_FAILURE;
+                        }
+
+                        if (config.fmtTest) {
+                            // Check the output matches the input.
+                            bool ok = output == input;
+                            jsonnet_realloc(vm, output, 0);
+                            if (!ok) {
+                                jsonnet_destroy(vm);
+                                return 2;
+                            }
+                        } else {
+                            // Write output Jsonnet.
+                            bool successful = write_output_file(output, output_file);
+                            jsonnet_realloc(vm, output, 0);
+                            if (!successful) {
+                                jsonnet_destroy(vm);
+                                return EXIT_FAILURE;
+                            }
+                        }
                     }
-                    if (config.filenameIsCode) {
-                        std::cerr << "ERROR: Cannot use --in-place with --exec" << std::endl;
-                        jsonnet_destroy(vm);
-                        return EXIT_FAILURE;
-                    }
-                    output_file = config.inputFile;
-                }
-
-                output = jsonnet_fmt_snippet(vm, config.inputFile.c_str(), input.c_str(), &error);
-
-                if (error) {
-                    std::cerr << output;
-                    std::cerr.flush();
-                    jsonnet_realloc(vm, output, 0);
-                    jsonnet_destroy(vm);
-                    return EXIT_FAILURE;
-                }
-
-                if (config.fmtTest) {
-                    // Check the output matches the input.
-                    bool ok = output == input;
-                    jsonnet_realloc(vm, output, 0);
-                    jsonnet_destroy(vm);
-                    return ok ? EXIT_SUCCESS : 2;
-
                 } else {
+                    assert(config.inputFiles.size() == 1);
+                    // Read input file.
+                    std::string input;
+                    if (!read_input(&config, &config.inputFiles[0], &input)) {
+                        jsonnet_destroy(vm);
+                        return EXIT_FAILURE;
+                    }
+
+                    output = jsonnet_fmt_snippet(vm, config.inputFiles[0].c_str(), input.c_str(), &error);
+
+                    if (error) {
+                        std::cerr << output;
+                        jsonnet_realloc(vm, output, 0);
+                        jsonnet_destroy(vm);
+                        return EXIT_FAILURE;
+                    }
+
                     // Write output Jsonnet.
                     bool successful = write_output_file(output, output_file);
                     jsonnet_realloc(vm, output, 0);
