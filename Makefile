@@ -127,7 +127,7 @@ libjsonnet.so: $(LIB_OBJ)
 libjsonnet++.so: $(LIB_CPP_OBJ)
 	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -o $@
 
-# Javascript build of C binding
+# JavaScript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_realloc", "_jsonnet_destroy"]'
 
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
