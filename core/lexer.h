@@ -99,7 +99,11 @@ static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
 {
     switch (f.kind) {
         case FodderElement::LINE_END:
-        o << "END(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";
+        o << "END(" << f.blanks << ", " << f.indent;
+        if (!f.comment.empty()) {
+            o << ", " << f.comment[0];
+        }
+        o << ")";
         break;
         case FodderElement::INTERSTITIAL:
         o << "INT(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";

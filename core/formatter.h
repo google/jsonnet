@@ -30,6 +30,7 @@ struct FmtOpts {
     bool stripAllButComments;
     bool stripEverything;
     bool prettyFieldNames;
+    bool sortImports;
     FmtOpts(void)
       : stringStyle('l'),
         commentStyle('l'),
@@ -40,7 +41,8 @@ struct FmtOpts {
         stripComments(false),
         stripAllButComments(false),
         stripEverything(false),
-        prettyFieldNames(true)
+        prettyFieldNames(true),
+        sortImports(false)
     { }
 };
 

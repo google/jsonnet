@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <algorithm>
 #include <typeinfo>
 
 #include "formatter.h"
@@ -594,6 +595,27 @@ class Unparser {
  * The rest of this file contains transformations on the ASTs before unparsing. *
  ********************************************************************************/
 
+/** As a.push_back(elem) but preserves constraints.
+ *
+ * See concat_fodder below.
+ */
+static void fodder_push_back(Fodder &a, const FodderElement &elem)
+{
+    if (!a.empty() && a.back().kind != FodderElement::INTERSTITIAL &&
+        elem.kind == FodderElement::LINE_END) {
+        if (elem.comment.size() > 0) {
+            // The line end had a comment, so create a single line paragraph for it.
+            a.emplace_back(FodderElement::PARAGRAPH, elem.blanks, elem.indent, elem.comment);
+        } else {
+            // Merge it into the previous line end.
+            a.back().indent = elem.indent;
+            a.back().blanks += elem.blanks;
+        }
+    } else {
+        a.push_back(elem);
+    }
+}
+
 /** As a + b but preserves constraints.
  *
  * Namely, a LINE_END is not allowed to follow a PARAGRAPH or a LINE_END.
@@ -603,20 +625,8 @@ static Fodder concat_fodder(const Fodder &a, const Fodder &b)
     if (a.size() == 0) return b;
     if (b.size() == 0) return a;
     Fodder r = a;
-    // Add the first element of b somehow.
-    if (r[a.size() - 1].kind != FodderElement::INTERSTITIAL &&
-        b[0].kind == FodderElement::LINE_END) {
-        if (b[0].comment.size() > 0) {
-            // The line end had a comment, so create a single line paragraph for it.
-            r.emplace_back(FodderElement::PARAGRAPH, b[0].blanks, b[0].indent, b[0].comment);
-        } else {
-            // Merge it into the previous line end.
-            r[r.size() - 1].indent = b[0].indent;
-            r[r.size() - 1].blanks += b[0].blanks;
-        }
-    } else {
-        r.push_back(b[0]);
-    }
+    // Carefully add the first element of b.
+    fodder_push_back(r, b[0]);
     // Add the rest of b.
     for (unsigned i = 1; i < b.size() ; ++i) {
         r.push_back(b[i]);
@@ -1724,16 +1734,245 @@ class FixIndentation {
     }
 };
 
+/** Sort top-level imports.
+ *
+ * Top-level imports are `local x = import 'xxx.jsonnet` expressions
+ * that go before anything else in the file (more precisely all such imports
+ * that are either the root of AST or a direct child (body) of a top-level
+ * import.
+ *
+ * Grouping of imports is preserved. Groups of imports are separated by blank
+ * lines or lines containing comments.
+ */
+class SortImports {
+    /// Internal representation of an import
+    struct ImportElem {
+        ImportElem(UString key, Fodder afterFodder, Local::Bind *bind)
+          : key(key), afterFodder(afterFodder), bind(bind) { }
+        UString key;
+        Fodder afterFodder;
+        Local::Bind *bind;
+        bool operator<(const ImportElem &elem) const {
+            return key < elem.key;
+        }
+    };
 
+    typedef std::vector<ImportElem> ImportElems;
 
-// TODO(dcunnin): Add pass to alphabeticize top level imports.
+    Allocator &alloc;
 
+    public:
+    SortImports(Allocator &alloc) : alloc(alloc) { }
+
+    /// Get the value by which the imports should be sorted.
+    /// The imports are sorted by UTF-32 codepoints without case folding
+    UString sortingKey(Import *import)
+    {
+        return import->file->value;
+    }
+
+    /// Check if `local` expression is used for importing,
+    bool isGoodLocal(Local *local)
+    {
+        for (const auto &bind: local->binds) {
+            if (bind.body->type != AST_IMPORT) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    Local *goodLocalOrNull(AST *expr)
+    {
+        if (auto *local = dynamic_cast<Local*>(expr)) {
+            return isGoodLocal(local) ? local : nullptr;
+        } else {
+            return nullptr;
+        }
+    }
+
+    /** Split openFodder into what logically belongs to the previous AST node
+     * what belongs to the current AST node.
+     *
+     * Example:
+     * local x = import "xxx.jsonnet"; // Importing stuff here
+     *
+     * // blah blah
+     * {}
+     *
+     * In such case "// Importing  stuff here\n" part of the fodder belongs
+     * to the `local` and the rest to the {}.
+     */
+    std::pair<Fodder, Fodder> splitOpenFodder(AST *expr)
+    {
+        const Fodder &fodder = open_fodder(expr);
+        Fodder afterPrev, beforeThis;
+        bool inSecondPart = false;
+        for (const auto &fodderElem: fodder) {
+            if (inSecondPart) {
+                fodder_push_back(beforeThis, fodderElem);
+            } else {
+                afterPrev.push_back(fodderElem);
+            }
+            if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL) {
+                inSecondPart = true;
+                if (fodderElem.blanks > 0) {
+                    afterPrev.back().blanks = 0;
+                    assert(beforeThis.empty());
+                    beforeThis.emplace_back(
+                        FodderElement::Kind::LINE_END,
+                        fodderElem.blanks,
+                        fodderElem.indent,
+                        std::vector<std::string>()
+                    );
+                }
+            }
+        }
+        return {afterPrev, beforeThis};
+    }
+
+    void sortGroup(ImportElems &imports)
+    {
+        // We don't want to change behaviour in such case:
+        // local foo = "b.jsonnet";
+        // local foo = "a.jsonnet";
+        // So we don't change the order when there are shadowed variables.
+        if (!duplicatedVariables(imports)) {
+            std::sort(imports.begin(), imports.end());
+        }
+    }
+
+    ImportElems extractImportElems(Local *local, Fodder after)
+    {
+        ImportElems result;
+        for (auto &bind: local->binds) {
+            Import *import = dynamic_cast<Import*>(bind.body);
+            assert(import != nullptr);
+            result.emplace_back(sortingKey(import), after, &bind);
+            after = {FodderElement(FodderElement::Kind::LINE_END, 0, 0, {})};
+        }
+        return result;
+    }
+
+    AST *buildGroupAST(ImportElems &imports, AST *body, const Fodder &groupOpenFodder)
+    {
+        for (int i = imports.size() - 1; i >= 0; --i) {
+            auto &import = imports[i];
+            Fodder fodder;
+            if (i == 0) {
+                fodder = groupOpenFodder;
+            } else {
+                fodder = imports[i - 1].afterFodder;
+            }
+            Local::Binds binds({*import.bind});
+            auto *local = alloc.make<Local>(
+                LocationRange(),
+                fodder,
+                binds,
+                body
+            );
+            body = local;
+        }
+
+        return body;
+    }
+
+    bool duplicatedVariables(const ImportElems &elems)
+    {
+        std::vector<UString> idents;
+        for (const auto &elem: elems) {
+            idents.push_back(elem.bind->var->name);
+        }
+        return std::unique(idents.begin(), idents.end()) != idents.end();
+    }
+
+    /// Check if the import group ends after this local
+    bool groupEndsAfter(Local *local)
+    {
+        Local *next = goodLocalOrNull(local->body);
+        if (!next) {
+            return true;
+        }
+
+        bool newlineReached = false;
+        for (const auto &fodderElem: open_fodder(next)) {
+            if (newlineReached || fodderElem.blanks > 0) {
+                return true;
+            }
+            if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL) {
+                newlineReached = true;
+            }
+        }
+        return false;
+    }
+
+    void ensureCleanNewline(Fodder &fodder)
+    {
+        if (fodder.size() == 0 || fodder.back().kind == FodderElement::Kind::INTERSTITIAL)
+        {
+            fodder.push_back(FodderElement(FodderElement::Kind::LINE_END, 0, 0, {}));
+        }
+    }
+
+    AST *toplevelImport(Local *local, ImportElems &imports, const Fodder &groupOpenFodder)
+    {
+        assert(isGoodLocal(local));
+
+        Fodder adjacentCommentFodder, beforeNextFodder;
+        std::tie(adjacentCommentFodder, beforeNextFodder) = splitOpenFodder(local->body);
+
+        ensureCleanNewline(adjacentCommentFodder);
+
+        ImportElems newImports = extractImportElems(local, adjacentCommentFodder);
+        imports.insert(imports.end(), newImports.begin(), newImports.end());
+
+        if (groupEndsAfter(local)) {
+            sortGroup(imports);
+
+            Fodder afterGroup = imports.back().afterFodder;
+            ensureCleanNewline(beforeNextFodder);
+            auto nextOpenFodder = concat_fodder(
+                afterGroup,
+                beforeNextFodder
+            );
+
+            // Process the code after the current group:
+            AST *bodyAfterGroup;
+            Local *next = goodLocalOrNull(local->body);
+            if (next) {
+                // Another group of imports
+                ImportElems nextImports;
+                bodyAfterGroup = toplevelImport(next, nextImports, nextOpenFodder);
+            } else {
+                // Something else
+                bodyAfterGroup = local->body;
+                open_fodder(bodyAfterGroup) = nextOpenFodder;
+            }
+
+            return buildGroupAST(imports, bodyAfterGroup, groupOpenFodder);
+        } else {
+            assert(beforeNextFodder.empty());
+            return toplevelImport(dynamic_cast<Local*>(local->body), imports, groupOpenFodder);
+        }
+    }
+
+    void file(AST *&body)
+    {
+        ImportElems imports;
+        Local *local = goodLocalOrNull(body);
+        if (local) {
+            body = toplevelImport(local, imports, open_fodder(local));
+        }
+    }
+};
 
 std::string jsonnet_fmt(AST *ast, Fodder &final_fodder, const FmtOpts &opts)
 {
     Allocator alloc;
 
     // Passes to enforce style on the AST.
+    if (opts.sortImports)
+        SortImports(alloc).file(ast);
     remove_initial_newlines(ast);
     if (opts.maxBlankLines > 0)
         EnforceMaximumBlankLines(alloc, opts).file(ast, final_fodder);

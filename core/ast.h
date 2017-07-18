@@ -60,6 +60,101 @@ enum ASTType {
     AST_VAR
 };
 
+static inline std::string ASTTypeToString(ASTType type) {
+    switch(type) {
+        case AST_APPLY:
+        return "AST_APPLY";
+        break;
+        case AST_ARRAY:
+        return "AST_ARRAY";
+        break;
+        case AST_ARRAY_COMPREHENSION:
+        return "AST_ARRAY_COMPREHENSION";
+        break;
+        case AST_ARRAY_COMPREHENSION_SIMPLE:
+        return "AST_ARRAY_COMPREHENSION_SIMPLE";
+        break;
+        case AST_ASSERT:
+        return "AST_ASSERT";
+        break;
+        case AST_BINARY:
+        return "AST_BINARY";
+        break;
+        case AST_BUILTIN_FUNCTION:
+        return "AST_BUILTIN_FUNCTION";
+        break;
+        case AST_CONDITIONAL:
+        return "AST_CONDITIONAL";
+        break;
+        case AST_DESUGARED_OBJECT:
+        return "AST_DESUGARED_OBJECT";
+        break;
+        case AST_DOLLAR:
+        return "AST_DOLLAR";
+        break;
+        case AST_ERROR:
+        return "AST_ERROR";
+        break;
+        case AST_FUNCTION:
+        return "AST_FUNCTION";
+        break;
+        case AST_IMPORT:
+        return "AST_IMPORT";
+        break;
+        case AST_IMPORTSTR:
+        return "AST_IMPORTSTR";
+        break;
+        case AST_INDEX:
+        return "AST_INDEX";
+        break;
+        case AST_IN_SUPER:
+        return "AST_IN_SUPER";
+        break;
+        case AST_LITERAL_BOOLEAN:
+        return "AST_LITERAL_BOOLEAN";
+        break;
+        case AST_LITERAL_NULL:
+        return "AST_LITERAL_NULL";
+        break;
+        case AST_LITERAL_NUMBER:
+        return "AST_LITERAL_NUMBER";
+        break;
+        case AST_LITERAL_STRING:
+        return "AST_LITERAL_STRING";
+        break;
+        case AST_LOCAL:
+        return "AST_LOCAL";
+        break;
+        case AST_OBJECT:
+        return "AST_OBJECT";
+        break;
+        case AST_OBJECT_COMPREHENSION:
+        return "AST_OBJECT_COMPREHENSION";
+        break;
+        case AST_OBJECT_COMPREHENSION_SIMPLE:
+        return "AST_OBJECT_COMPREHENSION_SIMPLE";
+        break;
+        case AST_PARENS:
+        return "AST_PARENS";
+        break;
+        case AST_SELF:
+        return "AST_SELF";
+        break;
+        case AST_SUPER_INDEX:
+        return "AST_SUPER_INDEX";
+        break;
+        case AST_UNARY:
+        return "AST_UNARY";
+        break;
+        case AST_VAR:
+        return "AST_VAR";
+        break;
+        default:
+        assert(false && "Unknown AST type");
+        return "???";
+    }
+}
+
 /** Represents a variable / parameter / field name. */
 struct Identifier {
     UString name;
@@ -213,7 +308,7 @@ struct ArrayComprehension : public AST {
 };
 
 /** Represents an assert expression (not an object-level assert).
- * 
+ *
  * After parsing, message can be nullptr indicating that no message was specified. This AST is
  * elimiated by desugaring.
  */
@@ -320,7 +415,7 @@ struct BuiltinFunction : public AST {
 };
 
 /** Represents if then else.
- * 
+ *
  * After parsing, branchFalse can be nullptr indicating that no else branch was specified.  The
  * desugarer fills this in with a LiteralNull.
  */
@@ -408,7 +503,7 @@ struct Index : public AST {
       : AST(lr, AST_INDEX, open_fodder), target(target), dotFodder(dot_fodder), isSlice(false),
         index(nullptr), end(nullptr), step(nullptr), idFodder(id_fodder), id(id)
     { }
-    // Use this constructor for e[x:y:z] with nullptr for index, end or step if not present. 
+    // Use this constructor for e[x:y:z] with nullptr for index, end or step if not present.
     Index(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &dot_fodder,
           bool is_slice, AST *index, const Fodder &end_colon_fodder, AST *end,
           const Fodder &step_colon_fodder, AST *step, const Fodder &id_fodder)
@@ -497,7 +592,7 @@ struct ObjectField {
         // <fodder1> 'assert' <expr2>
         // [ <opFodder> : <expr3> ]
         // <commaFodder>
-        ASSERT, 
+        ASSERT,
 
         // <fodder1> id
         // [ <fodderL> '(' <params> <fodderR> ')' ]
@@ -650,7 +745,7 @@ struct ObjectComprehension : public AST {
     ObjectComprehension(const LocationRange &lr, const Fodder &open_fodder,
                         const ObjectFields &fields, bool trailing_comma,
                         const std::vector<ComprehensionSpec> &specs, const Fodder &close_fodder)
-                        
+
       : AST(lr, AST_OBJECT_COMPREHENSION, open_fodder), fields(fields),
         trailingComma(trailing_comma), specs(specs), closeFodder(close_fodder)
     { }

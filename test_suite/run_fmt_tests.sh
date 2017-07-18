@@ -38,7 +38,7 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
     fi
 
     EXPECTED_EXIT_CODE=0
-    JSONNET_CMD="$VALGRIND ../jsonnet fmt -n 4"
+    JSONNET_CMD="$VALGRIND ../jsonnet fmt -n 4 --sort-imports"
     test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 
