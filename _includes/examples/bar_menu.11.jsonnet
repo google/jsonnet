@@ -17,7 +17,7 @@
 
         [if brunch then "Bloody Mary"]: {
             ingredients: [
-                { kind: "Vokda", qty: 1.5 },
+                { kind: "Vodka", qty: 1.5 },
                 { kind: "Tomato Juice", qty: 3 },
                 { kind: "Lemon Juice", qty: 1.5 },
                 { kind: "Worcestershire Sauce", qty: 0.25 },
