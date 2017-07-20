@@ -17,17 +17,17 @@ limitations under the License.
 #ifndef JSONNET_LEXER_H
 #define JSONNET_LEXER_H
 
-#include <cstdlib>
 #include <cassert>
+#include <cstdlib>
 
 #include <iostream>
-#include <string>
 #include <list>
 #include <sstream>
+#include <string>
 #include <vector>
 
-#include "unicode.h"
 #include "static_error.h"
+#include "unicode.h"
 
 /** Whitespace and comments.
  *
@@ -60,8 +60,8 @@ struct FodderElement {
          * // and # style commes have exactly one line.  C-style comments can have more than one
          * line.
          *
-         * All lines of the comment are indented according to the indentation level of the previous new line
-         * / paragraph fodder.
+         * All lines of the comment are indented according to the indentation level of the previous
+         * new line / paragraph fodder.
          *
          * The PARAGRAPH fodder specifies the indentation level and vertical spacing before whatever
          * comes next.
@@ -87,7 +87,7 @@ struct FodderElement {
 
     FodderElement(Kind kind, unsigned blanks, unsigned indent,
                   const std::vector<std::string> &comment)
-      : kind(kind), blanks(blanks), indent(indent), comment(comment)
+        : kind(kind), blanks(blanks), indent(indent), comment(comment)
     {
         assert(kind != LINE_END || comment.size() <= 1);
         assert(kind != INTERSTITIAL || (blanks == 0 && indent == 0 && comment.size() == 1));
@@ -99,18 +99,18 @@ static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
 {
     switch (f.kind) {
         case FodderElement::LINE_END:
-        o << "END(" << f.blanks << ", " << f.indent;
-        if (!f.comment.empty()) {
-            o << ", " << f.comment[0];
-        }
-        o << ")";
-        break;
+            o << "END(" << f.blanks << ", " << f.indent;
+            if (!f.comment.empty()) {
+                o << ", " << f.comment[0];
+            }
+            o << ")";
+            break;
         case FodderElement::INTERSTITIAL:
-        o << "INT(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";
-        break;
+            o << "INT(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << ")";
+            break;
         case FodderElement::PARAGRAPH:
-        o << "PAR(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << "...)";
-        break;
+            o << "PAR(" << f.blanks << ", " << f.indent << ", " << f.comment[0] << "...)";
+            break;
     }
     return o;
 }
@@ -128,7 +128,8 @@ static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
  */
 typedef std::vector<FodderElement> Fodder;
 
-static inline bool fodder_has_clean_endline(const Fodder &fodder) {
+static inline bool fodder_has_clean_endline(const Fodder &fodder)
+{
     return !fodder.empty() && fodder.back().kind != FodderElement::INTERSTITIAL;
 }
 
@@ -161,13 +162,15 @@ static inline void fodder_push_back(Fodder &a, const FodderElement &elem)
  */
 static inline Fodder concat_fodder(const Fodder &a, const Fodder &b)
 {
-    if (a.size() == 0) return b;
-    if (b.size() == 0) return a;
+    if (a.size() == 0)
+        return b;
+    if (b.size() == 0)
+        return a;
     Fodder r = a;
     // Carefully add the first element of b.
     fodder_push_back(r, b[0]);
     // Add the rest of b.
-    for (unsigned i = 1; i < b.size() ; ++i) {
+    for (unsigned i = 1; i < b.size(); ++i) {
         r.push_back(b[i]);
     }
     return r;
@@ -197,12 +200,9 @@ static inline void ensureCleanNewline(Fodder &fodder)
 static inline int countNewlines(const FodderElement &elem)
 {
     switch (elem.kind) {
-        case FodderElement::INTERSTITIAL:
-            return 0;
-        case FodderElement::LINE_END:
-            return 1;
-        case FodderElement::PARAGRAPH:
-            return elem.comment.size() + elem.blanks;
+        case FodderElement::INTERSTITIAL: return 0;
+        case FodderElement::LINE_END: return 1;
+        case FodderElement::PARAGRAPH: return elem.comment.size() + elem.blanks;
     }
     std::cerr << "Unknown FodderElement kind" << std::endl;
     abort();
@@ -211,7 +211,7 @@ static inline int countNewlines(const FodderElement &elem)
 static inline int countNewlines(const Fodder &fodder)
 {
     int sum = 0;
-    for (const auto &elem: fodder) {
+    for (const auto &elem : fodder) {
         sum += countNewlines(elem);
     }
     return sum;
@@ -292,19 +292,26 @@ struct Token {
      */
     std::string stringBlockTermIndent;
 
-    UString data32(void) { return decode_utf8(data); }
+    UString data32(void)
+    {
+        return decode_utf8(data);
+    }
 
     LocationRange location;
 
     Token(Kind kind, const Fodder &fodder, const std::string &data,
           const std::string &string_block_indent, const std::string &string_block_term_indent,
           const LocationRange &location)
-      : kind(kind), fodder(fodder), data(data), stringBlockIndent(string_block_indent),
-        stringBlockTermIndent(string_block_term_indent), location(location)
-    { }
+        : kind(kind),
+          fodder(fodder),
+          data(data),
+          stringBlockIndent(string_block_indent),
+          stringBlockTermIndent(string_block_term_indent),
+          location(location)
+    {
+    }
 
-    Token(Kind kind, const std::string &data="")
-        : kind(kind), data(data) { }
+    Token(Kind kind, const std::string &data = "") : kind(kind), data(data) {}
 
     static const char *toString(Kind v)
     {
@@ -350,8 +357,8 @@ struct Token {
 
             case END_OF_FILE: return "end of file";
             default:
-            std::cerr << "INTERNAL ERROR: Unknown token kind: " << v << std::endl;
-            std::abort();
+                std::cerr << "INTERNAL ERROR: Unknown token kind: " << v << std::endl;
+                std::abort();
         }
     }
 };
@@ -365,8 +372,10 @@ typedef std::list<Token> Tokens;
 
 static inline bool operator==(const Token &a, const Token &b)
 {
-    if (a.kind != b.kind) return false;
-    if (a.data != b.data) return false;
+    if (a.kind != b.kind)
+        return false;
+    if (a.data != b.data)
+        return false;
     return true;
 }
 
@@ -381,7 +390,7 @@ static inline std::ostream &operator<<(std::ostream &o, const Token &v)
     if (v.data == "") {
         o << Token::toString(v.kind);
     } else if (v.kind == Token::OPERATOR) {
-            o << "\"" << v.data << "\"";
+        o << "\"" << v.data << "\"";
     } else {
         o << "(" << Token::toString(v.kind) << ", \"" << v.data << "\")";
     }

@@ -17,12 +17,12 @@ limitations under the License.
 #ifndef JSONNET_AST_H
 #define JSONNET_AST_H
 
-#include <cstdlib>
 #include <cassert>
+#include <cstdlib>
 
 #include <iostream>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "lexer.h"
@@ -60,8 +60,9 @@ enum ASTType {
     AST_VAR
 };
 
-static inline std::string ASTTypeToString(ASTType type) {
-    switch(type) {
+static inline std::string ASTTypeToString(ASTType type)
+{
+    switch (type) {
         case AST_APPLY: return "AST_APPLY";
         case AST_ARRAY: return "AST_ARRAY";
         case AST_ARRAY_COMPREHENSION: return "AST_ARRAY_COMPREHENSION";
@@ -92,16 +93,15 @@ static inline std::string ASTTypeToString(ASTType type) {
         case AST_UNARY: return "AST_UNARY";
         case AST_VAR: return "AST_VAR";
     }
-    std::cerr << "Invalid AST type" << "\n";
+    std::cerr << "Invalid AST type"
+              << "\n";
     abort();
 }
 
 /** Represents a variable / parameter / field name. */
 struct Identifier {
     UString name;
-    Identifier(const UString &name)
-      : name(name)
-    { }
+    Identifier(const UString &name) : name(name) {}
 };
 
 static inline std::ostream &operator<<(std::ostream &o, const Identifier *id)
@@ -112,7 +112,6 @@ static inline std::ostream &operator<<(std::ostream &o, const Identifier *id)
 
 typedef std::vector<const Identifier *> Identifiers;
 
-
 /** All AST nodes are subtypes of this class.
  */
 struct AST {
@@ -121,15 +120,13 @@ struct AST {
     Fodder openFodder;
     Identifiers freeVariables;
     AST(const LocationRange &location, ASTType type, const Fodder &open_fodder)
-      : location(location), type(type), openFodder(open_fodder)
+        : location(location), type(type), openFodder(open_fodder)
     {
     }
-    virtual ~AST(void)
-    {
-    }
+    virtual ~AST(void) {}
 };
 
-typedef std::vector<AST*> ASTs;
+typedef std::vector<AST *> ASTs;
 
 /** Either an arg in a function apply, or a param in a closure / other function definition.
  *
@@ -142,47 +139,51 @@ typedef std::vector<AST*> ASTs;
  * used when no argument is bound to the param.
  */
 struct ArgParam {
-    Fodder idFodder;  // Empty if no id.
+    Fodder idFodder;       // Empty if no id.
     const Identifier *id;  // nullptr if there isn't one
-    Fodder eqFodder; // Empty if no id or no expr.
-    AST *expr;  // nullptr if there wasn't one.
-    Fodder commaFodder;  // Before the comma (if there is a comma).
+    Fodder eqFodder;       // Empty if no id or no expr.
+    AST *expr;             // nullptr if there wasn't one.
+    Fodder commaFodder;    // Before the comma (if there is a comma).
     // Only has id
-    ArgParam (const Fodder &id_fodder, const Identifier *id, const Fodder &comma_fodder)
-      : idFodder(id_fodder), id(id), expr(nullptr), commaFodder(comma_fodder)
-    { }
+    ArgParam(const Fodder &id_fodder, const Identifier *id, const Fodder &comma_fodder)
+        : idFodder(id_fodder), id(id), expr(nullptr), commaFodder(comma_fodder)
+    {
+    }
     // Only has expr
-    ArgParam (AST *expr, const Fodder &comma_fodder)
-      : id(nullptr), expr(expr), commaFodder(comma_fodder)
-    { }
+    ArgParam(AST *expr, const Fodder &comma_fodder)
+        : id(nullptr), expr(expr), commaFodder(comma_fodder)
+    {
+    }
     // Has both id and expr
-    ArgParam (const Fodder &id_fodder, const Identifier *id, const Fodder &eq_fodder,
-              AST *expr, const Fodder &comma_fodder)
-      : idFodder(id_fodder), id(id), eqFodder(eq_fodder), expr(expr), commaFodder(comma_fodder)
-    { }
+    ArgParam(const Fodder &id_fodder, const Identifier *id, const Fodder &eq_fodder, AST *expr,
+             const Fodder &comma_fodder)
+        : idFodder(id_fodder), id(id), eqFodder(eq_fodder), expr(expr), commaFodder(comma_fodder)
+    {
+    }
 };
 
 typedef std::vector<ArgParam> ArgParams;
 
 /** Used in Object & Array Comprehensions. */
 struct ComprehensionSpec {
-    enum Kind {
-        FOR,
-        IF
-    };
+    enum Kind { FOR, IF };
     Kind kind;
     Fodder openFodder;
-    Fodder varFodder; // {} when kind != SPEC_FOR.
+    Fodder varFodder;       // {} when kind != SPEC_FOR.
     const Identifier *var;  // Null when kind != SPEC_FOR.
-    Fodder inFodder; // {} when kind != SPEC_FOR.
+    Fodder inFodder;        // {} when kind != SPEC_FOR.
     AST *expr;
     ComprehensionSpec(Kind kind, const Fodder &open_fodder, const Fodder &var_fodder,
                       const Identifier *var, const Fodder &in_fodder, AST *expr)
-      : kind(kind), openFodder(open_fodder), varFodder(var_fodder), var(var), inFodder(in_fodder),
-        expr(expr)
-    { }
+        : kind(kind),
+          openFodder(open_fodder),
+          varFodder(var_fodder),
+          var(var),
+          inFodder(in_fodder),
+          expr(expr)
+    {
+    }
 };
-
 
 /** Represents function calls. */
 struct Apply : public AST {
@@ -196,10 +197,16 @@ struct Apply : public AST {
     Apply(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &fodder_l,
           const ArgParams &args, bool trailing_comma, const Fodder &fodder_r,
           const Fodder &tailstrict_fodder, bool tailstrict)
-      : AST(lr, AST_APPLY, open_fodder), target(target), fodderL(fodder_l), args(args),
-        trailingComma(trailing_comma), fodderR(fodder_r), tailstrictFodder(tailstrict_fodder),
-        tailstrict(tailstrict)
-    { }
+        : AST(lr, AST_APPLY, open_fodder),
+          target(target),
+          fodderL(fodder_l),
+          args(args),
+          trailingComma(trailing_comma),
+          fodderR(fodder_r),
+          tailstrictFodder(tailstrict_fodder),
+          tailstrict(tailstrict)
+    {
+    }
 };
 
 /** Represents e { }.  Desugared to e + { }. */
@@ -207,8 +214,9 @@ struct ApplyBrace : public AST {
     AST *left;
     AST *right;  // This is always an object or object comprehension.
     ApplyBrace(const LocationRange &lr, const Fodder &open_fodder, AST *left, AST *right)
-      : AST(lr, AST_BINARY, open_fodder), left(left), right(right)
-    { }
+        : AST(lr, AST_BINARY, open_fodder), left(left), right(right)
+    {
+    }
 };
 
 /** Represents array constructors [1, 2, 3]. */
@@ -216,9 +224,7 @@ struct Array : public AST {
     struct Element {
         AST *expr;
         Fodder commaFodder;
-        Element(AST *expr, const Fodder &comma_fodder)
-          : expr(expr), commaFodder(comma_fodder)
-        { }
+        Element(AST *expr, const Fodder &comma_fodder) : expr(expr), commaFodder(comma_fodder) {}
     };
     typedef std::vector<Element> Elements;
     Elements elements;
@@ -226,14 +232,17 @@ struct Array : public AST {
     Fodder closeFodder;
     Array(const LocationRange &lr, const Fodder &open_fodder, const Elements &elements,
           bool trailing_comma, const Fodder &close_fodder)
-      : AST(lr, AST_ARRAY, open_fodder), elements(elements), trailingComma(trailing_comma),
-        closeFodder(close_fodder)
-    { }
+        : AST(lr, AST_ARRAY, open_fodder),
+          elements(elements),
+          trailingComma(trailing_comma),
+          closeFodder(close_fodder)
+    {
+    }
 };
 
 /** Represents array comprehensions (which are like Python list comprehensions). */
 struct ArrayComprehension : public AST {
-    AST* body;
+    AST *body;
     Fodder commaFodder;
     bool trailingComma;
     std::vector<ComprehensionSpec> specs;
@@ -241,8 +250,12 @@ struct ArrayComprehension : public AST {
     ArrayComprehension(const LocationRange &lr, const Fodder &open_fodder, AST *body,
                        const Fodder &comma_fodder, bool trailing_comma,
                        const std::vector<ComprehensionSpec> &specs, const Fodder &close_fodder)
-      : AST(lr, AST_ARRAY_COMPREHENSION, open_fodder), body(body), commaFodder(comma_fodder),
-        trailingComma(trailing_comma), specs(specs), closeFodder(close_fodder)
+        : AST(lr, AST_ARRAY_COMPREHENSION, open_fodder),
+          body(body),
+          commaFodder(comma_fodder),
+          trailingComma(trailing_comma),
+          specs(specs),
+          closeFodder(close_fodder)
     {
         assert(specs.size() > 0);
     }
@@ -261,9 +274,14 @@ struct Assert : public AST {
     AST *rest;
     Assert(const LocationRange &lr, const Fodder &open_fodder, AST *cond,
            const Fodder &colon_fodder, AST *message, const Fodder &semicolon_fodder, AST *rest)
-      : AST(lr, AST_ASSERT, open_fodder), cond(cond), colonFodder(colon_fodder),
-        message(message), semicolonFodder(semicolon_fodder), rest(rest)
-    { }
+        : AST(lr, AST_ASSERT, open_fodder),
+          cond(cond),
+          colonFodder(colon_fodder),
+          message(message),
+          semicolonFodder(semicolon_fodder),
+          rest(rest)
+    {
+    }
 };
 
 enum BinaryOp {
@@ -294,7 +312,7 @@ enum BinaryOp {
     BOP_OR
 };
 
-static inline std::string bop_string (BinaryOp bop)
+static inline std::string bop_string(BinaryOp bop)
 {
     switch (bop) {
         case BOP_MULT: return "*";
@@ -324,8 +342,8 @@ static inline std::string bop_string (BinaryOp bop)
         case BOP_OR: return "||";
 
         default:
-        std::cerr << "INTERNAL ERROR: Unrecognised binary operator: " << bop << std::endl;
-        std::abort();
+            std::cerr << "INTERNAL ERROR: Unrecognised binary operator: " << bop << std::endl;
+            std::abort();
     }
 }
 
@@ -337,8 +355,9 @@ struct Binary : public AST {
     AST *right;
     Binary(const LocationRange &lr, const Fodder &open_fodder, AST *left, const Fodder &op_fodder,
            BinaryOp op, AST *right)
-      : AST(lr, AST_BINARY, open_fodder), left(left), opFodder(op_fodder), op(op), right(right)
-    { }
+        : AST(lr, AST_BINARY, open_fodder), left(left), opFodder(op_fodder), op(op), right(right)
+    {
+    }
 };
 
 /** Represents built-in functions.
@@ -349,10 +368,10 @@ struct Binary : public AST {
 struct BuiltinFunction : public AST {
     std::string name;
     Identifiers params;
-    BuiltinFunction(const LocationRange &lr, const std::string &name,
-                    const Identifiers &params)
-      : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), name(name), params(params)
-    { }
+    BuiltinFunction(const LocationRange &lr, const std::string &name, const Identifiers &params)
+        : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), name(name), params(params)
+    {
+    }
 };
 
 /** Represents if then else.
@@ -369,24 +388,28 @@ struct Conditional : public AST {
     Conditional(const LocationRange &lr, const Fodder &open_fodder, AST *cond,
                 const Fodder &then_fodder, AST *branch_true, const Fodder &else_fodder,
                 AST *branch_false)
-      : AST(lr, AST_CONDITIONAL, open_fodder), cond(cond), thenFodder(then_fodder),
-        branchTrue(branch_true), elseFodder(else_fodder), branchFalse(branch_false)
-    { }
+        : AST(lr, AST_CONDITIONAL, open_fodder),
+          cond(cond),
+          thenFodder(then_fodder),
+          branchTrue(branch_true),
+          elseFodder(else_fodder),
+          branchFalse(branch_false)
+    {
+    }
 };
 
 /** Represents the $ keyword. */
 struct Dollar : public AST {
-    Dollar(const LocationRange &lr, const Fodder &open_fodder)
-      : AST(lr, AST_DOLLAR, open_fodder)
-    { }
+    Dollar(const LocationRange &lr, const Fodder &open_fodder) : AST(lr, AST_DOLLAR, open_fodder) {}
 };
 
 /** Represents error e. */
 struct Error : public AST {
     AST *expr;
     Error(const LocationRange &lr, const Fodder &open_fodder, AST *expr)
-      : AST(lr, AST_ERROR, open_fodder), expr(expr)
-    { }
+        : AST(lr, AST_ERROR, open_fodder), expr(expr)
+    {
+    }
 };
 
 /** Represents closures. */
@@ -399,10 +422,14 @@ struct Function : public AST {
     Function(const LocationRange &lr, const Fodder &open_fodder, const Fodder &paren_left_fodder,
              const ArgParams &params, bool trailing_comma, const Fodder &paren_right_fodder,
              AST *body)
-      : AST(lr, AST_FUNCTION, open_fodder), parenLeftFodder(paren_left_fodder),
-        params(params), trailingComma(trailing_comma), parenRightFodder(paren_right_fodder),
-        body(body)
-    { }
+        : AST(lr, AST_FUNCTION, open_fodder),
+          parenLeftFodder(paren_left_fodder),
+          params(params),
+          trailingComma(trailing_comma),
+          parenRightFodder(paren_right_fodder),
+          body(body)
+    {
+    }
 };
 
 struct LiteralString;
@@ -411,16 +438,18 @@ struct LiteralString;
 struct Import : public AST {
     LiteralString *file;
     Import(const LocationRange &lr, const Fodder &open_fodder, LiteralString *file)
-      : AST(lr, AST_IMPORT, open_fodder), file(file)
-    { }
+        : AST(lr, AST_IMPORT, open_fodder), file(file)
+    {
+    }
 };
 
 /** Represents importstr "file". */
 struct Importstr : public AST {
     LiteralString *file;
     Importstr(const LocationRange &lr, const Fodder &open_fodder, LiteralString *file)
-      : AST(lr, AST_IMPORTSTR, open_fodder), file(file)
-    { }
+        : AST(lr, AST_IMPORTSTR, open_fodder), file(file)
+    {
+    }
 };
 
 /** Represents both e[e] and the syntax sugar e.f.
@@ -441,17 +470,34 @@ struct Index : public AST {
     // Use this constructor for e.f
     Index(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &dot_fodder,
           const Fodder &id_fodder, const Identifier *id)
-      : AST(lr, AST_INDEX, open_fodder), target(target), dotFodder(dot_fodder), isSlice(false),
-        index(nullptr), end(nullptr), step(nullptr), idFodder(id_fodder), id(id)
-    { }
+        : AST(lr, AST_INDEX, open_fodder),
+          target(target),
+          dotFodder(dot_fodder),
+          isSlice(false),
+          index(nullptr),
+          end(nullptr),
+          step(nullptr),
+          idFodder(id_fodder),
+          id(id)
+    {
+    }
     // Use this constructor for e[x:y:z] with nullptr for index, end or step if not present.
     Index(const LocationRange &lr, const Fodder &open_fodder, AST *target, const Fodder &dot_fodder,
           bool is_slice, AST *index, const Fodder &end_colon_fodder, AST *end,
           const Fodder &step_colon_fodder, AST *step, const Fodder &id_fodder)
-      : AST(lr, AST_INDEX, open_fodder), target(target), dotFodder(dot_fodder), isSlice(is_slice),
-        index(index), endColonFodder(end_colon_fodder), end(end),
-        stepColonFodder(step_colon_fodder), step(step), idFodder(id_fodder), id(nullptr)
-    { }
+        : AST(lr, AST_INDEX, open_fodder),
+          target(target),
+          dotFodder(dot_fodder),
+          isSlice(is_slice),
+          index(index),
+          endColonFodder(end_colon_fodder),
+          end(end),
+          stepColonFodder(step_colon_fodder),
+          step(step),
+          idFodder(id_fodder),
+          id(nullptr)
+    {
+    }
 };
 
 /** Represents local x = e; e.  After desugaring, functionSugar is false. */
@@ -470,33 +516,43 @@ struct Local : public AST {
         Bind(const Fodder &var_fodder, const Identifier *var, const Fodder &op_fodder, AST *body,
              bool function_sugar, const Fodder &paren_left_fodder, const ArgParams &params,
              bool trailing_comma, const Fodder &paren_right_fodder, const Fodder &close_fodder)
-          : varFodder(var_fodder), var(var), opFodder(op_fodder), body(body),
-            functionSugar(function_sugar), parenLeftFodder(paren_left_fodder), params(params),
-            trailingComma(trailing_comma), parenRightFodder(paren_right_fodder),
-            closeFodder(close_fodder)
-        { }
+            : varFodder(var_fodder),
+              var(var),
+              opFodder(op_fodder),
+              body(body),
+              functionSugar(function_sugar),
+              parenLeftFodder(paren_left_fodder),
+              params(params),
+              trailingComma(trailing_comma),
+              parenRightFodder(paren_right_fodder),
+              closeFodder(close_fodder)
+        {
+        }
     };
     typedef std::vector<Bind> Binds;
     Binds binds;
     AST *body;
     Local(const LocationRange &lr, const Fodder &open_fodder, const Binds &binds, AST *body)
-      : AST(lr, AST_LOCAL, open_fodder), binds(binds), body(body)
-    { }
+        : AST(lr, AST_LOCAL, open_fodder), binds(binds), body(body)
+    {
+    }
 };
 
 /** Represents true and false. */
 struct LiteralBoolean : public AST {
     bool value;
     LiteralBoolean(const LocationRange &lr, const Fodder &open_fodder, bool value)
-      : AST(lr, AST_LITERAL_BOOLEAN, open_fodder), value(value)
-    { }
+        : AST(lr, AST_LITERAL_BOOLEAN, open_fodder), value(value)
+    {
+    }
 };
 
 /** Represents the null keyword. */
 struct LiteralNull : public AST {
     LiteralNull(const LocationRange &lr, const Fodder &open_fodder)
-      : AST(lr, AST_LITERAL_NULL, open_fodder)
-    { }
+        : AST(lr, AST_LITERAL_NULL, open_fodder)
+    {
+    }
 };
 
 /** Represents JSON numbers. */
@@ -504,9 +560,11 @@ struct LiteralNumber : public AST {
     double value;
     std::string originalString;
     LiteralNumber(const LocationRange &lr, const Fodder &open_fodder, const std::string &str)
-      : AST(lr, AST_LITERAL_NUMBER, open_fodder), value(strtod(str.c_str(), nullptr)),
-        originalString(str)
-    { }
+        : AST(lr, AST_LITERAL_NUMBER, open_fodder),
+          value(strtod(str.c_str(), nullptr)),
+          originalString(str)
+    {
+    }
 };
 
 /** Represents JSON strings. */
@@ -514,16 +572,19 @@ struct LiteralString : public AST {
     UString value;
     enum TokenKind { SINGLE, DOUBLE, BLOCK, VERBATIM_SINGLE, VERBATIM_DOUBLE };
     TokenKind tokenKind;
-    std::string blockIndent;  // Only contains ' ' and '\t'.
+    std::string blockIndent;      // Only contains ' ' and '\t'.
     std::string blockTermIndent;  // Only contains ' ' and '\t'.
     LiteralString(const LocationRange &lr, const Fodder &open_fodder, const UString &value,
                   TokenKind token_kind, const std::string &block_indent,
                   const std::string &block_term_indent)
-      : AST(lr, AST_LITERAL_STRING, open_fodder), value(value), tokenKind(token_kind),
-        blockIndent(block_indent), blockTermIndent(block_term_indent)
-    { }
+        : AST(lr, AST_LITERAL_STRING, open_fodder),
+          value(value),
+          tokenKind(token_kind),
+          blockIndent(block_indent),
+          blockTermIndent(block_term_indent)
+    {
+    }
 };
-
 
 struct ObjectField {
     // Depending on the kind of Jsonnet field, the fields of this C++ class are used for storing
@@ -563,32 +624,44 @@ struct ObjectField {
     // NOTE TO SELF: sort out fodder1-4, then modify desugarer (maybe) parser and unparser.
 
     enum Hide {
-        HIDDEN,  // f:: e
+        HIDDEN,   // f:: e
         INHERIT,  // f: e
         VISIBLE,  // f::: e
     };
     enum Kind kind;
     Fodder fodder1, fodder2, fodderL, fodderR;
-    enum Hide hide;  // (ignore if kind != FIELD_something
-    bool superSugar;  // +:  (ignore if kind != FIELD_something)
+    enum Hide hide;    // (ignore if kind != FIELD_something
+    bool superSugar;   // +:  (ignore if kind != FIELD_something)
     bool methodSugar;  // f(x, y, z): ...  (ignore if kind  == ASSERT)
-    AST *expr1;  // Not in scope of the object
+    AST *expr1;        // Not in scope of the object
     const Identifier *id;
-    ArgParams params;  // If methodSugar == true then holds the params.
+    ArgParams params;    // If methodSugar == true then holds the params.
     bool trailingComma;  // If methodSugar == true then remembers the trailing comma.
-    Fodder opFodder;  // Before the : or =
+    Fodder opFodder;     // Before the : or =
     AST *expr2, *expr3;  // In scope of the object (can see self).
     Fodder commaFodder;  // If this field is followed by a comma, this is its fodder.
 
-    ObjectField(
-        enum Kind kind, const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
-        const Fodder &fodder_r, enum Hide hide, bool super_sugar, bool method_sugar, AST *expr1,
-        const Identifier *id, const ArgParams &params, bool trailing_comma, const Fodder &op_fodder,
-        AST *expr2, AST *expr3, const Fodder &comma_fodder)
-        : kind(kind), fodder1(fodder1), fodder2(fodder2), fodderL(fodder_l), fodderR(fodder_r),
-          hide(hide), superSugar(super_sugar), methodSugar(method_sugar), expr1(expr1), id(id),
-          params(params), trailingComma(trailing_comma), opFodder(op_fodder), expr2(expr2),
-          expr3(expr3), commaFodder(comma_fodder)
+    ObjectField(enum Kind kind, const Fodder &fodder1, const Fodder &fodder2,
+                const Fodder &fodder_l, const Fodder &fodder_r, enum Hide hide, bool super_sugar,
+                bool method_sugar, AST *expr1, const Identifier *id, const ArgParams &params,
+                bool trailing_comma, const Fodder &op_fodder, AST *expr2, AST *expr3,
+                const Fodder &comma_fodder)
+        : kind(kind),
+          fodder1(fodder1),
+          fodder2(fodder2),
+          fodderL(fodder_l),
+          fodderR(fodder_r),
+          hide(hide),
+          superSugar(super_sugar),
+          methodSugar(method_sugar),
+          expr1(expr1),
+          id(id),
+          params(params),
+          trailingComma(trailing_comma),
+          opFodder(op_fodder),
+          expr2(expr2),
+          expr3(expr3),
+          commaFodder(comma_fodder)
     {
         // Enforce what is written in comments above.
         assert(kind != ASSERT || (hide == VISIBLE && !superSugar && !methodSugar));
@@ -599,38 +672,90 @@ struct ObjectField {
         assert(kind == ASSERT || expr3 == nullptr);
     }
     // For when we don't know if it's a function or not.
-    static ObjectField Local(
-        const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
-        const Fodder &fodder_r, bool method_sugar, const Identifier *id, const ArgParams &params,
-        bool trailing_comma, const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
+    static ObjectField Local(const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
+                             const Fodder &fodder_r, bool method_sugar, const Identifier *id,
+                             const ArgParams &params, bool trailing_comma, const Fodder &op_fodder,
+                             AST *body, const Fodder &comma_fodder)
     {
-        return ObjectField(
-            LOCAL, fodder1, fodder2, fodder_l, fodder_r, VISIBLE, false, method_sugar, nullptr, id,
-            params, trailing_comma, op_fodder, body, nullptr, comma_fodder);
+        return ObjectField(LOCAL,
+                           fodder1,
+                           fodder2,
+                           fodder_l,
+                           fodder_r,
+                           VISIBLE,
+                           false,
+                           method_sugar,
+                           nullptr,
+                           id,
+                           params,
+                           trailing_comma,
+                           op_fodder,
+                           body,
+                           nullptr,
+                           comma_fodder);
     }
-    static ObjectField Local(
-        const Fodder &fodder1, const Fodder &fodder2, const Identifier *id,
-        const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
+    static ObjectField Local(const Fodder &fodder1, const Fodder &fodder2, const Identifier *id,
+                             const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
     {
-        return ObjectField(
-            LOCAL, fodder1, fodder2, Fodder{}, Fodder{}, VISIBLE, false, false, nullptr, id,
-            ArgParams{}, false, op_fodder, body, nullptr, comma_fodder);
+        return ObjectField(LOCAL,
+                           fodder1,
+                           fodder2,
+                           Fodder{},
+                           Fodder{},
+                           VISIBLE,
+                           false,
+                           false,
+                           nullptr,
+                           id,
+                           ArgParams{},
+                           false,
+                           op_fodder,
+                           body,
+                           nullptr,
+                           comma_fodder);
     }
-    static ObjectField LocalMethod(
-        const Fodder &fodder1, const Fodder &fodder2, const Fodder &fodder_l,
-        const Fodder &fodder_r, const Identifier *id, const ArgParams &params, bool trailing_comma,
-        const Fodder &op_fodder, AST *body, const Fodder &comma_fodder)
+    static ObjectField LocalMethod(const Fodder &fodder1, const Fodder &fodder2,
+                                   const Fodder &fodder_l, const Fodder &fodder_r,
+                                   const Identifier *id, const ArgParams &params,
+                                   bool trailing_comma, const Fodder &op_fodder, AST *body,
+                                   const Fodder &comma_fodder)
     {
-        return ObjectField(
-            LOCAL, fodder1, fodder2, fodder_l, fodder_r, VISIBLE, false, true, nullptr, id, params,
-            trailing_comma, op_fodder, body, nullptr, comma_fodder);
+        return ObjectField(LOCAL,
+                           fodder1,
+                           fodder2,
+                           fodder_l,
+                           fodder_r,
+                           VISIBLE,
+                           false,
+                           true,
+                           nullptr,
+                           id,
+                           params,
+                           trailing_comma,
+                           op_fodder,
+                           body,
+                           nullptr,
+                           comma_fodder);
     }
     static ObjectField Assert(const Fodder &fodder1, AST *body, const Fodder &op_fodder, AST *msg,
                               const Fodder &comma_fodder)
     {
-        return ObjectField(
-            ASSERT, fodder1, Fodder{}, Fodder{}, Fodder{}, VISIBLE, false, false, nullptr, nullptr,
-            ArgParams{}, false, op_fodder, body, msg, comma_fodder);
+        return ObjectField(ASSERT,
+                           fodder1,
+                           Fodder{},
+                           Fodder{},
+                           Fodder{},
+                           VISIBLE,
+                           false,
+                           false,
+                           nullptr,
+                           nullptr,
+                           ArgParams{},
+                           false,
+                           op_fodder,
+                           body,
+                           msg,
+                           comma_fodder);
     }
 };
 typedef std::vector<ObjectField> ObjectFields;
@@ -646,8 +771,10 @@ struct Object : public AST {
     Fodder closeFodder;
     Object(const LocationRange &lr, const Fodder &open_fodder, const ObjectFields &fields,
            bool trailing_comma, const Fodder &close_fodder)
-      : AST(lr, AST_OBJECT, open_fodder), fields(fields), trailingComma(trailing_comma),
-        closeFodder(close_fodder)
+        : AST(lr, AST_OBJECT, open_fodder),
+          fields(fields),
+          trailingComma(trailing_comma),
+          closeFodder(close_fodder)
     {
         assert(fields.size() > 0 || !trailing_comma);
         if (fields.size() > 0)
@@ -665,17 +792,18 @@ struct DesugaredObject : public AST {
         AST *name;
         AST *body;
         Field(enum ObjectField::Hide hide, AST *name, AST *body)
-          : hide(hide), name(name), body(body)
-        { }
+            : hide(hide), name(name), body(body)
+        {
+        }
     };
     typedef std::vector<Field> Fields;
     ASTs asserts;
     Fields fields;
     DesugaredObject(const LocationRange &lr, const ASTs &asserts, const Fields &fields)
-      : AST(lr, AST_DESUGARED_OBJECT, Fodder{}), asserts(asserts), fields(fields)
-    { }
+        : AST(lr, AST_DESUGARED_OBJECT, Fodder{}), asserts(asserts), fields(fields)
+    {
+    }
 };
-
 
 /** Represents object comprehension { [e]: e for x in e for.. if... }. */
 struct ObjectComprehension : public AST {
@@ -687,9 +815,13 @@ struct ObjectComprehension : public AST {
                         const ObjectFields &fields, bool trailing_comma,
                         const std::vector<ComprehensionSpec> &specs, const Fodder &close_fodder)
 
-      : AST(lr, AST_OBJECT_COMPREHENSION, open_fodder), fields(fields),
-        trailingComma(trailing_comma), specs(specs), closeFodder(close_fodder)
-    { }
+        : AST(lr, AST_OBJECT_COMPREHENSION, open_fodder),
+          fields(fields),
+          trailingComma(trailing_comma),
+          specs(specs),
+          closeFodder(close_fodder)
+    {
+    }
 };
 
 /** Represents post-desugaring object comprehension { [e]: e for x in e }. */
@@ -698,11 +830,15 @@ struct ObjectComprehensionSimple : public AST {
     AST *value;
     const Identifier *id;
     AST *array;
-    ObjectComprehensionSimple(const LocationRange &lr, AST *field, AST *value,
-                              const Identifier *id, AST *array)
-      : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}), field(field), value(value), id(id),
-        array(array)
-    { }
+    ObjectComprehensionSimple(const LocationRange &lr, AST *field, AST *value, const Identifier *id,
+                              AST *array)
+        : AST(lr, AST_OBJECT_COMPREHENSION_SIMPLE, Fodder{}),
+          field(field),
+          value(value),
+          id(id),
+          array(array)
+    {
+    }
 };
 
 /** Represents (e), which is desugared. */
@@ -711,15 +847,14 @@ struct Parens : public AST {
     Fodder closeFodder;
     Parens(const LocationRange &lr, const Fodder &open_fodder, AST *expr,
            const Fodder &close_fodder)
-      : AST(lr, AST_PARENS, open_fodder), expr(expr), closeFodder(close_fodder)
-    { }
+        : AST(lr, AST_PARENS, open_fodder), expr(expr), closeFodder(close_fodder)
+    {
+    }
 };
 
 /** Represents the self keyword. */
 struct Self : public AST {
-    Self(const LocationRange &lr, const Fodder &open_fodder)
-      : AST(lr, AST_SELF, open_fodder)
-    { }
+    Self(const LocationRange &lr, const Fodder &open_fodder) : AST(lr, AST_SELF, open_fodder) {}
 };
 
 /** Represents the super[e] and super.f constructs.
@@ -734,9 +869,13 @@ struct SuperIndex : public AST {
     const Identifier *id;
     SuperIndex(const LocationRange &lr, const Fodder &open_fodder, const Fodder &dot_fodder,
                AST *index, const Fodder &id_fodder, const Identifier *id)
-      : AST(lr, AST_SUPER_INDEX, open_fodder), dotFodder(dot_fodder), index(index),
-        idFodder(id_fodder), id(id)
-    { }
+        : AST(lr, AST_SUPER_INDEX, open_fodder),
+          dotFodder(dot_fodder),
+          index(index),
+          idFodder(id_fodder),
+          id(id)
+    {
+    }
 };
 
 /** Represents the e in super construct.
@@ -745,21 +884,19 @@ struct InSuper : public AST {
     AST *element;
     Fodder inFodder;
     Fodder superFodder;
-    InSuper(const LocationRange &lr, const Fodder &open_fodder,
-            AST *element, const Fodder &in_fodder, const Fodder &super_fodder)
-      : AST(lr, AST_IN_SUPER, open_fodder), element(element),
-        inFodder(in_fodder), superFodder(super_fodder)
-    { }
+    InSuper(const LocationRange &lr, const Fodder &open_fodder, AST *element,
+            const Fodder &in_fodder, const Fodder &super_fodder)
+        : AST(lr, AST_IN_SUPER, open_fodder),
+          element(element),
+          inFodder(in_fodder),
+          superFodder(super_fodder)
+    {
+    }
 };
 
-enum UnaryOp {
-    UOP_NOT,
-    UOP_BITWISE_NOT,
-    UOP_PLUS,
-    UOP_MINUS
-};
+enum UnaryOp { UOP_NOT, UOP_BITWISE_NOT, UOP_PLUS, UOP_MINUS };
 
-static inline std::string uop_string (UnaryOp uop)
+static inline std::string uop_string(UnaryOp uop)
 {
     switch (uop) {
         case UOP_PLUS: return "+";
@@ -768,43 +905,48 @@ static inline std::string uop_string (UnaryOp uop)
         case UOP_NOT: return "!";
 
         default:
-        std::cerr << "INTERNAL ERROR: Unrecognised unary operator: " << uop << std::endl;
-        std::abort();
+            std::cerr << "INTERNAL ERROR: Unrecognised unary operator: " << uop << std::endl;
+            std::abort();
     }
 }
 
 /** Represents unary operators. */
 struct Unary : public AST {
-   UnaryOp op;
+    UnaryOp op;
     AST *expr;
     Unary(const LocationRange &lr, const Fodder &open_fodder, UnaryOp op, AST *expr)
-      : AST(lr, AST_UNARY, open_fodder), op(op), expr(expr)
-    { }
+        : AST(lr, AST_UNARY, open_fodder), op(op), expr(expr)
+    {
+    }
 };
 
 /** Represents variables. */
 struct Var : public AST {
     const Identifier *id;
     Var(const LocationRange &lr, const Fodder &open_fodder, const Identifier *id)
-      : AST(lr, AST_VAR, open_fodder), id(id)
-    { }
+        : AST(lr, AST_VAR, open_fodder), id(id)
+    {
+    }
 };
-
 
 /** Allocates ASTs on demand, frees them in its destructor.
  */
 class Allocator {
-    std::map<UString, const Identifier*> internedIdentifiers;
+    std::map<UString, const Identifier *> internedIdentifiers;
     ASTs allocated;
-    public:
-    template <class T, class... Args> T* make(Args&&... args)
+
+   public:
+    template <class T, class... Args>
+    T *make(Args &&... args)
     {
         auto r = new T(std::forward<Args>(args)...);
         allocated.push_back(r);
         return r;
     }
 
-    template <class T> T *clone(T * ast) {
+    template <class T>
+    T *clone(T *ast)
+    {
         auto r = new T(*ast);
         allocated.push_back(r);
         return r;
@@ -839,10 +981,10 @@ class Allocator {
 namespace {
 
 // Precedences used by various compilation units are defined here.
-const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
-const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
-const int BEFORE_ELSE_PRECEDENCE = 15; // True branch of an if.
-const int MAX_PRECEDENCE = 16; // Local, If, Import, Function, Error
+const int APPLY_PRECEDENCE = 2;         // Function calls and indexing.
+const int UNARY_PRECEDENCE = 4;         // Logical and bitwise negation, unary + -
+const int BEFORE_ELSE_PRECEDENCE = 15;  // True branch of an if.
+const int MAX_PRECEDENCE = 16;          // Local, If, Import, Function, Error
 
 /** These are the binary operator precedences, unary precedence is given by
  * UNARY_PRECEDENCE.

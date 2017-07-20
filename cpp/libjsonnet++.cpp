@@ -17,9 +17,7 @@ limitations under the License.
 #include "libjsonnet++.h"
 
 namespace jsonnet {
-
-Jsonnet::Jsonnet()
-{}
+Jsonnet::Jsonnet() {}
 
 Jsonnet::~Jsonnet()
 {
@@ -34,7 +32,8 @@ std::string Jsonnet::version()
     return ::jsonnet_version();
 }
 
-bool Jsonnet::init() {
+bool Jsonnet::init()
+{
     vm_ = static_cast<struct JsonnetVm*>(::jsonnet_make());
     return vm_ != nullptr;
 }
@@ -94,16 +93,15 @@ bool Jsonnet::evaluateFile(const std::string& filename, std::string* output)
     return true;
 }
 
-bool Jsonnet::evaluateSnippet(const std::string& filename,
-                              const std::string& snippet,
+bool Jsonnet::evaluateSnippet(const std::string& filename, const std::string& snippet,
                               std::string* output)
 {
     if (output == nullptr) {
         return false;
     }
     int error = 0;
-    const char* jsonnet_output = ::jsonnet_evaluate_snippet(
-        vm_, filename.c_str(), snippet.c_str(), &error);
+    const char* jsonnet_output =
+        ::jsonnet_evaluate_snippet(vm_, filename.c_str(), snippet.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
         return false;
@@ -113,16 +111,17 @@ bool Jsonnet::evaluateSnippet(const std::string& filename,
 }
 
 namespace {
-void parseMultiOutput(const char* jsonnet_output,
-                      std::map<std::string, std::string>* outputs)
+void parseMultiOutput(const char* jsonnet_output, std::map<std::string, std::string>* outputs)
 {
-    for (const char* c = jsonnet_output; *c != '\0'; ) {
-        const char *filename = c;
-        const char *c2 = c;
-        while (*c2 != '\0') ++c2;
+    for (const char* c = jsonnet_output; *c != '\0';) {
+        const char* filename = c;
+        const char* c2 = c;
+        while (*c2 != '\0')
+            ++c2;
         ++c2;
-        const char *json = c2;
-        while (*c2 != '\0') ++c2;
+        const char* json = c2;
+        while (*c2 != '\0')
+            ++c2;
         ++c2;
         c = c2;
         outputs->insert(std::make_pair(filename, json));
@@ -137,8 +136,7 @@ bool Jsonnet::evaluateFileMulti(const std::string& filename,
         return false;
     }
     int error = 0;
-    const char* jsonnet_output =
-        ::jsonnet_evaluate_file_multi(vm_, filename.c_str(), &error);
+    const char* jsonnet_output = ::jsonnet_evaluate_file_multi(vm_, filename.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
         return false;
@@ -147,16 +145,15 @@ bool Jsonnet::evaluateFileMulti(const std::string& filename,
     return true;
 }
 
-bool Jsonnet::evaluateSnippetMulti(const std::string& filename,
-                                   const std::string& snippet,
+bool Jsonnet::evaluateSnippetMulti(const std::string& filename, const std::string& snippet,
                                    std::map<std::string, std::string>* outputs)
 {
     if (outputs == nullptr) {
         return false;
     }
     int error = 0;
-    const char* jsonnet_output = ::jsonnet_evaluate_snippet_multi(
-        vm_, filename.c_str(), snippet.c_str(), &error);
+    const char* jsonnet_output =
+        ::jsonnet_evaluate_snippet_multi(vm_, filename.c_str(), snippet.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
         return false;

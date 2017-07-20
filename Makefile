@@ -102,6 +102,12 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 	cd test_suite ; ./run_fmt_tests.sh
 	cd test_suite ; ./run_fmt_idempotence_tests.sh
 
+reformat:
+	clang-format -i -style=file **/*.cpp **/*.h
+
+test-formatting:
+	test "`clang-format -style=file -output-replacements-xml **/*.cpp **/*.h | grep -c "<replacement "`" == 0
+
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
 	core/libjsonnet_test_snippet.c \
@@ -167,3 +173,5 @@ clean:
 	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend
 
 -include Makefile.depend
+
+.PHONY: default all depend clean reformat test test-formatting

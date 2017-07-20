@@ -22,15 +22,14 @@ limitations under the License.
 /** A generic Pass that does nothing but can be extended to easily define real passes.
  */
 class CompilerPass {
-    public:
-
-    protected:
+   public:
+   protected:
     Allocator &alloc;
 
-    public:
-    CompilerPass(Allocator &alloc) : alloc(alloc) { }
+   public:
+    CompilerPass(Allocator &alloc) : alloc(alloc) {}
 
-    virtual void fodderElement(FodderElement &) { }
+    virtual void fodderElement(FodderElement &) {}
 
     virtual void fodder(Fodder &fodder);
 
@@ -56,11 +55,11 @@ class CompilerPass {
 
     virtual void visit(Binary *ast);
 
-    virtual void visit(BuiltinFunction *) { }
+    virtual void visit(BuiltinFunction *) {}
 
     virtual void visit(Conditional *ast);
 
-    virtual void visit(Dollar *) { }
+    virtual void visit(Dollar *) {}
 
     virtual void visit(Error *ast);
 
@@ -76,13 +75,13 @@ class CompilerPass {
 
     virtual void visit(Local *ast);
 
-    virtual void visit(LiteralBoolean *) { }
+    virtual void visit(LiteralBoolean *) {}
 
-    virtual void visit(LiteralNumber *) { }
+    virtual void visit(LiteralNumber *) {}
 
-    virtual void visit(LiteralString *) { }
+    virtual void visit(LiteralString *) {}
 
-    virtual void visit(LiteralNull *) { }
+    virtual void visit(LiteralNull *) {}
 
     virtual void visit(Object *ast);
 
@@ -91,22 +90,21 @@ class CompilerPass {
     virtual void visit(ObjectComprehension *ast);
 
     virtual void visit(ObjectComprehensionSimple *ast);
-    
+
     virtual void visit(Parens *ast);
 
-    virtual void visit(Self *) { }
+    virtual void visit(Self *) {}
 
     virtual void visit(SuperIndex *ast);
 
     virtual void visit(Unary *ast);
 
-    virtual void visit(Var *) { }
+    virtual void visit(Var *) {}
 
     virtual void visitExpr(AST *&ast_);
 
     virtual void file(AST *&body, Fodder &final_fodder);
 };
-
 
 /** Return an equivalent AST that can be modified without affecting the original.
  *

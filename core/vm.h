@@ -26,9 +26,10 @@ limitations under the License.
 struct TraceFrame {
     LocationRange location;
     std::string name;
-    TraceFrame(const LocationRange &location, const std::string &name="")
-      : location(location), name(name)
-    { }
+    TraceFrame(const LocationRange &location, const std::string &name = "")
+        : location(location), name(name)
+    {
+    }
 };
 
 /** Exception that is thrown by the interpreter when it reaches an error construct, or divide by
@@ -38,8 +39,9 @@ struct RuntimeError {
     std::vector<TraceFrame> stackTrace;
     std::string msg;
     RuntimeError(const std::vector<TraceFrame> stack_trace, const std::string &msg)
-      : stackTrace(stack_trace), msg(msg)
-    { }
+        : stackTrace(stack_trace), msg(msg)
+    {
+    }
 };
 
 /** Holds native callback and context. */
@@ -55,12 +57,9 @@ typedef std::map<std::string, VmNativeCallback> VmNativeCallbackMap;
 struct VmExt {
     std::string data;
     bool isCode;
-    VmExt() : isCode(false) { }
-    VmExt(const std::string &data, bool is_code)
-      : data(data), isCode(is_code)
-    { }
+    VmExt() : isCode(false) {}
+    VmExt(const std::string &data, bool is_code) : data(data), isCode(is_code) {}
 };
-
 
 /** Execute the program and return the value as a JSON string.
  *
@@ -76,16 +75,12 @@ struct VmExt {
  * \throws RuntimeError reports runtime errors in the program.
  * \returns The JSON result in string form.
  */
-std::string jsonnet_vm_execute(
-    Allocator *alloc, const AST *ast,
-    const std::map<std::string, VmExt> &ext,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *import_callback_ctx,
-    bool string_output);
+std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
+                               const std::map<std::string, VmExt> &ext, unsigned max_stack,
+                               double gc_min_objects, double gc_growth_trigger,
+                               const VmNativeCallbackMap &natives,
+                               JsonnetImportCallback *import_callback, void *import_callback_ctx,
+                               bool string_output);
 
 /** Execute the program and return the value as a number of named JSON files.
  *
@@ -105,16 +100,9 @@ std::string jsonnet_vm_execute(
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
-    Allocator *alloc,
-    const AST *ast,
-    const std::map<std::string, VmExt> &ext,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *import_callback_ctx,
-    bool string_output);
+    Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
+    double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
+    JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
 
 /** Execute the program and return the value as a stream of JSON files.
  *
@@ -135,14 +123,8 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::vector<std::string> jsonnet_vm_execute_stream(
-    Allocator *alloc,
-    const AST *ast,
-    const std::map<std::string, VmExt> &ext,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *import_callback_ctx);
+    Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
+    double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
+    JsonnetImportCallback *import_callback, void *import_callback_ctx);
 
 #endif

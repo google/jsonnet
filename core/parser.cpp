@@ -14,23 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <cstdlib>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 
+#include <iomanip>
 #include <list>
 #include <set>
 #include <sstream>
 #include <string>
-#include <iomanip>
-
 
 #include "ast.h"
 #include "desugarer.h"
 #include "lexer.h"
 #include "parser.h"
 #include "static_error.h"
-
 
 std::string jsonnet_unparse_number(double v)
 {
@@ -47,13 +45,13 @@ std::string jsonnet_unparse_number(double v)
     return ss.str();
 }
 
-
 namespace {
 
 static bool op_is_unary(const std::string &op, UnaryOp &uop)
 {
     auto it = unary_map.find(op);
-    if (it == unary_map.end()) return false;
+    if (it == unary_map.end())
+        return false;
     uop = it->second;
     return true;
 }
@@ -61,7 +59,8 @@ static bool op_is_unary(const std::string &op, UnaryOp &uop)
 static bool op_is_binary(const std::string &op, BinaryOp &bop)
 {
     auto it = binary_map.find(op);
-    if (it == binary_map.end()) return false;
+    if (it == binary_map.end())
+        return false;
     bop = it->second;
     return true;
 }
@@ -84,7 +83,6 @@ LocationRange span(const Token &begin, AST *end)
 /** Holds state while parsing a given token list.
  */
 class Parser {
-
     // The private member functions are utilities for dealing with the token stream.
 
     StaticError unexpected(const Token &tok, const std::string &while_)
@@ -101,7 +99,8 @@ class Parser {
         return tok;
     }
 
-    void push(Token tok) {
+    void push(Token tok)
+    {
         tokens.push_front(tok);
     }
 
@@ -115,11 +114,11 @@ class Parser {
     Token doublePeek(void)
     {
         Tokens::iterator it = tokens.begin();  // First one.
-        it++; // Now pointing at the second one.
+        it++;                                  // Now pointing at the second one.
         return *(it);
     }
 
-    Token popExpect(Token::Kind k, const char *data=nullptr)
+    Token popExpect(Token::Kind k, const char *data = nullptr)
     {
         Token tok = pop();
         if (tok.kind != k) {
@@ -138,11 +137,8 @@ class Parser {
     std::list<Token> &tokens;
     Allocator *alloc;
 
-    public:
-
-    Parser(Tokens &tokens, Allocator *alloc)
-      : tokens(tokens), alloc(alloc)
-    { }
+   public:
+    Parser(Tokens &tokens, Allocator *alloc) : tokens(tokens), alloc(alloc) {}
 
     /** Parse a comma-separated list of expressions.
      *
@@ -152,8 +148,8 @@ class Parser {
      * \param element_kind Used in error messages when a comma was not found.
      * \returns The last token (the one that matched parameter end).
      */
-    Token parseArgs(ArgParams &args, Token::Kind end,
-                    const std::string &element_kind, bool &got_comma)
+    Token parseArgs(ArgParams &args, Token::Kind end, const std::string &element_kind,
+                    bool &got_comma)
     {
         got_comma = false;
         bool first = true;
@@ -165,7 +161,7 @@ class Parser {
             }
             if (!first && !got_comma) {
                 std::stringstream ss;
-                ss << "Expected a comma before next " << element_kind <<  ".";
+                ss << "Expected a comma before next " << element_kind << ".";
                 throw StaticError(next.location, ss.str());
             }
             // Either id=expr or id or expr, but note that expr could be id==1 so this needs
@@ -205,11 +201,9 @@ class Parser {
         // parseArgs returns f(x) with x as an expression.  Convert it here.
         for (auto &p : params) {
             if (p.id == nullptr) {
-                auto *pv = dynamic_cast<Var*>(p.expr);
+                auto *pv = dynamic_cast<Var *>(p.expr);
                 if (pv == nullptr) {
-                    throw StaticError(p.expr->location,
-                                      "Could not parse parameter here.");
-
+                    throw StaticError(p.expr->location, "Could not parse parameter here.");
                 }
                 p.id = pv->id;
                 p.idFodder = pv->openFodder;
@@ -243,24 +237,30 @@ class Parser {
         Token eq = popExpect(Token::OPERATOR, "=");
         AST *body = parse(MAX_PRECEDENCE);
         Token delim = pop();
-        binds.emplace_back(var_id.fodder, id, eq.fodder, body, is_function, fodder_l, params,
-                           trailing_comma, fodder_r, delim.fodder);
+        binds.emplace_back(var_id.fodder,
+                           id,
+                           eq.fodder,
+                           body,
+                           is_function,
+                           fodder_l,
+                           params,
+                           trailing_comma,
+                           fodder_r,
+                           delim.fodder);
         return delim;
     }
-
 
     Token parseObjectRemainder(AST *&obj, const Token &tok)
     {
         ObjectFields fields;
         std::set<std::string> literal_fields;  // For duplicate fields detection.
-        std::set<const Identifier *> binds;  // For duplicate locals detection.
+        std::set<const Identifier *> binds;    // For duplicate locals detection.
 
         bool got_comma = false;
         bool first = true;
         Token next = pop();
 
         do {
-
             if (next.kind == Token::BRACE_R) {
                 obj = alloc->make<Object>(
                     span(tok, next), tok.fodder, fields, got_comma, next.fodder);
@@ -272,7 +272,8 @@ class Parser {
                 unsigned num_asserts = 0;
                 const ObjectField *field_ptr = nullptr;
                 for (const auto &field : fields) {
-                    if (field.kind == ObjectField::LOCAL) continue;
+                    if (field.kind == ObjectField::LOCAL)
+                        continue;
                     if (field.kind == ObjectField::ASSERT) {
                         num_asserts++;
                         continue;
@@ -315,8 +316,11 @@ class Parser {
             got_comma = false;
 
             switch (next.kind) {
-                case Token::BRACKET_L: case Token::IDENTIFIER: case Token::STRING_DOUBLE:
-                case Token::STRING_SINGLE: case Token::STRING_BLOCK: {
+                case Token::BRACKET_L:
+                case Token::IDENTIFIER:
+                case Token::STRING_DOUBLE:
+                case Token::STRING_SINGLE:
+                case Token::STRING_BLOCK: {
                     ObjectField::Kind kind;
                     AST *expr1 = nullptr;
                     const Identifier *id = nullptr;
@@ -327,19 +331,28 @@ class Parser {
                         id = alloc->makeIdentifier(next.data32());
                     } else if (next.kind == Token::STRING_DOUBLE) {
                         kind = ObjectField::FIELD_STR;
-                        expr1 = alloc->make<LiteralString>(
-                            next.location, next.fodder, next.data32(), LiteralString::DOUBLE,
-                            "", "");
+                        expr1 = alloc->make<LiteralString>(next.location,
+                                                           next.fodder,
+                                                           next.data32(),
+                                                           LiteralString::DOUBLE,
+                                                           "",
+                                                           "");
                     } else if (next.kind == Token::STRING_SINGLE) {
                         kind = ObjectField::FIELD_STR;
-                        expr1 = alloc->make<LiteralString>(
-                            next.location, next.fodder, next.data32(), LiteralString::SINGLE,
-                            "", "");
+                        expr1 = alloc->make<LiteralString>(next.location,
+                                                           next.fodder,
+                                                           next.data32(),
+                                                           LiteralString::SINGLE,
+                                                           "",
+                                                           "");
                     } else if (next.kind == Token::STRING_BLOCK) {
                         kind = ObjectField::FIELD_STR;
-                        expr1 = alloc->make<LiteralString>(
-                            next.location, next.fodder, next.data32(), LiteralString::BLOCK,
-                            next.stringBlockIndent, next.stringBlockTermIndent);
+                        expr1 = alloc->make<LiteralString>(next.location,
+                                                           next.fodder,
+                                                           next.data32(),
+                                                           LiteralString::BLOCK,
+                                                           next.stringBlockIndent,
+                                                           next.stringBlockTermIndent);
                     } else {
                         kind = ObjectField::FIELD_EXPR;
                         fodder1 = next.fodder;
@@ -369,7 +382,7 @@ class Parser {
                         od++;
                     }
                     unsigned colons = 0;
-                    for (; *od != '\0' ; ++od) {
+                    for (; *od != '\0'; ++od) {
                         if (*od != ':') {
                             throw StaticError(
                                 next.location,
@@ -379,17 +392,11 @@ class Parser {
                     }
                     ObjectField::Hide field_hide;
                     switch (colons) {
-                        case 1:
-                        field_hide = ObjectField::INHERIT;
-                        break;
+                        case 1: field_hide = ObjectField::INHERIT; break;
 
-                        case 2:
-                        field_hide = ObjectField::HIDDEN;
-                        break;
+                        case 2: field_hide = ObjectField::HIDDEN; break;
 
-                        case 3:
-                        field_hide = ObjectField::VISIBLE;
-                        break;
+                        case 3: field_hide = ObjectField::VISIBLE; break;
 
                         default:
                             throw StaticError(
@@ -399,12 +406,12 @@ class Parser {
 
                     // Basic checks for invalid Jsonnet code.
                     if (is_method && plus_sugar) {
-                        throw StaticError(
-                            next.location, "Cannot use +: syntax sugar in a method: " + next.data);
+                        throw StaticError(next.location,
+                                          "Cannot use +: syntax sugar in a method: " + next.data);
                     }
                     if (kind != ObjectField::FIELD_EXPR) {
                         if (!literal_fields.insert(next.data).second) {
-                            throw StaticError(next.location, "Duplicate field: "+next.data);
+                            throw StaticError(next.location, "Duplicate field: " + next.data);
                         }
                     }
 
@@ -417,12 +424,23 @@ class Parser {
                         next = pop();
                         got_comma = true;
                     }
-                    fields.emplace_back(
-                        kind, fodder1, fodder2, fodder_l, fodder_r, field_hide, plus_sugar,
-                        is_method, expr1, id, params, meth_comma, op.fodder, body, nullptr,
-                        comma_fodder);
-                }
-                break;
+                    fields.emplace_back(kind,
+                                        fodder1,
+                                        fodder2,
+                                        fodder_l,
+                                        fodder_r,
+                                        field_hide,
+                                        plus_sugar,
+                                        is_method,
+                                        expr1,
+                                        id,
+                                        params,
+                                        meth_comma,
+                                        op.fodder,
+                                        body,
+                                        nullptr,
+                                        comma_fodder);
+                } break;
 
                 case Token::LOCAL: {
                     Fodder local_fodder = next.fodder;
@@ -454,13 +472,19 @@ class Parser {
                         next = pop();
                         got_comma = true;
                     }
-                    fields.push_back(
-                        ObjectField::Local(
-                            local_fodder, var_id.fodder, paren_l_fodder, paren_r_fodder,
-                            is_method, id, params, func_comma, eq.fodder, body, comma_fodder));
+                    fields.push_back(ObjectField::Local(local_fodder,
+                                                        var_id.fodder,
+                                                        paren_l_fodder,
+                                                        paren_r_fodder,
+                                                        is_method,
+                                                        id,
+                                                        params,
+                                                        func_comma,
+                                                        eq.fodder,
+                                                        body,
+                                                        comma_fodder));
 
-                }
-                break;
+                } break;
 
                 case Token::ASSERT: {
                     Fodder assert_fodder = next.fodder;
@@ -480,15 +504,12 @@ class Parser {
                         next = pop();
                         got_comma = true;
                     }
-                    fields.push_back(ObjectField::Assert(assert_fodder, cond, colon_fodder, msg,
-                                     comma_fodder));
-                }
-                break;
+                    fields.push_back(
+                        ObjectField::Assert(assert_fodder, cond, colon_fodder, msg, comma_fodder));
+                } break;
 
-                default:
-                throw unexpected(next, "parsing field definition");
+                default: throw unexpected(next, "parsing field definition");
             }
-
 
         } while (true);
     }
@@ -503,14 +524,14 @@ class Parser {
             const Identifier *id = alloc->makeIdentifier(id_token.data32());
             Token in_token = popExpect(Token::IN);
             AST *arr = parse(MAX_PRECEDENCE);
-            specs.emplace_back(ComprehensionSpec::FOR, for_fodder, id_token.fodder, id,
-                               in_token.fodder, arr);
+            specs.emplace_back(
+                ComprehensionSpec::FOR, for_fodder, id_token.fodder, id, in_token.fodder, arr);
 
             Token maybe_if = pop();
             for (; maybe_if.kind == Token::IF; maybe_if = pop()) {
                 AST *cond = parse(MAX_PRECEDENCE);
-                specs.emplace_back(ComprehensionSpec::IF, maybe_if.fodder, Fodder{}, nullptr,
-                                   Fodder{}, cond);
+                specs.emplace_back(
+                    ComprehensionSpec::IF, maybe_if.fodder, Fodder{}, nullptr, Fodder{}, cond);
             }
             if (maybe_if.kind == end) {
                 return maybe_if;
@@ -546,11 +567,9 @@ class Parser {
             case Token::PAREN_R:
             case Token::SEMICOLON:
             case Token::TAILSTRICT:
-            case Token::THEN:
-            throw unexpected(tok, "parsing terminal");
+            case Token::THEN: throw unexpected(tok, "parsing terminal");
 
-            case Token::END_OF_FILE:
-            throw StaticError(tok.location, "Unexpected end of file.");
+            case Token::END_OF_FILE: throw StaticError(tok.location, "Unexpected end of file.");
 
             case Token::BRACE_L: {
                 AST *obj;
@@ -562,8 +581,8 @@ class Parser {
                 Token next = peek();
                 if (next.kind == Token::BRACKET_R) {
                     Token bracket_r = pop();
-                    return alloc->make<Array>(span(tok, next), tok.fodder, Array::Elements{},
-                                              false, bracket_r.fodder);
+                    return alloc->make<Array>(
+                        span(tok, next), tok.fodder, Array::Elements{}, false, bracket_r.fodder);
                 }
                 AST *first = parse(MAX_PRECEDENCE);
                 bool got_comma = false;
@@ -581,9 +600,13 @@ class Parser {
                     Token for_token = pop();
                     std::vector<ComprehensionSpec> specs;
                     Token last = parseComprehensionSpecs(Token::BRACKET_R, for_token.fodder, specs);
-                    return alloc->make<ArrayComprehension>(
-                        span(tok, last), tok.fodder, first, comma_fodder, got_comma, specs,
-                        last.fodder);
+                    return alloc->make<ArrayComprehension>(span(tok, last),
+                                                           tok.fodder,
+                                                           first,
+                                                           comma_fodder,
+                                                           got_comma,
+                                                           specs,
+                                                           last.fodder);
                 }
 
                 // Not a comprehension: It can have more elements.
@@ -621,45 +644,42 @@ class Parser {
             }
 
             // Literals
-            case Token::NUMBER:
-            return alloc->make<LiteralNumber>(span(tok), tok.fodder, tok.data);
+            case Token::NUMBER: return alloc->make<LiteralNumber>(span(tok), tok.fodder, tok.data);
 
             case Token::STRING_SINGLE:
-            return alloc->make<LiteralString>(
-                span(tok), tok.fodder, tok.data32(), LiteralString::SINGLE, "", "");
+                return alloc->make<LiteralString>(
+                    span(tok), tok.fodder, tok.data32(), LiteralString::SINGLE, "", "");
             case Token::STRING_DOUBLE:
-            return alloc->make<LiteralString>(
-                span(tok), tok.fodder, tok.data32(), LiteralString::DOUBLE, "", "");
+                return alloc->make<LiteralString>(
+                    span(tok), tok.fodder, tok.data32(), LiteralString::DOUBLE, "", "");
             case Token::STRING_BLOCK:
-            return alloc->make<LiteralString>(
-                span(tok), tok.fodder, tok.data32(), LiteralString::BLOCK,
-                tok.stringBlockIndent, tok.stringBlockTermIndent);
+                return alloc->make<LiteralString>(span(tok),
+                                                  tok.fodder,
+                                                  tok.data32(),
+                                                  LiteralString::BLOCK,
+                                                  tok.stringBlockIndent,
+                                                  tok.stringBlockTermIndent);
             case Token::VERBATIM_STRING_SINGLE:
-            return alloc->make<LiteralString>(
-                span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_SINGLE, "", "");
+                return alloc->make<LiteralString>(
+                    span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_SINGLE, "", "");
             case Token::VERBATIM_STRING_DOUBLE:
-            return alloc->make<LiteralString>(
-                span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_DOUBLE, "", "");
+                return alloc->make<LiteralString>(
+                    span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_DOUBLE, "", "");
 
+            case Token::FALSE: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, false);
 
-            case Token::FALSE:
-            return alloc->make<LiteralBoolean>(span(tok), tok.fodder, false);
-
-            case Token::TRUE:
-            return alloc->make<LiteralBoolean>(span(tok), tok.fodder, true);
+            case Token::TRUE: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, true);
 
             case Token::NULL_LIT:
-            return alloc->make<LiteralNull>(span(tok), tok.fodder);
+                return alloc->make<LiteralNull>(span(tok), tok.fodder);
 
             // Variables
-            case Token::DOLLAR:
-            return alloc->make<Dollar>(span(tok), tok.fodder);
+            case Token::DOLLAR: return alloc->make<Dollar>(span(tok), tok.fodder);
 
             case Token::IDENTIFIER:
-            return alloc->make<Var>(span(tok), tok.fodder, alloc->makeIdentifier(tok.data32()));
+                return alloc->make<Var>(span(tok), tok.fodder, alloc->makeIdentifier(tok.data32()));
 
-            case Token::SELF:
-            return alloc->make<Self>(span(tok), tok.fodder);
+            case Token::SELF: return alloc->make<Self>(span(tok), tok.fodder);
 
             case Token::SUPER: {
                 Token next = pop();
@@ -677,11 +697,10 @@ class Parser {
                         Token bracket_r = popExpect(Token::BRACKET_R);
                         id_fodder = bracket_r.fodder;  // Not id_fodder, but use the same var.
                     } break;
-                    default:
-                    throw StaticError(tok.location, "Expected . or [ after super.");
+                    default: throw StaticError(tok.location, "Expected . or [ after super.");
                 }
-                return alloc->make<SuperIndex>(span(tok), tok.fodder, next.fodder, index,
-                                               id_fodder, id);
+                return alloc->make<SuperIndex>(
+                    span(tok), tok.fodder, next.fodder, index, id_fodder, id);
             }
         }
 
@@ -695,7 +714,6 @@ class Parser {
         Token begin = peek();
 
         switch (begin.kind) {
-
             // These cases have effectively MAX_PRECEDENCE as the first
             // call to parse will parse them.
             case Token::ASSERT: {
@@ -710,8 +728,13 @@ class Parser {
                 }
                 Token semicolon = popExpect(Token::SEMICOLON);
                 AST *rest = parse(MAX_PRECEDENCE);
-                return alloc->make<Assert>(span(begin, rest), begin.fodder, cond, colonFodder,
-                                           msg, semicolon.fodder, rest);
+                return alloc->make<Assert>(span(begin, rest),
+                                           begin.fodder,
+                                           cond,
+                                           colonFodder,
+                                           msg,
+                                           semicolon.fodder,
+                                           rest);
             }
 
             case Token::ERROR: {
@@ -728,27 +751,39 @@ class Parser {
                 if (peek().kind == Token::ELSE) {
                     Token else_ = pop();
                     AST *branch_false = parse(MAX_PRECEDENCE);
-                    return alloc->make<Conditional>(
-                        span(begin, branch_false), begin.fodder, cond, then.fodder, branch_true,
-                        else_.fodder, branch_false);
+                    return alloc->make<Conditional>(span(begin, branch_false),
+                                                    begin.fodder,
+                                                    cond,
+                                                    then.fodder,
+                                                    branch_true,
+                                                    else_.fodder,
+                                                    branch_false);
                 }
-                return alloc->make<Conditional>(span(begin, branch_true), begin.fodder, cond,
-                                                then.fodder, branch_true, Fodder{}, nullptr);
+                return alloc->make<Conditional>(span(begin, branch_true),
+                                                begin.fodder,
+                                                cond,
+                                                then.fodder,
+                                                branch_true,
+                                                Fodder{},
+                                                nullptr);
             }
 
             case Token::FUNCTION: {
                 pop();  // Still available in 'begin'.
                 Token paren_l = pop();
                 if (paren_l.kind == Token::PAREN_L) {
-                    std::vector<AST*> params_asts;
+                    std::vector<AST *> params_asts;
                     bool got_comma;
                     Fodder paren_r_fodder;
-                    ArgParams params = parseParams(
-                        "function parameter", got_comma, paren_r_fodder);
+                    ArgParams params = parseParams("function parameter", got_comma, paren_r_fodder);
                     AST *body = parse(MAX_PRECEDENCE);
-                    return alloc->make<Function>(
-                        span(begin, body), begin.fodder, paren_l.fodder, params, got_comma,
-                        paren_r_fodder, body);
+                    return alloc->make<Function>(span(begin, body),
+                                                 begin.fodder,
+                                                 paren_l.fodder,
+                                                 params,
+                                                 got_comma,
+                                                 paren_r_fodder,
+                                                 body);
                 } else {
                     std::stringstream ss;
                     ss << "Expected ( but got " << paren_l;
@@ -759,7 +794,7 @@ class Parser {
             case Token::IMPORT: {
                 pop();
                 AST *body = parse(MAX_PRECEDENCE);
-                if (auto *lit = dynamic_cast<LiteralString*>(body)) {
+                if (auto *lit = dynamic_cast<LiteralString *>(body)) {
                     if (lit->tokenKind == LiteralString::BLOCK) {
                         throw StaticError(lit->location,
                                           "Cannot use text blocks in import statements.");
@@ -775,7 +810,7 @@ class Parser {
             case Token::IMPORTSTR: {
                 pop();
                 AST *body = parse(MAX_PRECEDENCE);
-                if (auto *lit = dynamic_cast<LiteralString*>(body)) {
+                if (auto *lit = dynamic_cast<LiteralString *>(body)) {
                     if (lit->tokenKind == LiteralString::BLOCK) {
                         throw StaticError(lit->location,
                                           "Cannot use text blocks in import statements.");
@@ -798,7 +833,8 @@ class Parser {
                         ss << "Expected , or ; but got " << delim;
                         throw StaticError(delim.location, ss.str());
                     }
-                    if (delim.kind == Token::SEMICOLON) break;
+                    if (delim.kind == Token::SEMICOLON)
+                        break;
                 } while (true);
                 AST *body = parse(MAX_PRECEDENCE);
                 return alloc->make<Local>(span(begin, body), begin.fodder, binds, body);
@@ -806,178 +842,198 @@ class Parser {
 
             default:
 
-            // Unary operator.
-            if (begin.kind == Token::OPERATOR) {
-                UnaryOp uop;
-                if (!op_is_unary(begin.data, uop)) {
-                    std::stringstream ss;
-                    ss << "Not a unary operator: " << begin.data;
-                    throw StaticError(begin.location, ss.str());
-                }
-                if (UNARY_PRECEDENCE == precedence) {
-                    Token op = pop();
-                    AST *expr = parse(precedence);
-                    return alloc->make<Unary>(span(op, expr), op.fodder, uop, expr);
-                }
-            }
-
-            // Base case
-            if (precedence == 0) return parseTerminal();
-
-            AST *lhs = parse(precedence - 1);
-
-            Fodder begin_fodder;
-
-            while (true) {
-
-                // Then next token must be a binary operator.
-
-                // The compiler can't figure out that this is never used uninitialized.
-                BinaryOp bop = BOP_PLUS;
-
-                // Check precedence is correct for this level.  If we're
-                // parsing operators with higher precedence, then return
-                // lhs and let lower levels deal with the operator.
-                switch (peek().kind) {
-                    // Logical / arithmetic binary operator.
-                    case Token::IN:
-                    case Token::OPERATOR:
-                    if (peek().data == ":") {
-                        // Special case for the colons in assert.
-                        // Since COLON is no-longer a special token, we have to make sure it
-                        // does not trip the op_is_binary test below.  It should
-                        // terminate parsing of the expression here, returning control
-                        // to the parsing of the actual assert AST.
-                        return lhs;
-                    }
-                    if (peek().data == "::") {
-                        // Special case for [e::]
-                        // We need to stop parsing e when we see the :: and
-                        // avoid tripping the op_is_binary test below.
-                        return lhs;
-                    }
-                    if (!op_is_binary(peek().data, bop)) {
+                // Unary operator.
+                if (begin.kind == Token::OPERATOR) {
+                    UnaryOp uop;
+                    if (!op_is_unary(begin.data, uop)) {
                         std::stringstream ss;
-                        ss << "Not a binary operator: " << peek().data;
-                        throw StaticError(peek().location, ss.str());
+                        ss << "Not a unary operator: " << begin.data;
+                        throw StaticError(begin.location, ss.str());
                     }
-                    if (precedence_map[bop] != precedence) return lhs;
-                    break;
-
-                    // Index, Apply
-                    case Token::DOT: case Token::BRACKET_L:
-                    case Token::PAREN_L: case Token::BRACE_L:
-                    if (APPLY_PRECEDENCE != precedence) return lhs;
-                    break;
-
-                    default:
-                    return lhs;
+                    if (UNARY_PRECEDENCE == precedence) {
+                        Token op = pop();
+                        AST *expr = parse(precedence);
+                        return alloc->make<Unary>(span(op, expr), op.fodder, uop, expr);
+                    }
                 }
 
-                Token op = pop();
-                if (op.kind == Token::BRACKET_L) {
-                    bool is_slice;
-                    AST *first = nullptr;
-                    Fodder second_fodder;
-                    AST *second = nullptr;
-                    Fodder third_fodder;
-                    AST *third = nullptr;
+                // Base case
+                if (precedence == 0)
+                    return parseTerminal();
 
-                    if (peek().kind == Token::BRACKET_R)
-                        throw unexpected(pop(), "parsing index");
+                AST *lhs = parse(precedence - 1);
 
-                    if (peek().data != ":" && peek().data != "::") {
-                        first = parse(MAX_PRECEDENCE);
+                Fodder begin_fodder;
+
+                while (true) {
+                    // Then next token must be a binary operator.
+
+                    // The compiler can't figure out that this is never used uninitialized.
+                    BinaryOp bop = BOP_PLUS;
+
+                    // Check precedence is correct for this level.  If we're
+                    // parsing operators with higher precedence, then return
+                    // lhs and let lower levels deal with the operator.
+                    switch (peek().kind) {
+                        // Logical / arithmetic binary operator.
+                        case Token::IN:
+                        case Token::OPERATOR:
+                            if (peek().data == ":") {
+                                // Special case for the colons in assert.
+                                // Since COLON is no-longer a special token, we have to make sure it
+                                // does not trip the op_is_binary test below.  It should
+                                // terminate parsing of the expression here, returning control
+                                // to the parsing of the actual assert AST.
+                                return lhs;
+                            }
+                            if (peek().data == "::") {
+                                // Special case for [e::]
+                                // We need to stop parsing e when we see the :: and
+                                // avoid tripping the op_is_binary test below.
+                                return lhs;
+                            }
+                            if (!op_is_binary(peek().data, bop)) {
+                                std::stringstream ss;
+                                ss << "Not a binary operator: " << peek().data;
+                                throw StaticError(peek().location, ss.str());
+                            }
+                            if (precedence_map[bop] != precedence)
+                                return lhs;
+                            break;
+
+                        // Index, Apply
+                        case Token::DOT:
+                        case Token::BRACKET_L:
+                        case Token::PAREN_L:
+                        case Token::BRACE_L:
+                            if (APPLY_PRECEDENCE != precedence)
+                                return lhs;
+                            break;
+
+                        default: return lhs;
                     }
 
-                    if (peek().kind == Token::OPERATOR && peek().data == "::") {
-                        // Handle ::
-                        is_slice = true;
-                        Token joined = pop();
-                        second_fodder = joined.fodder;
+                    Token op = pop();
+                    if (op.kind == Token::BRACKET_L) {
+                        bool is_slice;
+                        AST *first = nullptr;
+                        Fodder second_fodder;
+                        AST *second = nullptr;
+                        Fodder third_fodder;
+                        AST *third = nullptr;
 
-                        if (peek().kind != Token::BRACKET_R)
-                            third = parse(MAX_PRECEDENCE);
+                        if (peek().kind == Token::BRACKET_R)
+                            throw unexpected(pop(), "parsing index");
 
-                    } else if (peek().kind != Token::BRACKET_R) {
-                        is_slice = true;
-                        Token delim = pop();
-                        if (delim.data != ":")
-                            throw unexpected(delim, "parsing slice");
+                        if (peek().data != ":" && peek().data != "::") {
+                            first = parse(MAX_PRECEDENCE);
+                        }
 
-                        second_fodder = delim.fodder;
+                        if (peek().kind == Token::OPERATOR && peek().data == "::") {
+                            // Handle ::
+                            is_slice = true;
+                            Token joined = pop();
+                            second_fodder = joined.fodder;
 
-                        if (peek().data != ":" && peek().kind != Token::BRACKET_R)
-                            second = parse(MAX_PRECEDENCE);
+                            if (peek().kind != Token::BRACKET_R)
+                                third = parse(MAX_PRECEDENCE);
 
-                        if (peek().kind != Token::BRACKET_R) {
+                        } else if (peek().kind != Token::BRACKET_R) {
+                            is_slice = true;
                             Token delim = pop();
                             if (delim.data != ":")
                                 throw unexpected(delim, "parsing slice");
 
-                            third_fodder = delim.fodder;
+                            second_fodder = delim.fodder;
 
-                            if (peek().kind != Token::BRACKET_R)
-                                third = parse(MAX_PRECEDENCE);
+                            if (peek().data != ":" && peek().kind != Token::BRACKET_R)
+                                second = parse(MAX_PRECEDENCE);
+
+                            if (peek().kind != Token::BRACKET_R) {
+                                Token delim = pop();
+                                if (delim.data != ":")
+                                    throw unexpected(delim, "parsing slice");
+
+                                third_fodder = delim.fodder;
+
+                                if (peek().kind != Token::BRACKET_R)
+                                    third = parse(MAX_PRECEDENCE);
+                            }
+                        } else {
+                            is_slice = false;
                         }
+                        Token end = popExpect(Token::BRACKET_R);
+                        lhs = alloc->make<Index>(span(begin, end),
+                                                 begin_fodder,
+                                                 lhs,
+                                                 op.fodder,
+                                                 is_slice,
+                                                 first,
+                                                 second_fodder,
+                                                 second,
+                                                 third_fodder,
+                                                 third,
+                                                 end.fodder);
+
+                    } else if (op.kind == Token::DOT) {
+                        Token field_id = popExpect(Token::IDENTIFIER);
+                        const Identifier *id = alloc->makeIdentifier(field_id.data32());
+                        lhs = alloc->make<Index>(span(begin, field_id),
+                                                 begin_fodder,
+                                                 lhs,
+                                                 op.fodder,
+                                                 field_id.fodder,
+                                                 id);
+
+                    } else if (op.kind == Token::PAREN_L) {
+                        ArgParams args;
+                        bool got_comma;
+                        Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
+                        bool tailstrict = false;
+                        Fodder tailstrict_fodder;
+                        if (peek().kind == Token::TAILSTRICT) {
+                            Token tailstrict_token = pop();
+                            tailstrict_fodder = tailstrict_token.fodder;
+                            tailstrict = true;
+                        }
+                        lhs = alloc->make<Apply>(span(begin, end),
+                                                 begin_fodder,
+                                                 lhs,
+                                                 op.fodder,
+                                                 args,
+                                                 got_comma,
+                                                 end.fodder,
+                                                 tailstrict_fodder,
+                                                 tailstrict);
+
+                    } else if (op.kind == Token::BRACE_L) {
+                        AST *obj;
+                        Token end = parseObjectRemainder(obj, op);
+                        lhs = alloc->make<ApplyBrace>(span(begin, end), begin_fodder, lhs, obj);
+
+                    } else if (op.kind == Token::IN) {
+                        if (peek().kind == Token::SUPER) {
+                            Token super = pop();
+                            lhs = alloc->make<InSuper>(
+                                span(begin, super), begin_fodder, lhs, op.fodder, super.fodder);
+                        } else {
+                            AST *rhs = parse(precedence - 1);
+                            lhs = alloc->make<Binary>(
+                                span(begin, rhs), begin_fodder, lhs, op.fodder, bop, rhs);
+                        }
+
                     } else {
-                        is_slice = false;
-                    }
-                    Token end = popExpect(Token::BRACKET_R);
-                    lhs = alloc->make<Index>(span(begin, end), begin_fodder, lhs, op.fodder,
-                                             is_slice, first, second_fodder, second,
-                                             third_fodder, third, end.fodder);
-
-                } else if (op.kind == Token::DOT) {
-                    Token field_id = popExpect(Token::IDENTIFIER);
-                    const Identifier *id = alloc->makeIdentifier(field_id.data32());
-                    lhs = alloc->make<Index>(span(begin, field_id), begin_fodder, lhs,
-                                             op.fodder, field_id.fodder, id);
-
-                } else if (op.kind == Token::PAREN_L) {
-                    ArgParams args;
-                    bool got_comma;
-                    Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
-                    bool tailstrict = false;
-                    Fodder tailstrict_fodder;
-                    if (peek().kind == Token::TAILSTRICT) {
-                        Token tailstrict_token = pop();
-                        tailstrict_fodder = tailstrict_token.fodder;
-                        tailstrict = true;
-                    }
-                    lhs = alloc->make<Apply>(span(begin, end), begin_fodder, lhs, op.fodder,
-                                             args, got_comma, end.fodder, tailstrict_fodder,
-                                             tailstrict);
-
-                } else if (op.kind == Token::BRACE_L) {
-                    AST *obj;
-                    Token end = parseObjectRemainder(obj, op);
-                    lhs = alloc->make<ApplyBrace>(span(begin, end), begin_fodder, lhs, obj);
-
-                } else if (op.kind == Token::IN) {
-                    if (peek().kind == Token::SUPER) {
-                        Token super = pop();
-                        lhs = alloc->make<InSuper>(
-                            span(begin, super), begin_fodder, lhs, op.fodder, super.fodder);
-                    } else {
+                        // Logical / arithmetic binary operator.
+                        assert(op.kind == Token::OPERATOR);
                         AST *rhs = parse(precedence - 1);
                         lhs = alloc->make<Binary>(
                             span(begin, rhs), begin_fodder, lhs, op.fodder, bop, rhs);
                     }
 
-                } else {
-                    // Logical / arithmetic binary operator.
-                    assert(op.kind == Token::OPERATOR);
-                    AST *rhs = parse(precedence - 1);
-                    lhs = alloc->make<Binary>(span(begin, rhs), begin_fodder, lhs, op.fodder,
-                                              bop, rhs);
+                    begin_fodder.clear();
                 }
-
-                begin_fodder.clear();
-            }
         }
     }
-
 };
 
 }  // namespace
