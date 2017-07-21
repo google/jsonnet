@@ -32,7 +32,8 @@ limitations under the License.
         },
 
     local test_local4(
-        x, y) = {
+        x, y
+    ) = {
         g: 2,
     },
 
@@ -47,7 +48,8 @@ limitations under the License.
 
     local test_local_default2(
         x=100,
-        y=200)
+        y=200
+    )
     = {
         g: 2,
     },
@@ -64,13 +66,15 @@ limitations under the License.
             g: 1,
         },
 
-    test_field0B: { f: 1,
-                    g: 1,
+    test_field0B: {
+        f: 1,
+        g: 1,
     },
 
     test_field1B:
-        { f: 1,
-          g: 1,
+        {
+            f: 1,
+            g: 1,
         },
 
     test_field2: if true then
@@ -149,7 +153,8 @@ limitations under the License.
     test_field9a: g(
         {
             f: 3,
-        }),
+        }
+    ),
 
     test_field9b: g(
         {
@@ -162,10 +167,11 @@ limitations under the License.
                         f: 3,
                     }),
 
-    test_field9d: f(10,
-                    {
-                        f: 3,
-                    }
+    test_field9d: f(
+        10,
+        {
+            f: 3,
+        }
     ),
 
     test_field9e: f(local x = 10;
@@ -207,8 +213,9 @@ limitations under the License.
         1,
     ],
 
-    test_field13: [1,
-                   2,
+    test_field13: [
+        1,
+        2,
     ],
 
     test_field14(obj):: if 10000 == 10000 then "wheeeeeeeee"
@@ -318,28 +325,32 @@ limitations under the License.
                  ["baz"]
              else [],
 
-        fox: std.equals(["foo"],
-                        if true then [
-                            "baz",
-                        ] else [],
+        fox: std.equals(
+            ["foo"],
+            if true then [
+                "baz",
+            ] else [],
         ),
 
-        bax: std.equals(["foo"],
-                        if true then
-                            ["baz"]
-                        else [],
+        bax: std.equals(
+            ["foo"],
+            if true then
+                ["baz"]
+            else [],
         ),
 
-        foy: [["foo"],
-              if true then [
-                  "baz",
-              ] else [],
+        foy: [
+            ["foo"],
+            if true then [
+                "baz",
+            ] else [],
         ],
 
-        bay: [["foo"],
-              if true then
-                  ["baz"]
-              else [],
+        bay: [
+            ["foo"],
+            if true then
+                ["baz"]
+            else [],
         ],
 
         foz: (["foo"]

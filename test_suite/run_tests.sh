@@ -24,6 +24,8 @@ source "tests.source"
 
 #VERBOSE=true
 
+init
+
 for TEST in *.jsonnet ; do
 
     GOLDEN_OUTPUT="true"
@@ -60,3 +62,5 @@ else
     echo "FAILED: $FAILED / $EXECUTED"
     exit 1
 fi
+
+deinit

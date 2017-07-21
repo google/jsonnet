@@ -51,7 +51,8 @@ local web_indexes = std.range(1, 4);
                 // i is a scoped variable here
                 instance_type: "m1.small",
                 ami: aws_amis[aws_region],
-            } for i in web_indexes
+            }
+            for i in web_indexes
         },
 
     },
