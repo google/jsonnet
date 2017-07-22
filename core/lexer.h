@@ -35,14 +35,56 @@ limitations under the License.
  */
 struct FodderElement {
     enum Kind {
+        /** The next token, paragraph, or interstitial should be on a new line.
+         *
+         * A single comment string is allowed, which flows before the new line.
+         *
+         * The LINE_END fodder specifies the indentation level and vertical spacing before whatever
+         * comes next.
+         */
         LINE_END,
+
+        /** A C-style comment that begins and ends on the same line.
+         *
+         * If it follows a token (i.e., it is the first fodder element) then it appears after the
+         * token on the same line.  If it follows another interstitial, it will also flow after it
+         * on the same line.  If it follows a new line or a paragraph, it is the first thing on the
+         * following line, after the blank lines and indentation specified by the previous fodder.
+         *
+         * There is exactly one comment string.
+         */
         INTERSTITIAL,
+
+        /** A comment consisting of at least one line.
+         *
+         * // and # style commes have exactly one line.  C-style comments can have more than one
+         * line.
+         *
+         * All lines of the comment are indented according to the indentation level of the previous new line
+         * / paragraph fodder.
+         *
+         * The PARAGRAPH fodder specifies the indentation level and vertical spacing before whatever
+         * comes next.
+         */
         PARAGRAPH,
     };
     Kind kind;
+
+    /** How many blank lines (vertical space) before the next fodder / token. */
     unsigned blanks;
+
+    /** How far the next fodder / token should be indented. */
     unsigned indent;
+
+    /** Whatever comments are part of this fodder.
+     *
+     * Constraints apply.  See Kind, above.
+     *
+     * The strings include any delimiting characters, e.g. // # and C-style comment delimiters but
+     * not newline characters or indentation.
+     */
     std::vector<std::string> comment;
+
     FodderElement(Kind kind, unsigned blanks, unsigned indent,
                   const std::vector<std::string> &comment)
       : kind(kind), blanks(blanks), indent(indent), comment(comment)
@@ -52,6 +94,7 @@ struct FodderElement {
         assert(kind != PARAGRAPH || comment.size() >= 1);
     }
 };
+
 static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
 {
     switch (f.kind) {
@@ -67,6 +110,14 @@ static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
     }
     return o;
 }
+
+/** A sequence of fodder elements, typically between two tokens.
+ *
+ * A LINE_END is not allowed to follow a PARAGRAPH or a LINE_END.  This can be represented by
+ * replacing the indent of the prior fodder and increasing the number of blank lines if necessary.
+ * If there was a comment, it can be represented by changing the LINE_END to a paragraph containing
+ * the same single comment string.
+ */
 typedef std::vector<FodderElement> Fodder;
 
 static inline std::ostream &operator<<(std::ostream &o, const Fodder &fodder)
