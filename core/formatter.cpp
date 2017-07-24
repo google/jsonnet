@@ -1806,9 +1806,9 @@ class SortImports {
      *
      * The two returned fodders can be concatenated using concat_fodder to get the original fodder.
      *
-     * It's a heuristic that given two consecutive tokens prev_token, next_token
+     * It's a heuristic that given two consecutive tokens `prev_token`, `next_token`
      * with some fodder between them, decides which part of the fodder logically belongs
-     * to the prev_token and which part belongs to the next_token.
+     * to `prev_token` and which part belongs to the `next_token`.
      *
      * Example:
      * prev_token // prev_token is awesome!
@@ -1832,6 +1832,7 @@ class SortImports {
             if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL && !inSecondPart) {
                 inSecondPart = true;
                 if (fodderElem.blanks > 0) {
+                    // If there are any blank lines at the end of afterPrev, move them to beforeNext.
                     afterPrev.back().blanks = 0;
                     assert(beforeNext.empty());
                     beforeNext.emplace_back(
