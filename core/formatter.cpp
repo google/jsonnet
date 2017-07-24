@@ -1815,7 +1815,7 @@ class SortImports {
             } else {
                 afterPrev.push_back(fodderElem);
             }
-            if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL) {
+            if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL && !inSecondPart) {
                 inSecondPart = true;
                 if (fodderElem.blanks > 0) {
                     afterPrev.back().blanks = 0;
