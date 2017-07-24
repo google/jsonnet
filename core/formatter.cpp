@@ -1750,8 +1750,18 @@ class SortImports {
     struct ImportElem {
         ImportElem(UString key, Fodder adjacentFodder, Local::Bind bind)
           : key(key), adjacentFodder(adjacentFodder), bind(bind) { }
+
+        // A key by which the imports should be sorted.
+        // It's a file path that is imported, represented as UTF-32 codepoints without case folding.
+        // In particular "Z" < "a", because 'Z' == 90 and 'a' == 97.
         UString key;
+
+        // Comments adjacent to the import that go after it and that should stay attached
+        // when imports are reordered.
         Fodder adjacentFodder;
+
+        // The bind that contains the import
+        // Satisfies: bind.functionSugar == false && bind.body->type == AST_IMPORT
         Local::Bind bind;
         bool operator<(const ImportElem &elem) const {
             return key < elem.key;
@@ -1766,7 +1776,6 @@ class SortImports {
     SortImports(Allocator &alloc) : alloc(alloc) { }
 
     /// Get the value by which the imports should be sorted.
-    /// The imports are sorted by UTF-32 codepoints without case folding
     UString sortingKey(Import *import)
     {
         return import->file->value;
