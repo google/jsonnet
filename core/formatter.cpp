@@ -1803,7 +1803,12 @@ class SortImports {
 
     /** Split fodder after the first new line / paragraph fodder,
      * leaving blank lines after the newline in the second half.
+     *
      * The two returned fodders can be concatenated using concat_fodder to get the original fodder.
+     *
+     * It's a heuristic that given two consecutive tokens prev_token, next_token
+     * with some fodder between them, decides which part of the fodder logically belongs
+     * to the prev_token and which part belongs to the next_token.
      *
      * Example:
      * prev_token // prev_token is awesome!
@@ -1812,7 +1817,7 @@ class SortImports {
      * next_token
      *
      * In such case "// prev_token is awesome!\n" part of the fodder belongs
-     * to the `prev_token` and "\n//blah blah\n" to the {}.
+     * to the `prev_token` and "\n//blah blah\n" to the `next_token`.
      */
     std::pair<Fodder, Fodder> splitFodder(const Fodder &fodder)
     {
