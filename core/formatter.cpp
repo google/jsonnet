@@ -1832,7 +1832,8 @@ class SortImports {
             if (fodderElem.kind != FodderElement::Kind::INTERSTITIAL && !inSecondPart) {
                 inSecondPart = true;
                 if (fodderElem.blanks > 0) {
-                    // If there are any blank lines at the end of afterPrev, move them to beforeNext.
+                    // If there are any blank lines at the end of afterPrev, move them
+                    // to beforeNext.
                     afterPrev.back().blanks = 0;
                     assert(beforeNext.empty());
                     beforeNext.emplace_back(
