@@ -91,8 +91,6 @@ static inline std::string ASTTypeToString(ASTType type) {
         case AST_SUPER_INDEX: return "AST_SUPER_INDEX";
         case AST_UNARY: return "AST_UNARY";
         case AST_VAR: return "AST_VAR";
-        default:
-        assert(false && "Unknown AST type");
     }
 }
 

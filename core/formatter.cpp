@@ -1748,10 +1748,10 @@ class FixIndentation {
 class SortImports {
     /// Internal representation of an import
     struct ImportElem {
-        ImportElem(UString key, Fodder afterFodder, Local::Bind bind)
-          : key(key), afterFodder(afterFodder), bind(bind) { }
+        ImportElem(UString key, Fodder adjacentFodder, Local::Bind bind)
+          : key(key), adjacentFodder(adjacentFodder), bind(bind) { }
         UString key;
-        Fodder afterFodder;
+        Fodder adjacentFodder;
         Local::Bind bind;
         bool operator<(const ImportElem &elem) const {
             return key < elem.key;
@@ -1843,22 +1843,21 @@ class SortImports {
         }
     }
 
-    ImportElems extractImportElems(Local *local, Fodder after)
+    ImportElems extractImportElems(const Local::Binds &binds, Fodder after)
     {
         ImportElems result;
-        //for (auto &bind: local->binds) {
-        Fodder before = local->binds.front().varFodder;
-        for (int i = 0; i < int(local->binds.size()); ++i) {
-            bool last = i == int(local->binds.size() - 1);
+        Fodder before = binds.front().varFodder;
+        for (int i = 0; i < int(binds.size()); ++i) {
+            const auto &bind = binds[i];
+            bool last = i == int(binds.size() - 1);
             Fodder adjacent, beforeNext;
             if (!last) {
-                auto &next = local->binds[i + 1];
+                auto &next = binds[i + 1];
                 std::tie(adjacent, beforeNext) = splitFodder(next.varFodder);
             } else {
                 adjacent = after;
             }
             ensureCleanNewline(adjacent);
-            const auto &bind = local->binds[i];
             Local::Bind newBind = bind;
             newBind.varFodder = before;
             Import *import = dynamic_cast<Import*>(bind.body);
@@ -1877,7 +1876,7 @@ class SortImports {
             if (i == 0) {
                 fodder = groupOpenFodder;
             } else {
-                fodder = imports[i - 1].afterFodder;
+                fodder = imports[i - 1].adjacentFodder;
             }
             auto *local = alloc.make<Local>(
                 LocationRange(),
@@ -1937,13 +1936,13 @@ class SortImports {
 
         ensureCleanNewline(adjacentCommentFodder);
 
-        ImportElems newImports = extractImportElems(local, adjacentCommentFodder);
+        ImportElems newImports = extractImportElems(local->binds, adjacentCommentFodder);
         imports.insert(imports.end(), newImports.begin(), newImports.end());
 
         if (groupEndsAfter(local)) {
             sortGroup(imports);
 
-            Fodder afterGroup = imports.back().afterFodder;
+            Fodder afterGroup = imports.back().adjacentFodder;
             ensureCleanNewline(beforeNextFodder);
             auto nextOpenFodder = concat_fodder(
                 afterGroup,
