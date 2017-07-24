@@ -62,96 +62,37 @@ enum ASTType {
 
 static inline std::string ASTTypeToString(ASTType type) {
     switch(type) {
-        case AST_APPLY:
-        return "AST_APPLY";
-        break;
-        case AST_ARRAY:
-        return "AST_ARRAY";
-        break;
-        case AST_ARRAY_COMPREHENSION:
-        return "AST_ARRAY_COMPREHENSION";
-        break;
-        case AST_ARRAY_COMPREHENSION_SIMPLE:
-        return "AST_ARRAY_COMPREHENSION_SIMPLE";
-        break;
-        case AST_ASSERT:
-        return "AST_ASSERT";
-        break;
-        case AST_BINARY:
-        return "AST_BINARY";
-        break;
-        case AST_BUILTIN_FUNCTION:
-        return "AST_BUILTIN_FUNCTION";
-        break;
-        case AST_CONDITIONAL:
-        return "AST_CONDITIONAL";
-        break;
-        case AST_DESUGARED_OBJECT:
-        return "AST_DESUGARED_OBJECT";
-        break;
-        case AST_DOLLAR:
-        return "AST_DOLLAR";
-        break;
-        case AST_ERROR:
-        return "AST_ERROR";
-        break;
-        case AST_FUNCTION:
-        return "AST_FUNCTION";
-        break;
-        case AST_IMPORT:
-        return "AST_IMPORT";
-        break;
-        case AST_IMPORTSTR:
-        return "AST_IMPORTSTR";
-        break;
-        case AST_INDEX:
-        return "AST_INDEX";
-        break;
-        case AST_IN_SUPER:
-        return "AST_IN_SUPER";
-        break;
-        case AST_LITERAL_BOOLEAN:
-        return "AST_LITERAL_BOOLEAN";
-        break;
-        case AST_LITERAL_NULL:
-        return "AST_LITERAL_NULL";
-        break;
-        case AST_LITERAL_NUMBER:
-        return "AST_LITERAL_NUMBER";
-        break;
-        case AST_LITERAL_STRING:
-        return "AST_LITERAL_STRING";
-        break;
-        case AST_LOCAL:
-        return "AST_LOCAL";
-        break;
-        case AST_OBJECT:
-        return "AST_OBJECT";
-        break;
-        case AST_OBJECT_COMPREHENSION:
-        return "AST_OBJECT_COMPREHENSION";
-        break;
-        case AST_OBJECT_COMPREHENSION_SIMPLE:
-        return "AST_OBJECT_COMPREHENSION_SIMPLE";
-        break;
-        case AST_PARENS:
-        return "AST_PARENS";
-        break;
-        case AST_SELF:
-        return "AST_SELF";
-        break;
-        case AST_SUPER_INDEX:
-        return "AST_SUPER_INDEX";
-        break;
-        case AST_UNARY:
-        return "AST_UNARY";
-        break;
-        case AST_VAR:
-        return "AST_VAR";
-        break;
+        case AST_APPLY: return "AST_APPLY";
+        case AST_ARRAY: return "AST_ARRAY";
+        case AST_ARRAY_COMPREHENSION: return "AST_ARRAY_COMPREHENSION";
+        case AST_ARRAY_COMPREHENSION_SIMPLE: return "AST_ARRAY_COMPREHENSION_SIMPLE";
+        case AST_ASSERT: return "AST_ASSERT";
+        case AST_BINARY: return "AST_BINARY";
+        case AST_BUILTIN_FUNCTION: return "AST_BUILTIN_FUNCTION";
+        case AST_CONDITIONAL: return "AST_CONDITIONAL";
+        case AST_DESUGARED_OBJECT: return "AST_DESUGARED_OBJECT";
+        case AST_DOLLAR: return "AST_DOLLAR";
+        case AST_ERROR: return "AST_ERROR";
+        case AST_FUNCTION: return "AST_FUNCTION";
+        case AST_IMPORT: return "AST_IMPORT";
+        case AST_IMPORTSTR: return "AST_IMPORTSTR";
+        case AST_INDEX: return "AST_INDEX";
+        case AST_IN_SUPER: return "AST_IN_SUPER";
+        case AST_LITERAL_BOOLEAN: return "AST_LITERAL_BOOLEAN";
+        case AST_LITERAL_NULL: return "AST_LITERAL_NULL";
+        case AST_LITERAL_NUMBER: return "AST_LITERAL_NUMBER";
+        case AST_LITERAL_STRING: return "AST_LITERAL_STRING";
+        case AST_LOCAL: return "AST_LOCAL";
+        case AST_OBJECT: return "AST_OBJECT";
+        case AST_OBJECT_COMPREHENSION: return "AST_OBJECT_COMPREHENSION";
+        case AST_OBJECT_COMPREHENSION_SIMPLE: return "AST_OBJECT_COMPREHENSION_SIMPLE";
+        case AST_PARENS: return "AST_PARENS";
+        case AST_SELF: return "AST_SELF";
+        case AST_SUPER_INDEX: return "AST_SUPER_INDEX";
+        case AST_UNARY: return "AST_UNARY";
+        case AST_VAR: return "AST_VAR";
         default:
         assert(false && "Unknown AST type");
-        return "???";
     }
 }
 

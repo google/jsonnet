@@ -1,0 +1,6 @@
+local a = import "a.jsonnet";  # A comment.
+local b = import "b.jsonnet";  # B comment.
+
+local /* aaa */ a = import "a.jsonnet";  # A comment.
+local /* bbb */ b = import "b.jsonnet";  # B comment.
+true

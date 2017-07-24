@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <algorithm>
+#include <set>
 #include <typeinfo>
 
 #include "formatter.h"
@@ -1747,11 +1748,11 @@ class FixIndentation {
 class SortImports {
     /// Internal representation of an import
     struct ImportElem {
-        ImportElem(UString key, Fodder afterFodder, Local::Bind *bind)
+        ImportElem(UString key, Fodder afterFodder, Local::Bind bind)
           : key(key), afterFodder(afterFodder), bind(bind) { }
         UString key;
         Fodder afterFodder;
-        Local::Bind *bind;
+        Local::Bind bind;
         bool operator<(const ImportElem &elem) const {
             return key < elem.key;
         }
@@ -1775,7 +1776,7 @@ class SortImports {
     bool isGoodLocal(Local *local)
     {
         for (const auto &bind: local->binds) {
-            if (bind.body->type != AST_IMPORT) {
+            if (bind.body->type != AST_IMPORT || bind.functionSugar) {
                 return false;
             }
         }
@@ -1791,26 +1792,26 @@ class SortImports {
         }
     }
 
-    /** Split openFodder into what logically belongs to the previous AST node
-     * what belongs to the current AST node.
+    /** Split fodder after the first new line / paragraph fodder,
+     * leaving blank lines after the newline in the second half.
+     * The two returned fodders can be concatenated using concat_fodder to get the original fodder.
      *
      * Example:
-     * local x = import "xxx.jsonnet"; // Importing stuff here
+     * prev_token // prev_token is awesome!
      *
      * // blah blah
-     * {}
+     * next_token
      *
-     * In such case "// Importing  stuff here\n" part of the fodder belongs
-     * to the `local` and the rest to the {}.
+     * In such case "// prev_token is awesome!\n" part of the fodder belongs
+     * to the `prev_token` and "\n//blah blah\n" to the {}.
      */
-    std::pair<Fodder, Fodder> splitOpenFodder(AST *expr)
+    std::pair<Fodder, Fodder> splitFodder(const Fodder &fodder)
     {
-        const Fodder &fodder = open_fodder(expr);
-        Fodder afterPrev, beforeThis;
+        Fodder afterPrev, beforeNext;
         bool inSecondPart = false;
         for (const auto &fodderElem: fodder) {
             if (inSecondPart) {
-                fodder_push_back(beforeThis, fodderElem);
+                fodder_push_back(beforeNext, fodderElem);
             } else {
                 afterPrev.push_back(fodderElem);
             }
@@ -1818,8 +1819,8 @@ class SortImports {
                 inSecondPart = true;
                 if (fodderElem.blanks > 0) {
                     afterPrev.back().blanks = 0;
-                    assert(beforeThis.empty());
-                    beforeThis.emplace_back(
+                    assert(beforeNext.empty());
+                    beforeNext.emplace_back(
                         FodderElement::Kind::LINE_END,
                         fodderElem.blanks,
                         fodderElem.indent,
@@ -1828,7 +1829,7 @@ class SortImports {
                 }
             }
         }
-        return {afterPrev, beforeThis};
+        return {afterPrev, beforeNext};
     }
 
     void sortGroup(ImportElems &imports)
@@ -1845,11 +1846,25 @@ class SortImports {
     ImportElems extractImportElems(Local *local, Fodder after)
     {
         ImportElems result;
-        for (auto &bind: local->binds) {
+        //for (auto &bind: local->binds) {
+        Fodder before = local->binds.front().varFodder;
+        for (int i = 0; i < int(local->binds.size()); ++i) {
+            bool last = i == int(local->binds.size() - 1);
+            Fodder adjacent, beforeNext;
+            if (!last) {
+                auto &next = local->binds[i + 1];
+                std::tie(adjacent, beforeNext) = splitFodder(next.varFodder);
+            } else {
+                adjacent = after;
+            }
+            ensureCleanNewline(adjacent);
+            const auto &bind = local->binds[i];
+            Local::Bind newBind = bind;
+            newBind.varFodder = before;
             Import *import = dynamic_cast<Import*>(bind.body);
             assert(import != nullptr);
-            result.emplace_back(sortingKey(import), after, &bind);
-            after = {FodderElement(FodderElement::Kind::LINE_END, 0, 0, {})};
+            result.emplace_back(sortingKey(import), adjacent, newBind);
+            before = beforeNext;
         }
         return result;
     }
@@ -1864,11 +1879,10 @@ class SortImports {
             } else {
                 fodder = imports[i - 1].afterFodder;
             }
-            Local::Binds binds({*import.bind});
             auto *local = alloc.make<Local>(
                 LocationRange(),
                 fodder,
-                binds,
+                Local::Binds({import.bind}),
                 body
             );
             body = local;
@@ -1879,11 +1893,11 @@ class SortImports {
 
     bool duplicatedVariables(const ImportElems &elems)
     {
-        std::vector<UString> idents;
+        std::set<UString> idents;
         for (const auto &elem: elems) {
-            idents.push_back(elem.bind->var->name);
+            idents.insert(elem.bind.var->name);
         }
-        return std::unique(idents.begin(), idents.end()) != idents.end();
+        return idents.size() < elems.size();
     }
 
     /// Check if the import group ends after this local
@@ -1919,7 +1933,7 @@ class SortImports {
         assert(isGoodLocal(local));
 
         Fodder adjacentCommentFodder, beforeNextFodder;
-        std::tie(adjacentCommentFodder, beforeNextFodder) = splitOpenFodder(local->body);
+        std::tie(adjacentCommentFodder, beforeNextFodder) = splitFodder(open_fodder(local->body));
 
         ensureCleanNewline(adjacentCommentFodder);
 

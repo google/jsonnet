@@ -10,4 +10,11 @@ local t = import 't.jsonnet';
 local u = import 'u.jsonnet';
 local v = import 'v.jsonnet';
 local w = import 'w.jsonnet'; /* w3 */ /* w4 */
+
+local b = import "b.jsonnet";
+/* foo */
+
+/* bar */
+local a = import "a.jsonnet";
+
 true
