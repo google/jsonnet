@@ -596,52 +596,6 @@ class Unparser {
  * The rest of this file contains transformations on the ASTs before unparsing. *
  ********************************************************************************/
 
-/** As a.push_back(elem) but preserves constraints.
- *
- * See concat_fodder below.
- */
-static void fodder_push_back(Fodder &a, const FodderElement &elem)
-{
-    if (!a.empty() && a.back().kind != FodderElement::INTERSTITIAL &&
-        elem.kind == FodderElement::LINE_END) {
-        if (elem.comment.size() > 0) {
-            // The line end had a comment, so create a single line paragraph for it.
-            a.emplace_back(FodderElement::PARAGRAPH, elem.blanks, elem.indent, elem.comment);
-        } else {
-            // Merge it into the previous line end.
-            a.back().indent = elem.indent;
-            a.back().blanks += elem.blanks;
-        }
-    } else {
-        a.push_back(elem);
-    }
-}
-
-/** As a + b but preserves constraints.
- *
- * Namely, a LINE_END is not allowed to follow a PARAGRAPH or a LINE_END.
- */
-static Fodder concat_fodder(const Fodder &a, const Fodder &b)
-{
-    if (a.size() == 0) return b;
-    if (b.size() == 0) return a;
-    Fodder r = a;
-    // Carefully add the first element of b.
-    fodder_push_back(r, b[0]);
-    // Add the rest of b.
-    for (unsigned i = 1; i < b.size() ; ++i) {
-        r.push_back(b[i]);
-    }
-    return r;
-}
-
-/** Move b to the front of a. */
-static void fodder_move_front(Fodder &a, Fodder &b)
-{
-    a = concat_fodder(b, a);
-    b.clear();
-}
-
 /** A generic Pass that does nothing but can be extended to easily define real passes.
  */
 class FmtPass : public CompilerPass {
@@ -1937,9 +1891,8 @@ class SortImports {
 
     void ensureCleanNewline(Fodder &fodder)
     {
-        if (fodder.size() == 0 || fodder.back().kind == FodderElement::Kind::INTERSTITIAL)
-        {
-            fodder.push_back(FodderElement(FodderElement::Kind::LINE_END, 0, 0, {}));
+        if (!fodder_has_clean_endline(fodder)) {
+            fodder_push_back(fodder, FodderElement(FodderElement::Kind::LINE_END, 0, 0, {}));
         }
     }
 

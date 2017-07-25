@@ -117,12 +117,75 @@ static inline std::ostream &operator<<(std::ostream &o, const FodderElement &f)
 
 /** A sequence of fodder elements, typically between two tokens.
  *
- * A LINE_END is not allowed to follow a PARAGRAPH or a LINE_END.  This can be represented by
+ * A LINE_END is not allowed to follow a PARAGRAPH or a LINE_END. This can be represented by
  * replacing the indent of the prior fodder and increasing the number of blank lines if necessary.
  * If there was a comment, it can be represented by changing the LINE_END to a paragraph containing
  * the same single comment string.
+ *
+ * There must be a LINE_END or a PARAGRAPH before a PARAGRAPH.
+ *
+ * TODO(sbarzowski) Make it a proper class
  */
 typedef std::vector<FodderElement> Fodder;
+
+static inline bool fodder_has_clean_endline(const Fodder &fodder) {
+    return !fodder.empty() && fodder.back().kind != FodderElement::INTERSTITIAL;
+}
+
+/** As a.push_back(elem) but preserves constraints.
+ *
+ * See concat_fodder below.
+ */
+static inline void fodder_push_back(Fodder &a, const FodderElement &elem)
+{
+    if (fodder_has_clean_endline(a) && elem.kind == FodderElement::LINE_END) {
+        if (elem.comment.size() > 0) {
+            // The line end had a comment, so create a single line paragraph for it.
+            a.emplace_back(FodderElement::PARAGRAPH, elem.blanks, elem.indent, elem.comment);
+        } else {
+            // Merge it into the previous line end.
+            a.back().indent = elem.indent;
+            a.back().blanks += elem.blanks;
+        }
+    } else {
+        if (!fodder_has_clean_endline(a) && elem.kind == FodderElement::PARAGRAPH) {
+            a.emplace_back(FodderElement::LINE_END, 0, elem.indent, std::vector<std::string>());
+        }
+        a.push_back(elem);
+    }
+}
+
+/** As a + b but preserves constraints.
+ *
+ * Namely, a LINE_END is not allowed to follow a PARAGRAPH or a LINE_END.
+ */
+static inline Fodder concat_fodder(const Fodder &a, const Fodder &b)
+{
+    if (a.size() == 0) return b;
+    if (b.size() == 0) return a;
+    Fodder r = a;
+    // Carefully add the first element of b.
+    fodder_push_back(r, b[0]);
+    // Add the rest of b.
+    for (unsigned i = 1; i < b.size() ; ++i) {
+        r.push_back(b[i]);
+    }
+    return r;
+}
+
+/** Move b to the front of a. */
+static inline void fodder_move_front(Fodder &a, Fodder &b)
+{
+    a = concat_fodder(b, a);
+    b.clear();
+}
+
+static inline Fodder make_fodder(const FodderElement &elem) {
+    Fodder fodder;
+    fodder_push_back(fodder, elem);
+    return fodder;
+}
+
 
 static inline std::ostream &operator<<(std::ostream &o, const Fodder &fodder)
 {
