@@ -38,6 +38,7 @@ test_eval() {
         echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$JSONNET_FILE\e[0m"
         echo "This run's output:"
         echo "$TEST_OUTPUT"
+        echo "Actual exit code $TEST_EXIT_CODE, expected $EXPECTED_EXIT_CODE"
         return 1
     fi
 

@@ -100,6 +100,7 @@ test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 	cd examples/terraform ; ./check.sh
 	cd test_suite ; ./run_tests.sh
 	cd test_suite ; ./run_fmt_tests.sh
+	cd test_suite ; ./run_fmt_idempotence_tests.sh
 
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
