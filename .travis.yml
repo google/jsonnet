@@ -6,12 +6,11 @@ before_install:
   - echo $LANG
   - echo $LC_ALL
 before_script:
-script: |
-    set -e
-    rvm get head  # Workaround 'shell_session_update: command not found'
-    make test
-    python setup.py build
-    python setup.py test
+script:
+    - rvm get head  # Workaround 'shell_session_update: command not found'
+    - make test
+    - python setup.py build
+    - python setup.py test
 branches:
   only:
     - master
