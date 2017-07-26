@@ -444,6 +444,8 @@ static bool process_args(int argc,
                 jsonnet_fmt_pretty_field_names(vm, true);
             } else if (arg == "--no-pretty-field-names") {
                 jsonnet_fmt_pretty_field_names(vm, false);
+            } else if (arg == "--sort-imports") {
+                jsonnet_fmt_sort_imports(vm, true);
             } else if (arg == "--debug-desugaring") {
                 jsonnet_fmt_debug_desugaring(vm, true);
             } else if (arg.length() > 1 && arg[0] == '-') {

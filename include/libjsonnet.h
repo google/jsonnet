@@ -242,6 +242,10 @@ void jsonnet_fmt_pad_objects(struct JsonnetVm *vm, int v);
  */
 void jsonnet_fmt_pretty_field_names(struct JsonnetVm *vm, int v);
 
+/** Sort top-level imports in alphabetical order
+ */
+void jsonnet_fmt_sort_imports(struct JsonnetVm *vm, int v);
+
 /** If set to 1, will reformat the Jsonnet input after desugaring. */
 void jsonnet_fmt_debug_desugaring(struct JsonnetVm *vm, int v);
 

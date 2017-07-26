@@ -628,11 +628,11 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                             new_lines_after = 1;
                             indent_after = 0;
                         }
-                        if (!fresh_line)
-                            // Ensure a line end before the comment.
-                            fodder.emplace_back(FodderElement::LINE_END, 0, 0, EMPTY);
-                        fodder.emplace_back(FodderElement::PARAGRAPH, new_lines_after - 1,
-                                            indent_after, lines);
+                        fodder_push_back(fodder,
+                                         FodderElement(FodderElement::PARAGRAPH,
+                                                       new_lines_after - 1,
+                                                       indent_after,
+                                                       lines));
                         fresh_line = true;
                     }
                     continue;  // We've not got a token, just fodder, so keep scanning.
