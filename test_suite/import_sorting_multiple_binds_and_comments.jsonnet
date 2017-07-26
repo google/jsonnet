@@ -16,13 +16,13 @@ local /* bbb */ b = import "b.jsonnet",  # B comment.
          aaa */ a = import "a.jsonnet";  # A comment.
 
 // We don't really support that, it's going to be messy.
-// There's an endline silently inserted before any
+// There's an endline inserted before any paragraph comment.
 local b = import "b.jsonnet",  /* BBB */ /* B comment.
       bbb
       bbb
       bbb */ a = import "a.jsonnet";  # A comment.
 
-// The example above is equivalent to this one, due to fodder representation constraints
+// The example above is equivalent to this one, due to fodder representation constraints.
 local b = import "b.jsonnet",  /* BBB */
       /* B comment.
       bbb
