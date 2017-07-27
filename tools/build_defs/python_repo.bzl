@@ -29,7 +29,7 @@ def _python_interpreter(repository_ctx):
     realpath = rctx.which(rctx.attr.path)
   rctx.symlink(realpath, "bin/python")
   include_path = rctx.execute([
-      realpath, "-c", 'import sysconfig; print(sysconfig.get_path("include"))',
+      realpath, "-c", "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())",
   ])
   if include_path.return_code != 0:
     fail("Failed to locate Python headers:\n" + include_path.stderr)
