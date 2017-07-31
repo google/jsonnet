@@ -975,7 +975,8 @@ class PrettyFieldNames : public FmtPass {
 ///     'a': 'b',
 ///     'c': 'd',
 /// }]
-/// The outer array can be unexpanded, because there are no newlines between
+/// The outer array can stay unexpanded, because there are no newlines between
+/// the square brackets and the braces.
 class FixNewlines: public FmtPass {
     using FmtPass::visit;
 
