@@ -1159,10 +1159,10 @@ class FixNewlines: public FmtPass {
     }
 
     // Example:
-    // very_long_function_on_a_long_line_so_arguments_dont_fit_on_the_same_line(
+    // foo(
     //     1, 2, 3)
     // Should be expanded to:
-    // very_long_function_on_a_long_line_so_arguments_dont_fit_on_the_same_line(
+    // foo(
     //     1, 2, 3
     // )
     bool shouldExpandNearParens(ArgParams &params, Fodder &fodder_r)

@@ -27,7 +27,8 @@ separator() {
 
 get_temp_dir() {
     if [ -z "$TMP_DIR" ]; then
-        # Simplest and most portable way I could find.
+        # We use Python to avoid portability problems with `mktemp`.
+        # See: https://unix.stackexchange.com/questions/30091/fix-or-alternative-for-mktemp-in-os-x
         TMP_DIR="`python2 -c "import tempfile; print(tempfile.mkdtemp(prefix='jsonnet_'))"`"
         $($VERBOSE) && echo "Created temporary directory $TMP_DIR"
     fi
