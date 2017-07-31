@@ -18,7 +18,8 @@
     collCorrect2c: [
         {
         name: "Bad",
-        }, self.someOther(),],
+        }, self.someOther(),
+    ],
     collCorrect2d: [
         {
         name: "Bad",
