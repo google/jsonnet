@@ -967,7 +967,7 @@ class PrettyFieldNames : public FmtPass {
 ///
 /// The main principle is that a structure can either be:
 /// * expanded and contain newlines in all the designated places
-/// * unexpanded and not contain any newlines in any of designated places.
+/// * unexpanded and contain newlines in none of the designated places
 ///
 /// It only looks shallowly at the AST nodes, so there may be some newlines deeper that
 /// don't affect expanding. For example:
