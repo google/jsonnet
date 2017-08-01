@@ -24,7 +24,8 @@ std.assertEqual(
     local std = { sqrt: function(x) x };
     local lib = import "lib/capture_std.libsonnet";
     lib.sqrt(4),
-    2) &&
+    2
+) &&
 
 // Now, test each std library function in turn.
 
@@ -195,7 +196,8 @@ std.assertEqual(
             empty: {},
         },
     }),
-    "a = 1\nb = 2\n[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+    "a = 1\nb = 2\n[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n"
+) &&
 
 std.assertEqual(
     std.manifestIni({
@@ -205,7 +207,8 @@ std.assertEqual(
             empty: {},
         },
     }),
-    "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+    "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n"
+) &&
 
 std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
@@ -272,7 +275,8 @@ std.assertEqual(std.sort(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
 std.assertEqual(
     std.sort(["The", "rain", "in", "spain", "falls", "mainly", "on", "the", "plain."]),
-    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]
+) &&
 
 std.assertEqual(std.uniq([]), []) &&
 std.assertEqual(std.uniq([1]), [1]) &&
@@ -280,17 +284,20 @@ std.assertEqual(std.uniq([1, 2]), [1, 2]) &&
 std.assertEqual(std.uniq(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(
     std.uniq(["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]),
-    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]
+) &&
 
 local animal_set = ["ant", "bat", "cat", "dog", "elephant", "fish", "giraffe"];
 
 std.assertEqual(
     std.uniq(["ant", "bat", "cat", "dog", "dog", "elephant", "fish", "fish", "giraffe"]),
-    animal_set) &&
+    animal_set
+) &&
 
 std.assertEqual(
     std.set(["dog", "ant", "bat", "cat", "dog", "elephant", "fish", "giraffe", "fish"]),
-    animal_set) &&
+    animal_set
+) &&
 
 std.assertEqual(std.setUnion(animal_set, animal_set), animal_set) &&
 std.assertEqual(std.setUnion(animal_set, []), animal_set) &&
@@ -338,38 +345,40 @@ std.assertEqual(std.split("/foo/", "/"), ["", "foo", ""]) &&
 std.assertEqual(std.splitLimit("foo/bar", "/", 1), ["foo", "bar"]) &&
 std.assertEqual(std.splitLimit("/foo/", "/", 1), ["", "foo/"]) &&
 
-std.assertEqual(std.manifestJsonEx({
-    x: [1, 2, 3, true, false, null, "string\nstring"],
-    y: { a: 1, b: 2, c: [1, 2] },
-    emptyArray: [],
-    emptyObject: {},
-}, "    ") + "\n", |||
-    {
-        "emptyArray": [
+std.assertEqual(
+    std.manifestJsonEx({
+        x: [1, 2, 3, true, false, null, "string\nstring"],
+        y: { a: 1, b: 2, c: [1, 2] },
+        emptyArray: [],
+        emptyObject: {},
+    }, "    ") + "\n",
+    |||
+        {
+            "emptyArray": [
 
-        ],
-        "emptyObject": {
+            ],
+            "emptyObject": {
 
-        },
-        "x": [
-            1,
-            2,
-            3,
-            true,
-            false,
-            null,
-            "string\nstring"
-        ],
-        "y": {
-            "a": 1,
-            "b": 2,
-            "c": [
+            },
+            "x": [
                 1,
-                2
-            ]
+                2,
+                3,
+                true,
+                false,
+                null,
+                "string\nstring"
+            ],
+            "y": {
+                "a": 1,
+                "b": 2,
+                "c": [
+                    1,
+                    2
+                ]
+            }
         }
-    }
-|||
+    |||
 ) &&
 
 std.assertEqual(std.parseInt("01234567890"), 1234567890) &&

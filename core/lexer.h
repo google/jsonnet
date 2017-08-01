@@ -180,12 +180,42 @@ static inline void fodder_move_front(Fodder &a, Fodder &b)
     b.clear();
 }
 
-static inline Fodder make_fodder(const FodderElement &elem) {
+static inline Fodder make_fodder(const FodderElement &elem)
+{
     Fodder fodder;
     fodder_push_back(fodder, elem);
     return fodder;
 }
 
+static inline void ensureCleanNewline(Fodder &fodder)
+{
+    if (!fodder_has_clean_endline(fodder)) {
+        fodder_push_back(fodder, FodderElement(FodderElement::Kind::LINE_END, 0, 0, {}));
+    }
+}
+
+static inline int countNewlines(const FodderElement &elem)
+{
+    switch (elem.kind) {
+        case FodderElement::INTERSTITIAL:
+            return 0;
+        case FodderElement::LINE_END:
+            return 1;
+        case FodderElement::PARAGRAPH:
+            return elem.comment.size() + elem.blanks;
+    }
+    std::cerr << "Unknown FodderElement kind" << std::endl;
+    abort();
+}
+
+static inline int countNewlines(const Fodder &fodder)
+{
+    int sum = 0;
+    for (const auto &elem: fodder) {
+        sum += countNewlines(elem);
+    }
+    return sum;
+}
 
 static inline std::ostream &operator<<(std::ostream &o, const Fodder &fodder)
 {

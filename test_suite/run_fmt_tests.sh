@@ -24,6 +24,8 @@ source "tests.source"
 
 #VERBOSE=true
 
+init
+
 for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../benchmarks/*.jsonnet ../gc_stress/*.jsonnet ; do
 
     GOLDEN_OUTPUT="$(cat $TEST)"
@@ -48,3 +50,5 @@ else
     echo "FAILED: $FAILED / $EXECUTED"
     exit 1
 fi
+
+deinit

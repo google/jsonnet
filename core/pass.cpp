@@ -116,12 +116,7 @@ void CompilerPass::expr(AST *&ast_)
 void CompilerPass::visit(Apply *ast)
 {
     expr(ast->target);
-    fodder(ast->fodderL);
-    for (auto &arg : ast->args) {
-        expr(arg.expr);
-        fodder(arg.commaFodder);
-    }
-    fodder(ast->fodderR);
+    params(ast->fodderL, ast->args, ast->fodderR);
     if (ast->tailstrict) {
         fodder(ast->tailstrictFodder);
     }
@@ -232,7 +227,7 @@ void CompilerPass::visit(Local *ast)
         fodder(bind.varFodder);
         if (bind.functionSugar) {
             params(bind.parenLeftFodder, bind.params, bind.parenRightFodder);
-        } 
+        }
         fodder(bind.opFodder);
         expr(bind.body);
         fodder(bind.closeFodder);

@@ -92,6 +92,8 @@ static inline std::string ASTTypeToString(ASTType type) {
         case AST_UNARY: return "AST_UNARY";
         case AST_VAR: return "AST_VAR";
     }
+    std::cerr << "Invalid AST type" << "\n";
+    abort();
 }
 
 /** Represents a variable / parameter / field name. */
