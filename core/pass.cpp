@@ -28,13 +28,11 @@ void CompilerPass::specs(std::vector<ComprehensionSpec> &specs)
         fodder(spec.openFodder);
         switch (spec.kind) {
             case ComprehensionSpec::FOR:
-            fodder(spec.varFodder);
-            fodder(spec.inFodder);
-            expr(spec.expr);
-            break;
-            case ComprehensionSpec::IF:
-            expr(spec.expr);
-            break;
+                fodder(spec.varFodder);
+                fodder(spec.inFodder);
+                expr(spec.expr);
+                break;
+            case ComprehensionSpec::IF: expr(spec.expr); break;
         }
     }
 }
@@ -63,7 +61,6 @@ void CompilerPass::fieldParams(ObjectField &field)
 void CompilerPass::fields(ObjectFields &fields)
 {
     for (auto &field : fields) {
-
         switch (field.kind) {
             case ObjectField::LOCAL: {
                 fodder(field.fodder1);
@@ -287,69 +284,68 @@ void CompilerPass::visit(Unary *ast)
 
 void CompilerPass::visitExpr(AST *&ast_)
 {
-    if (auto *ast = dynamic_cast<Apply*>(ast_)) {
+    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<ApplyBrace*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Array*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<ArrayComprehension*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Assert*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Binary*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<BuiltinFunction*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<BuiltinFunction *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Conditional*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Dollar*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Error*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Function*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Import*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Importstr*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<InSuper*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Local*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralBoolean*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralBoolean *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNumber*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralNumber *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralString*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNull*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralNull *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Object*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<DesugaredObject*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Parens*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Self*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Self *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<SuperIndex*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Unary*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
         visit(ast);
-    } else if (auto *ast = dynamic_cast<Var*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Var *>(ast_)) {
         visit(ast);
 
     } else {
         std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
         std::abort();
-
     }
 }
 
@@ -361,76 +357,75 @@ void CompilerPass::file(AST *&body, Fodder &final_fodder)
 
 /** A pass that clones the AST it is given. */
 class ClonePass : public CompilerPass {
-    public:
-    ClonePass(Allocator &alloc) : CompilerPass(alloc) { }
+   public:
+    ClonePass(Allocator &alloc) : CompilerPass(alloc) {}
     virtual void expr(AST *&ast);
 };
 
 void ClonePass::expr(AST *&ast_)
 {
-    if (auto *ast = dynamic_cast<Apply*>(ast_)) {
+    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ApplyBrace*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Array*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ArrayComprehension*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Assert*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Binary*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<BuiltinFunction*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<BuiltinFunction *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Conditional*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Dollar*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Error*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Function*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Import*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Importstr*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<InSuper*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Index*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Local*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralBoolean*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralBoolean *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNumber*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralNumber *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralString*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNull*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<LiteralNull *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Object*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<DesugaredObject*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehension*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Parens*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Self*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Self *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<SuperIndex*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Unary*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
         ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Var*>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Var *>(ast_)) {
         ast_ = alloc.clone(ast);
 
     } else {
         std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
         std::abort();
-
     }
 
     CompilerPass::expr(ast_);

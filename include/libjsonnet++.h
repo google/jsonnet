@@ -17,17 +17,16 @@ limitations under the License.
 #ifndef CPP_JSONNET_H_
 #define CPP_JSONNET_H_
 
-#include <functional>
 #include <cstring>
-#include <string>
+#include <functional>
 #include <map>
+#include <string>
 
 extern "C" {
-    #include "libjsonnet.h"
+#include "libjsonnet.h"
 }
 
 namespace jsonnet {
-
 class Jsonnet {
    public:
     Jsonnet();
@@ -99,8 +98,7 @@ class Jsonnet {
     /// @param output Pointer to string to contain the output.
     /// @return true if the Jsonnet code was successfully evaluated, false
     ///         otherwise.
-    bool evaluateSnippet(const std::string& filename,
-                         const std::string& snippet,
+    bool evaluateSnippet(const std::string& filename, const std::string& snippet,
                          std::string* output);
 
     /// Evaluate a file containing Jsonnet code, return a number of JSON files.
@@ -127,14 +125,13 @@ class Jsonnet {
     ///        to JSON string.
     /// @return true if the Jsonnet code was successfully evaluated, false
     ///         otherwise.
-    bool evaluateSnippetMulti(const std::string& filename,
-                              const std::string& snippet,
+    bool evaluateSnippetMulti(const std::string& filename, const std::string& snippet,
                               std::map<std::string, std::string>* outputs);
 
     /// Returns the last error raised by Jsonnet.
     std::string lastError() const;
 
-  private:
+   private:
     struct JsonnetVm* vm_;
     std::string last_error_;
 };

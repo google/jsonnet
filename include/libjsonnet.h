@@ -24,9 +24,7 @@ limitations under the License.
  * of using the library.
  */
 
-
 #define LIB_JSONNET_VERSION "v0.9.4"
-
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
  * http://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between
@@ -66,7 +64,8 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * \param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
  */
-typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, char **found_here, int *success);
+typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, char **found_here,
+                                    int *success);
 
 /** An opaque type which can only be utilized via the jsonnet_json_* family of functions.
  */
@@ -78,7 +77,8 @@ const char *jsonnet_json_extract_string(struct JsonnetVm *vm, const struct Jsonn
 
 /** If the value is a number, return 1 and store the number in out, otherwise return 0.
  */
-int jsonnet_json_extract_number(struct JsonnetVm *vm, const struct JsonnetJsonValue *v, double *out);
+int jsonnet_json_extract_number(struct JsonnetVm *vm, const struct JsonnetJsonValue *v,
+                                double *out);
 
 /** Return 0 if the value is false, 1 if it is true, and 2 if it is not a bool.
  */
@@ -112,8 +112,7 @@ struct JsonnetJsonValue *jsonnet_json_make_array(struct JsonnetVm *vm);
 
 /** Add v to the end of the array.
  */
-void jsonnet_json_array_append(struct JsonnetVm *vm,
-                               struct JsonnetJsonValue *arr,
+void jsonnet_json_array_append(struct JsonnetVm *vm, struct JsonnetJsonValue *arr,
                                struct JsonnetJsonValue *v);
 
 /** Make a JsonnetJsonValue representing an object with the given number of fields.
@@ -126,9 +125,7 @@ struct JsonnetJsonValue *jsonnet_json_make_object(struct JsonnetVm *vm);
  *
  * This replaces any previous binding of the field.
  */
-void jsonnet_json_object_append(struct JsonnetVm *vm,
-                                struct JsonnetJsonValue *obj,
-                                const char *f,
+void jsonnet_json_object_append(struct JsonnetVm *vm, struct JsonnetJsonValue *obj, const char *f,
                                 struct JsonnetJsonValue *v);
 
 /** Clean up a JSON subtree.
@@ -150,7 +147,7 @@ void jsonnet_json_destroy(struct JsonnetVm *vm, struct JsonnetJsonValue *v);
  * \returns The content of the imported file, or an error message.
  */
 typedef struct JsonnetJsonValue *JsonnetNativeCallback(void *ctx,
-                                                       const struct JsonnetJsonValue * const *argv,
+                                                       const struct JsonnetJsonValue *const *argv,
                                                        int *success);
 
 /** Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will
@@ -180,7 +177,7 @@ void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, vo
  * \param params NULL-terminated array of the names of the params.  Must be valid identifiers.
  */
 void jsonnet_native_callback(struct JsonnetVm *vm, const char *name, JsonnetNativeCallback *cb,
-                             void *ctx, const char * const *params);
+                             void *ctx, const char *const *params);
 
 /** Bind a Jsonnet external var to the given string.
  *
@@ -257,9 +254,7 @@ void jsonnet_fmt_debug_desugaring(struct JsonnetVm *vm, int v);
  * \param error Return by reference whether or not there was an error.
  * \returns Either Jsonnet code or the error message.
  */
-char *jsonnet_fmt_file(struct JsonnetVm *vm,
-                       const char *filename,
-                       int *error);
+char *jsonnet_fmt_file(struct JsonnetVm *vm, const char *filename, int *error);
 
 /** Evaluate a string containing Jsonnet code, return a Jsonnet string.
  *
@@ -270,9 +265,7 @@ char *jsonnet_fmt_file(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either JSON or the error message.
  */
-char *jsonnet_fmt_snippet(struct JsonnetVm *vm,
-                          const char *filename,
-                          const char *snippet,
+char *jsonnet_fmt_snippet(struct JsonnetVm *vm, const char *filename, const char *snippet,
                           int *error);
 
 /** Set the number of lines of stack trace to display (0 for all of them). */
@@ -289,9 +282,7 @@ void jsonnet_jpath_add(struct JsonnetVm *vm, const char *v);
  * \param error Return by reference whether or not there was an error.
  * \returns Either JSON or the error message.
  */
-char *jsonnet_evaluate_file(struct JsonnetVm *vm,
-                            const char *filename,
-                            int *error);
+char *jsonnet_evaluate_file(struct JsonnetVm *vm, const char *filename, int *error);
 
 /** Evaluate a string containing Jsonnet code, return a JSON string.
  *
@@ -302,9 +293,7 @@ char *jsonnet_evaluate_file(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either JSON or the error message.
  */
-char *jsonnet_evaluate_snippet(struct JsonnetVm *vm,
-                               const char *filename,
-                               const char *snippet,
+char *jsonnet_evaluate_snippet(struct JsonnetVm *vm, const char *filename, const char *snippet,
                                int *error);
 
 /** Evaluate a file containing Jsonnet code, return a number of named JSON files.
@@ -316,9 +305,7 @@ char *jsonnet_evaluate_snippet(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
  */
-char *jsonnet_evaluate_file_multi(struct JsonnetVm *vm,
-                                  const char *filename,
-                                  int *error);
+char *jsonnet_evaluate_file_multi(struct JsonnetVm *vm, const char *filename, int *error);
 
 /** Evaluate a string containing Jsonnet code, return a number of named JSON files.
  *
@@ -330,10 +317,8 @@ char *jsonnet_evaluate_file_multi(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
  */
-char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
-                                     const char *filename,
-                                     const char *snippet,
-                                     int *error);
+char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm, const char *filename,
+                                     const char *snippet, int *error);
 
 /** Evaluate a file containing Jsonnet code, return a number of JSON files.
  *
@@ -344,9 +329,7 @@ char *jsonnet_evaluate_snippet_multi(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
  */
-char *jsonnet_evaluate_file_stream(struct JsonnetVm *vm,
-                                   const char *filename,
-                                   int *error);
+char *jsonnet_evaluate_file_stream(struct JsonnetVm *vm, const char *filename, int *error);
 
 /** Evaluate a string containing Jsonnet code, return a number of JSON files.
  *
@@ -358,10 +341,8 @@ char *jsonnet_evaluate_file_stream(struct JsonnetVm *vm,
  * \param error Return by reference whether or not there was an error.
  * \returns Either the error, or a sequence of strings separated by \0, terminated with \0\0.
  */
-char *jsonnet_evaluate_snippet_stream(struct JsonnetVm *vm,
-                                      const char *filename,
-                                      const char *snippet,
-                                      int *error);
+char *jsonnet_evaluate_snippet_stream(struct JsonnetVm *vm, const char *filename,
+                                      const char *snippet, int *error);
 
 /** Complement of \see jsonnet_vm_make. */
 void jsonnet_destroy(struct JsonnetVm *vm);

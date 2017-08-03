@@ -38,23 +38,23 @@ static inline int encode_utf8(char32_t x, std::string &s)
     if (x < 0x80) {
         s.push_back((char)x);
         return 1;
-    } else if (x < 0x800) { // note that capital 'Y' bits must be 0
+    } else if (x < 0x800) {  // note that capital 'Y' bits must be 0
         bytes |= 0xC080;
         s.push_back((bytes >> 8) & 0xFF);
         s.push_back((bytes >> 0) & 0xFF);
         return 2;
-    } else if (x < 0x10000) { // note that 'z' bits must be 0
+    } else if (x < 0x10000) {  // note that 'z' bits must be 0
         bytes |= 0xE08080;
         s.push_back((bytes >> 16) & 0xFF);
-        s.push_back((bytes >>  8) & 0xFF);
-        s.push_back((bytes >>  0) & 0xFF);
+        s.push_back((bytes >> 8) & 0xFF);
+        s.push_back((bytes >> 0) & 0xFF);
         return 3;
-    } else if (x < 0x110000) { // note that capital 'Z' bits must be 0
+    } else if (x < 0x110000) {  // note that capital 'Z' bits must be 0
         bytes |= 0xF0808080;
         s.push_back((bytes >> 24) & 0xFF);
         s.push_back((bytes >> 16) & 0xFF);
-        s.push_back((bytes >>  8) & 0xFF);
-        s.push_back((bytes >>  0) & 0xFF);
+        s.push_back((bytes >> 8) & 0xFF);
+        s.push_back((bytes >> 0) & 0xFF);
         return 4;
     } else {
         std::cerr << "Should never get here." << std::endl;
@@ -64,18 +64,18 @@ static inline int encode_utf8(char32_t x, std::string &s)
 
 /** Convert the UTF8 byte sequence in the given string to a unicode code point.
  *
- * \param str The string. 
+ * \param str The string.
  * \param i The index of the string from which to start decoding and returns the index of the last
- *          byte of the encoded codepoint. 
+ *          byte of the encoded codepoint.
  * \returns The decoded unicode codepoint.
  */
 static inline char32_t decode_utf8(const std::string &str, size_t &i)
 {
     char c0 = str[i];
-    if ((c0 & 0x80) == 0) { //0xxxxxxx
+    if ((c0 & 0x80) == 0) {  // 0xxxxxxx
         return c0;
-    } else if ((c0 & 0xE0) == 0xC0) { //110yyyxx 10xxxxxx
-        if (i+1 >= str.length()) {
+    } else if ((c0 & 0xE0) == 0xC0) {  // 110yyyxx 10xxxxxx
+        if (i + 1 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
         }
         char c1 = str[++i];
@@ -83,8 +83,8 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
             return JSONNET_CODEPOINT_ERROR;
         }
         return ((c0 & 0x1F) << 6ul) | (c1 & 0x3F);
-    } else if ((c0 & 0xF0) == 0xE0) { //1110yyyy 10yyyyxx 10xxxxxx
-        if (i+2 >= str.length()) {
+    } else if ((c0 & 0xF0) == 0xE0) {  // 1110yyyy 10yyyyxx 10xxxxxx
+        if (i + 2 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
         }
         char c1 = str[++i];
@@ -96,8 +96,8 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
             return JSONNET_CODEPOINT_ERROR;
         }
         return ((c0 & 0xF) << 12ul) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
-    } else if ((c0 & 0xF8) == 0xF0) { //11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
-        if (i+3 >= str.length()) {
+    } else if ((c0 & 0xF8) == 0xF0) {  // 11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
+        if (i + 3 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
         }
         char c1 = str[++i];
@@ -121,7 +121,6 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
 /** A string class capable of holding unicode codepoints. */
 typedef std::basic_string<char32_t> UString;
 
-  
 static inline void encode_utf8(const UString &s, std::string &r)
 {
     for (char32_t cp : s)
@@ -138,21 +137,35 @@ static inline std::string encode_utf8(const UString &s)
 static inline UString decode_utf8(const std::string &s)
 {
     UString r;
-    for (size_t i = 0; i < s.length(); ++i) 
+    for (size_t i = 0; i < s.length(); ++i)
         r.push_back(decode_utf8(s, i));
     return r;
 }
 
-/** A stringstream-like class capable of holding unicode codepoints. 
+/** A stringstream-like class capable of holding unicode codepoints.
  * The C++ standard does not support std::basic_stringstream<char32_t.
  */
 class UStringStream {
     UString buf;
-    public:
-    UStringStream &operator << (const UString &s) { buf.append(s); return *this; }
-    UStringStream &operator << (const char32_t *s) { buf.append(s); return *this; }
-    UStringStream &operator << (char32_t c) { buf.push_back(c); return *this; }
-    template<class T> UStringStream &operator << (T c)
+
+   public:
+    UStringStream &operator<<(const UString &s)
+    {
+        buf.append(s);
+        return *this;
+    }
+    UStringStream &operator<<(const char32_t *s)
+    {
+        buf.append(s);
+        return *this;
+    }
+    UStringStream &operator<<(char32_t c)
+    {
+        buf.push_back(c);
+        return *this;
+    }
+    template <class T>
+    UStringStream &operator<<(T c)
     {
         std::stringstream ss;
         ss << c;
@@ -160,7 +173,10 @@ class UStringStream {
             buf.push_back(char32_t(c));
         return *this;
     }
-    UString str() { return buf; }
+    UString str()
+    {
+        return buf;
+    }
 };
 
 #endif  // JSONNET_UNICODE_H

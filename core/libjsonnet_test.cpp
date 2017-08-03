@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 extern "C" {
-    #include "libjsonnet.h"
+#include "libjsonnet.h"
 }
 
 #include "gtest/gtest.h"

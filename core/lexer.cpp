@@ -17,8 +17,8 @@ limitations under the License.
 #include <cassert>
 
 #include <map>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include "lexer.h"
 #include "static_error.h"
@@ -29,7 +29,8 @@ static const std::vector<std::string> EMPTY;
 /** Strip whitespace from both ends of a string, but only up to margin on the left hand side. */
 static std::string strip_ws(const std::string &s, unsigned margin)
 {
-    if (s.size() == 0) return s;  // Avoid underflow below.
+    if (s.size() == 0)
+        return s;  // Avoid underflow below.
     size_t i = 0;
     while (i < s.length() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') && i < margin)
         i++;
@@ -45,7 +46,7 @@ static std::vector<std::string> line_split(const std::string &s, unsigned margin
 {
     std::vector<std::string> ret;
     std::stringstream ss;
-    for (size_t i=0 ; i<s.length() ; ++i) {
+    for (size_t i = 0; i < s.length(); ++i) {
         if (s[i] == '\n') {
             ret.emplace_back(strip_ws(ss.str(), margin));
             ss.str("");
@@ -56,8 +57,6 @@ static std::vector<std::string> line_split(const std::string &s, unsigned margin
     ret.emplace_back(strip_ws(ss.str(), margin));
     return ret;
 }
-
-
 
 /** Consume whitespace.
  *
@@ -71,31 +70,28 @@ static void lex_ws(const char *&c, unsigned &new_lines, unsigned &indent, const 
     for (; *c != '\0' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'); c++) {
         switch (*c) {
             case '\r':
-            // Ignore.
-            break;
+                // Ignore.
+                break;
 
             case '\n':
-            indent = 0;
-            new_lines++;
-            line_number++;
-            line_start = c + 1;
-            break;
+                indent = 0;
+                new_lines++;
+                line_number++;
+                line_start = c + 1;
+                break;
 
             case ' ':
-            indent += 1;
-            break;
+                indent += 1;
+                break;
 
             // This only works for \t at the beginning of lines, but we strip it everywhere else
             // anyway.  The only case where this will cause a problem is spaces followed by \t
             // at the beginning of a line.  However that is rare, ill-advised, and if re-indentation
             // is enabled it will be fixed later.
-            case '\t':
-            indent += 8;
-            break;
+            case '\t': indent += 8; break;
         }
     }
 }
-
 
 /**
 # Consume all text until the end of the line, return number of newlines after that and indent
@@ -144,12 +140,21 @@ static bool is_identifier(char c)
 static bool is_symbol(char c)
 {
     switch (c) {
-        case '!': case '$': case ':':
-        case '~': case '+': case '-':
-        case '&': case '|': case '^':
-        case '=': case '<': case '>':
-        case '*': case '/': case '%':
-        return true;
+        case '!':
+        case '$':
+        case ':':
+        case '~':
+        case '+':
+        case '-':
+        case '&':
+        case '|':
+        case '^':
+        case '=':
+        case '<':
+        case '>':
+        case '*':
+        case '/':
+        case '%': return true;
     }
     return false;
 }
@@ -177,7 +182,8 @@ static const std::map<std::string, Token::Kind> keywords = {
 Token::Kind lex_get_keyword_kind(const std::string &identifier)
 {
     auto it = keywords.find(identifier);
-    if (it == keywords.end()) return Token::IDENTIFIER;
+    if (it == keywords.end())
+        return Token::IDENTIFIER;
     return it->second;
 }
 
@@ -208,137 +214,163 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
     while (true) {
         switch (state) {
             case BEGIN:
-            switch (*c) {
-                case '0':
-                state = AFTER_ZERO;
-                break;
+                switch (*c) {
+                    case '0': state = AFTER_ZERO; break;
 
-                case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_ONE_TO_NINE;
-                break;
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_ONE_TO_NINE; break;
 
-                default:
-                throw StaticError(filename, begin, "Couldn't lex number");
-            }
-            break;
+                    default: throw StaticError(filename, begin, "Couldn't lex number");
+                }
+                break;
 
             case AFTER_ZERO:
-            switch (*c) {
-                case '.':
-                state = AFTER_DOT;
-                break;
+                switch (*c) {
+                    case '.': state = AFTER_DOT; break;
 
-                case 'e': case 'E':
-                state = AFTER_E;
-                break;
+                    case 'e':
+                    case 'E': state = AFTER_E; break;
 
-                default:
-                goto end;
-            }
-            break;
+                    default: goto end;
+                }
+                break;
 
             case AFTER_ONE_TO_NINE:
-            switch (*c) {
-                case '.':
-                state = AFTER_DOT;
-                break;
+                switch (*c) {
+                    case '.': state = AFTER_DOT; break;
 
-                case 'e': case 'E':
-                state = AFTER_E;
-                break;
+                    case 'e':
+                    case 'E': state = AFTER_E; break;
 
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_ONE_TO_NINE;
-                break;
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_ONE_TO_NINE; break;
 
-                default:
-                goto end;
-            }
-            break;
+                    default: goto end;
+                }
+                break;
 
             case AFTER_DOT:
-            switch (*c) {
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_DIGIT;
-                break;
+                switch (*c) {
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_DIGIT; break;
 
-                default: {
-                    std::stringstream ss;
-                    ss << "Couldn't lex number, junk after decimal point: " << *c;
-                    throw StaticError(filename, begin, ss.str());
+                    default: {
+                        std::stringstream ss;
+                        ss << "Couldn't lex number, junk after decimal point: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
                 }
-            }
-            break;
+                break;
 
             case AFTER_DIGIT:
-            switch (*c) {
-                case 'e': case 'E':
-                state = AFTER_E;
-                break;
+                switch (*c) {
+                    case 'e':
+                    case 'E': state = AFTER_E; break;
 
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_DIGIT;
-                break;
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_DIGIT; break;
 
-                default:
-                goto end;
-            }
-            break;
+                    default: goto end;
+                }
+                break;
 
             case AFTER_E:
-            switch (*c) {
-                case '+': case '-':
-                state = AFTER_EXP_SIGN;
-                break;
+                switch (*c) {
+                    case '+':
+                    case '-': state = AFTER_EXP_SIGN; break;
 
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_EXP_DIGIT;
-                break;
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_EXP_DIGIT; break;
 
-                default: {
-                    std::stringstream ss;
-                    ss << "Couldn't lex number, junk after 'E': " << *c;
-                    throw StaticError(filename, begin, ss.str());
+                    default: {
+                        std::stringstream ss;
+                        ss << "Couldn't lex number, junk after 'E': " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
                 }
-            }
-            break;
+                break;
 
             case AFTER_EXP_SIGN:
-            switch (*c) {
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_EXP_DIGIT;
-                break;
+                switch (*c) {
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_EXP_DIGIT; break;
 
-                default: {
-                    std::stringstream ss;
-                    ss << "Couldn't lex number, junk after exponent sign: " << *c;
-                    throw StaticError(filename, begin, ss.str());
+                    default: {
+                        std::stringstream ss;
+                        ss << "Couldn't lex number, junk after exponent sign: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
                 }
-            }
-            break;
+                break;
 
             case AFTER_EXP_DIGIT:
-            switch (*c) {
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                state = AFTER_EXP_DIGIT;
-                break;
+                switch (*c) {
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_EXP_DIGIT; break;
 
-                default:
-                goto end;
-            }
-            break;
+                    default: goto end;
+                }
+                break;
         }
         r += *c;
         c++;
     }
-    end:
+end:
     return r;
 }
 
@@ -348,7 +380,8 @@ static int whitespace_check(const char *a, const char *b)
 {
     int i = 0;
     while (a[i] == ' ' || a[i] == '\t') {
-        if (b[i] != a[i]) return 0;
+        if (b[i] != a[i])
+            return 0;
         i++;
     }
     return i;
@@ -378,8 +411,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
     Fodder fodder;
     bool fresh_line = true;  // Are we tokenizing from the beginning of a new line?
 
-    while (*c!='\0') {
-
+    while (*c != '\0') {
         // Used to ensure we have actually advanced the pointer by the end of the iteration.
         const char *original_c = c;
 
@@ -405,111 +437,116 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
         Location begin(line_number, c - line_start + 1);
 
         switch (*c) {
-
             // The following operators should never be combined with subsequent symbols.
             case '{':
-            kind = Token::BRACE_L;
-            c++;
-            break;
+                kind = Token::BRACE_L;
+                c++;
+                break;
 
             case '}':
-            kind = Token::BRACE_R;
-            c++;
-            break;
+                kind = Token::BRACE_R;
+                c++;
+                break;
 
             case '[':
-            kind = Token::BRACKET_L;
-            c++;
-            break;
+                kind = Token::BRACKET_L;
+                c++;
+                break;
 
             case ']':
-            kind = Token::BRACKET_R;
-            c++;
-            break;
+                kind = Token::BRACKET_R;
+                c++;
+                break;
 
             case ',':
-            kind = Token::COMMA;
-            c++;
-            break;
+                kind = Token::COMMA;
+                c++;
+                break;
 
             case '.':
-            kind = Token::DOT;
-            c++;
-            break;
+                kind = Token::DOT;
+                c++;
+                break;
 
             case '(':
-            kind = Token::PAREN_L;
-            c++;
-            break;
+                kind = Token::PAREN_L;
+                c++;
+                break;
 
             case ')':
-            kind = Token::PAREN_R;
-            c++;
-            break;
+                kind = Token::PAREN_R;
+                c++;
+                break;
 
             case ';':
-            kind = Token::SEMICOLON;
-            c++;
-            break;
+                kind = Token::SEMICOLON;
+                c++;
+                break;
 
             // Numeric literals.
-            case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-            kind = Token::NUMBER;
-            data = lex_number(c, filename, begin);
-            break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                kind = Token::NUMBER;
+                data = lex_number(c, filename, begin);
+                break;
 
             // UString literals.
             case '"': {
                 c++;
-                for (; ; ++c) {
+                for (;; ++c) {
                     if (*c == '\0') {
                         throw StaticError(filename, begin, "Unterminated string");
                     }
                     if (*c == '"') {
                         break;
                     }
-                    if (*c == '\\' && *(c+1) != '\0') {
+                    if (*c == '\\' && *(c + 1) != '\0') {
                         data += *c;
                         ++c;
                     }
                     if (*c == '\n') {
                         // Maintain line/column counters.
                         line_number++;
-                        line_start = c+1;
+                        line_start = c + 1;
                     }
                     data += *c;
                 }
                 c++;  // Advance beyond the ".
                 kind = Token::STRING_DOUBLE;
-            }
-            break;
+            } break;
 
             // UString literals.
             case '\'': {
                 c++;
-                for (; ; ++c) {
+                for (;; ++c) {
                     if (*c == '\0') {
                         throw StaticError(filename, begin, "Unterminated string");
                     }
                     if (*c == '\'') {
                         break;
                     }
-                    if (*c == '\\' && *(c+1) != '\0') {
+                    if (*c == '\\' && *(c + 1) != '\0') {
                         data += *c;
                         ++c;
                     }
                     if (*c == '\n') {
                         // Maintain line/column counters.
                         line_number++;
-                        line_start = c+1;
+                        line_start = c + 1;
                     }
                     data += *c;
                 }
                 c++;  // Advance beyond the '.
                 kind = Token::STRING_SINGLE;
-            }
-            break;
+            } break;
 
             // Verbatim string literals.
             // ' and " quoting is interpreted here, unlike non-verbatim strings
@@ -526,16 +563,16 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                 }
                 const char quot = *c;
                 c++;  // Advance beyond the opening quote.
-                for (; ; ++c) {
-                    if (*c == '\0')  {
+                for (;; ++c) {
+                    if (*c == '\0') {
                         throw StaticError(filename, begin, "Unterminated verbatim string");
                     }
                     if (*c == quot) {
-                        if (*(c+1) == quot) {
-                           c++;
-                       } else {
-                           break;
-                       }
+                        if (*(c + 1) == quot) {
+                            c++;
+                        } else {
+                            break;
+                        }
                     }
                     data += *c;
                 }
@@ -545,197 +582,202 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                 } else {
                     kind = Token::VERBATIM_STRING_SINGLE;
                 }
-            }
-            break;
+            } break;
 
             // Keywords
             default:
-            if (is_identifier_first(*c)) {
-                std::string id;
-                for (; is_identifier(*c); ++c)
-                    id += *c;
-                kind = lex_get_keyword_kind(id);
-                data = id;
+                if (is_identifier_first(*c)) {
+                    std::string id;
+                    for (; is_identifier(*c); ++c)
+                        id += *c;
+                    kind = lex_get_keyword_kind(id);
+                    data = id;
 
-            } else if (is_symbol(*c) || *c == '#') {
-
-                // Single line C++ and Python style comments.
-                if (*c == '#' || (*c == '/' && *(c+1) == '/')) {
-                    std::vector<std::string> comment(1);
-                    unsigned blanks;
-                    unsigned indent;
-                    lex_until_newline(c, comment[0], blanks, indent, line_start, line_number);
-                    auto kind = fresh_line ? FodderElement::PARAGRAPH : FodderElement::LINE_END;
-                    fodder.emplace_back(kind, blanks, indent, comment);
-                    fresh_line = true;
-                    continue;  // We've not got a token, just fodder, so keep scanning.
-                }
-
-                // Multi-line C style comment.
-                if (*c == '/' && *(c+1) == '*') {
-
-                    unsigned margin = c - line_start;
-
-                    const char *initial_c = c;
-                    c += 2;  // Avoid matching /*/: skip the /* before starting the search for */.
-
-                    while (!(*c == '*' && *(c+1) == '/')) {
-                        if (*c == '\0') {
-                            auto msg = "Multi-line comment has no terminating */.";
-                            throw StaticError(filename, begin, msg);
-                        }
-                        if (*c == '\n') {
-                            // Just keep track of the line / column counters.
-                            line_number++;
-                            line_start = c+1;
-                        }
-                        ++c;
+                } else if (is_symbol(*c) || *c == '#') {
+                    // Single line C++ and Python style comments.
+                    if (*c == '#' || (*c == '/' && *(c + 1) == '/')) {
+                        std::vector<std::string> comment(1);
+                        unsigned blanks;
+                        unsigned indent;
+                        lex_until_newline(c, comment[0], blanks, indent, line_start, line_number);
+                        auto kind = fresh_line ? FodderElement::PARAGRAPH : FodderElement::LINE_END;
+                        fodder.emplace_back(kind, blanks, indent, comment);
+                        fresh_line = true;
+                        continue;  // We've not got a token, just fodder, so keep scanning.
                     }
-                    c += 2;  // Move the pointer to the char after the closing '/'.
 
-                    std::string comment(initial_c, c - initial_c);  // Includes the "/*" and "*/".
+                    // Multi-line C style comment.
+                    if (*c == '/' && *(c + 1) == '*') {
+                        unsigned margin = c - line_start;
 
-                    // Lex whitespace after comment
-                    unsigned new_lines_after, indent_after;
-                    lex_ws(c, new_lines_after, indent_after, line_start, line_number);
-                    std::vector<std::string> lines;
-                    if (comment.find('\n') >= comment.length()) {
-                        // Comment looks like /* foo */
-                        lines.push_back(comment);
-                        fodder.emplace_back(FodderElement::INTERSTITIAL, 0, 0, lines);
-                        if (new_lines_after > 0) {
-                            fodder.emplace_back(FodderElement::LINE_END, new_lines_after - 1,
-                                                indent_after, EMPTY);
+                        const char *initial_c = c;
+                        c += 2;  // Avoid matching /*/: skip the /* before starting the search for
+                                 // */.
+
+                        while (!(*c == '*' && *(c + 1) == '/')) {
+                            if (*c == '\0') {
+                                auto msg = "Multi-line comment has no terminating */.";
+                                throw StaticError(filename, begin, msg);
+                            }
+                            if (*c == '\n') {
+                                // Just keep track of the line / column counters.
+                                line_number++;
+                                line_start = c + 1;
+                            }
+                            ++c;
+                        }
+                        c += 2;  // Move the pointer to the char after the closing '/'.
+
+                        std::string comment(initial_c,
+                                            c - initial_c);  // Includes the "/*" and "*/".
+
+                        // Lex whitespace after comment
+                        unsigned new_lines_after, indent_after;
+                        lex_ws(c, new_lines_after, indent_after, line_start, line_number);
+                        std::vector<std::string> lines;
+                        if (comment.find('\n') >= comment.length()) {
+                            // Comment looks like /* foo */
+                            lines.push_back(comment);
+                            fodder.emplace_back(FodderElement::INTERSTITIAL, 0, 0, lines);
+                            if (new_lines_after > 0) {
+                                fodder.emplace_back(FodderElement::LINE_END,
+                                                    new_lines_after - 1,
+                                                    indent_after,
+                                                    EMPTY);
+                                fresh_line = true;
+                            }
+                        } else {
+                            lines = line_split(comment, margin);
+                            assert(lines[0][0] == '/');
+                            // Little hack to support PARAGRAPHs with * down the LHS:
+                            // Add a space to lines that start with a '*'
+                            bool all_star = true;
+                            for (auto &l : lines) {
+                                if (l[0] != '*')
+                                    all_star = false;
+                            }
+                            if (all_star) {
+                                for (auto &l : lines) {
+                                    if (l[0] == '*')
+                                        l = " " + l;
+                                }
+                            }
+                            if (new_lines_after == 0) {
+                                // Ensure a line end after the paragraph.
+                                new_lines_after = 1;
+                                indent_after = 0;
+                            }
+                            fodder_push_back(fodder,
+                                             FodderElement(FodderElement::PARAGRAPH,
+                                                           new_lines_after - 1,
+                                                           indent_after,
+                                                           lines));
                             fresh_line = true;
                         }
-                    } else {
-                        lines = line_split(comment, margin);
-                        assert(lines[0][0] == '/');
-                        // Little hack to support PARAGRAPHs with * down the LHS:
-                        // Add a space to lines that start with a '*'
-                        bool all_star = true;
-                        for (auto &l : lines) {
-                            if (l[0] != '*')
-                                all_star = false;
-                        }
-                        if (all_star) {
-                            for (auto &l : lines) {
-                                if (l[0] == '*') l = " " + l;
-                            }
-                        }
-                        if (new_lines_after == 0) {
-                            // Ensure a line end after the paragraph.
-                            new_lines_after = 1;
-                            indent_after = 0;
-                        }
-                        fodder_push_back(fodder,
-                                         FodderElement(FodderElement::PARAGRAPH,
-                                                       new_lines_after - 1,
-                                                       indent_after,
-                                                       lines));
-                        fresh_line = true;
+                        continue;  // We've not got a token, just fodder, so keep scanning.
                     }
-                    continue;  // We've not got a token, just fodder, so keep scanning.
-                }
 
-                // Text block
-                if (*c == '|' && *(c+1) == '|' && *(c+2) == '|') {
-                    if (*(c+3) != '\n') {
-                        auto msg = "Text block syntax requires new line after |||.";
-                        throw StaticError(filename, begin, msg);
-                    }
-                    std::stringstream block;
-                    c += 4; // Skip the "|||\n"
-                    line_number++;
-                    // Skip any blank lines at the beginning of the block.
-                    while (*c == '\n') {
-                        line_number++;
-                        ++c;
-                        block << '\n';
-                    }
-                    line_start = c;
-                    const char *first_line = c;
-                    int ws_chars = whitespace_check(first_line, c);
-                    string_block_indent = std::string(first_line, ws_chars);
-                    if (ws_chars == 0) {
-                        auto msg = "Text block's first line must start with whitespace.";
-                        throw StaticError(filename, begin, msg);
-                    }
-                    while (true) {
-                        assert(ws_chars > 0);
-                        // Read up to the \n
-                        for (c = &c[ws_chars]; *c != '\n' ; ++c) {
-                            if (*c == '\0')
-                                throw StaticError(filename, begin, "Unexpected EOF");
-                            block << *c;
+                    // Text block
+                    if (*c == '|' && *(c + 1) == '|' && *(c + 2) == '|') {
+                        if (*(c + 3) != '\n') {
+                            auto msg = "Text block syntax requires new line after |||.";
+                            throw StaticError(filename, begin, msg);
                         }
-                        // Add the \n
-                        block << '\n';
-                        ++c;
+                        std::stringstream block;
+                        c += 4;  // Skip the "|||\n"
                         line_number++;
-                        line_start = c;
-                        // Skip any blank lines
+                        // Skip any blank lines at the beginning of the block.
                         while (*c == '\n') {
                             line_number++;
                             ++c;
                             block << '\n';
                         }
-                        // Examine next line
-                        ws_chars = whitespace_check(first_line, c);
+                        line_start = c;
+                        const char *first_line = c;
+                        int ws_chars = whitespace_check(first_line, c);
+                        string_block_indent = std::string(first_line, ws_chars);
                         if (ws_chars == 0) {
-                            // End of text block
-                            // Skip over any whitespace
-                            while (*c == ' ' || *c == '\t') {
-                                string_block_term_indent += *c;
-                                ++c;
-                            }
-                            // Expect |||
-                            if (!(*c == '|' && *(c+1) == '|' && *(c+2) == '|')) {
-                                auto msg = "Text block not terminated with |||";
-                                throw StaticError(filename, begin, msg);
-                            }
-                            c += 3;  // Leave after the last |
-                            data = block.str();
-                            kind = Token::STRING_BLOCK;
-                            break;  // Out of the while loop.
+                            auto msg = "Text block's first line must start with whitespace.";
+                            throw StaticError(filename, begin, msg);
                         }
+                        while (true) {
+                            assert(ws_chars > 0);
+                            // Read up to the \n
+                            for (c = &c[ws_chars]; *c != '\n'; ++c) {
+                                if (*c == '\0')
+                                    throw StaticError(filename, begin, "Unexpected EOF");
+                                block << *c;
+                            }
+                            // Add the \n
+                            block << '\n';
+                            ++c;
+                            line_number++;
+                            line_start = c;
+                            // Skip any blank lines
+                            while (*c == '\n') {
+                                line_number++;
+                                ++c;
+                                block << '\n';
+                            }
+                            // Examine next line
+                            ws_chars = whitespace_check(first_line, c);
+                            if (ws_chars == 0) {
+                                // End of text block
+                                // Skip over any whitespace
+                                while (*c == ' ' || *c == '\t') {
+                                    string_block_term_indent += *c;
+                                    ++c;
+                                }
+                                // Expect |||
+                                if (!(*c == '|' && *(c + 1) == '|' && *(c + 2) == '|')) {
+                                    auto msg = "Text block not terminated with |||";
+                                    throw StaticError(filename, begin, msg);
+                                }
+                                c += 3;  // Leave after the last |
+                                data = block.str();
+                                kind = Token::STRING_BLOCK;
+                                break;  // Out of the while loop.
+                            }
+                        }
+
+                        break;  // Out of the switch.
                     }
 
-                    break;  // Out of the switch.
-                }
-
-                const char *operator_begin = c;
-                for (; is_symbol(*c) ; ++c) {
-                    // Not allowed // in operators
-                    if (*c == '/' && *(c+1) == '/') break;
-                    // Not allowed /* in operators
-                    if (*c == '/' && *(c+1) == '*') break;
-                    // Not allowed ||| in operators
-                    if (*c == '|' && *(c+1) == '|' && *(c+2) == '|') break;
-                }
-                // Not allowed to end with a + - ~ ! unless a single char.
-                // So, wind it back if we need to (but not too far).
-                while (c > operator_begin + 1
-                       && (*(c-1) == '+' || *(c-1) == '-' || *(c-1) == '~' || *(c-1) == '!')) {
-                    c--;
-                }
-                data += std::string(operator_begin, c);
-                if (data == "$") {
-                    kind = Token::DOLLAR;
-                    data = "";
+                    const char *operator_begin = c;
+                    for (; is_symbol(*c); ++c) {
+                        // Not allowed // in operators
+                        if (*c == '/' && *(c + 1) == '/')
+                            break;
+                        // Not allowed /* in operators
+                        if (*c == '/' && *(c + 1) == '*')
+                            break;
+                        // Not allowed ||| in operators
+                        if (*c == '|' && *(c + 1) == '|' && *(c + 2) == '|')
+                            break;
+                    }
+                    // Not allowed to end with a + - ~ ! unless a single char.
+                    // So, wind it back if we need to (but not too far).
+                    while (c > operator_begin + 1 && (*(c - 1) == '+' || *(c - 1) == '-' ||
+                                                      *(c - 1) == '~' || *(c - 1) == '!')) {
+                        c--;
+                    }
+                    data += std::string(operator_begin, c);
+                    if (data == "$") {
+                        kind = Token::DOLLAR;
+                        data = "";
+                    } else {
+                        kind = Token::OPERATOR;
+                    }
                 } else {
-                    kind = Token::OPERATOR;
+                    std::stringstream ss;
+                    ss << "Could not lex the character ";
+                    auto uc = (unsigned char)(*c);
+                    if (*c < 32)
+                        ss << "code " << unsigned(uc);
+                    else
+                        ss << "'" << *c << "'";
+                    throw StaticError(filename, begin, ss.str());
                 }
-            } else {
-                std::stringstream ss;
-                ss << "Could not lex the character ";
-                auto uc = (unsigned char)(*c);
-                if (*c < 32)
-                    ss << "code " << unsigned(uc);
-                else
-                    ss << "'" << *c << "'";
-                throw StaticError(filename, begin, ss.str());
-            }
         }
 
         // Ensure that a bug in the above code does not cause an infinite memory consuming loop due
@@ -745,7 +787,11 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
         }
 
         Location end(line_number, c - line_start);
-        r.emplace_back(kind, fodder, data, string_block_indent, string_block_term_indent,
+        r.emplace_back(kind,
+                       fodder,
+                       data,
+                       string_block_indent,
+                       string_block_term_indent,
                        LocationRange(filename, begin, end));
         fodder.clear();
         fresh_line = false;
@@ -764,8 +810,8 @@ std::string jsonnet_unlex(const Tokens &tokens)
             switch (f.kind) {
                 case FodderElement::LINE_END: {
                     if (f.comment.size() > 0) {
-                        ss << "LineEnd(" << f.blanks << ", " << f.indent << ", "
-                           << f.comment[0] << ")\n";
+                        ss << "LineEnd(" << f.blanks << ", " << f.indent << ", " << f.comment[0]
+                           << ")\n";
                     } else {
                         ss << "LineEnd(" << f.blanks << ", " << f.indent << ")\n";
                     }
@@ -795,7 +841,7 @@ std::string jsonnet_unlex(const Tokens &tokens)
         } else if (t.kind == Token::STRING_BLOCK) {
             ss << "|||\n";
             ss << t.stringBlockIndent;
-            for (const char *cp = t.data.c_str() ; *cp != '\0' ; ++cp) {
+            for (const char *cp = t.data.c_str(); *cp != '\0'; ++cp) {
                 ss << *cp;
                 if (*cp == '\n' && *(cp + 1) != '\n' && *(cp + 1) != '\0') {
                     ss << t.stringBlockIndent;

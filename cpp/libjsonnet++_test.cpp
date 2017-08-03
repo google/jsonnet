@@ -16,14 +16,13 @@ limitations under the License.
 
 #include "libjsonnet++.h"
 
-#include <string>
 #include <fstream>
 #include <streambuf>
+#include <string>
 
 #include "gtest/gtest.h"
 
 namespace jsonnet {
-
 std::string readFile(const std::string& filename)
 {
     std::ifstream in(filename);
@@ -51,8 +50,7 @@ TEST(JsonnetTest, TestEvaluateInvalidSnippet)
     Jsonnet jsonnet;
     ASSERT_TRUE(jsonnet.init());
     std::string output;
-    EXPECT_FALSE(jsonnet.evaluateSnippet("cpp/testdata/invalid.jsonnet",
-                                         input, &output));
+    EXPECT_FALSE(jsonnet.evaluateSnippet("cpp/testdata/invalid.jsonnet", input, &output));
     EXPECT_EQ("", output);
     EXPECT_EQ(error, jsonnet.lastError());
 }

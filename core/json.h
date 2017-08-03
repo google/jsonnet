@@ -17,9 +17,9 @@ limitations under the License.
 #ifndef JSONNET_JSON_H
 #define JSONNET_JSON_H
 
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <libjsonnet.h>
 
