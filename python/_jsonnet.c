@@ -33,7 +33,11 @@ static const char *exc_to_str(void)
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyObject *exc_str = PyObject_Str(pvalue);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_AsUTF8(exc_str);
+#else
     return PyString_AsString(exc_str);
+#endif
 }
 
 struct NativeCtx {
@@ -45,20 +49,34 @@ struct NativeCtx {
 static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyObject *v,
                                                        const char **err_msg)
 {
+#if PY_MAJOR_VERSION < 3
     if (PyString_Check(v)) {
         return jsonnet_json_make_string(vm, PyString_AsString(v));
     } else if (PyUnicode_Check(v)) {
+#else
+    if (PyUnicode_Check(v)) {
+#endif
         struct JsonnetJsonValue *r;
         PyObject *str = PyUnicode_AsUTF8String(v);
-        r = jsonnet_json_make_string(vm, PyString_AsString(str));
+#if PY_MAJOR_VERSION >= 3
+        const char *cstr = PyBytes_AsString(str);
+#else
+        const char *cstr = PyString_AsString(str);
+#endif
+        r = jsonnet_json_make_string(vm, cstr);
         Py_DECREF(str);
         return r;
     } else if (PyBool_Check(v)) {
         return jsonnet_json_make_bool(vm, PyObject_IsTrue(v));
     } else if (PyFloat_Check(v)) {
         return jsonnet_json_make_number(vm, PyFloat_AsDouble(v));
+#if PY_MAJOR_VERSION >= 3
+    } else if (PyLong_Check(v)) {
+        return jsonnet_json_make_number(vm, (double)(PyLong_AsLong(v)));
+#else
     } else if (PyInt_Check(v)) {
         return jsonnet_json_make_number(vm, (double)(PyInt_AsLong(v)));
+#endif
     } else if (v == Py_None) {
         return jsonnet_json_make_null(vm);
     } else if (PySequence_Check(v)) {
@@ -88,7 +106,11 @@ static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyO
         obj = jsonnet_json_make_object(vm);
         while (PyDict_Next(v, &pos, &key, &val)) {
             struct JsonnetJsonValue *json_val;
+#if PY_MAJOR_VERSION >= 3
+            const char *key_ = PyUnicode_AsUTF8(key);
+#else
             const char *key_ = PyString_AsString(key);
+#endif
             if (key_ == NULL) {
                 *err_msg = "Non-string key in dict returned from Python Jsonnet native extension.";
                 jsonnet_json_destroy(vm, obj);
@@ -108,7 +130,7 @@ static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyO
     }
 }
 
-/* This function is bound for every native callback, but with a different 
+/* This function is bound for every native callback, but with a different
  * context.
  */
 static struct JsonnetJsonValue *cpython_native_callback(
@@ -130,7 +152,11 @@ static struct JsonnetJsonValue *cpython_native_callback(
         int param_num = jsonnet_json_extract_number(ctx->vm, argv[i], &d);
         PyObject *pyobj;
         if (param_str != NULL) {
+#if PY_MAJOR_VERSION >= 3
+            pyobj = PyUnicode_FromString(param_str);
+#else
             pyobj = PyString_FromString(param_str);
+#endif
         } else if (param_null) {
             pyobj = Py_None;
         } else if (param_bool != 2) {
@@ -204,12 +230,21 @@ static char *cpython_import_callback(void *ctx_, const char *base, const char *r
     } else {
         PyObject *file_name = PyTuple_GetItem(result, 0);
         PyObject *file_content = PyTuple_GetItem(result, 1);
+#if PY_MAJOR_VERSION >= 3
+        if (!PyUnicode_Check(file_name) || !PyUnicode_Check(file_content)) {
+#else
         if (!PyString_Check(file_name) || !PyString_Check(file_content)) {
+#endif
             out = jsonnet_str(ctx->vm, "import_callback did not return a pair of strings");
             *success = 0;
         } else {
+#if PY_MAJOR_VERSION >= 3
+            const char *found_here_cstr = PyUnicode_AsUTF8(file_name);
+            const char *content_cstr = PyUnicode_AsUTF8(file_content);
+#else
             const char *found_here_cstr = PyString_AsString(file_name);
             const char *content_cstr = PyString_AsString(file_content);
+#endif
             *found_here = jsonnet_str(ctx->vm, found_here_cstr);
             out = jsonnet_str(ctx->vm, content_cstr);
             *success = 1;
@@ -229,7 +264,11 @@ static PyObject *handle_result(struct JsonnetVm *vm, char *out, int error)
         jsonnet_destroy(vm);
         return NULL;
     } else {
+#if PY_MAJOR_VERSION >= 3
+        PyObject *ret = PyUnicode_FromString(out);
+#else
         PyObject *ret = PyString_FromString(out);
+#endif
         jsonnet_realloc(vm, out, 0);
         jsonnet_destroy(vm);
         return ret;
@@ -242,14 +281,22 @@ int handle_vars(struct JsonnetVm *vm, PyObject *map, int code, int tla)
 
     PyObject *key, *val;
     Py_ssize_t pos = 0;
-    
+
     while (PyDict_Next(map, &pos, &key, &val)) {
+#if PY_MAJOR_VERSION >= 3
+        const char *key_ = PyUnicode_AsUTF8(key);
+#else
         const char *key_ = PyString_AsString(key);
+#endif
         if (key_ == NULL) {
             jsonnet_destroy(vm);
             return 0;
         }
+#if PY_MAJOR_VERSION >= 3
+        const char *val_ = PyUnicode_AsUTF8(val);
+#else
         const char *val_ = PyString_AsString(val);
+#endif
         if (val_ == NULL) {
             jsonnet_destroy(vm);
             return 0;
@@ -308,7 +355,11 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         Py_ssize_t i;
         Py_ssize_t num_params;
         PyObject *params;
+#if PY_MAJOR_VERSION >= 3
+        const char *key_ = PyUnicode_AsUTF8(key);
+#else
         const char *key_ = PyString_AsString(key);
+#endif
         if (key_ == NULL) {
             PyErr_SetString(PyExc_TypeError, "native callback dict keys must be string");
             goto bad;
@@ -329,7 +380,11 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         num_params = PyTuple_Size(params);
         for (i = 0; i < num_params ; ++i) {
             PyObject *param = PyTuple_GetItem(params, 0);
+#if PY_MAJOR_VERSION >= 3
+            if (!PyUnicode_Check(param)) {
+#else
             if (!PyString_Check(param)) {
+#endif
                 PyErr_SetString(PyExc_TypeError, "native callback param must be string");
                 goto bad;
             }
@@ -352,7 +407,7 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
     }
 
     *ctxs = malloc(sizeof(struct NativeCtx) * num_natives);
-    
+
     /* Re-use num_natives but just as a counter this time. */
     num_natives = 0;
     pos = 0;
@@ -360,13 +415,21 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         Py_ssize_t i;
         Py_ssize_t num_params;
         PyObject *params;
+#if PY_MAJOR_VERSION >= 3
+        const char *key_ = PyUnicode_AsUTF8(key);
+#else
         const char *key_ = PyString_AsString(key);
+#endif
         params = PyTuple_GetItem(val, 0);
         num_params = PyTuple_Size(params);
         /* Include space for terminating NULL. */
         const char **params_c = malloc(sizeof(const char*) * (num_params + 1));
         for (i = 0; i < num_params ; ++i) {
+#if PY_MAJOR_VERSION >= 3
+            params_c[i] = PyUnicode_AsUTF8(PyTuple_GetItem(params, i));
+#else
             params_c[i] = PyString_AsString(PyTuple_GetItem(params, i));
+#endif
         }
         params_c[num_params] = NULL;
         (*ctxs)[num_natives].vm = vm;
@@ -498,8 +561,23 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef _jsonnet =
+{
+    PyModuleDef_HEAD_INIT,
+    "_jsonnet",
+    "A Python interface to Jsonnet.",
+    -1,
+    module_methods,
+};
+
+PyMODINIT_FUNC PyInit__jsonnet(void)
+{
+    return PyModule_Create(&_jsonnet);
+}
+#else
 PyMODINIT_FUNC init_jsonnet(void)
 {
     Py_InitModule3("_jsonnet", module_methods, "A Python interface to Jsonnet.");
 }
-
+#endif
