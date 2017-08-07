@@ -91,16 +91,8 @@ default: jsonnet
 
 all: $(ALL)
 
-TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
-	./jsonnet -e $(TEST_SNIPPET)
-	LD_LIBRARY_PATH=. ./libjsonnet_test_snippet $(TEST_SNIPPET)
-	LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet"
-	cd examples ; ./check.sh
-	cd examples/terraform ; ./check.sh
-	cd test_suite ; ./run_tests.sh
-	cd test_suite ; ./run_fmt_tests.sh
-	cd test_suite ; ./run_fmt_idempotence_tests.sh
+	./tests.sh
 
 reformat:
 	clang-format -i -style=file **/*.cpp **/*.h
