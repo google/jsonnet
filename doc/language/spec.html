@@ -847,7 +847,7 @@ desugar_{expr}(e[:], b) =  desugar_{expr}(e[\null:\null:\null], b)
 <!-- slice -->
 
 <div class="desugar-rule"> \[
-desugar_{expr}(e[e':e'':e'''], b) = desugar_{expr}(\texttt{std.slice}(e', e'', e'''), b)
+desugar_{expr}(e[e':e'':e'''], b) = desugar_{expr}(\texttt{std.slice}(e, e', e'', e'''), b)
 \] </div>
 
 <div class="desugar-rule"> \[
