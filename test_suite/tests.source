@@ -58,6 +58,9 @@ test_eval() {
     EXPECTED_EXIT_CODE="$3"
     GOLDEN_OUTPUT="$4"
     GOLDEN_KIND="$5"
+    if [ -n "$DISABLE_ERROR_TESTS" ] && [ "$EXPECTED_EXIT_CODE" != 0 ]; then
+        return 0
+    fi
 
     TEST_OUTPUT="$($JSONNET_CMD "$JSONNET_FILE" 2>&1)"
     TEST_EXIT_CODE="$?"
