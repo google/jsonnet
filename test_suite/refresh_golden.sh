@@ -16,6 +16,8 @@
 
 set -e
 
+source "tests.source"
+
 if [ $# -eq 0 ] ; then
     echo "Usage: $0 <filename.jsonnet>" 2>&1
     exit 1

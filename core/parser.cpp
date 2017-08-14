@@ -320,7 +320,9 @@ class Parser {
                 case Token::IDENTIFIER:
                 case Token::STRING_DOUBLE:
                 case Token::STRING_SINGLE:
-                case Token::STRING_BLOCK: {
+                case Token::STRING_BLOCK:
+                case Token::VERBATIM_STRING_DOUBLE:
+                case Token::VERBATIM_STRING_SINGLE: {
                     ObjectField::Kind kind;
                     AST *expr1 = nullptr;
                     const Identifier *id = nullptr;
@@ -353,6 +355,22 @@ class Parser {
                                                            LiteralString::BLOCK,
                                                            next.stringBlockIndent,
                                                            next.stringBlockTermIndent);
+                    } else if (next.kind == Token::VERBATIM_STRING_SINGLE) {
+                        kind = ObjectField::FIELD_STR;
+                        expr1 = alloc->make<LiteralString>(next.location,
+                                                           next.fodder,
+                                                           next.data32(),
+                                                           LiteralString::VERBATIM_SINGLE,
+                                                           "",
+                                                           "");
+                    } else if (next.kind == Token::VERBATIM_STRING_DOUBLE) {
+                        kind = ObjectField::FIELD_STR;
+                        expr1 = alloc->make<LiteralString>(next.location,
+                                                           next.fodder,
+                                                           next.data32(),
+                                                           LiteralString::VERBATIM_DOUBLE,
+                                                           "",
+                                                           "");
                     } else {
                         kind = ObjectField::FIELD_EXPR;
                         fodder1 = next.fodder;
