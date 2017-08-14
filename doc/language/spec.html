@@ -138,7 +138,8 @@ The next line must be prefixed with some non-zero length whitespace <i>W</i>.  T
 first subsequent line that does not begin with <i>W</i>, and it is an error if this line does not
 contain some optional whitespace followed by <code>|||</code>.  The content of the string is the
 concatenation of all the lines that began with <i>W</i> but with that prefix stripped.  The line
-ending style in the file is preserved in the string.</li>
+ending style in the file is preserved in the string.  This form cannot be used in
+<code>import</code> statements.</li>
 </ul>
 
 <p>Double- and single-quoted strings are allowed to span multiple lines, in which case whatever
