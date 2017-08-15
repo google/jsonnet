@@ -643,11 +643,17 @@ class Desugarer {
             desugar(ast->body, obj_level);
             desugarParams(ast->params, obj_level);
 
-        } else if (dynamic_cast<const Import *>(ast_)) {
-            // Nothing to do.
+        } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
+            // TODO(dcunnin): Abstract this into a template function if it becomes more common.
+            AST *file = ast->file;
+            desugar(file, obj_level);
+            ast->file = dynamic_cast<LiteralString*>(file);
 
-        } else if (dynamic_cast<const Importstr *>(ast_)) {
-            // Nothing to do.
+        } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
+            // TODO(dcunnin): Abstract this into a template function if it becomes more common.
+            AST *file = ast->file;
+            desugar(file, obj_level);
+            ast->file = dynamic_cast<LiteralString*>(file);
 
         } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
             desugar(ast->element, obj_level);

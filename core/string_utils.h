@@ -22,6 +22,11 @@ limitations under the License.
 /** Unparse the string. */
 UString jsonnet_string_unparse(const UString &str, bool single);
 
+
+// Note that the following two functions do not handle the quoting of ' and "
+// inside verbatim strings because that quoting is reversible.  Thus, that
+// quoting is done at lexing time and undone again at pretty-printing time.
+
 /** Escape special characters. */
 UString jsonnet_string_escape(const UString &str, bool single);
 

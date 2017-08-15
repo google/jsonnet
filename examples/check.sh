@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+TEST_SUITE_NAME="${TEST_SUITE_NAME:-$0}"
+
+cd $(dirname $0)
+
 JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
 
 source ../test_suite/tests.source
@@ -51,8 +55,8 @@ done
 deinit
 
 if [ "$FAILED" -eq 0 ] ; then
-    echo "All $EXECUTED examples executed correctly."
+    echo "$TEST_SUITE_NAME: All $EXECUTED tests executed correctly."
 else
-    echo "$FAILED / $EXECUTED tests failed."
+    echo "$TEST_SUITE_NAME: $FAILED / $EXECUTED tests failed."
     exit 1
 fi
