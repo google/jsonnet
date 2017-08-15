@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export TEST_SUITE_NAME="$0"
+
+cd "$(dirname $0)"
+
 export EXAMPLES_DIR="$PWD"
 
 cd .. && ./check.sh

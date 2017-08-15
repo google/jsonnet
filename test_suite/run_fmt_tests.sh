@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cd "$(dirname $0)"
+
 source "tests.source"
 
 # Enable next line to test the garbage collector
@@ -45,9 +47,9 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
 done
 
 if [ $FAILED -eq 0 ] ; then
-    echo "All $EXECUTED test scripts pass."
+    echo "$0: All $EXECUTED test scripts pass."
 else
-    echo "FAILED: $FAILED / $EXECUTED"
+    echo "$0: FAILED: $FAILED / $EXECUTED"
     exit 1
 fi
 
