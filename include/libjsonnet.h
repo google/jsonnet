@@ -256,14 +256,14 @@ void jsonnet_fmt_debug_desugaring(struct JsonnetVm *vm, int v);
  */
 char *jsonnet_fmt_file(struct JsonnetVm *vm, const char *filename, int *error);
 
-/** Evaluate a string containing Jsonnet code, return a Jsonnet string.
+/** Reformat a string containing Jsonnet code, return a Jsonnet string.
  *
  * The returned string should be cleaned up with jsonnet_realloc.
  *
  * \param filename Path to a file (used in error messages).
  * \param snippet Jsonnet code to execute.
  * \param error Return by reference whether or not there was an error.
- * \returns Either JSON or the error message.
+ * \returns Either Jsonnet code or the error message.
  */
 char *jsonnet_fmt_snippet(struct JsonnetVm *vm, const char *filename, const char *snippet,
                           int *error);
