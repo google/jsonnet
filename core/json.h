@@ -32,6 +32,14 @@ struct JsonnetJsonValue {
         OBJECT,
         STRING,
     };
+
+    JsonnetJsonValue() = default;
+    JsonnetJsonValue(JsonnetJsonValue&) = delete;
+    JsonnetJsonValue(JsonnetJsonValue&&) = default;
+
+    JsonnetJsonValue(Kind kind, std::string string, double number)
+        : kind(kind), string(string), number(number) {}
+
     Kind kind;
     std::string string;
     double number;  // Also used for bool (0.0 and 1.0)

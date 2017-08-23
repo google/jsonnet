@@ -2078,43 +2078,31 @@ class Interpreter {
                         for (const Value &arg : args) {
                             switch (arg.t) {
                                 case Value::STRING:
-                                    args2.push_back(JsonnetJsonValue{
+                                    args2.emplace_back(
                                         JsonnetJsonValue::STRING,
                                         encode_utf8(static_cast<HeapString *>(arg.v.h)->value),
-                                        0,
-                                        std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                        std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                    });
+                                        0);
                                     break;
 
                                 case Value::BOOLEAN:
-                                    args2.push_back(JsonnetJsonValue{
+                                    args2.emplace_back(
                                         JsonnetJsonValue::BOOL,
                                         "",
-                                        arg.v.b ? 1.0 : 0.0,
-                                        std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                        std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                    });
+                                        arg.v.b ? 1.0 : 0.0);
                                     break;
 
                                 case Value::DOUBLE:
-                                    args2.push_back(JsonnetJsonValue{
+                                    args2.emplace_back(
                                         JsonnetJsonValue::NUMBER,
                                         "",
-                                        arg.v.d,
-                                        std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                        std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                    });
+                                        arg.v.d);
                                     break;
 
                                 case Value::NULL_TYPE:
-                                    args2.push_back(JsonnetJsonValue{
+                                    args2.emplace_back(
                                         JsonnetJsonValue::NULL_KIND,
                                         "",
-                                        0,
-                                        std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                        std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                    });
+                                        0);
                                     break;
 
                                 default:
