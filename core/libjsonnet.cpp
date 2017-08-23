@@ -180,8 +180,8 @@ struct JsonnetVm {
           stringOutput(false),
           fmtDebugDesugaring(false)
     {
-        jpaths.emplace_back("/usr/share/" + std::string(jsonnet_version()) + "/");
-        jpaths.emplace_back("/usr/local/share/" + std::string(jsonnet_version()) + "/");
+        jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
+        jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
     }
 };
 
