@@ -38,7 +38,7 @@ struct Value {
     enum Type {
         NULL_TYPE = 0x0,  // Unfortunately NULL is a macro in C.
         BOOLEAN = 0x1,
-        DOUBLE = 0x2,
+        NUMBER = 0x2,
 
         ARRAY = 0x10,
         FUNCTION = 0x11,
@@ -63,7 +63,7 @@ std::string type_str(Value::Type t)
     switch (t) {
         case Value::NULL_TYPE: return "null";
         case Value::BOOLEAN: return "boolean";
-        case Value::DOUBLE: return "double";
+        case Value::NUMBER: return "number";
         case Value::ARRAY: return "array";
         case Value::FUNCTION: return "function";
         case Value::OBJECT: return "object";
