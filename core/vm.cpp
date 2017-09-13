@@ -549,15 +549,15 @@ class Interpreter {
         return r;
     }
 
-    Value makeDouble(double v)
+    Value makeNumber(double v)
     {
         Value r;
-        r.t = Value::DOUBLE;
+        r.t = Value::NUMBER;
         r.v.d = v;
         return r;
     }
 
-    Value makeDoubleCheck(const LocationRange &loc, double v)
+    Value makeNumberCheck(const LocationRange &loc, double v)
     {
         if (std::isnan(v)) {
             throw makeError(loc, "Not a number");
@@ -565,7 +565,7 @@ class Interpreter {
         if (std::isinf(v)) {
             throw makeError(loc, "Overflow");
         }
-        return makeDouble(v);
+        return makeNumber(v);
     }
 
     Value makeNull(void)
@@ -908,7 +908,7 @@ class Interpreter {
     const AST *builtinMakeArray(const LocationRange &loc, const std::vector<Value> &args)
     {
         Frame &f = stack.top();
-        validateBuiltinArgs(loc, "makeArray", args, {Value::DOUBLE, Value::FUNCTION});
+        validateBuiltinArgs(loc, "makeArray", args, {Value::NUMBER, Value::FUNCTION});
         long sz = long(args[0].v.d);
         if (sz < 0) {
             std::stringstream ss;
@@ -930,7 +930,7 @@ class Interpreter {
             th->upValues = func->upValues;
 
             auto *el = makeHeap<HeapThunk>(func->params[0].id, nullptr, 0, nullptr);
-            el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
+            el->fill(makeNumber(i));  // i guaranteed not to be inf/NaN
             th->upValues[func->params[0].id] = el;
             elements[i] = th;
         }
@@ -940,71 +940,71 @@ class Interpreter {
 
     const AST *builtinPow(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "pow", args, {Value::DOUBLE, Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::pow(args[0].v.d, args[1].v.d));
+        validateBuiltinArgs(loc, "pow", args, {Value::NUMBER, Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::pow(args[0].v.d, args[1].v.d));
         return nullptr;
     }
 
     const AST *builtinFloor(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "floor", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::floor(args[0].v.d));
+        validateBuiltinArgs(loc, "floor", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::floor(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinCeil(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "ceil", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::ceil(args[0].v.d));
+        validateBuiltinArgs(loc, "ceil", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::ceil(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinSqrt(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "sqrt", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::sqrt(args[0].v.d));
+        validateBuiltinArgs(loc, "sqrt", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::sqrt(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinSin(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "sin", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::sin(args[0].v.d));
+        validateBuiltinArgs(loc, "sin", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::sin(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinCos(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "cos", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::cos(args[0].v.d));
+        validateBuiltinArgs(loc, "cos", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::cos(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinTan(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "tan", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::tan(args[0].v.d));
+        validateBuiltinArgs(loc, "tan", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::tan(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAsin(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "asin", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::asin(args[0].v.d));
+        validateBuiltinArgs(loc, "asin", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::asin(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAcos(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "acos", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::acos(args[0].v.d));
+        validateBuiltinArgs(loc, "acos", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::acos(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAtan(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "atan", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::atan(args[0].v.d));
+        validateBuiltinArgs(loc, "atan", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::atan(args[0].v.d));
         return nullptr;
     }
 
@@ -1015,7 +1015,7 @@ class Interpreter {
 
             case Value::BOOLEAN: scratch = makeString(U"boolean"); return nullptr;
 
-            case Value::DOUBLE: scratch = makeString(U"number"); return nullptr;
+            case Value::NUMBER: scratch = makeString(U"number"); return nullptr;
 
             case Value::ARRAY: scratch = makeString(U"array"); return nullptr;
 
@@ -1082,19 +1082,19 @@ class Interpreter {
         switch (args[0].t) {
             case Value::OBJECT: {
                 auto fields = objectFields(static_cast<HeapObject *>(e), true);
-                scratch = makeDouble(fields.size());
+                scratch = makeNumber(fields.size());
             } break;
 
             case Value::ARRAY:
-                scratch = makeDouble(static_cast<HeapArray *>(e)->elements.size());
+                scratch = makeNumber(static_cast<HeapArray *>(e)->elements.size());
                 break;
 
             case Value::STRING:
-                scratch = makeDouble(static_cast<HeapString *>(e)->value.length());
+                scratch = makeNumber(static_cast<HeapString *>(e)->value.length());
                 break;
 
             case Value::FUNCTION:
-                scratch = makeDouble(static_cast<HeapClosure *>(e)->params.size());
+                scratch = makeNumber(static_cast<HeapClosure *>(e)->params.size());
                 break;
 
             default:
@@ -1136,13 +1136,13 @@ class Interpreter {
             throw makeError(loc, ss.str());
         }
         char32_t c = static_cast<HeapString *>(args[0].v.h)->value[0];
-        scratch = makeDouble((unsigned long)(c));
+        scratch = makeNumber((unsigned long)(c));
         return nullptr;
     }
 
     const AST *builtinChar(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "char", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "char", args, {Value::NUMBER});
         long l = long(args[0].v.d);
         if (l < 0) {
             std::stringstream ss;
@@ -1161,44 +1161,44 @@ class Interpreter {
 
     const AST *builtinLog(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "log", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::log(args[0].v.d));
+        validateBuiltinArgs(loc, "log", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::log(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinExp(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "exp", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::exp(args[0].v.d));
+        validateBuiltinArgs(loc, "exp", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::exp(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinMantissa(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "mantissa", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "mantissa", args, {Value::NUMBER});
         int exp;
         double m = std::frexp(args[0].v.d, &exp);
-        scratch = makeDoubleCheck(loc, m);
+        scratch = makeNumberCheck(loc, m);
         return nullptr;
     }
 
     const AST *builtinExponent(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "exponent", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "exponent", args, {Value::NUMBER});
         int exp;
         std::frexp(args[0].v.d, &exp);
-        scratch = makeDoubleCheck(loc, exp);
+        scratch = makeNumberCheck(loc, exp);
         return nullptr;
     }
 
     const AST *builtinModulo(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "modulo", args, {Value::DOUBLE, Value::DOUBLE});
+        validateBuiltinArgs(loc, "modulo", args, {Value::NUMBER, Value::NUMBER});
         double a = args[0].v.d;
         double b = args[1].v.d;
         if (b == 0)
             throw makeError(loc, "Division by zero.");
-        scratch = makeDoubleCheck(loc, std::fmod(a, b));
+        scratch = makeNumberCheck(loc, std::fmod(a, b));
         return nullptr;
     }
 
@@ -1242,7 +1242,7 @@ class Interpreter {
         switch (args[0].t) {
             case Value::BOOLEAN: r = args[0].v.b == args[1].v.b; break;
 
-            case Value::DOUBLE: r = args[0].v.d == args[1].v.d; break;
+            case Value::NUMBER: r = args[0].v.d == args[1].v.d; break;
 
             case Value::STRING:
                 r = static_cast<HeapString *>(args[0].v.h)->value ==
@@ -1305,7 +1305,7 @@ class Interpreter {
                 break;
 
             case JsonnetJsonValue::NUMBER:
-                attach = makeDouble(v->number);
+                attach = makeNumber(v->number);
                 filled = true;
                 break;
 
@@ -1569,7 +1569,7 @@ class Interpreter {
 
             case AST_LITERAL_NUMBER: {
                 const auto &ast = *static_cast<const LiteralNumber *>(ast_);
-                scratch = makeDoubleCheck(ast_->location, ast.value);
+                scratch = makeNumberCheck(ast_->location, ast.value);
             } break;
 
             case AST_LITERAL_STRING: {
@@ -1910,24 +1910,24 @@ class Interpreter {
                             }
                             break;
 
-                        case Value::DOUBLE:
+                        case Value::NUMBER:
                             switch (ast.op) {
                                 case BOP_PLUS:
-                                    scratch = makeDoubleCheck(ast.location, lhs.v.d + rhs.v.d);
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d + rhs.v.d);
                                     break;
 
                                 case BOP_MINUS:
-                                    scratch = makeDoubleCheck(ast.location, lhs.v.d - rhs.v.d);
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d - rhs.v.d);
                                     break;
 
                                 case BOP_MULT:
-                                    scratch = makeDoubleCheck(ast.location, lhs.v.d * rhs.v.d);
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d * rhs.v.d);
                                     break;
 
                                 case BOP_DIV:
                                     if (rhs.v.d == 0)
                                         throw makeError(ast.location, "Division by zero.");
-                                    scratch = makeDoubleCheck(ast.location, lhs.v.d / rhs.v.d);
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d / rhs.v.d);
                                     break;
 
                                     // No need to check doubles made from longs
@@ -1935,31 +1935,31 @@ class Interpreter {
                                 case BOP_SHIFT_L: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
-                                    scratch = makeDouble(long_l << long_r);
+                                    scratch = makeNumber(long_l << long_r);
                                 } break;
 
                                 case BOP_SHIFT_R: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
-                                    scratch = makeDouble(long_l >> long_r);
+                                    scratch = makeNumber(long_l >> long_r);
                                 } break;
 
                                 case BOP_BITWISE_AND: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
-                                    scratch = makeDouble(long_l & long_r);
+                                    scratch = makeNumber(long_l & long_r);
                                 } break;
 
                                 case BOP_BITWISE_XOR: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
-                                    scratch = makeDouble(long_l ^ long_r);
+                                    scratch = makeNumber(long_l ^ long_r);
                                 } break;
 
                                 case BOP_BITWISE_OR: {
                                     long long_l = lhs.v.d;
                                     long long_r = rhs.v.d;
-                                    scratch = makeDouble(long_l | long_r);
+                                    scratch = makeNumber(long_l | long_r);
                                 } break;
 
                                 case BOP_LESS_EQ: scratch = makeBoolean(lhs.v.d <= rhs.v.d); break;
@@ -2091,7 +2091,7 @@ class Interpreter {
                                         arg.v.b ? 1.0 : 0.0);
                                     break;
 
-                                case Value::DOUBLE:
+                                case Value::NUMBER:
                                     args2.emplace_back(
                                         JsonnetJsonValue::NUMBER,
                                         "",
@@ -2247,7 +2247,7 @@ class Interpreter {
                     const Value &target = f.val;
                     if (target.t == Value::ARRAY) {
                         const auto *array = static_cast<HeapArray *>(target.v.h);
-                        if (scratch.t != Value::DOUBLE) {
+                        if (scratch.t != Value::NUMBER) {
                             throw makeError(
                                 ast.location,
                                 "Array index must be number, got " + type_str(scratch) + ".");
@@ -2285,7 +2285,7 @@ class Interpreter {
                     } else if (target.t == Value::STRING) {
                         auto *obj = static_cast<HeapString *>(target.v.h);
                         assert(obj != nullptr);
-                        if (scratch.t != Value::DOUBLE) {
+                        if (scratch.t != Value::NUMBER) {
                             throw makeError(
                                 ast.location,
                                 "UString index must be a number, got " + type_str(scratch) + ".");
@@ -2471,14 +2471,14 @@ class Interpreter {
                             }
                             break;
 
-                        case Value::DOUBLE:
+                        case Value::NUMBER:
                             switch (ast.op) {
                                 case UOP_PLUS: break;
 
-                                case UOP_MINUS: scratch = makeDouble(-scratch.v.d); break;
+                                case UOP_MINUS: scratch = makeNumber(-scratch.v.d); break;
 
                                 case UOP_BITWISE_NOT:
-                                    scratch = makeDouble(~(long)(scratch.v.d));
+                                    scratch = makeNumber(~(long)(scratch.v.d));
                                     break;
 
                                 default:
@@ -2555,7 +2555,7 @@ class Interpreter {
 
             case Value::BOOLEAN: ss << (scratch.v.b ? U"true" : U"false"); break;
 
-            case Value::DOUBLE: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
+            case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
 
             case Value::FUNCTION:
                 throw makeError(loc, "Couldn't manifest function in JSON output.");
