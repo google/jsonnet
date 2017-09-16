@@ -16,7 +16,7 @@
 # User-servicable parts:
 ################################################################################
 
-# C/C++ compiler -- clang also works
+# C/C++ compiler; to use Clang, build with `make CC=clang CXX=clang++`
 CXX ?= g++
 CC ?= gcc
 
