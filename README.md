@@ -37,14 +37,24 @@ To run the output binary, run:
 
 Bazel builds are also supported.
 [Install Bazel](https://www.bazel.io/versions/master/docs/install.html) if it is
-not installed already. Then, run the following command to build:
+not installed already. Then, run the following command to build with GCC:
 
 ```
 bazel build -c opt //cmd:jsonnet
 ```
 
-This builds the `jsonnet` target defined in [cmd/BUILD](./cmd/BUILD) To run the
-output binary, run:
+To build with Clang, use one of these two options:
+
+```
+env CC=clang CXX=clang++ bazel build -c opt //cmd:jsonnet
+
+# OR
+
+bazel build -c opt --action_env=CC=clang --action_env=CXX=clang++ //cmd:jsonnet
+```
+
+This builds the `jsonnet` target defined in [`cmd/BUILD`](./cmd/BUILD). To
+launch the output binary, run:
 
 ```
 bazel-bin/cmd/jsonnet
