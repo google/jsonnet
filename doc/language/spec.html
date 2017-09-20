@@ -8,13 +8,13 @@ i {
     font-family: Arial, sans-serif;
     font-weight: medium;
     font-style: italic;
-    color: #008 
+    color: #008
 }
 
 /* Value sets */
 em {
     font-family: Arial, sans-serif;
-    font-weight: medium; 
+    font-weight: medium;
     font-style: italic;
     color: #800
 }
@@ -158,12 +158,12 @@ removed. </p>
 
 </li>
 
-<li><i>symbol</i>: 
+<li><i>symbol</i>:
 The following single-character symbols:
 <p><code>{}[],.();</code></p>
 </li>
 
-<li><i>operator</i>: 
+<li><i>operator</i>:
 A sequence of at least one of the following single-character symbols:
 <code>!$:~+-&amp;|^=&lt;&gt;*/%</code>
 <p>Subject to the following rules, which will cause the lexing to terminate with a shorter
@@ -233,7 +233,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <i>expr</i>
 <code>[</code>
 <i>expr</i>
-[ <code>:</code> [ <i>expr</i> 
+[ <code>:</code> [ <i>expr</i>
 [ <code>:</code> [ <i>expr</i> ] ] ] ]
 <code>]</code>
 
@@ -241,7 +241,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 </td></tr> <tr><td></td><td> | </td><td>
 <i>expr</i>
 <code>[</code>
-<code>:</code> [ <i>expr</i> 
+<code>:</code> [ <i>expr</i>
 [ <code>:</code> [ <i>expr</i> ] ] ] ]
 <code>]</code>
 
@@ -512,7 +512,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>^</code> |
 <code>|</code> |
 <code>&amp;&amp;</code> |
-<code>||</code> 
+<code>||</code>
 </td></tr>
 
 <!-- unaryop -->
@@ -520,7 +520,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <code>-</code> |
 <code>+</code> |
 <code>!</code> |
-<code>~</code> 
+<code>~</code>
 </td></tr>
 </table>
 
@@ -573,7 +573,7 @@ parser.</p>
 
 <ul>
 <li>The set of identifiers now includes <code>$</code>, which is no-longer a special keyword.</li>
-<li>The following binary operators are removed: <code>!=</code> <code>==</code> 
+<li>The following binary operators are removed: <code>!=</code> <code>==</code>
     <code>%</code> <code>in</code></li>
 <li>Array slices <code>[::]</code> are removed.</li>
 <li>Array and object comprehensions are replaced with a simple object comprehension construct.</li>
@@ -928,7 +928,7 @@ desugar_{field}([string(id)](params) \mathrel{h} e), binds, b)
 
 <div class="desugar-rule"> \[
 desugar_{field}(string \mathrel{h} e), binds, b) =
-desugar_{field}([string] \mathrel{h} e), binds, b) 
+desugar_{field}([string] \mathrel{h} e), binds, b)
 \] </div>
 
 <div class="desugar-rule"> \[
@@ -1015,7 +1015,7 @@ desugar_{arrcomp}(e, \textrm{for }x\textrm{ in }e', b) = \\
 \hspace{10mm}desugar_{expr}(
     \local{arr = e'}{
         \texttt{std.join}(\\\hspace{20mm}[], \texttt{std.makeArray}(
-            \texttt{std.length}(arr), 
+            \texttt{std.length}(arr),
             \function{i}{\local{x = arr[i]}{[base]}}
         ))
     },
@@ -1178,7 +1178,7 @@ judgement and in the \(v ⇓ j\) judgement (because it is defined in terms of \(
 
 <p> When executed, Jsonnet expressions yield Jsonnet values.  These need to be manifested, an
 additional step, to get JSON values.  The differences between Jsonnet values and JSON values are:
-1) Jsonnet values contain functions (which are not representable in JSON). 2) 
+1) Jsonnet values contain functions (which are not representable in JSON). 2)
 Due to the lazy semantics, both object fields and array elements have yet to be executed to yield
 values.  3) Object assertions still need to be checked.</p>
 
@@ -1257,7 +1257,7 @@ calculus</a>.</p>
     ...
     <code>[</code><i>e''</i><code>]</code> <i>h</i> <i>e'''</i>
     ...
-<code>}</code>[<i>e</i>/<i>x</i>] = 
+<code>}</code>[<i>e</i>/<i>x</i>] =
 <code>{</code>
     ...
     <code>assert</code> <i>e'</i>[<i>e</i>/<i>x</i>]
@@ -1484,14 +1484,14 @@ e_1 ↓ \false \hspace{15pt} e_3 ↓ v
 
 <div class="sequent-rule"> \[\rule{object-inherit} {
 e^L ↓ \object{
-    \assert e''^L_1 \ldots \assert e''^L_n,\ 
-    f_1 h^L_1 e^L_1 \ldots f_m h^L_m e^L_m,\ 
+    \assert e''^L_1 \ldots \assert e''^L_n,\
+    f_1 h^L_1 e^L_1 \ldots f_m h^L_m e^L_m,\
     f'^L_1 h'^L_1 e'^L_1 \ldots f'^L_p h'^L_p e'^L_p
 }
 \\
 e^R ↓ \object{
-    \assert e''^R_1 \ldots \assert e''^R_q,\ 
-    f_1 h^R_1 e^R_1 \ldots f_m h^R_m e^R_m,\ 
+    \assert e''^R_1 \ldots \assert e''^R_q,\
+    f_1 h^R_1 e^R_1 \ldots f_m h^R_m e^R_m,\
     f'^R_1 h'^R_1 e'^R_1 \ldots f'^R_r h'^R_r e'^R_r
 }
 \\
@@ -1502,7 +1502,7 @@ x, y \textrm{ fresh} \hspace{15pt} \textrm{let } S = λe . e⟦x/\self, y/\super
 e_s = \super + \object{
     \assert S(e''^L_1) \ldots \assert S(e''^L_n),\\
 \hspace{20mm}
-    f_1 h^L_1 S(e^L_1) \ldots f_m h^L_m S(e^L_m),\ 
+    f_1 h^L_1 S(e^L_1) \ldots f_m h^L_m S(e^L_m),\
     f'^L_1 h'^L_1 S(e'^L_1) \ldots f'^L_p h'^L_p S(e'^L_p)
 }
 \\
@@ -1510,10 +1510,10 @@ e_s = \super + \object{
                    e'''_i = (\local{x = \self, y = \super}{e^R_i ⟦e_s / \super⟧})
 \\
 o = \{ \\
-\hspace{5mm} \assert e''^L_1 \ldots \assert e''^L_n, \ 
-    \assert e''^R_1 \ldots \assert e''^R_p, \\
-\hspace{5mm} f^L_1 h^L_1 e^L_1 \ldots f^L_p h^L_p e^L_p, \ 
-    f^R_1 h^R_1 e^R_1 \ldots f^R_q h^R_q e^R_q, \ 
+\hspace{5mm} \assert e''^L_1 \ldots \assert e''^L_n, \
+    \assert e''^R_1 \ldots \assert e''^R_q, \\
+\hspace{5mm} f'^L_1 h'^L_1 e'^L_1 \ldots f'^L_p h'^L_p e'^L_p, \
+    f'^R_1 h'^R_1 e'^R_1 \ldots f'^R_r h'^R_r e'^R_r, \
     f_1 h'''_1 e'''_m \ldots f_m h'''_m e'''_m \\
 \}
 } {
@@ -1805,9 +1805,9 @@ j ⇓ j
 
 <div class="sequent-rule"> \[\rule{manifest-object} {
 o = \object{
-    \assert e''_1 \ldots \assert e''_m,\ 
-    f_1 h_1 e_1 \ldots f_n h_n e_n,\ 
-    f'_1 :: e'_1 \ldots f'_p :: e'_p,\ 
+    \assert e''_1 \ldots \assert e''_m,\
+    f_1 h_1 e_1 \ldots f_n h_n e_n,\
+    f'_1 :: e'_1 \ldots f'_p :: e'_p,\
 }
 \\
 ∀i∈\{1\ldots m\}: e''_i⟦o/\self,\{\}/\super⟧↓\_
