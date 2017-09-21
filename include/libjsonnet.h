@@ -138,10 +138,10 @@ void jsonnet_json_destroy(struct JsonnetVm *vm, struct JsonnetJsonValue *v);
  *
  * The returned JsonnetJsonValue* should be allocated with jsonnet_realloc.  It will be cleaned up
  * along with the objects rooted at argv by libjsonnet when no-longer needed.  Return a string upon
- * failure, which will appear in Jsonnet as an error.
+ * failure, which will appear in Jsonnet as an error.  The argv pointer is an array whose size
+ * matches the array of parameters supplied when the native callback was originally registered.
  *
  * \param ctx User pointer, given in jsonnet_native_callback.
- * \param argc The number of arguments from Jsonnet code.
  * \param argv Array of arguments from Jsonnet code.
  * \param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
