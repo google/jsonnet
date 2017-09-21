@@ -2121,7 +2121,7 @@ class Interpreter {
                         const VmNativeCallback &cb = nit->second;
 
                         int succ;
-                        std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, &args3[0], &succ));
+                        std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, args3.data(), &succ));
 
                         if (succ) {
                             bool unused;
