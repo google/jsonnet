@@ -7,7 +7,7 @@
                 { kind: "Sweet Red Vermouth", qty: 1 },
                 { kind: "Angostura", qty: "dash" },
             ],
-            garnish: "Maraschino Cherry",
+            garnish: importstr "bar_menu.6.manhattan_garnish.txt",
             served: "Straight Up",
         },
         Cosmopolitan: {
