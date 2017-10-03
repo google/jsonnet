@@ -20,4 +20,5 @@ if [ -z "$DISABLE_FMT_TESTS" ]; then
 fi
 if [ -n "$FAIL" ]; then
     echo "TESTS FAILED"
+    exit 1
 fi
