@@ -82,10 +82,10 @@ object).</p>
 <h3 id="arith_cond">Arithmetic and Conditionals</h3>
 
 <p>Jsonnet has constructs for manipulating data.  There are the usual arithmetic operators on
-numbers (double precision floating point), booleans, and strings.  The + operator also concatenates
-arrays and strings.  On objects, it fuses the two objects preferring the right hand side when fields
-conflict.  The <code>%</code> operator is compatible with Python's <code>%</code> operator and is
-used for string formatting.</p>
+numbers (double precision floating point), booleans, and strings.  The <code>+</code> operator also
+concatenates arrays and strings.  On objects, it fuses the two objects preferring the right hand
+side when fields conflict.  The <code>%</code> operator is compatible with Python's <code>%</code>
+operator and is used for string formatting.</p>
 
 <p>There is an <code>if</code> construct for conditional code.  Since Jsonnet is an expression
 language, the conditional behaves more like the ternary "?:" operator in C, or the "a if b else c"
@@ -93,7 +93,7 @@ syntax of Python.  I.e., it can be embedded in the middle of an expression.</p>
 
 <p>The example below illustrates some of these features.  Note that equality returns false if the
 two values have different types, as is the case in most dynamically typed scripting languages (but
-not Javascript).  Note also the <code>|||</code> syntax for text blocks.  This strips the leading
+not JavaScript).  Note also the <code>|||</code> syntax for text blocks.  This strips the leading
 whitespace but preserves the newlines in the string literal.  Just like any other string, one can
 use the string formatting operator <code>%</code>.</p>
 
@@ -144,8 +144,8 @@ also computed as 4/3 instead of being given as 1.3333...</p>
 
 <p>After the +, object comprehension is used to create two more cocktails.  In this case, the prefix
 in front of "Screwdriver" and the kind of fruit juice is what differs each time.  Note also the use
-of <code>null</code>, which is a special value that we have inherited from JSON.  The + fuses the two objects
-together to produce a single record for the "cocktails" field. </p>
+of <code>null</code>, which is a special value that we have inherited from JSON.  The <code>+</code>
+fuses the two objects together to produce a single record for the "cocktails" field. </p>
 
 <table>
 <tr>
@@ -167,24 +167,56 @@ together to produce a single record for the "cocktails" field. </p>
 
 <p>As the amount of JSON grows, its size makes it harder to manage.  Jsonnet has various constructs
 to help.  A file can be broken into parts, as one Jsonnet file can import other Jsonnet files (and
-therefore other JSON files).  Values can be held in local variables and fields, which are only
-visible within their scopes.  Functions can be defined to factor out common descriptions, and error
-statements can be used to validate inputs.  Jsonnet provides a standard library that is implicitly
-imported and contains useful functions for data manipulation, among other things.</p>
+therefore other JSON files), or a whole text file can be imported as a string value.  Values can be
+held in local variables and fields, which are only visible within their scopes.  Functions can be
+defined to factor out common descriptions, and error statements can be used to validate inputs.
+Jsonnet provides a standard library that is implicitly imported and contains useful functions for
+data manipulation, among other things.</p>
 
 <h3 id="imports">Imports</h3>
 
 <p>The first example below factors out some cocktails into a separate file.  This may be useful to
-allow concurrent modifications by different mixologists.  The <code>import</code> construct yields
-the content of the <tt>martinis.libsonnet</tt> file.  The <code>+</code> operator is object
-concatenation, which combines two objects to form a single object.  Note that the Cosmopolitan field
-is defined in both files, so the one on the right hand side is used.  This means that
-<tt>bar_menu.jsonnet</tt> has overridden the recipe from <tt>martinis.libsonnet</tt> with a different
-recipe (one that uses Cointreau instead of Triple Sec, among other changes).</p>
+allow concurrent modifications by different mixologists.</p>
 
+<p>The <code>import</code> construct yields the content of the <tt>martinis.libsonnet</tt> file
+evaluated as a Jsonnet object. The <code>+</code> operator is object concatenation, which combines
+two objects to form a single object.  Note that the Cosmopolitan field is defined in both files, so
+the one on the right hand side is used.  This means that <tt>bar_menu.jsonnet</tt> has overridden
+the recipe from <tt>martinis.libsonnet</tt> with a different recipe (one that uses Cointreau instead
+of Triple Sec, among other changes).</p>
+
+<p>The <code>importstr</code> construct yields a string with the content of
+the <tt>bar_menu.6.manhattan_garnish.txt</tt> file without any processing beyond UTF-8 decoding.</p>
+
+<table>
+<tr> <td><span class="TableHeader">Input (Jsonnet)</span></td> </tr>
+
+<tr>
+<td>
 <pre><code>{% include examples/martinis.libsonnet %}</code></pre>
+</td>
+</tr>
 
+<tr>
+<td>
+<pre><code>// bar_menu.6.manhattan_garnish.txt
+{% include examples/bar_menu.6.manhattan_garnish.txt %}</code></pre>
+</td>
+</tr>
+
+<tr>
+<td>
 <pre><code>{% include examples/bar_menu.6.jsonnet %}</code></pre>
+</td>
+</tr>
+
+<tr><td><span class="TableHeader">Output (JSON)</span></td></tr>
+<tr>
+<td>
+<pre><code>{% include examples/bar_menu.6.jsonnet.golden %}</code></pre>
+</td>
+</tr>
+</table>
 
 <p>By convention, Jsonnet code that is intended only for importing has a <tt>.libsonnet</tt>
 extension.  This is not enforced, it simply allows you to distinguish between the two kinds of files
@@ -207,7 +239,7 @@ definitions are really just syntax sugar for closures that are assigned to a fie
 <p>Finally, you may have noticed that two colons are used instead of one.  This marks the field as
 being <dfn>hidden</dfn>, i.e. it will not appear in the JSON output.  The field can still be
 accessed by Jsonnet code, so it is not like the private/protected modifier that some languages have.
-Hidden fields are convenient for functions, which cannot be manifestated in the JSON output.  It has
+Hidden fields are convenient for functions, which cannot be manifested in the JSON output.  It has
 other uses too, as we will see in the later section on object orientation.</p>
 
 <h3 id="locals">Local Variables</h3>
@@ -338,9 +370,10 @@ brace, so in fact this same simplification could have also been made in all of t
 utilizing the object concatenation operator <code>+</code>.  The second syntax sugar is the
 
 <code>f +: e</code> operator, which is a little like the += operator from other languages.  Its
-behavior is the same as saying <code>f: super.f + e</code>.  This works not just for <code>+</code>
-when used for inheritance, but also for string concatenation, list concatenation, and arithmetic
-addition, so it could also have been used in the previous example to add the egg white.</p>
+behavior is the same as saying <code>f: if "f" in super then super.f + e else e</code>.  This works
+not just for <code>+</code> when used for inheritance, but also for string concatenation, list
+concatenation, and arithmetic addition, so it could also have been used in the previous example to
+add the egg white.</p>
 
 <table>
 <tr>

@@ -24,7 +24,8 @@ std.assertEqual(
     local std = { sqrt: function(x) x };
     local lib = import "lib/capture_std.libsonnet";
     lib.sqrt(4),
-    2) &&
+    2
+) &&
 
 // Now, test each std library function in turn.
 
@@ -195,7 +196,8 @@ std.assertEqual(
             empty: {},
         },
     }),
-    "a = 1\nb = 2\n[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+    "a = 1\nb = 2\n[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n"
+) &&
 
 std.assertEqual(
     std.manifestIni({
@@ -205,7 +207,8 @@ std.assertEqual(
             empty: {},
         },
     }),
-    "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n") &&
+    "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n"
+) &&
 
 std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
@@ -272,7 +275,8 @@ std.assertEqual(std.sort(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(std.sort(["2", "1"]), ["1", "2"]) &&
 std.assertEqual(
     std.sort(["The", "rain", "in", "spain", "falls", "mainly", "on", "the", "plain."]),
-    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]
+) &&
 
 std.assertEqual(std.uniq([]), []) &&
 std.assertEqual(std.uniq([1]), [1]) &&
@@ -280,17 +284,20 @@ std.assertEqual(std.uniq([1, 2]), [1, 2]) &&
 std.assertEqual(std.uniq(["1", "2"]), ["1", "2"]) &&
 std.assertEqual(
     std.uniq(["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]),
-    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]) &&
+    ["The", "falls", "in", "mainly", "on", "plain.", "rain", "spain", "the"]
+) &&
 
 local animal_set = ["ant", "bat", "cat", "dog", "elephant", "fish", "giraffe"];
 
 std.assertEqual(
     std.uniq(["ant", "bat", "cat", "dog", "dog", "elephant", "fish", "fish", "giraffe"]),
-    animal_set) &&
+    animal_set
+) &&
 
 std.assertEqual(
     std.set(["dog", "ant", "bat", "cat", "dog", "elephant", "fish", "giraffe", "fish"]),
-    animal_set) &&
+    animal_set
+) &&
 
 std.assertEqual(std.setUnion(animal_set, animal_set), animal_set) &&
 std.assertEqual(std.setUnion(animal_set, []), animal_set) &&
@@ -338,38 +345,40 @@ std.assertEqual(std.split("/foo/", "/"), ["", "foo", ""]) &&
 std.assertEqual(std.splitLimit("foo/bar", "/", 1), ["foo", "bar"]) &&
 std.assertEqual(std.splitLimit("/foo/", "/", 1), ["", "foo/"]) &&
 
-std.assertEqual(std.manifestJsonEx({
-    x: [1, 2, 3, true, false, null, "string\nstring"],
-    y: { a: 1, b: 2, c: [1, 2] },
-    emptyArray: [],
-    emptyObject: {},
-}, "    ") + "\n", |||
-    {
-        "emptyArray": [
+std.assertEqual(
+    std.manifestJsonEx({
+        x: [1, 2, 3, true, false, null, "string\nstring"],
+        y: { a: 1, b: 2, c: [1, 2] },
+        emptyArray: [],
+        emptyObject: {},
+    }, "    ") + "\n",
+    |||
+        {
+            "emptyArray": [
 
-        ],
-        "emptyObject": {
+            ],
+            "emptyObject": {
 
-        },
-        "x": [
-            1,
-            2,
-            3,
-            true,
-            false,
-            null,
-            "string\nstring"
-        ],
-        "y": {
-            "a": 1,
-            "b": 2,
-            "c": [
+            },
+            "x": [
                 1,
-                2
-            ]
+                2,
+                3,
+                true,
+                false,
+                null,
+                "string\nstring"
+            ],
+            "y": {
+                "a": 1,
+                "b": 2,
+                "c": [
+                    1,
+                    2
+                ]
+            }
         }
-    }
-|||
+    |||
 ) &&
 
 std.assertEqual(std.parseInt("01234567890"), 1234567890) &&
@@ -380,4 +389,14 @@ std.assertEqual(std.md5("grape"), "b781cbb29054db12f88f08c6e161c199") &&
 std.assertEqual(std.md5("{}[]01234567890\"'+=-_/<>?,.!@#$%^&*|\\:;`~"), "a680db28332f0c9647376e5b2aeb4b3d") &&
 std.assertEqual(std.md5("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh. Quisque volutpat condimentum velit. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nam nec ante. Sed lacinia, urna non tincidunt mattis, tortor neque adipiscing diam, a cursus ipsum ante quis turpis. Nulla facilisi. Ut fringilla. Suspendisse potenti. Nunc feugiat mi a tellus consequat imperdiet. Vestibulum sapien. Proin quam. Etiam ultrices. Suspendisse in justo eu magna luctus suscipit. Sed lectus. Integer euismod lacus luctus magna. Quisque cursus, metus vitae pharetra auctor, sem massa mattis sem, at interdum magna augue eget diam. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi lacinia molestie dui. Praesent blandit dolor. Sed non quam. In vel mi sit amet augue congue elementum. Morbi in ipsum sit amet pede facilisis laoreet. Donec lacus nunc, viverra nec, blandit vel, egestas et, augue. Vestibulum tincidunt malesuada tellus. Ut ultrices ultrices enim. Curabitur sit amet mauris. Morbi in dui quis est pulvinar ullamcorper. Nulla facilisi. Integer lacinia sollicitudin massa. Cras metus. Sed aliquet risus a tortor. Integer id quam. Morbi mi. Quisque nisl felis, venenatis tristique, dignissim in, ultrices sit amet, augue. Proin sodales libero eget ante. Nulla quam. Aenean laoreet. Vestibulum nisi lectus, commodo ac, facilisis ac, ultricies eu, pede. Ut orci risus, accumsan porttitor, cursus quis, aliquet eget, justo. Sed pretium blandit orci. Ut eu diam at pede suscipit sodales. Aenean lectus elit, fermentum non, convallis id, sagittis at, neque. Nullam mauris orci, aliquet et, iaculis et, viverra vitae, ligula. Nulla ut felis in purus aliquam imperdiet. Maecenas aliquet mollis lectus. Vivamus consectetuer risus et tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh. Quisque volutpat condimentum velit. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nam nec ante. Sed lacinia, urna non tincidunt mattis, tortor neque adipiscing diam, a cursus ipsum ante quis turpis. Nulla facilisi. Ut fringilla. Suspendisse potenti. Nunc feugiat mi a tellus consequat imperdiet. Vestibulum sapien. Proin quam. Etiam ultrices. Suspendisse in justo eu magna luctus suscipit. Sed lectus. Integer euismod lacus luctus magna. Quisque cursus, metus vitae pharetra auctor, sem massa mattis sem, at interdum magna augue eget diam. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi lacinia molestie dui. Praesent blandit dolor. Sed non quam. In vel mi sit amet augue congue elementum. Morbi in ipsum sit amet pede facilisis laoreet. Donec lacus nunc, viverra nec, blandit vel, egestas et, augue. Vestibulum tincidunt malesuada tellus. Ut ultrices ultrices enim. Curabitur sit amet mauris. Morbi in dui quis est pulvinar ullamcorper. Nulla facilisi. Integer lacinia sollicitudin massa. Cras metus. Sed aliquet risus a tortor. Integer id quam. Morbi mi. Quisque nisl felis, venenatis tristique, dignissim in, ultrices sit amet, augue. Proin sodales libero eget ante. Nulla quam. Aenean laoreet. Vestibulum nisi lectus, commodo ac, facilisis ac, ultricies eu, pede. Ut orci risus, accumsan porttitor, cursus quis, aliquet eget, justo. Sed pretium blandit orci. Ut eu diam at pede suscipit sodales. Aenean lectus elit, fermentum non, convallis id, sagittis at, neque. Nullam mauris orci, aliquet et, iaculis et, viverra vitae, ligula. Nulla ut felis in purus aliquam imperdiet. Maecenas aliquet mollis lectus. Vivamus consectetuer risus et tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh. Quisque volutpat condimentum velit. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nam nec ante. Sed lacinia, urna non tincidunt mattis, tortor neque adipiscing diam, a cursus ipsum ante quis turpis. Nulla facilisi. Ut fringilla. Suspendisse potenti. Nunc feugiat mi a tellus consequat imperdiet. Vestibulum sapien. Proin quam. Etiam ultrices. Suspendisse in justo eu magna luctus suscipit. Sed lectus. Integer euismod lacus luctus magna. Quisque cursus, metus vitae pharetra auctor, sem massa mattis sem, at interdum magna augue eget diam. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi lacinia molestie dui. Praesent blandit dolor. Sed non quam. In vel mi sit amet augue congue elementum. Morbi in ipsum si."), "3496bb633e830e7679ce53700d42de1e") &&
 std.assertEqual(std.parseInt("-01234567890"), -1234567890) &&
+
+std.assertEqual(std.prune({}), {}) &&
+std.assertEqual(std.prune([]), []) &&
+std.assertEqual(std.prune(null), null) &&
+std.assertEqual(std.prune({ a: [], b: {}, c: null }), {}) &&
+std.assertEqual(std.prune([[], {}, null]), []) &&
+std.assertEqual(std.prune({ a: [[], {}, null], b: { a: [], b: {}, c: null } }), {}) &&
+std.assertEqual(std.prune([[[], {}, null], { a: [], b: {}, c: null }]), []) &&
+std.assertEqual(std.prune({ a: [{ b: true }] }), { a: [{ b: true }] }) &&
+
 true

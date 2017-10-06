@@ -23,12 +23,8 @@ limitations under the License.
 struct Location {
     unsigned long line;
     unsigned long column;
-    Location(void)
-      : line(0), column(0)
-    { }
-    Location(unsigned long line_number, unsigned long column)
-      : line(line_number), column(column)
-    { }
+    Location(void) : line(0), column(0) {}
+    Location(unsigned long line_number, unsigned long column) : line(line_number), column(column) {}
     bool isSet(void) const
     {
         return line != 0;
@@ -44,15 +40,13 @@ static inline std::ostream &operator<<(std::ostream &o, const Location &loc)
 struct LocationRange {
     std::string file;
     Location begin, end;
-    LocationRange(void)
-    { }
+    LocationRange(void) {}
     /** This is useful for special locations, e.g. manifestation entry point. */
-    LocationRange(const std::string &msg)
-      : file(msg)
-    { }
+    LocationRange(const std::string &msg) : file(msg) {}
     LocationRange(const std::string &file, const Location &begin, const Location &end)
-      : file(file), begin(begin), end(end)
-    { }
+        : file(file), begin(begin), end(end)
+    {
+    }
     bool isSet(void) const
     {
         return begin.isSet();
@@ -82,16 +76,13 @@ static inline std::ostream &operator<<(std::ostream &o, const LocationRange &loc
 struct StaticError {
     LocationRange location;
     std::string msg;
-    StaticError(const std::string &msg)
-      : msg(msg)
-    {
-    }
+    StaticError(const std::string &msg) : msg(msg) {}
     StaticError(const std::string &filename, const Location &location, const std::string &msg)
-      : location(filename, location, location), msg(msg)
+        : location(filename, location, location), msg(msg)
     {
     }
     StaticError(const LocationRange &location, const std::string &msg)
-      : location(location), msg(msg)
+        : location(location), msg(msg)
     {
     }
 

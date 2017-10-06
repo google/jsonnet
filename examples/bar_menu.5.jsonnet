@@ -35,7 +35,8 @@ limitations under the License.
             ],
             garnish: null,
             served: "On The Rocks",
-        } for sd in [
+        }
+        for sd in [
             { name: "Yellow ", fruit: "Lemonade" },
             { name: "", fruit: "Orange Juice" },
         ]

@@ -14,44 +14,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+TEST_SUITE_NAME="${TEST_SUITE_NAME:-$0}"
+
+cd $(dirname $0)
+
+JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
+
+source ../test_suite/tests.source
+
+init
+
+shopt -s nullglob
+
 FAILED=0
 SUCCESS=0
 
-for I in *.jsonnet.golden ; do
+EXAMPLES_DIR="${EXAMPLES_DIR:-./}"
+
+for I in "$EXAMPLES_DIR"/*.jsonnet.golden ; do
     TEST=$(basename "$I" .golden)
-    OUT1=$(../jsonnet "$TEST" 2>&1)
-    OUT2=$(../jsonnet "$I" 2>&1)
-    if [ "$OUT1" == "$OUT2" ] ; then
-        SUCCESS=$((SUCCESS + 1))
-    else
-        echo "Failed: $TEST"
-        echo "Got:"
-        echo "$OUT1"
-        echo "Expected:"
-        echo "$OUT2"
-        FAILED=$((FAILED + 1))
-    fi
+    JSONNET_CMD="$JSONNET_BIN"
+    JSONNET_FILE="$EXAMPLES_DIR/$TEST"
+    EXPECTED_EXIT_CODE=0
+    # We run jsonnet again on the output to disregard formatting
+    GOLDEN_OUTPUT="$("$JSONNET_BIN" "$I" 2> /dev/null)"
+    GOLDEN_KIND=PLAIN
+    test_eval "$JSONNET_CMD" "$JSONNET_FILE" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 
-for I in *.error ; do
+for I in "$EXAMPLES_DIR"/*.error ; do
     TEST=$(basename "$I" .error)
-    OUT1=$(../jsonnet "$TEST" 2>&1)
-    OUT2=$(cat "$I" 2>&1)
-    if [ "$OUT1" == "$OUT2" ] ; then
-        SUCCESS=$((SUCCESS + 1))
-    else
-        echo "Failed: $TEST"
-        echo "Got:"
-        echo "$OUT1"
-        echo "Expected:"
-        echo "$OUT2"
-        FAILED=$((FAILED + 1))
-    fi
+    JSONNET_CMD="$JSONNET_BIN"
+    JSONNET_FILE="$TEST"
+    EXPECTED_EXIT_CODE=1
+    GOLDEN_OUTPUT="$(cat "$I")"
+    GOLDEN_KIND=PLAIN
+    test_eval "$JSONNET_CMD" "$JSONNET_FILE" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
+
+deinit
 
 if [ "$FAILED" -eq 0 ] ; then
-    echo "All $SUCCESS examples executed correctly."
+    echo "$TEST_SUITE_NAME: All $EXECUTED tests executed correctly."
 else
-    echo "$FAILED / $((FAILED+SUCCESS)) tests failed."
+    echo "$TEST_SUITE_NAME: $FAILED / $EXECUTED tests failed."
     exit 1
 fi

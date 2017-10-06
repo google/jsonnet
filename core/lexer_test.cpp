@@ -21,9 +21,7 @@ limitations under the License.
 
 namespace {
 
-void testLex(const char* name,
-             const char* input,
-             const std::list<Token>& tokens,
+void testLex(const char* name, const char* input, const std::list<Token>& tokens,
              const std::string& error)
 {
     std::list<Token> test_tokens(tokens);
@@ -31,8 +29,7 @@ void testLex(const char* name,
 
     try {
         std::list<Token> lexed_tokens = jsonnet_lex(name, input);
-        ASSERT_EQ(test_tokens, lexed_tokens)
-            << "Test failed: " << name << std::endl;
+        ASSERT_EQ(test_tokens, lexed_tokens) << "Test failed: " << name << std::endl;
     } catch (StaticError& e) {
         ASSERT_EQ(error, e.toString());
     }
@@ -54,9 +51,10 @@ TEST(Lexer, TestOperators)
     testLex("colon 2", "::", {Token(Token::Kind::OPERATOR, "::")}, "");
     testLex("colon 2", ":::", {Token(Token::Kind::OPERATOR, ":::")}, "");
     testLex("arrow right", "->", {Token(Token::Kind::OPERATOR, "->")}, "");
-    testLex("less than minus", "<-",
-            {Token(Token::Kind::OPERATOR, "<"),
-             Token(Token::Kind::OPERATOR, "-")}, "");
+    testLex("less than minus",
+            "<-",
+            {Token(Token::Kind::OPERATOR, "<"), Token(Token::Kind::OPERATOR, "-")},
+            "");
     testLex("comma", ",", {Token(Token::Kind::COMMA, "")}, "");
     testLex("dollar", "$", {Token(Token::Kind::DOLLAR, "")}, "");
     testLex("dot", ".", {Token(Token::Kind::DOT, "")}, "");
@@ -97,79 +95,106 @@ TEST(Lexer, TestNumbers)
     testLex("number 1.1e100", "1.1e100", {Token(Token::Kind::NUMBER, "1.1e100")}, "");
     testLex("number 1.1e-100", "1.1e-100", {Token(Token::Kind::NUMBER, "1.1e-100")}, "");
     testLex("number 1.1e+100", "1.1e+100", {Token(Token::Kind::NUMBER, "1.1e+100")}, "");
-    testLex("number 0100", "0100",
+    testLex("number 0100",
+            "0100",
             {Token(Token::Kind::NUMBER, "0"), Token(Token::Kind::NUMBER, "100")},
             "");
-    testLex("number 10+10", "10+10",
+    testLex("number 10+10",
+            "10+10",
             {Token(Token::Kind::NUMBER, "10"),
              Token(Token::Kind::OPERATOR, "+"),
-             Token(Token::Kind::NUMBER, "10")}, "");
-    testLex("number 1.+3", "1.+3", {},
+             Token(Token::Kind::NUMBER, "10")},
+            "");
+    testLex("number 1.+3",
+            "1.+3",
+            {},
             "number 1.+3:1:1: Couldn't lex number, junk after decimal point: +");
-    testLex("number 1e!", "1e!", {},
-            "number 1e!:1:1: Couldn't lex number, junk after 'E': !");
-    testLex("number 1e+!", "1e+!", {},
+    testLex("number 1e!", "1e!", {}, "number 1e!:1:1: Couldn't lex number, junk after 'E': !");
+    testLex("number 1e+!",
+            "1e+!",
+            {},
             "number 1e+!:1:1: Couldn't lex number, junk after exponent sign: !");
 }
 
 TEST(Lexer, TestDoubleStrings)
 {
-    testLex("double string \"hi\"",
-            "\"hi\"", {Token(Token::Kind::STRING_DOUBLE, "hi")}, "");
-    testLex("double string \"hi nl\"",
-            "\"hi\n\"", {Token(Token::Kind::STRING_DOUBLE, "hi\n")}, "");
+    testLex("double string \"hi\"", "\"hi\"", {Token(Token::Kind::STRING_DOUBLE, "hi")}, "");
+    testLex("double string \"hi nl\"", "\"hi\n\"", {Token(Token::Kind::STRING_DOUBLE, "hi\n")}, "");
     testLex("double string \"hi\\\"\"",
-            "\"hi\\\"\"", {Token(Token::Kind::STRING_DOUBLE, "hi\\\"")}, "");
+            "\"hi\\\"\"",
+            {Token(Token::Kind::STRING_DOUBLE, "hi\\\"")},
+            "");
     testLex("double string \"hi\\nl\"",
-            "\"hi\\\n\"", {Token(Token::Kind::STRING_DOUBLE, "hi\\\n")}, "");
-    testLex("double string \"hi",
-            "\"hi", {}, "double string \"hi:1:1: Unterminated string");
+            "\"hi\\\n\"",
+            {Token(Token::Kind::STRING_DOUBLE, "hi\\\n")},
+            "");
+    testLex("double string \"hi", "\"hi", {}, "double string \"hi:1:1: Unterminated string");
 }
 
 TEST(Lexer, TestSingleStrings)
 {
-    testLex("single string 'hi'",
-            "'hi'", {Token(Token::Kind::STRING_SINGLE, "hi")}, "");
-    testLex("single string 'hi nl'",
-            "'hi\n'", {Token(Token::Kind::STRING_SINGLE, "hi\n")}, "");
-    testLex("single string 'hi\\''",
-            "'hi\\''", {Token(Token::Kind::STRING_SINGLE, "hi\\'")}, "");
-    testLex("single string 'hi\\nl'",
-            "'hi\\\n'", {Token(Token::Kind::STRING_SINGLE, "hi\\\n")}, "");
-    testLex("single string 'hi",
-            "'hi", {}, "single string 'hi:1:1: Unterminated string");
+    testLex("single string 'hi'", "'hi'", {Token(Token::Kind::STRING_SINGLE, "hi")}, "");
+    testLex("single string 'hi nl'", "'hi\n'", {Token(Token::Kind::STRING_SINGLE, "hi\n")}, "");
+    testLex("single string 'hi\\''", "'hi\\''", {Token(Token::Kind::STRING_SINGLE, "hi\\'")}, "");
+    testLex(
+        "single string 'hi\\nl'", "'hi\\\n'", {Token(Token::Kind::STRING_SINGLE, "hi\\\n")}, "");
+    testLex("single string 'hi", "'hi", {}, "single string 'hi:1:1: Unterminated string");
 }
 
 TEST(Lexer, TestVerbatimDoubleStrings)
 {
     testLex("verbatim double string @\"hi\"",
-            "@\"hi\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi")}, "");
+            "@\"hi\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi")},
+            "");
     testLex("verbatim double string @\"hi nl\"",
-            "@\"hi\n\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\n")}, "");
+            "@\"hi\n\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\n")},
+            "");
     testLex("verbatim double string @\"hi\\\"",
-            "@\"hi\\\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\")}, "");
+            "@\"hi\\\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\")},
+            "");
     testLex("verbatim double string @\"hi\\\\\"",
-            "@\"hi\\\\\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\\\")}, "");
+            "@\"hi\\\\\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\\\\")},
+            "");
     testLex("verbatim double string @\"hi\"\"\"",
-            "@\"hi\"\"\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\"")}, "");
+            "@\"hi\"\"\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "hi\"")},
+            "");
     testLex("verbatim double string @\"\"\"hi\"",
-            "@\"\"\"hi\"", {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "\"hi")}, "");
+            "@\"\"\"hi\"",
+            {Token(Token::Kind::VERBATIM_STRING_DOUBLE, "\"hi")},
+            "");
 }
 
 TEST(Lexer, TestVerbatimSingleStrings)
 {
     testLex("verbatim single string @'hi'",
-            "@'hi'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi")}, "");
+            "@'hi'",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi")},
+            "");
     testLex("verbatim single string @'hi nl'",
-            "@'hi\n'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\n")}, "");
+            "@'hi\n'",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\n")},
+            "");
     testLex("verbatim single string @'hi\\'",
-            "@'hi\\'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\")}, "");
+            "@'hi\\'",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\")},
+            "");
     testLex("verbatim single string @'hi\\\\'",
-            "@'hi\\\\'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\\\")}, "");
+            "@'hi\\\\'",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi\\\\")},
+            "");
     testLex("verbatim single string @'hi'''",
-            "@'hi'''", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi'")}, "");
+            "@'hi'''",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "hi'")},
+            "");
     testLex("verbatim single string @'''hi'",
-            "@'''hi'", {Token(Token::Kind::VERBATIM_STRING_SINGLE, "'hi")}, "");
+            "@'''hi'",
+            {Token(Token::Kind::VERBATIM_STRING_SINGLE, "'hi")},
+            "");
 }
 
 TEST(Lexer, TestBlockStringSpaces)
@@ -181,13 +206,8 @@ TEST(Lexer, TestBlockStringSpaces)
         "  |||\n"
         "    foo\n"
         "|||";
-    const Token token = Token(
-        Token::Kind::STRING_BLOCK,
-        {},
-        "test\n  more\n|||\n  foo\n",
-        "  ",
-        "",
-        {});
+    const Token token =
+        Token(Token::Kind::STRING_BLOCK, {}, "test\n  more\n|||\n  foo\n", "  ", "", {});
     testLex("block string spaces", str, {token}, "");
 }
 
@@ -200,13 +220,8 @@ TEST(Lexer, TestBlockStringTabs)
         "\t|||\n"
         "\t  foo\n"
         "|||";
-    const Token token = Token(
-        Token::Kind::STRING_BLOCK,
-        {},
-        "test\n  more\n|||\n  foo\n",
-        "\t",
-        "",
-        {});
+    const Token token =
+        Token(Token::Kind::STRING_BLOCK, {}, "test\n  more\n|||\n  foo\n", "\t", "", {});
     testLex("block string tabs", str, {token}, "");
 }
 
@@ -219,13 +234,8 @@ TEST(Lexer, TestBlockStringsMixed)
         "\t  \t|||\n"
         "\t  \t  foo\n"
         "|||";
-    const Token token = Token(
-        Token::Kind::STRING_BLOCK,
-        {},
-        "test\n  more\n|||\n  foo\n",
-        "\t  \t",
-        "",
-        {});
+    const Token token =
+        Token(Token::Kind::STRING_BLOCK, {}, "test\n  more\n|||\n  foo\n", "\t  \t", "", {});
     testLex("block string mixed", str, {token}, "");
 }
 
@@ -238,13 +248,8 @@ TEST(Lexer, TestBlockStringBlanks)
         "  |||\n"
         "    foo\n"
         "|||";
-    const Token token = Token(
-        Token::Kind::STRING_BLOCK,
-        {},
-        "\ntest\n\n\n  more\n|||\n  foo\n",
-        "  ",
-        "",
-        {});
+    const Token token =
+        Token(Token::Kind::STRING_BLOCK, {}, "\ntest\n\n\n  more\n|||\n  foo\n", "  ", "", {});
     testLex("block string blanks", str, {token}, "");
 }
 
@@ -255,7 +260,9 @@ TEST(Lexer, TestBlockStringBadIndent)
         "  test\n"
         " foo\n"
         "|||";
-    testLex("block string bad indent", str, {},
+    testLex("block string bad indent",
+            str,
+            {},
             "block string bad indent:1:1: Text block not terminated with |||");
 }
 
@@ -272,7 +279,9 @@ TEST(Lexer, TestBlockStringNotTerm)
     const char str[] =
         "|||\n"
         "  test\n";
-    testLex("block string not term", str, {},
+    testLex("block string not term",
+            str,
+            {},
             "block string not term:1:1: Text block not terminated with |||");
 }
 
@@ -282,7 +291,9 @@ TEST(Lexer, TestBlockStringNoWs)
         "|||\n"
         "test\n"
         "|||";
-    testLex("block string no ws", str, {},
+    testLex("block string no ws",
+            str,
+            {},
             "block string no ws:1:1: Text block's first line must start with"
             " whitespace.");
 }
@@ -311,9 +322,10 @@ TEST(Lexer, TestKeywords)
 TEST(Lexer, TestIdentifier)
 {
     testLex("identifier", "foobar123", {Token(Token::Kind::IDENTIFIER, "foobar123")}, "");
-    testLex("identifier", "foo bar123",
-            {Token(Token::Kind::IDENTIFIER, "foo"),
-             Token(Token::Kind::IDENTIFIER, "bar123")}, "");
+    testLex("identifier",
+            "foo bar123",
+            {Token(Token::Kind::IDENTIFIER, "foo"), Token(Token::Kind::IDENTIFIER, "bar123")},
+            "");
 }
 
 TEST(Lexer, TestComments)
@@ -322,7 +334,9 @@ TEST(Lexer, TestComments)
     testLex("c++ comment", "// hi", {}, "");
     testLex("hash comment", "# hi", {}, "");
     testLex("c comment", "/* hi */", {}, "");
-    testLex("c comment no term", "/* hi", {},
+    testLex("c comment no term",
+            "/* hi",
+            {},
             "c comment no term:1:1: Multi-line comment has no terminating */.");
 }
 

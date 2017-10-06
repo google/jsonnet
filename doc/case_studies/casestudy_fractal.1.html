@@ -49,7 +49,7 @@ fault-tolerant.</p>
 <img src="/img/fractal_architecture.png">
 
 <p>The Application Server hosts static content (CSS) and Jinja'd HTML.  The <a
-href="{{ page.srcroot }}/fractal/appserv/templates/page.html">HTML</a> contains Javascript that issues AJAX
+href="{{ page.srcroot }}/fractal/appserv/templates/page.html">HTML</a> contains JavaScript that issues AJAX
 requests to 1) the Tile Generating Service and 2) the Application Server (to fetch / amend the
 discoveries list).  The Application Server therefore does not communicate directly with the fractal
 Tile Generating Service, but it needs to know the host:port endpoint in order to embed it in the

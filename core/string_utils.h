@@ -20,12 +20,17 @@ limitations under the License.
 #include "lexer.h"
 
 /** Unparse the string. */
-String jsonnet_string_unparse(const String &str, bool single);
+UString jsonnet_string_unparse(const UString &str, bool single);
+
+
+// Note that the following two functions do not handle the quoting of ' and "
+// inside verbatim strings because that quoting is reversible.  Thus, that
+// quoting is done at lexing time and undone again at pretty-printing time.
 
 /** Escape special characters. */
-String jsonnet_string_escape(const String &str, bool single);
+UString jsonnet_string_escape(const UString &str, bool single);
 
 /** Resolve escape chracters in the string. */
-String jsonnet_string_unescape(const LocationRange &loc, const String &s);
+UString jsonnet_string_unescape(const LocationRange &loc, const UString &s);
 
 #endif

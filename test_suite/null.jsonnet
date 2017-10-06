@@ -22,4 +22,3 @@ std.assertEqual(null != 3, true) &&
 std.assertEqual(null != "null", true) &&
 std.assertEqual(null != "false", true) &&
 true
-

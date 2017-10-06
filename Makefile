@@ -16,7 +16,7 @@
 # User-servicable parts:
 ################################################################################
 
-# C/C++ compiler -- clang also works
+# C/C++ compiler; to use Clang, build with `make CC=clang CXX=clang++`
 CXX ?= g++
 CC ?= gcc
 
@@ -31,7 +31,8 @@ OPT ?= -O3
 
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
-EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
+MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5
+EMCXXFLAGS = $(CXXFLAGS) -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
 
@@ -84,21 +85,20 @@ ALL_HEADERS = \
 	core/std.jsonnet.h \
 	include/libjsonnet.h \
 	include/libjsonnet++.h \
-	third_party/md5.h
+	third_party/md5/md5.h
 
 default: jsonnet
 
 all: $(ALL)
 
-TEST_SNIPPET = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
 test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
-	./jsonnet -e $(TEST_SNIPPET)
-	LD_LIBRARY_PATH=. ./libjsonnet_test_snippet $(TEST_SNIPPET)
-	LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet"
-	cd examples ; ./check.sh
-	cd examples/terraform ; ./check.sh
-	cd test_suite ; ./run_tests.sh
-	cd test_suite ; ./run_fmt_tests.sh
+	./tests.sh
+
+reformat:
+	clang-format -i -style=file **/*.cpp **/*.h
+
+test-formatting:
+	test "`clang-format -style=file -output-replacements-xml **/*.cpp **/*.h | grep -c "<replacement "`" == 0
 
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
@@ -106,7 +106,8 @@ MAKEDEPEND_SRCS = \
 	core/libjsonnet_test_file.c
 
 depend:
-	makedepend -f- $(LIB_SRC) $(MAKEDEPEND_SRCS) > Makefile.depend
+	rm -f Makefile.depend
+	for FILE in $(LIB_SRC) $(MAKEDEPEND_SRCS) ; do $(CXX) -MM $(CXXFLAGS) $$FILE -MT $$(dirname $$FILE)/$$(basename $$FILE .cpp).o >> Makefile.depend ; done
 
 core/desugarer.cpp: core/std.jsonnet.h
 
@@ -125,7 +126,7 @@ libjsonnet.so: $(LIB_OBJ)
 libjsonnet++.so: $(LIB_CPP_OBJ)
 	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -o $@
 
-# Javascript build of C binding
+# JavaScript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_realloc", "_jsonnet_destroy"]'
 
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
@@ -161,6 +162,8 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Make.depend
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend
 
 -include Makefile.depend
+
+.PHONY: default all depend clean reformat test test-formatting

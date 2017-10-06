@@ -1006,4 +1006,23 @@ limitations under the License.
         local arr = std.split(f, "/");
         std.join("/", std.makeArray(std.length(arr) - 1, function(i) arr[i]) + [r]),
 
+    prune(a)::
+        local isContent(b) =
+            local t = std.type(b);
+            if b == null then
+                false
+            else if t == "array" then
+                std.length(b) > 0
+            else if t == "object" then
+                std.length(b) > 0
+            else
+                true;
+        local t = std.type(a);
+        if t== "array" then
+            [ std.prune(x) for x in a if isContent($.prune(x)) ]
+        else if t == "object" then {
+            [x]: $.prune(a[x])
+            for x in std.objectFields(a) if isContent(std.prune(a[x]))
+        } else
+            a,
 }

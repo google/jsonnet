@@ -17,9 +17,9 @@ limitations under the License.
 #ifndef JSONNET_JSON_H
 #define JSONNET_JSON_H
 
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <libjsonnet.h>
 
@@ -32,6 +32,14 @@ struct JsonnetJsonValue {
         OBJECT,
         STRING,
     };
+
+    JsonnetJsonValue() = default;
+    JsonnetJsonValue(JsonnetJsonValue&) = delete;
+    JsonnetJsonValue(JsonnetJsonValue&&) = default;
+
+    JsonnetJsonValue(Kind kind, std::string string, double number)
+        : kind(kind), string(string), number(number) {}
+
     Kind kind;
     std::string string;
     double number;  // Also used for bool (0.0 and 1.0)

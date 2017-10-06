@@ -17,4 +17,3 @@ limitations under the License.
 local foo(a, b) = [a, b];
 
 foo(3, 4, 5)
-

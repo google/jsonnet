@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cd "$(dirname $0)"
+
 source "tests.source"
 
 # Enable next line to test the garbage collector
@@ -23,6 +25,8 @@ source "tests.source"
 #VALGRIND="valgrind -q"
 
 #VERBOSE=true
+
+init
 
 for TEST in *.jsonnet ; do
 
@@ -50,13 +54,18 @@ for TEST in *.jsonnet ; do
         EXT_PARAMS="--ext-str var1=test --ext-code var2={x:1,y:2}"
     fi
 
-    JSONNET_CMD="$VALGRIND ../jsonnet $PARAMS $EXT_PARAMS $TLA_PARAMS"
+    if [ -n "$DISABLE_EXT_PARAMS" ]; then
+        EXT_PARAMS=""
+    fi
+    JSONNET_CMD="$VALGRIND "$JSONNET_BIN" $PARAMS $EXT_PARAMS $TLA_PARAMS"
     test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 
+deinit
+
 if [ $FAILED -eq 0 ] ; then
-    echo "All $EXECUTED test scripts pass."
+    echo "$0: All $EXECUTED test scripts pass."
 else
-    echo "FAILED: $FAILED / $EXECUTED"
+    echo "$0: FAILED: $FAILED / $EXECUTED"
     exit 1
 fi

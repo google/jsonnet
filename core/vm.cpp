@@ -21,7 +21,6 @@ limitations under the License.
 #include <set>
 #include <string>
 
-
 #include "desugarer.h"
 #include "json.h"
 #include "md5.h"
@@ -39,7 +38,7 @@ std::string dir_name(const std::string &path)
 {
     size_t last_slash = path.rfind('/');
     if (last_slash != std::string::npos) {
-        return path.substr(0, last_slash+1);
+        return path.substr(0, last_slash + 1);
     }
     return "";
 }
@@ -50,24 +49,25 @@ std::string dir_name(const std::string &path)
  * trace (for errors) displays.
  */
 enum FrameKind {
-    FRAME_APPLY_TARGET,  // e in e(...)
-    FRAME_BINARY_LEFT,  // a in a + b
-    FRAME_BINARY_RIGHT,  // b in a + b
-    FRAME_BUILTIN_FILTER,  // When executing std.filter, used to hold intermediate state.
+    FRAME_APPLY_TARGET,          // e in e(...)
+    FRAME_BINARY_LEFT,           // a in a + b
+    FRAME_BINARY_RIGHT,          // b in a + b
+    FRAME_BUILTIN_FILTER,        // When executing std.filter, used to hold intermediate state.
     FRAME_BUILTIN_FORCE_THUNKS,  // When forcing builtin args, holds intermediate state.
-    FRAME_CALL,  // Used any time we have switched location in user code.
-    FRAME_ERROR,  // e in error e
-    FRAME_IF,  // e in if e then a else b
-    FRAME_INDEX_TARGET,  // e in e[x]
-    FRAME_INDEX_INDEX,  // e in x[e]
-    FRAME_INVARIANTS,  // Caches the thunks that need to be executed one at a time.
-    FRAME_LOCAL,  // Stores thunk bindings as we execute e in local ...; e
+    FRAME_CALL,                  // Used any time we have switched location in user code.
+    FRAME_ERROR,                 // e in error e
+    FRAME_IF,                    // e in if e then a else b
+    FRAME_IN_SUPER_ELEMENT,      // e in 'e in super'
+    FRAME_INDEX_TARGET,          // e in e[x]
+    FRAME_INDEX_INDEX,           // e in x[e]
+    FRAME_INVARIANTS,            // Caches the thunks that need to be executed one at a time.
+    FRAME_LOCAL,                 // Stores thunk bindings as we execute e in local ...; e
     FRAME_OBJECT,  // Stores intermediate state as we execute es in { [e]: ..., [e]: ... }
-    FRAME_OBJECT_COMP_ARRAY,  // e in {f:a for x in e]
+    FRAME_OBJECT_COMP_ARRAY,    // e in {f:a for x in e]
     FRAME_OBJECT_COMP_ELEMENT,  // Stores intermediate state when building object
-    FRAME_STRING_CONCAT,  // Stores intermediate state while co-ercing objects
-    FRAME_SUPER_INDEX,  // e in super[e]
-    FRAME_UNARY,  // e in -e
+    FRAME_STRING_CONCAT,        // Stores intermediate state while co-ercing objects
+    FRAME_SUPER_INDEX,          // e in super[e]
+    FRAME_UNARY,                // e in -e
 };
 
 /** A frame on the stack.
@@ -90,7 +90,6 @@ enum FrameKind {
  * prematurely collected.
  */
 struct Frame {
-
     /** Tag (tagged union). */
     FrameKind kind;
 
@@ -122,10 +121,10 @@ struct Frame {
     unsigned elementId;
 
     /** Used for a variety of purposes. */
-    std::map<const Identifier *, HeapThunk*> elements;
+    std::map<const Identifier *, HeapThunk *> elements;
 
     /** Used for a variety of purposes. */
-    std::vector<HeapThunk*> thunks;
+    std::vector<HeapThunk *> thunks;
 
     /** The context is used in error messages to attempt to find a reasonable name for the
      * object, function, or thunk value being executed.  If it is a thunk, it is filled
@@ -154,16 +153,28 @@ struct Frame {
     BindingFrame bindings;
 
     Frame(const FrameKind &kind, const AST *ast)
-      : kind(kind), ast(ast), location(ast->location), tailCall(false), elementId(0),
-        context(NULL), self(NULL), offset(0)
+        : kind(kind),
+          ast(ast),
+          location(ast->location),
+          tailCall(false),
+          elementId(0),
+          context(NULL),
+          self(NULL),
+          offset(0)
     {
         val.t = Value::NULL_TYPE;
         val2.t = Value::NULL_TYPE;
     }
 
     Frame(const FrameKind &kind, const LocationRange &location)
-      : kind(kind), ast(nullptr), location(location), tailCall(false), elementId(0),
-        context(NULL), self(NULL), offset(0)
+        : kind(kind),
+          ast(nullptr),
+          location(location),
+          tailCall(false),
+          elementId(0),
+          context(NULL),
+          self(NULL),
+          offset(0)
     {
         val.t = Value::NULL_TYPE;
         val2.t = Value::NULL_TYPE;
@@ -174,8 +185,10 @@ struct Frame {
     {
         heap.markFrom(val);
         heap.markFrom(val2);
-        if (context) heap.markFrom(context);
-        if (self) heap.markFrom(self);
+        if (context)
+            heap.markFrom(context);
+        if (self)
+            heap.markFrom(self);
         for (const auto &bind : bindings)
             heap.markFrom(bind.second);
         for (const auto &el : elements)
@@ -188,12 +201,10 @@ struct Frame {
     {
         return kind == FRAME_CALL;
     }
-
 };
 
 /** The stack holds all the stack frames and manages the stack frame limit. */
 class Stack {
-
     /** How many call frames are on the stack. */
     unsigned calls;
 
@@ -203,14 +214,10 @@ class Stack {
     /** The stack frames. */
     std::vector<Frame> stack;
 
-    public:
+   public:
+    Stack(unsigned limit) : calls(0), limit(limit) {}
 
-    Stack(unsigned limit)
-      : calls(0), limit(limit)
-    {
-    }
-
-    ~Stack(void) { }
+    ~Stack(void) {}
 
     unsigned size(void)
     {
@@ -220,13 +227,14 @@ class Stack {
     /** Search for the closest variable in scope that matches the given name. */
     HeapThunk *lookUpVar(const Identifier *id)
     {
-        for (int i=stack.size()-1 ; i>=0 ; --i) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
             const auto &binds = stack[i].bindings;
             auto it = binds.find(id);
             if (it != binds.end()) {
                 return it->second;
             }
-            if (stack[i].isCall()) break;
+            if (stack[i].isCall())
+                break;
         }
         return nullptr;
     }
@@ -251,7 +259,8 @@ class Stack {
 
     void pop(void)
     {
-        if (top().isCall()) calls--;
+        if (top().isCall())
+            calls--;
         stack.pop_back();
     }
 
@@ -263,23 +272,28 @@ class Stack {
     std::string getName(unsigned from_here, const HeapEntity *e)
     {
         std::string name;
-        for (int i=from_here-1 ; i>=0; --i) {
+        for (int i = from_here - 1; i >= 0; --i) {
             const auto &f = stack[i];
             for (const auto &pair : f.bindings) {
                 HeapThunk *thunk = pair.second;
-                if (!thunk->filled) continue;
-                if (!thunk->content.isHeap()) continue;
-                if (e != thunk->content.v.h) continue;
+                if (!thunk->filled)
+                    continue;
+                if (!thunk->content.isHeap())
+                    continue;
+                if (e != thunk->content.v.h)
+                    continue;
                 name = encode_utf8(pair.first->name);
             }
             // Do not go into the next call frame, keep local reasoning.
-            if (f.isCall()) break;
+            if (f.isCall())
+                break;
         }
 
-        if (name == "") name = "anonymous";
-        if (dynamic_cast<const HeapObject*>(e)) {
+        if (name == "")
+            name = "anonymous";
+        if (dynamic_cast<const HeapObject *>(e)) {
             return "object <" + name + ">";
-        } else if (auto *thunk = dynamic_cast<const HeapThunk*>(e)) {
+        } else if (auto *thunk = dynamic_cast<const HeapThunk *>(e)) {
             if (thunk->name == nullptr) {
                 return "";  // Argument of builtin, or root (since top level functions).
             } else {
@@ -301,10 +315,9 @@ class Stack {
      */
     virtual void dump(void)
     {
-        for (unsigned i=0 ; i<stack.size() ; ++i) {
-            std::cout << "stack[" << i << "] = " << stack[i].location
-                      << " (" << stack[i].kind << ")"
-                      << std::endl;
+        for (unsigned i = 0; i < stack.size(); ++i) {
+            std::cout << "stack[" << i << "] = " << stack[i].location << " (" << stack[i].kind
+                      << ")" << std::endl;
         }
         std::cout << std::endl;
     }
@@ -315,12 +328,12 @@ class Stack {
     {
         std::vector<TraceFrame> stack_trace;
         stack_trace.push_back(TraceFrame(loc));
-        for (int i=stack.size()-1 ; i>=0 ; --i) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
             const auto &f = stack[i];
             if (f.isCall()) {
                 if (f.context != nullptr) {
                     // Give the last line a name.
-                    stack_trace[stack_trace.size()-1].name = getName(i, f.context);
+                    stack_trace[stack_trace.size() - 1].name = getName(i, f.context);
                 }
                 if (f.location.isSet() || f.location.file.length() > 0)
                     stack_trace.push_back(TraceFrame(f.location));
@@ -330,22 +343,24 @@ class Stack {
     }
 
     /** New (non-call) frame. */
-    template <class... Args> void newFrame(Args... args)
+    template <class... Args>
+    void newFrame(Args... args)
     {
         stack.emplace_back(args...);
     }
 
     /** If there is a tailstrict annotated frame followed by some locals, pop them all. */
-    void tailCallTrimStack (void)
+    void tailCallTrimStack(void)
     {
-        for (int i=stack.size()-1 ; i>=0 ; --i) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
             switch (stack[i].kind) {
                 case FRAME_CALL: {
                     if (!stack[i].tailCall || stack[i].thunks.size() > 0) {
                         return;
                     }
                     // Remove all stack frames including this one.
-                    while (stack.size() > unsigned(i)) stack.pop_back();
+                    while (stack.size() > unsigned(i))
+                        stack.pop_back();
                     calls--;
                     return;
                 } break;
@@ -358,8 +373,8 @@ class Stack {
     }
 
     /** New call frame. */
-    void newCall(const LocationRange &loc, HeapEntity *context, HeapObject *self,
-                 unsigned offset, const BindingFrame &up_values)
+    void newCall(const LocationRange &loc, HeapEntity *context, HeapObject *self, unsigned offset,
+                 const BindingFrame &up_values)
     {
         tailCallTrimStack();
         if (calls >= limit) {
@@ -373,7 +388,7 @@ class Stack {
         top().bindings = up_values;
         top().tailCall = false;
 
-        #ifndef NDEBUG
+#ifndef NDEBUG
         for (const auto &bind : up_values) {
             if (bind.second == nullptr) {
                 std::cerr << "INTERNAL ERROR: No binding for variable "
@@ -381,7 +396,7 @@ class Stack {
                 std::abort();
             }
         }
-        #endif
+#endif
     }
 
     /** Look up the stack to find the self binding. */
@@ -389,7 +404,7 @@ class Stack {
     {
         self = nullptr;
         offset = 0;
-        for (int i=stack.size() - 1 ; i>=0 ; --i) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
             if (stack[i].isCall()) {
                 self = stack[i].self;
                 offset = stack[i].offset;
@@ -401,9 +416,10 @@ class Stack {
     /** Look up the stack to see if we're running assertions for this object. */
     bool alreadyExecutingInvariants(HeapObject *self)
     {
-        for (int i=stack.size() - 1 ; i>=0 ; --i) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
             if (stack[i].kind == FRAME_INVARIANTS) {
-                if (stack[i].self == self) return true;
+                if (stack[i].self == self)
+                    return true;
             }
         }
         return false;
@@ -415,7 +431,6 @@ typedef std::map<std::string, VmExt> ExtMap;
 
 /** Typedef to save some typing. */
 typedef std::map<std::string, std::string> StrMap;
-
 
 class Interpreter;
 
@@ -431,7 +446,6 @@ typedef const AST *(Interpreter::*BuiltinFunc)(const LocationRange &loc,
  * mark are removed from the heap.
  */
 class Interpreter {
-
     /** The heap. */
     Heap heap;
 
@@ -473,7 +487,7 @@ class Interpreter {
     };
 
     /** Cache for imported Jsonnet files. */
-    std::map<std::pair<std::string, String>, ImportCacheValue *> cachedImports;
+    std::map<std::pair<std::string, UString>, ImportCacheValue *> cachedImports;
 
     /** External variables for std.extVar. */
     ExtMap externalVars;
@@ -500,7 +514,8 @@ class Interpreter {
      * \param T Something under HeapEntity
      * \returns The new object
      */
-    template <class T, class... Args> T* makeHeap(Args&&... args)
+    template <class T, class... Args>
+    T *makeHeap(Args &&... args)
     {
         T *r = heap.makeEntity<T, Args...>(std::forward<Args>(args)...);
         if (heap.checkHeap()) {  // Do a GC cycle?
@@ -534,15 +549,15 @@ class Interpreter {
         return r;
     }
 
-    Value makeDouble(double v)
+    Value makeNumber(double v)
     {
         Value r;
-        r.t = Value::DOUBLE;
+        r.t = Value::NUMBER;
         r.v.d = v;
         return r;
     }
 
-    Value makeDoubleCheck(const LocationRange &loc, double v)
+    Value makeNumberCheck(const LocationRange &loc, double v)
     {
         if (std::isnan(v)) {
             throw makeError(loc, "Not a number");
@@ -550,7 +565,7 @@ class Interpreter {
         if (std::isinf(v)) {
             throw makeError(loc, "Overflow");
         }
-        return makeDouble(v);
+        return makeNumber(v);
     }
 
     Value makeNull(void)
@@ -560,7 +575,7 @@ class Interpreter {
         return r;
     }
 
-    Value makeArray(const std::vector<HeapThunk*> &v)
+    Value makeArray(const std::vector<HeapThunk *> &v)
     {
         Value r;
         r.t = Value::ARRAY;
@@ -568,11 +583,8 @@ class Interpreter {
         return r;
     }
 
-    Value makeClosure(const BindingFrame &env,
-                       HeapObject *self,
-                       unsigned offset,
-                       const HeapClosure::Params &params,
-                       AST *body)
+    Value makeClosure(const BindingFrame &env, HeapObject *self, unsigned offset,
+                      const HeapClosure::Params &params, AST *body)
     {
         Value r;
         r.t = Value::FUNCTION;
@@ -598,7 +610,8 @@ class Interpreter {
         return r;
     }
 
-    template <class T, class... Args> Value makeObject(Args... args)
+    template <class T, class... Args>
+    Value makeObject(Args... args)
     {
         Value r;
         r.t = Value::OBJECT;
@@ -606,7 +619,7 @@ class Interpreter {
         return r;
     }
 
-    Value makeString(const String &v)
+    Value makeString(const UString &v)
     {
         Value r;
         r.t = Value::STRING;
@@ -624,22 +637,24 @@ class Interpreter {
      * \param counter Return the level of "super" that contained the field.
      * \returns The first object with the field, or nullptr if it could not be found.
      */
-    HeapLeafObject *findObject(const Identifier *f, HeapObject *curr,
-                               unsigned start_from, unsigned &counter)
+    HeapLeafObject *findObject(const Identifier *f, HeapObject *curr, unsigned start_from,
+                               unsigned &counter)
     {
-        if (auto *ext = dynamic_cast<HeapExtendedObject*>(curr)) {
+        if (auto *ext = dynamic_cast<HeapExtendedObject *>(curr)) {
             auto *r = findObject(f, ext->right, start_from, counter);
-            if (r) return r;
+            if (r)
+                return r;
             auto *l = findObject(f, ext->left, start_from, counter);
-            if (l) return l;
+            if (l)
+                return l;
         } else {
             if (counter >= start_from) {
-                if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
+                if (auto *simp = dynamic_cast<HeapSimpleObject *>(curr)) {
                     auto it = simp->fields.find(f);
                     if (it != simp->fields.end()) {
                         return simp;
                     }
-                } else if (auto *comp = dynamic_cast<HeapComprehensionObject*>(curr)) {
+                } else if (auto *comp = dynamic_cast<HeapComprehensionObject *>(curr)) {
                     auto it = comp->compValues.find(f);
                     if (it != comp->compValues.end()) {
                         return comp;
@@ -651,19 +666,19 @@ class Interpreter {
         return nullptr;
     }
 
-    typedef std::map<const Identifier*, ObjectField::Hide> IdHideMap;
+    typedef std::map<const Identifier *, ObjectField::Hide> IdHideMap;
 
     /** Auxiliary function.
      */
     IdHideMap objectFieldsAux(const HeapObject *obj_)
     {
         IdHideMap r;
-        if (auto *obj = dynamic_cast<const HeapSimpleObject*>(obj_)) {
+        if (auto *obj = dynamic_cast<const HeapSimpleObject *>(obj_)) {
             for (const auto &f : obj->fields) {
                 r[f.first] = f.second.hide;
             }
 
-        } else if (auto *obj = dynamic_cast<const HeapExtendedObject*>(obj_)) {
+        } else if (auto *obj = dynamic_cast<const HeapExtendedObject *>(obj_)) {
             r = objectFieldsAux(obj->right);
             for (const auto &pair : objectFieldsAux(obj->left)) {
                 auto it = r.find(pair.first);
@@ -676,7 +691,7 @@ class Interpreter {
                 }
             }
 
-        } else if (auto *obj = dynamic_cast<const HeapComprehensionObject*>(obj_)) {
+        } else if (auto *obj = dynamic_cast<const HeapComprehensionObject *>(obj_)) {
             for (const auto &f : obj->compValues)
                 r[f.first] = ObjectField::VISIBLE;
         }
@@ -685,11 +700,12 @@ class Interpreter {
 
     /** Auxiliary function.
      */
-    std::set<const Identifier*> objectFields(const HeapObject *obj_, bool manifesting)
+    std::set<const Identifier *> objectFields(const HeapObject *obj_, bool manifesting)
     {
-        std::set<const Identifier*> r;
+        std::set<const Identifier *> r;
         for (const auto &pair : objectFieldsAux(obj_)) {
-            if (!manifesting || pair.second != ObjectField::HIDDEN) r.insert(pair.first);
+            if (!manifesting || pair.second != ObjectField::HIDDEN)
+                r.insert(pair.first);
         }
         return r;
     }
@@ -731,18 +747,20 @@ class Interpreter {
     {
         std::string dir = dir_name(loc.file);
 
-        const String &path = file->value;
+        const UString &path = file->value;
 
-        std::pair<std::string, String> key(dir, path);
+        std::pair<std::string, UString> key(dir, path);
         ImportCacheValue *cached_value = cachedImports[key];
         if (cached_value != nullptr)
             return cached_value;
 
         int success = 0;
         char *found_here_cptr;
-        char *content =
-            importCallback(importCallbackContext, dir.c_str(), encode_utf8(path).c_str(),
-                           &found_here_cptr, &success);
+        char *content = importCallback(importCallbackContext,
+                                       dir.c_str(),
+                                       encode_utf8(path).c_str(),
+                                       &found_here_cptr,
+                                       &success);
 
         std::string input(content);
         ::free(content);
@@ -763,7 +781,7 @@ class Interpreter {
     }
 
     /** Capture the required variables from the environment. */
-    BindingFrame capture(const std::vector<const Identifier*> &free_vars)
+    BindingFrame capture(const std::vector<const Identifier *> &free_vars)
     {
         BindingFrame env;
         for (auto fv : free_vars) {
@@ -776,45 +794,39 @@ class Interpreter {
     /** Count the number of leaves in the tree.
      *
      * \param obj The root of the tree.
-     * \param counter Initialize to 0, returns the number of leaves.
+     * \returns The number of leaves.
      */
     unsigned countLeaves(HeapObject *obj)
     {
-        if (auto *ext = dynamic_cast<HeapExtendedObject*>(obj)) {
+        if (auto *ext = dynamic_cast<HeapExtendedObject *>(obj)) {
             return countLeaves(ext->left) + countLeaves(ext->right);
         } else {
+            // Must be a HeapLeafObject.
             return 1;
         }
     }
 
-    public:
-
+   public:
     /** Create a new interpreter.
      *
      * \param loc The location range of the file to be executed.
      */
-    Interpreter(
-        Allocator *alloc,
-        const ExtMap &ext_vars,
-        unsigned max_stack,
-        double gc_min_objects,
-        double gc_growth_trigger,
-        const VmNativeCallbackMap &native_callbacks,
-        JsonnetImportCallback *import_callback,
-        void *import_callback_context)
+    Interpreter(Allocator *alloc, const ExtMap &ext_vars, unsigned max_stack, double gc_min_objects,
+                double gc_growth_trigger, const VmNativeCallbackMap &native_callbacks,
+                JsonnetImportCallback *import_callback, void *import_callback_context)
 
-      : heap(gc_min_objects, gc_growth_trigger),
-        stack(max_stack),
-        alloc(alloc),
-        idImport(alloc->makeIdentifier(U"import")),
-        idArrayElement(alloc->makeIdentifier(U"array_element")),
-        idInvariant(alloc->makeIdentifier(U"object_assert")),
-        idJsonObjVar(alloc->makeIdentifier(U"_")),
-        jsonObjVar(alloc->make<Var>(LocationRange(), Fodder{}, idJsonObjVar)),
-        externalVars(ext_vars),
-        nativeCallbacks(native_callbacks),
-        importCallback(import_callback),
-        importCallbackContext(import_callback_context)
+        : heap(gc_min_objects, gc_growth_trigger),
+          stack(max_stack),
+          alloc(alloc),
+          idImport(alloc->makeIdentifier(U"import")),
+          idArrayElement(alloc->makeIdentifier(U"array_element")),
+          idInvariant(alloc->makeIdentifier(U"object_assert")),
+          idJsonObjVar(alloc->makeIdentifier(U"_")),
+          jsonObjVar(alloc->make<Var>(LocationRange(), Fodder{}, idJsonObjVar)),
+          externalVars(ext_vars),
+          nativeCallbacks(native_callbacks),
+          importCallback(import_callback),
+          importCallbackContext(import_callback_context)
     {
         scratch = makeNull();
         builtins["makeArray"] = &Interpreter::builtinMakeArray;
@@ -864,20 +876,18 @@ class Interpreter {
         scratch = v;
     }
 
-
     /** Raise an error if the arguments aren't the expected types. */
-    void validateBuiltinArgs(const LocationRange &loc,
-                             const std::string &name,
-                             const std::vector<Value> &args,
-                             const std::vector<Value::Type> params)
+    void validateBuiltinArgs(const LocationRange &loc, const std::string &name,
+                             const std::vector<Value> &args, const std::vector<Value::Type> params)
     {
         if (args.size() == params.size()) {
-            for (unsigned i=0 ; i<args.size() ; ++i) {
-                if (args[i].t != params[i]) goto bad;
+            for (unsigned i = 0; i < args.size(); ++i) {
+                if (args[i].t != params[i])
+                    goto bad;
             }
             return;
         }
-        bad:;
+    bad:;
         std::stringstream ss;
         ss << "Builtin function " + name + " expected (";
         const char *prefix = "";
@@ -898,30 +908,29 @@ class Interpreter {
     const AST *builtinMakeArray(const LocationRange &loc, const std::vector<Value> &args)
     {
         Frame &f = stack.top();
-        validateBuiltinArgs(loc, "makeArray", args,
-                            {Value::DOUBLE, Value::FUNCTION});
+        validateBuiltinArgs(loc, "makeArray", args, {Value::NUMBER, Value::FUNCTION});
         long sz = long(args[0].v.d);
         if (sz < 0) {
             std::stringstream ss;
             ss << "makeArray requires size >= 0, got " << sz;
             throw makeError(loc, ss.str());
         }
-        auto *func = static_cast<const HeapClosure*>(args[1].v.h);
-        std::vector<HeapThunk*> elements;
+        auto *func = static_cast<const HeapClosure *>(args[1].v.h);
+        std::vector<HeapThunk *> elements;
         if (func->params.size() != 1) {
             std::stringstream ss;
             ss << "makeArray function must take 1 param, got: " << func->params.size();
             throw makeError(loc, ss.str());
         }
         elements.resize(sz);
-        for (long i=0 ; i<sz ; ++i) {
+        for (long i = 0; i < sz; ++i) {
             auto *th = makeHeap<HeapThunk>(idArrayElement, func->self, func->offset, func->body);
             // The next line stops the new thunks from being GCed.
             f.thunks.push_back(th);
             th->upValues = func->upValues;
 
             auto *el = makeHeap<HeapThunk>(func->params[0].id, nullptr, 0, nullptr);
-            el->fill(makeDouble(i));  // i guaranteed not to be inf/NaN
+            el->fill(makeNumber(i));  // i guaranteed not to be inf/NaN
             th->upValues[func->params[0].id] = el;
             elements[i] = th;
         }
@@ -931,104 +940,90 @@ class Interpreter {
 
     const AST *builtinPow(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "pow", args, {Value::DOUBLE, Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::pow(args[0].v.d, args[1].v.d));
+        validateBuiltinArgs(loc, "pow", args, {Value::NUMBER, Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::pow(args[0].v.d, args[1].v.d));
         return nullptr;
     }
 
     const AST *builtinFloor(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "floor", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::floor(args[0].v.d));
+        validateBuiltinArgs(loc, "floor", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::floor(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinCeil(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "ceil", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::ceil(args[0].v.d));
+        validateBuiltinArgs(loc, "ceil", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::ceil(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinSqrt(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "sqrt", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::sqrt(args[0].v.d));
+        validateBuiltinArgs(loc, "sqrt", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::sqrt(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinSin(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "sin", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::sin(args[0].v.d));
+        validateBuiltinArgs(loc, "sin", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::sin(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinCos(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "cos", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::cos(args[0].v.d));
+        validateBuiltinArgs(loc, "cos", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::cos(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinTan(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "tan", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::tan(args[0].v.d));
+        validateBuiltinArgs(loc, "tan", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::tan(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAsin(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "asin", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::asin(args[0].v.d));
+        validateBuiltinArgs(loc, "asin", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::asin(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAcos(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "acos", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::acos(args[0].v.d));
+        validateBuiltinArgs(loc, "acos", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::acos(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinAtan(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "atan", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::atan(args[0].v.d));
+        validateBuiltinArgs(loc, "atan", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::atan(args[0].v.d));
         return nullptr;
     }
 
     const AST *builtinType(const LocationRange &, const std::vector<Value> &args)
     {
         switch (args[0].t) {
-            case Value::NULL_TYPE:
-            scratch = makeString(U"null");
-            return nullptr;
+            case Value::NULL_TYPE: scratch = makeString(U"null"); return nullptr;
 
-            case Value::BOOLEAN:
-            scratch = makeString(U"boolean");
-            return nullptr;
+            case Value::BOOLEAN: scratch = makeString(U"boolean"); return nullptr;
 
-            case Value::DOUBLE:
-            scratch = makeString(U"number");
-            return nullptr;
+            case Value::NUMBER: scratch = makeString(U"number"); return nullptr;
 
-            case Value::ARRAY:
-            scratch = makeString(U"array");
-            return nullptr;
+            case Value::ARRAY: scratch = makeString(U"array"); return nullptr;
 
-            case Value::FUNCTION:
-            scratch = makeString(U"function");
-            return nullptr;
+            case Value::FUNCTION: scratch = makeString(U"function"); return nullptr;
 
-            case Value::OBJECT:
-            scratch = makeString(U"object");
-            return nullptr;
+            case Value::OBJECT: scratch = makeString(U"object"); return nullptr;
 
-            case Value::STRING:
-            scratch = makeString(U"string");
-            return nullptr;
+            case Value::STRING: scratch = makeString(U"string"); return nullptr;
         }
         return nullptr;  // Quiet, compiler.
     }
@@ -1037,8 +1032,8 @@ class Interpreter {
     {
         Frame &f = stack.top();
         validateBuiltinArgs(loc, "filter", args, {Value::FUNCTION, Value::ARRAY});
-        auto *func = static_cast<HeapClosure*>(args[0].v.h);
-        auto *arr = static_cast<HeapArray*>(args[1].v.h);
+        auto *func = static_cast<HeapClosure *>(args[0].v.h);
+        auto *arr = static_cast<HeapArray *>(args[1].v.h);
         if (func->params.size() != 1) {
             throw makeError(loc, "filter function takes 1 parameter.");
         }
@@ -1062,11 +1057,10 @@ class Interpreter {
 
     const AST *builtinObjectHasEx(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "objectHasEx", args,
-                            {Value::OBJECT, Value::STRING,
-                             Value::BOOLEAN});
-        const auto *obj = static_cast<const HeapObject*>(args[0].v.h);
-        const auto *str = static_cast<const HeapString*>(args[1].v.h);
+        validateBuiltinArgs(
+            loc, "objectHasEx", args, {Value::OBJECT, Value::STRING, Value::BOOLEAN});
+        const auto *obj = static_cast<const HeapObject *>(args[0].v.h);
+        const auto *str = static_cast<const HeapString *>(args[1].v.h);
         bool include_hidden = args[2].v.b;
         bool found = false;
         for (const auto &field : objectFields(obj, !include_hidden)) {
@@ -1077,7 +1071,7 @@ class Interpreter {
         }
         scratch = makeBoolean(found);
         return nullptr;
-    } 
+    }
 
     const AST *builtinLength(const LocationRange &loc, const std::vector<Value> &args)
     {
@@ -1087,70 +1081,68 @@ class Interpreter {
         HeapEntity *e = args[0].v.h;
         switch (args[0].t) {
             case Value::OBJECT: {
-                auto fields = objectFields(static_cast<HeapObject*>(e), true);
-                scratch = makeDouble(fields.size());
+                auto fields = objectFields(static_cast<HeapObject *>(e), true);
+                scratch = makeNumber(fields.size());
             } break;
 
             case Value::ARRAY:
-            scratch = makeDouble(static_cast<HeapArray*>(e)->elements.size());
-            break;
+                scratch = makeNumber(static_cast<HeapArray *>(e)->elements.size());
+                break;
 
             case Value::STRING:
-            scratch = makeDouble(static_cast<HeapString*>(e)->value.length());
-            break;
+                scratch = makeNumber(static_cast<HeapString *>(e)->value.length());
+                break;
 
             case Value::FUNCTION:
-            scratch = makeDouble(static_cast<HeapClosure*>(e)->params.size());
-            break;
+                scratch = makeNumber(static_cast<HeapClosure *>(e)->params.size());
+                break;
 
             default:
-            throw makeError(loc,
-                            "length operates on strings, objects, "
-                            "and arrays, got " + type_str(args[0]));
+                throw makeError(loc,
+                                "length operates on strings, objects, "
+                                "and arrays, got " +
+                                    type_str(args[0]));
         }
         return nullptr;
-    } 
+    }
 
     const AST *builtinObjectFieldsEx(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "objectFieldsEx", args,
-                            {Value::OBJECT, Value::BOOLEAN});
-        const auto *obj = static_cast<HeapObject*>(args[0].v.h);
+        validateBuiltinArgs(loc, "objectFieldsEx", args, {Value::OBJECT, Value::BOOLEAN});
+        const auto *obj = static_cast<HeapObject *>(args[0].v.h);
         bool include_hidden = args[1].v.b;
         // Stash in a set first to sort them.
-        std::set<String> fields;
+        std::set<UString> fields;
         for (const auto &field : objectFields(obj, !include_hidden)) {
             fields.insert(field->name);
         }
         scratch = makeArray({});
-        auto &elements = static_cast<HeapArray*>(scratch.v.h)->elements;
+        auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
         for (const auto &field : fields) {
             auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
             elements.push_back(th);
             th->fill(makeString(field));
         }
         return nullptr;
-    } 
+    }
 
     const AST *builtinCodepoint(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "codepoint", args, {Value::STRING});
-        const String &str =
-            static_cast<HeapString*>(args[0].v.h)->value;
+        const UString &str = static_cast<HeapString *>(args[0].v.h)->value;
         if (str.length() != 1) {
             std::stringstream ss;
-            ss << "codepoint takes a string of length 1, got length "
-               << str.length();
+            ss << "codepoint takes a string of length 1, got length " << str.length();
             throw makeError(loc, ss.str());
         }
-        char32_t c = static_cast<HeapString*>(args[0].v.h)->value[0];
-        scratch = makeDouble((unsigned long)(c));
+        char32_t c = static_cast<HeapString *>(args[0].v.h)->value[0];
+        scratch = makeNumber((unsigned long)(c));
         return nullptr;
-    } 
+    }
 
     const AST *builtinChar(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "char", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "char", args, {Value::NUMBER});
         long l = long(args[0].v.d);
         if (l < 0) {
             std::stringstream ss;
@@ -1163,58 +1155,57 @@ class Interpreter {
             throw makeError(loc, ss.str());
         }
         char32_t c = l;
-        scratch = makeString(String(&c, 1));
+        scratch = makeString(UString(&c, 1));
         return nullptr;
-    } 
+    }
 
     const AST *builtinLog(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "log", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::log(args[0].v.d));
+        validateBuiltinArgs(loc, "log", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::log(args[0].v.d));
         return nullptr;
-    } 
+    }
 
     const AST *builtinExp(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "exp", args, {Value::DOUBLE});
-        scratch = makeDoubleCheck(loc, std::exp(args[0].v.d));
+        validateBuiltinArgs(loc, "exp", args, {Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::exp(args[0].v.d));
         return nullptr;
-    } 
+    }
 
     const AST *builtinMantissa(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "mantissa", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "mantissa", args, {Value::NUMBER});
         int exp;
         double m = std::frexp(args[0].v.d, &exp);
-        scratch = makeDoubleCheck(loc, m);
+        scratch = makeNumberCheck(loc, m);
         return nullptr;
-    } 
+    }
 
     const AST *builtinExponent(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "exponent", args, {Value::DOUBLE});
+        validateBuiltinArgs(loc, "exponent", args, {Value::NUMBER});
         int exp;
         std::frexp(args[0].v.d, &exp);
-        scratch = makeDoubleCheck(loc, exp);
+        scratch = makeNumberCheck(loc, exp);
         return nullptr;
-    } 
+    }
 
     const AST *builtinModulo(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "modulo", args, {Value::DOUBLE, Value::DOUBLE});
+        validateBuiltinArgs(loc, "modulo", args, {Value::NUMBER, Value::NUMBER});
         double a = args[0].v.d;
         double b = args[1].v.d;
         if (b == 0)
             throw makeError(loc, "Division by zero.");
-        scratch = makeDoubleCheck(loc, std::fmod(a, b));
+        scratch = makeNumberCheck(loc, std::fmod(a, b));
         return nullptr;
-    } 
+    }
 
     const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
-        const String &var =
-            static_cast<HeapString*>(args[0].v.h)->value;
+        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
         std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
@@ -1234,7 +1225,7 @@ class Interpreter {
             scratch = makeString(decode_utf8(ext.data));
             return nullptr;
         }
-    } 
+    }
 
     const AST *builtinPrimitiveEquals(const LocationRange &loc, const std::vector<Value> &args)
     {
@@ -1249,41 +1240,34 @@ class Interpreter {
         }
         bool r;
         switch (args[0].t) {
-            case Value::BOOLEAN:
-            r = args[0].v.b == args[1].v.b;
-            break;
+            case Value::BOOLEAN: r = args[0].v.b == args[1].v.b; break;
 
-            case Value::DOUBLE:
-            r = args[0].v.d == args[1].v.d;
-            break;
+            case Value::NUMBER: r = args[0].v.d == args[1].v.d; break;
 
             case Value::STRING:
-            r = static_cast<HeapString*>(args[0].v.h)->value
-              == static_cast<HeapString*>(args[1].v.h)->value;
-            break;
+                r = static_cast<HeapString *>(args[0].v.h)->value ==
+                    static_cast<HeapString *>(args[1].v.h)->value;
+                break;
 
-            case Value::NULL_TYPE:
-            r = true;
-            break;
+            case Value::NULL_TYPE: r = true; break;
 
-            case Value::FUNCTION:
-            throw makeError(loc, "Cannot test equality of functions");
-            break;
+            case Value::FUNCTION: throw makeError(loc, "Cannot test equality of functions"); break;
 
             default:
-            throw makeError(loc,
-                            "primitiveEquals operates on primitive "
-                            "types, got " + type_str(args[0]));
+                throw makeError(loc,
+                                "primitiveEquals operates on primitive "
+                                "types, got " +
+                                    type_str(args[0]));
         }
         scratch = makeBoolean(r);
         return nullptr;
-    } 
+    }
 
     const AST *builtinNative(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "native", args, {Value::STRING});
 
-        std::string builtin_name = encode_utf8(static_cast<HeapString*>(args[0].v.h)->value);
+        std::string builtin_name = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         VmNativeCallbackMap::const_iterator nit = nativeCallbacks.find(builtin_name);
         if (nit == nativeCallbacks.end()) {
@@ -1293,13 +1277,13 @@ class Interpreter {
         const VmNativeCallback &cb = nit->second;
         scratch = makeNativeBuiltin(builtin_name, cb.params);
         return nullptr;
-    } 
+    }
 
     const AST *builtinMd5(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "md5", args, {Value::STRING});
 
-        std::string value = encode_utf8(static_cast<HeapString*>(args[0].v.h)->value);
+        std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         scratch = makeString(decode_utf8(md5(value)));
         return nullptr;
@@ -1311,30 +1295,30 @@ class Interpreter {
         // making the heap object.
         switch (v->kind) {
             case JsonnetJsonValue::STRING:
-            attach = makeString(decode_utf8(v->string));
-            filled = true;
-            break;
+                attach = makeString(decode_utf8(v->string));
+                filled = true;
+                break;
 
             case JsonnetJsonValue::BOOL:
-            attach = makeBoolean(v->number != 0.0);
-            filled = true;
-            break;
+                attach = makeBoolean(v->number != 0.0);
+                filled = true;
+                break;
 
             case JsonnetJsonValue::NUMBER:
-            attach = makeDouble(v->number);
-            filled = true;
-            break;
+                attach = makeNumber(v->number);
+                filled = true;
+                break;
 
             case JsonnetJsonValue::NULL_KIND:
-            attach = makeNull();
-            filled = true;
-            break;
+                attach = makeNull();
+                filled = true;
+                break;
 
             case JsonnetJsonValue::ARRAY: {
-                attach = makeArray(std::vector<HeapThunk*>{});
+                attach = makeArray(std::vector<HeapThunk *>{});
                 filled = true;
-                auto *arr = static_cast<HeapArray*>(attach.v.h);
-                for (size_t i = 0; i < v->elements.size() ; ++i) {
+                auto *arr = static_cast<HeapArray *>(attach.v.h);
+                for (size_t i = 0; i < v->elements.size(); ++i) {
                     arr->elements.push_back(
                         makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
                     jsonToHeap(v->elements[i], arr->elements[i]->filled, arr->elements[i]->content);
@@ -1345,7 +1329,7 @@ class Interpreter {
                 attach = makeObject<HeapComprehensionObject>(
                     BindingFrame{}, jsonObjVar, idJsonObjVar, BindingFrame{});
                 filled = true;
-                auto *obj = static_cast<HeapComprehensionObject*>(attach.v.h);
+                auto *obj = static_cast<HeapComprehensionObject *>(attach.v.h);
                 for (const auto &pair : v->fields) {
                     auto *thunk = makeHeap<HeapThunk>(idJsonObjVar, nullptr, 0, nullptr);
                     obj->compValues[alloc->makeIdentifier(decode_utf8(pair.first))] = thunk;
@@ -1355,13 +1339,10 @@ class Interpreter {
         }
     }
 
-
-    String toString(const LocationRange &loc)
+    UString toString(const LocationRange &loc)
     {
         return manifestJson(loc, false, U"");
     }
-
-
 
     /** Recursively collect an object's invariants.
      *
@@ -1370,14 +1351,14 @@ class Interpreter {
      * \param offset
      * \param thunks
      */
-    void objectInvariants(HeapObject *curr, HeapObject *self,
-                          unsigned &counter, std::vector<HeapThunk*> &thunks)
+    void objectInvariants(HeapObject *curr, HeapObject *self, unsigned &counter,
+                          std::vector<HeapThunk *> &thunks)
     {
-        if (auto *ext = dynamic_cast<HeapExtendedObject*>(curr)) {
+        if (auto *ext = dynamic_cast<HeapExtendedObject *>(curr)) {
             objectInvariants(ext->right, self, counter, thunks);
             objectInvariants(ext->left, self, counter, thunks);
         } else {
-            if (auto *simp = dynamic_cast<HeapSimpleObject*>(curr)) {
+            if (auto *simp = dynamic_cast<HeapSimpleObject *>(curr)) {
                 for (AST *assert : simp->asserts) {
                     auto *el_th = makeHeap<HeapThunk>(idInvariant, self, counter, assert);
                     el_th->upValues = simp->upValues;
@@ -1394,8 +1375,8 @@ class Interpreter {
      * \param obj The target
      * \param f The field
      */
-    const AST *objectIndex(const LocationRange &loc, HeapObject *obj,
-                           const Identifier *f, unsigned offset)
+    const AST *objectIndex(const LocationRange &loc, HeapObject *obj, const Identifier *f,
+                           unsigned offset)
     {
         unsigned found_at = 0;
         HeapObject *self = obj;
@@ -1403,7 +1384,7 @@ class Interpreter {
         if (found == nullptr) {
             throw makeError(loc, "Field does not exist: " + encode_utf8(f->name));
         }
-        if (auto *simp = dynamic_cast<HeapSimpleObject*>(found)) {
+        if (auto *simp = dynamic_cast<HeapSimpleObject *>(found)) {
             auto it = simp->fields.find(f);
             const AST *body = it->second.body;
 
@@ -1411,7 +1392,7 @@ class Interpreter {
             return body;
         } else {
             // If a HeapLeafObject is not HeapSimpleObject, it must be HeapComprehensionObject.
-            auto *comp = static_cast<HeapComprehensionObject*>(found);
+            auto *comp = static_cast<HeapComprehensionObject *>(found);
             auto it = comp->compValues.find(f);
             auto *th = it->second;
             BindingFrame binds = comp->upValues;
@@ -1423,12 +1404,13 @@ class Interpreter {
 
     void runInvariants(const LocationRange &loc, HeapObject *self)
     {
-        if (stack.alreadyExecutingInvariants(self)) return;
+        if (stack.alreadyExecutingInvariants(self))
+            return;
 
         unsigned counter = 0;
         unsigned initial_stack_size = stack.size();
         stack.newFrame(FRAME_INVARIANTS, loc);
-        std::vector<HeapThunk*> &thunks = stack.top().thunks;
+        std::vector<HeapThunk *> &thunks = stack.top().thunks;
         objectInvariants(self, self, counter, thunks);
         if (thunks.size() == 0) {
             stack.pop();
@@ -1455,39 +1437,39 @@ class Interpreter {
      */
     void evaluate(const AST *ast_, unsigned initial_stack_size)
     {
-        recurse:
+    recurse:
 
         switch (ast_->type) {
             case AST_APPLY: {
-                const auto &ast = *static_cast<const Apply*>(ast_);
+                const auto &ast = *static_cast<const Apply *>(ast_);
                 stack.newFrame(FRAME_APPLY_TARGET, ast_);
                 ast_ = ast.target;
                 goto recurse;
             } break;
 
             case AST_ARRAY: {
-                const auto &ast = *static_cast<const Array*>(ast_);
+                const auto &ast = *static_cast<const Array *>(ast_);
                 HeapObject *self;
                 unsigned offset;
                 stack.getSelfBinding(self, offset);
                 scratch = makeArray({});
-                auto &elements = static_cast<HeapArray*>(scratch.v.h)->elements;
+                auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
                 for (const auto &el : ast.elements) {
                     auto *el_th = makeHeap<HeapThunk>(idArrayElement, self, offset, el.expr);
-                    el_th->upValues =  capture(el.expr->freeVariables);
+                    el_th->upValues = capture(el.expr->freeVariables);
                     elements.push_back(el_th);
                 }
             } break;
 
             case AST_BINARY: {
-                const auto &ast = *static_cast<const Binary*>(ast_);
+                const auto &ast = *static_cast<const Binary *>(ast_);
                 stack.newFrame(FRAME_BINARY_LEFT, ast_);
                 ast_ = ast.left;
                 goto recurse;
             } break;
 
             case AST_BUILTIN_FUNCTION: {
-                const auto &ast = *static_cast<const BuiltinFunction*>(ast_);
+                const auto &ast = *static_cast<const BuiltinFunction *>(ast_);
                 HeapClosure::Params params;
                 params.reserve(ast.params.size());
                 for (const auto &p : ast.params) {
@@ -1498,21 +1480,21 @@ class Interpreter {
             } break;
 
             case AST_CONDITIONAL: {
-                const auto &ast = *static_cast<const Conditional*>(ast_);
+                const auto &ast = *static_cast<const Conditional *>(ast_);
                 stack.newFrame(FRAME_IF, ast_);
                 ast_ = ast.cond;
                 goto recurse;
             } break;
 
             case AST_ERROR: {
-                const auto &ast = *static_cast<const Error*>(ast_);
+                const auto &ast = *static_cast<const Error *>(ast_);
                 stack.newFrame(FRAME_ERROR, ast_);
                 ast_ = ast.expr;
                 goto recurse;
             } break;
 
             case AST_FUNCTION: {
-                const auto &ast = *static_cast<const Function*>(ast_);
+                const auto &ast = *static_cast<const Function *>(ast_);
                 auto env = capture(ast.freeVariables);
                 HeapObject *self;
                 unsigned offset;
@@ -1526,7 +1508,7 @@ class Interpreter {
             } break;
 
             case AST_IMPORT: {
-                const auto &ast = *static_cast<const Import*>(ast_);
+                const auto &ast = *static_cast<const Import *>(ast_);
                 HeapThunk *thunk = import(ast.location, ast.file);
                 if (thunk->filled) {
                     scratch = thunk->content;
@@ -1538,20 +1520,27 @@ class Interpreter {
             } break;
 
             case AST_IMPORTSTR: {
-                const auto &ast = *static_cast<const Importstr*>(ast_);
+                const auto &ast = *static_cast<const Importstr *>(ast_);
                 const ImportCacheValue *value = importString(ast.location, ast.file);
                 scratch = makeString(decode_utf8(value->content));
             } break;
 
+            case AST_IN_SUPER: {
+                const auto &ast = *static_cast<const InSuper *>(ast_);
+                stack.newFrame(FRAME_IN_SUPER_ELEMENT, ast_);
+                ast_ = ast.element;
+                goto recurse;
+            } break;
+
             case AST_INDEX: {
-                const auto &ast = *static_cast<const Index*>(ast_);
+                const auto &ast = *static_cast<const Index *>(ast_);
                 stack.newFrame(FRAME_INDEX_TARGET, ast_);
                 ast_ = ast.target;
                 goto recurse;
             } break;
 
             case AST_LOCAL: {
-                const auto &ast = *static_cast<const Local*>(ast_);
+                const auto &ast = *static_cast<const Local *>(ast_);
                 stack.newFrame(FRAME_LOCAL, ast_);
                 Frame &f = stack.top();
                 // First build all the thunks and bind them.
@@ -1574,17 +1563,17 @@ class Interpreter {
             } break;
 
             case AST_LITERAL_BOOLEAN: {
-                const auto &ast = *static_cast<const LiteralBoolean*>(ast_);
+                const auto &ast = *static_cast<const LiteralBoolean *>(ast_);
                 scratch = makeBoolean(ast.value);
             } break;
 
             case AST_LITERAL_NUMBER: {
-                const auto &ast = *static_cast<const LiteralNumber*>(ast_);
-                scratch = makeDoubleCheck(ast_->location, ast.value);
+                const auto &ast = *static_cast<const LiteralNumber *>(ast_);
+                scratch = makeNumberCheck(ast_->location, ast.value);
             } break;
 
             case AST_LITERAL_STRING: {
-                const auto &ast = *static_cast<const LiteralString*>(ast_);
+                const auto &ast = *static_cast<const LiteralString *>(ast_);
                 scratch = makeString(ast.value);
             } break;
 
@@ -1593,7 +1582,7 @@ class Interpreter {
             } break;
 
             case AST_DESUGARED_OBJECT: {
-                const auto &ast = *static_cast<const DesugaredObject*>(ast_);
+                const auto &ast = *static_cast<const DesugaredObject *>(ast_);
                 if (ast.fields.empty()) {
                     auto env = capture(ast.freeVariables);
                     std::map<const Identifier *, HeapSimpleObject::Field> fields;
@@ -1609,7 +1598,7 @@ class Interpreter {
             } break;
 
             case AST_OBJECT_COMPREHENSION_SIMPLE: {
-                const auto &ast = *static_cast<const ObjectComprehensionSimple*>(ast_);
+                const auto &ast = *static_cast<const ObjectComprehensionSimple *>(ast_);
                 stack.newFrame(FRAME_OBJECT_COMP_ARRAY, ast_);
                 ast_ = ast.array;
                 goto recurse;
@@ -1624,21 +1613,21 @@ class Interpreter {
             } break;
 
             case AST_SUPER_INDEX: {
-                const auto &ast = *static_cast<const SuperIndex*>(ast_);
+                const auto &ast = *static_cast<const SuperIndex *>(ast_);
                 stack.newFrame(FRAME_SUPER_INDEX, ast_);
                 ast_ = ast.index;
                 goto recurse;
             } break;
 
             case AST_UNARY: {
-                const auto &ast = *static_cast<const Unary*>(ast_);
+                const auto &ast = *static_cast<const Unary *>(ast_);
                 stack.newFrame(FRAME_UNARY, ast_);
                 ast_ = ast.expr;
                 goto recurse;
             } break;
 
             case AST_VAR: {
-                const auto &ast = *static_cast<const Var*>(ast_);
+                const auto &ast = *static_cast<const Var *>(ast_);
                 auto *thunk = stack.lookUpVar(ast.id);
                 if (thunk == nullptr) {
                     std::cerr << "INTERNAL ERROR: Could not bind variable: "
@@ -1655,8 +1644,8 @@ class Interpreter {
             } break;
 
             default:
-            std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_->type << std::endl;
-            std::abort();
+                std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_->type << std::endl;
+                std::abort();
         }
 
         // To evaluate another AST, set ast to it, then goto recurse.
@@ -1666,13 +1655,12 @@ class Interpreter {
             Frame &f = stack.top();
             switch (f.kind) {
                 case FRAME_APPLY_TARGET: {
-                    const auto &ast = *static_cast<const Apply*>(f.ast);
+                    const auto &ast = *static_cast<const Apply *>(f.ast);
                     if (scratch.t != Value::FUNCTION) {
                         throw makeError(ast.location,
-                                        "Only functions can be called, got "
-                                        + type_str(scratch));
+                                        "Only functions can be called, got " + type_str(scratch));
                     }
-                    auto *func = static_cast<HeapClosure*>(scratch.v.h);
+                    auto *func = static_cast<HeapClosure *>(scratch.v.h);
 
                     std::set<const Identifier *> params_needed;
                     for (const auto &param : func->params) {
@@ -1680,10 +1668,10 @@ class Interpreter {
                     }
 
                     // Create thunks for arguments.
-                    std::vector<HeapThunk*> positional_args;
+                    std::vector<HeapThunk *> positional_args;
                     BindingFrame args;
                     bool got_named = false;
-                    for (unsigned i=0 ; i<ast.args.size() ; ++i) {
+                    for (unsigned i = 0; i < ast.args.size(); ++i) {
                         const auto &arg = ast.args[i];
 
                         const Identifier *name;
@@ -1735,21 +1723,22 @@ class Interpreter {
 
                     // Raise errors for unbound params, create thunks (but don't fill in upvalues).
                     // This is a subset of f.thunks, so will not get garbage collected.
-                    std::vector<HeapThunk*> def_arg_thunks;
+                    std::vector<HeapThunk *> def_arg_thunks;
                     for (const auto &param : func->params) {
-                        if (args.find(param.id) != args.end()) continue;
+                        if (args.find(param.id) != args.end())
+                            continue;
                         if (param.def == nullptr) {
                             std::stringstream ss;
-                            ss << "Function parameter " << encode_utf8(param.id->name) <<
-                                  " not bound in call.";
+                            ss << "Function parameter " << encode_utf8(param.id->name)
+                               << " not bound in call.";
                             throw makeError(ast.location, ss.str());
                         }
 
                         // Special case for builtin functions -- leave identifier blank for
                         // them in the thunk.  This removes the thunk frame from the stacktrace.
                         const Identifier *name_ = func->body == nullptr ? nullptr : param.id;
-                        auto *thunk = makeHeap<HeapThunk>(name_, func->self, func->offset,
-                                                          param.def);
+                        auto *thunk =
+                            makeHeap<HeapThunk>(name_, func->self, func->offset, param.def);
                         f.thunks.push_back(thunk);
                         def_arg_thunks.push_back(thunk);
                         args[param.id] = thunk;
@@ -1764,7 +1753,7 @@ class Interpreter {
                     }
 
                     // Cache these, because pop will invalidate them.
-                    std::vector<HeapThunk*> thunks_copy = f.thunks;
+                    std::vector<HeapThunk *> thunks_copy = f.thunks;
 
                     stack.pop();
 
@@ -1799,7 +1788,7 @@ class Interpreter {
                 } break;
 
                 case FRAME_BINARY_LEFT: {
-                    const auto &ast = *static_cast<const Binary*>(f.ast);
+                    const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = scratch;
                     if (lhs.t == Value::BOOLEAN) {
                         // Handle short-cut semantics
@@ -1828,9 +1817,11 @@ class Interpreter {
                 } break;
 
                 case FRAME_BINARY_RIGHT: {
-                    const auto &ast = *static_cast<const Binary*>(f.ast);
+                    const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
                     const Value &rhs = scratch;
+
+                    // Handle cases where the LHS and RHS are not the same type.
                     if (lhs.t == Value::STRING || rhs.t == Value::STRING) {
                         if (ast.op == BOP_PLUS) {
                             // Handle co-ercions for string processing.
@@ -1839,201 +1830,212 @@ class Interpreter {
                             goto replaceframe;
                         }
                     }
-                    // Equality can be used when the types don't match.
                     switch (ast.op) {
+                        // Equality can be used when the types don't match.
                         case BOP_MANIFEST_EQUAL:
-                        std::cerr << "INTERNAL ERROR: Equals not desugared" << std::endl;
-                        abort();
+                            std::cerr << "INTERNAL ERROR: Equals not desugared" << std::endl;
+                            abort();
 
+                        // Equality can be used when the types don't match.
                         case BOP_MANIFEST_UNEQUAL:
-                        std::cerr << "INTERNAL ERROR: Notequals not desugared" << std::endl;
-                        abort();
+                            std::cerr << "INTERNAL ERROR: Notequals not desugared" << std::endl;
+                            abort();
+
+                        // e in e
+                        case BOP_IN: {
+                            if (lhs.t != Value::STRING) {
+                                throw makeError(ast.location,
+                                                "The left hand side of the 'in' operator should be "
+                                                "a string,  got " +
+                                                    type_str(lhs));
+                            }
+                            auto *field = static_cast<HeapString *>(lhs.v.h);
+                            switch (rhs.t) {
+                                case Value::OBJECT: {
+                                    auto *obj = static_cast<HeapObject *>(rhs.v.h);
+                                    auto *fid = alloc->makeIdentifier(field->value);
+                                    unsigned unused_found_at = 0;
+                                    bool in = findObject(fid, obj, 0, unused_found_at);
+                                    scratch = makeBoolean(in);
+                                } break;
+
+                                default:
+                                    throw makeError(
+                                        ast.location,
+                                        "The right hand side of the 'in' operator should be"
+                                        " an object, got " +
+                                            type_str(rhs));
+                            }
+                            goto popframe;
+                        }
 
                         default:;
                     }
                     // Everything else requires matching types.
                     if (lhs.t != rhs.t) {
                         throw makeError(ast.location,
-                                        "Binary operator " + bop_string(ast.op) + " requires "
-                                        "matching types, got " + type_str(lhs) + " and " +
-                                        type_str(rhs) + ".");
+                                        "Binary operator " + bop_string(ast.op) +
+                                            " requires "
+                                            "matching types, got " +
+                                            type_str(lhs) + " and " + type_str(rhs) + ".");
                     }
                     switch (lhs.t) {
                         case Value::ARRAY:
-                        if (ast.op == BOP_PLUS) {
-                            auto *arr_l = static_cast<HeapArray*>(lhs.v.h);
-                            auto *arr_r = static_cast<HeapArray*>(rhs.v.h);
-                            std::vector<HeapThunk*> elements;
-                            for (auto *el : arr_l->elements)
-                                elements.push_back(el);
-                            for (auto *el : arr_r->elements)
-                                elements.push_back(el);
-                            scratch = makeArray(elements);
-                        } else {
-                            throw makeError(ast.location,
-                                            "Binary operator " + bop_string(ast.op)
-                                            + " does not operate on arrays.");
-                        }
-                        break;
+                            if (ast.op == BOP_PLUS) {
+                                auto *arr_l = static_cast<HeapArray *>(lhs.v.h);
+                                auto *arr_r = static_cast<HeapArray *>(rhs.v.h);
+                                std::vector<HeapThunk *> elements;
+                                for (auto *el : arr_l->elements)
+                                    elements.push_back(el);
+                                for (auto *el : arr_r->elements)
+                                    elements.push_back(el);
+                                scratch = makeArray(elements);
+                            } else {
+                                throw makeError(ast.location,
+                                                "Binary operator " + bop_string(ast.op) +
+                                                    " does not operate on arrays.");
+                            }
+                            break;
 
                         case Value::BOOLEAN:
-                        switch (ast.op) {
-                            case BOP_AND:
-                            scratch = makeBoolean(lhs.v.b && rhs.v.b);
+                            switch (ast.op) {
+                                case BOP_AND: scratch = makeBoolean(lhs.v.b && rhs.v.b); break;
+
+                                case BOP_OR: scratch = makeBoolean(lhs.v.b || rhs.v.b); break;
+
+                                default:
+                                    throw makeError(ast.location,
+                                                    "Binary operator " + bop_string(ast.op) +
+                                                        " does not operate on booleans.");
+                            }
                             break;
 
-                            case BOP_OR:
-                            scratch = makeBoolean(lhs.v.b || rhs.v.b);
+                        case Value::NUMBER:
+                            switch (ast.op) {
+                                case BOP_PLUS:
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d + rhs.v.d);
+                                    break;
+
+                                case BOP_MINUS:
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d - rhs.v.d);
+                                    break;
+
+                                case BOP_MULT:
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d * rhs.v.d);
+                                    break;
+
+                                case BOP_DIV:
+                                    if (rhs.v.d == 0)
+                                        throw makeError(ast.location, "Division by zero.");
+                                    scratch = makeNumberCheck(ast.location, lhs.v.d / rhs.v.d);
+                                    break;
+
+                                    // No need to check doubles made from longs
+
+                                case BOP_SHIFT_L: {
+                                    long long_l = lhs.v.d;
+                                    long long_r = rhs.v.d;
+                                    scratch = makeNumber(long_l << long_r);
+                                } break;
+
+                                case BOP_SHIFT_R: {
+                                    long long_l = lhs.v.d;
+                                    long long_r = rhs.v.d;
+                                    scratch = makeNumber(long_l >> long_r);
+                                } break;
+
+                                case BOP_BITWISE_AND: {
+                                    long long_l = lhs.v.d;
+                                    long long_r = rhs.v.d;
+                                    scratch = makeNumber(long_l & long_r);
+                                } break;
+
+                                case BOP_BITWISE_XOR: {
+                                    long long_l = lhs.v.d;
+                                    long long_r = rhs.v.d;
+                                    scratch = makeNumber(long_l ^ long_r);
+                                } break;
+
+                                case BOP_BITWISE_OR: {
+                                    long long_l = lhs.v.d;
+                                    long long_r = rhs.v.d;
+                                    scratch = makeNumber(long_l | long_r);
+                                } break;
+
+                                case BOP_LESS_EQ: scratch = makeBoolean(lhs.v.d <= rhs.v.d); break;
+
+                                case BOP_GREATER_EQ:
+                                    scratch = makeBoolean(lhs.v.d >= rhs.v.d);
+                                    break;
+
+                                case BOP_LESS: scratch = makeBoolean(lhs.v.d < rhs.v.d); break;
+
+                                case BOP_GREATER: scratch = makeBoolean(lhs.v.d > rhs.v.d); break;
+
+                                default:
+                                    throw makeError(ast.location,
+                                                    "Binary operator " + bop_string(ast.op) +
+                                                        " does not operate on numbers.");
+                            }
                             break;
-
-                            default:
-                            throw makeError(ast.location,
-                                            "Binary operator " + bop_string(ast.op)
-                                            + " does not operate on booleans.");
-                        }
-                        break;
-
-                        case Value::DOUBLE:
-                        switch (ast.op) {
-                            case BOP_PLUS:
-                            scratch = makeDoubleCheck(ast.location, lhs.v.d + rhs.v.d);
-                            break;
-
-                            case BOP_MINUS:
-                            scratch = makeDoubleCheck(ast.location, lhs.v.d - rhs.v.d);
-                            break;
-
-                            case BOP_MULT:
-                            scratch = makeDoubleCheck(ast.location, lhs.v.d * rhs.v.d);
-                            break;
-
-                            case BOP_DIV:
-                            if (rhs.v.d == 0)
-                                throw makeError(ast.location, "Division by zero.");
-                            scratch = makeDoubleCheck(ast.location, lhs.v.d / rhs.v.d);
-                            break;
-
-                            // No need to check doubles made from longs
-
-                            case BOP_SHIFT_L: {
-                                long long_l = lhs.v.d;
-                                long long_r = rhs.v.d;
-                                scratch = makeDouble(long_l << long_r);
-                            } break;
-
-                            case BOP_SHIFT_R: {
-                                long long_l = lhs.v.d;
-                                long long_r = rhs.v.d;
-                                scratch = makeDouble(long_l >> long_r);
-                            } break;
-
-                            case BOP_BITWISE_AND: {
-                                long long_l = lhs.v.d;
-                                long long_r = rhs.v.d;
-                                scratch = makeDouble(long_l & long_r);
-                            } break;
-
-                            case BOP_BITWISE_XOR: {
-                                long long_l = lhs.v.d;
-                                long long_r = rhs.v.d;
-                                scratch = makeDouble(long_l ^ long_r);
-                            } break;
-
-                            case BOP_BITWISE_OR: {
-                                long long_l = lhs.v.d;
-                                long long_r = rhs.v.d;
-                                scratch = makeDouble(long_l | long_r);
-                            } break;
-
-                            case BOP_LESS_EQ:
-                            scratch = makeBoolean(lhs.v.d <= rhs.v.d);
-                            break;
-
-                            case BOP_GREATER_EQ:
-                            scratch = makeBoolean(lhs.v.d >= rhs.v.d);
-                            break;
-
-                            case BOP_LESS:
-                            scratch = makeBoolean(lhs.v.d < rhs.v.d);
-                            break;
-
-                            case BOP_GREATER:
-                            scratch = makeBoolean(lhs.v.d > rhs.v.d);
-                            break;
-
-                            default:
-                            throw makeError(ast.location,
-                                            "Binary operator " + bop_string(ast.op)
-                                            + " does not operate on numbers.");
-                        }
-                        break;
 
                         case Value::FUNCTION:
-                        throw makeError(ast.location, "Binary operator " + bop_string(ast.op) +
-                                                      " does not operate on functions.");
+                            throw makeError(ast.location,
+                                            "Binary operator " + bop_string(ast.op) +
+                                                " does not operate on functions.");
 
                         case Value::NULL_TYPE:
-                        throw makeError(ast.location, "Binary operator " + bop_string(ast.op) +
-                                                      " does not operate on null.");
+                            throw makeError(ast.location,
+                                            "Binary operator " + bop_string(ast.op) +
+                                                " does not operate on null.");
 
                         case Value::OBJECT: {
                             if (ast.op != BOP_PLUS) {
                                 throw makeError(ast.location,
                                                 "Binary operator " + bop_string(ast.op) +
-                                                " does not operate on objects.");
+                                                    " does not operate on objects.");
                             }
-                            auto *lhs_obj = static_cast<HeapObject*>(lhs.v.h);
-                            auto *rhs_obj = static_cast<HeapObject*>(rhs.v.h);
+                            auto *lhs_obj = static_cast<HeapObject *>(lhs.v.h);
+                            auto *rhs_obj = static_cast<HeapObject *>(rhs.v.h);
                             scratch = makeObject<HeapExtendedObject>(lhs_obj, rhs_obj);
-                        }
-                        break;
+                        } break;
 
                         case Value::STRING: {
-                            const String &lhs_str =
-                                static_cast<HeapString*>(lhs.v.h)->value;
-                            const String &rhs_str =
-                                static_cast<HeapString*>(rhs.v.h)->value;
+                            const UString &lhs_str = static_cast<HeapString *>(lhs.v.h)->value;
+                            const UString &rhs_str = static_cast<HeapString *>(rhs.v.h)->value;
                             switch (ast.op) {
-                                case BOP_PLUS:
-                                scratch = makeString(lhs_str + rhs_str);
-                                break;
+                                case BOP_PLUS: scratch = makeString(lhs_str + rhs_str); break;
 
-                                case BOP_LESS_EQ:
-                                scratch = makeBoolean(lhs_str <= rhs_str);
-                                break;
+                                case BOP_LESS_EQ: scratch = makeBoolean(lhs_str <= rhs_str); break;
 
                                 case BOP_GREATER_EQ:
-                                scratch = makeBoolean(lhs_str >= rhs_str);
-                                break;
+                                    scratch = makeBoolean(lhs_str >= rhs_str);
+                                    break;
 
-                                case BOP_LESS:
-                                scratch = makeBoolean(lhs_str < rhs_str);
-                                break;
+                                case BOP_LESS: scratch = makeBoolean(lhs_str < rhs_str); break;
 
-                                case BOP_GREATER:
-                                scratch = makeBoolean(lhs_str > rhs_str);
-                                break;
+                                case BOP_GREATER: scratch = makeBoolean(lhs_str > rhs_str); break;
 
                                 default:
-                                throw makeError(ast.location,
-                                                "Binary operator " + bop_string(ast.op)
-                                                + " does not operate on strings.");
+                                    throw makeError(ast.location,
+                                                    "Binary operator " + bop_string(ast.op) +
+                                                        " does not operate on strings.");
                             }
-                        }
-                        break;
+                        } break;
                     }
                 } break;
 
                 case FRAME_BUILTIN_FILTER: {
-                    const auto &ast = *static_cast<const Apply*>(f.ast);
-                    auto *func = static_cast<HeapClosure*>(f.val.v.h);
-                    auto *arr = static_cast<HeapArray*>(f.val2.v.h);
+                    const auto &ast = *static_cast<const Apply *>(f.ast);
+                    auto *func = static_cast<HeapClosure *>(f.val.v.h);
+                    auto *arr = static_cast<HeapArray *>(f.val2.v.h);
                     if (scratch.t != Value::BOOLEAN) {
-                        throw makeError(ast.location,
-                                        "filter function must return boolean, got: "
-                                        + type_str(scratch));
+                        throw makeError(
+                            ast.location,
+                            "filter function must return boolean, got: " + type_str(scratch));
                     }
-                    if (scratch.v.b) f.thunks.push_back(arr->elements[f.elementId]);
+                    if (scratch.v.b)
+                        f.thunks.push_back(arr->elements[f.elementId]);
                     f.elementId++;
                     // Iterate through arr, calling the function on each.
                     if (f.elementId == arr->elements.size()) {
@@ -2049,8 +2051,8 @@ class Interpreter {
                 } break;
 
                 case FRAME_BUILTIN_FORCE_THUNKS: {
-                    const auto &ast = *static_cast<const Apply*>(f.ast);
-                    auto *func = static_cast<HeapClosure*>(f.val.v.h);
+                    const auto &ast = *static_cast<const Apply *>(f.ast);
+                    auto *func = static_cast<HeapClosure *>(f.val.v.h);
                     if (f.elementId == f.thunks.size()) {
                         // All thunks forced, now the builtin implementations.
                         const LocationRange &loc = ast.location;
@@ -2076,53 +2078,40 @@ class Interpreter {
                         for (const Value &arg : args) {
                             switch (arg.t) {
                                 case Value::STRING:
-                                args2.push_back(JsonnetJsonValue{
-                                    JsonnetJsonValue::STRING,
-                                    encode_utf8(static_cast<HeapString*>(arg.v.h)->value),
-                                    0,
-                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                });
-                                break;
+                                    args2.emplace_back(
+                                        JsonnetJsonValue::STRING,
+                                        encode_utf8(static_cast<HeapString *>(arg.v.h)->value),
+                                        0);
+                                    break;
 
                                 case Value::BOOLEAN:
-                                args2.push_back(JsonnetJsonValue{
-                                    JsonnetJsonValue::BOOL,
-                                    "",
-                                    arg.v.b ? 1.0 : 0.0,
-                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                });
-                                break;
+                                    args2.emplace_back(
+                                        JsonnetJsonValue::BOOL,
+                                        "",
+                                        arg.v.b ? 1.0 : 0.0);
+                                    break;
 
-                                case Value::DOUBLE:
-                                args2.push_back(JsonnetJsonValue{
-                                    JsonnetJsonValue::NUMBER,
-                                    "",
-                                    arg.v.d,
-                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                });
-                                break;
+                                case Value::NUMBER:
+                                    args2.emplace_back(
+                                        JsonnetJsonValue::NUMBER,
+                                        "",
+                                        arg.v.d);
+                                    break;
 
                                 case Value::NULL_TYPE:
-                                args2.push_back(JsonnetJsonValue{
-                                    JsonnetJsonValue::NULL_KIND,
-                                    "",
-                                    0,
-                                    std::vector<std::unique_ptr<JsonnetJsonValue>>{},
-                                    std::map<std::string, std::unique_ptr<JsonnetJsonValue>>{},
-                                });
-                                break;
+                                    args2.emplace_back(
+                                        JsonnetJsonValue::NULL_KIND,
+                                        "",
+                                        0);
+                                    break;
 
                                 default:
-                                throw makeError(ast.location,
-                                                "Native extensions can only take primitives.");
+                                    throw makeError(ast.location,
+                                                    "Native extensions can only take primitives.");
                             }
-
                         }
-                        std::vector<const JsonnetJsonValue*> args3;
-                        for (size_t i = 0; i < args2.size() ; ++i) {
+                        std::vector<const JsonnetJsonValue *> args3;
+                        for (size_t i = 0; i < args2.size(); ++i) {
                             args3.push_back(&args2[i]);
                         }
                         if (nit == nativeCallbacks.end()) {
@@ -2132,7 +2121,7 @@ class Interpreter {
                         const VmNativeCallback &cb = nit->second;
 
                         int succ;
-                        std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, &args3[0], &succ));
+                        std::unique_ptr<JsonnetJsonValue> r(cb.cb(cb.ctx, args3.data(), &succ));
 
                         if (succ) {
                             bool unused;
@@ -2159,16 +2148,15 @@ class Interpreter {
                 } break;
 
                 case FRAME_CALL: {
-                    if (auto *thunk = dynamic_cast<HeapThunk*>(f.context)) {
+                    if (auto *thunk = dynamic_cast<HeapThunk *>(f.context)) {
                         // If we called a thunk, cache result.
                         thunk->fill(scratch);
-                    } else if (auto *closure = dynamic_cast<HeapClosure*>(f.context)) {
+                    } else if (auto *closure = dynamic_cast<HeapClosure *>(f.context)) {
                         if (f.elementId < f.thunks.size()) {
                             // If tailstrict, force thunks
                             HeapThunk *th = f.thunks[f.elementId++];
                             if (!th->filled) {
-                                stack.newCall(f.location, th,
-                                              th->self, th->offset, th->upValues);
+                                stack.newCall(f.location, th, th->self, th->offset, th->upValues);
                                 ast_ = th->body;
                                 goto recurse;
                             }
@@ -2186,10 +2174,10 @@ class Interpreter {
                 } break;
 
                 case FRAME_ERROR: {
-                    const auto &ast = *static_cast<const Error*>(f.ast);
-                    String msg;
+                    const auto &ast = *static_cast<const Error *>(f.ast);
+                    UString msg;
                     if (scratch.t == Value::STRING) {
-                        msg = static_cast<HeapString*>(scratch.v.h)->value;
+                        msg = static_cast<HeapString *>(scratch.v.h)->value;
                     } else {
                         msg = toString(ast.location);
                     }
@@ -2197,10 +2185,11 @@ class Interpreter {
                 } break;
 
                 case FRAME_IF: {
-                    const auto &ast = *static_cast<const Conditional*>(f.ast);
+                    const auto &ast = *static_cast<const Conditional *>(f.ast);
                     if (scratch.t != Value::BOOLEAN) {
-                        throw makeError(ast.location, "Condition must be boolean, got " +
-                                                      type_str(scratch) + ".");
+                        throw makeError(
+                            ast.location,
+                            "Condition must be boolean, got " + type_str(scratch) + ".");
                     }
                     ast_ = scratch.v.b ? ast.branchTrue : ast.branchFalse;
                     stack.pop();
@@ -2208,7 +2197,7 @@ class Interpreter {
                 } break;
 
                 case FRAME_SUPER_INDEX: {
-                    const auto &ast = *static_cast<const SuperIndex*>(f.ast);
+                    const auto &ast = *static_cast<const SuperIndex *>(f.ast);
                     HeapObject *self;
                     unsigned offset;
                     stack.getSelfBinding(self, offset);
@@ -2218,34 +2207,56 @@ class Interpreter {
                                         "Attempt to use super when there is no super class.");
                     }
                     if (scratch.t != Value::STRING) {
-                        throw makeError(ast.location,
-                                        "Super index must be string, got "
-                                        + type_str(scratch) + ".");
+                        throw makeError(
+                            ast.location,
+                            "Super index must be string, got " + type_str(scratch) + ".");
                     }
 
-                    const String &index_name =
-                        static_cast<HeapString*>(scratch.v.h)->value;
+                    const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
                     auto *fid = alloc->makeIdentifier(index_name);
                     stack.pop();
                     ast_ = objectIndex(ast.location, self, fid, offset);
                     goto recurse;
                 } break;
 
+                case FRAME_IN_SUPER_ELEMENT: {
+                    const auto &ast = *static_cast<const InSuper *>(f.ast);
+                    HeapObject *self;
+                    unsigned offset;
+                    stack.getSelfBinding(self, offset);
+                    offset++;
+                    if (scratch.t != Value::STRING) {
+                        throw makeError(ast.location,
+                                        "Left hand side of e in super must be string, got " +
+                                            type_str(scratch) + ".");
+                    }
+                    if (offset >= countLeaves(self)) {
+                        // There is no super object.
+                        scratch = makeBoolean(false);
+                    } else {
+                        const UString &element_name = static_cast<HeapString *>(scratch.v.h)->value;
+                        auto *fid = alloc->makeIdentifier(element_name);
+                        unsigned unused_found_at = 0;
+                        bool in = findObject(fid, self, offset, unused_found_at);
+                        scratch = makeBoolean(in);
+                    }
+                } break;
+
                 case FRAME_INDEX_INDEX: {
-                    const auto &ast = *static_cast<const Index*>(f.ast);
+                    const auto &ast = *static_cast<const Index *>(f.ast);
                     const Value &target = f.val;
                     if (target.t == Value::ARRAY) {
-                        const auto *array = static_cast<HeapArray*>(target.v.h);
-                        if (scratch.t != Value::DOUBLE) {
-                            throw makeError(ast.location, "Array index must be number, got "
-                                                          + type_str(scratch) + ".");
+                        const auto *array = static_cast<HeapArray *>(target.v.h);
+                        if (scratch.t != Value::NUMBER) {
+                            throw makeError(
+                                ast.location,
+                                "Array index must be number, got " + type_str(scratch) + ".");
                         }
                         long i = long(scratch.v.d);
                         long sz = array->elements.size();
                         if (i < 0 || i >= sz) {
                             std::stringstream ss;
-                            ss << "Array bounds error: " << i
-                               << " not within [0, " << sz << ")";
+                            ss << "Array bounds error: " << i << " not within [0, " << sz << ")";
                             throw makeError(ast.location, ss.str());
                         }
                         auto *thunk = array->elements[i];
@@ -2253,39 +2264,37 @@ class Interpreter {
                             scratch = thunk->content;
                         } else {
                             stack.pop();
-                            stack.newCall(ast.location, thunk,
-                                          thunk->self, thunk->offset, thunk->upValues);
+                            stack.newCall(
+                                ast.location, thunk, thunk->self, thunk->offset, thunk->upValues);
                             ast_ = thunk->body;
                             goto recurse;
                         }
                     } else if (target.t == Value::OBJECT) {
-                        auto *obj = static_cast<HeapObject*>(target.v.h);
+                        auto *obj = static_cast<HeapObject *>(target.v.h);
                         assert(obj != nullptr);
                         if (scratch.t != Value::STRING) {
-                            throw makeError(ast.location,
-                                            "Object index must be string, got "
-                                            + type_str(scratch) + ".");
+                            throw makeError(
+                                ast.location,
+                                "Object index must be string, got " + type_str(scratch) + ".");
                         }
-                        const String &index_name =
-                            static_cast<HeapString*>(scratch.v.h)->value;
+                        const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
                         auto *fid = alloc->makeIdentifier(index_name);
                         stack.pop();
                         ast_ = objectIndex(ast.location, obj, fid, 0);
                         goto recurse;
                     } else if (target.t == Value::STRING) {
-                        auto *obj = static_cast<HeapString*>(target.v.h);
+                        auto *obj = static_cast<HeapString *>(target.v.h);
                         assert(obj != nullptr);
-                        if (scratch.t != Value::DOUBLE) {
-                            throw makeError(ast.location,
-                                            "String index must be a number, got "
-                                            + type_str(scratch) + ".");
+                        if (scratch.t != Value::NUMBER) {
+                            throw makeError(
+                                ast.location,
+                                "UString index must be a number, got " + type_str(scratch) + ".");
                         }
                         long sz = obj->value.length();
                         long i = (long)scratch.v.d;
                         if (i < 0 || i >= sz) {
                             std::stringstream ss;
-                            ss << "String bounds error: " << i
-                               << " not within [0, " << sz << ")";
+                            ss << "UString bounds error: " << i << " not within [0, " << sz << ")";
                             throw makeError(ast.location, ss.str());
                         }
                         char32_t ch[] = {obj->value[i], U'\0'};
@@ -2297,18 +2306,17 @@ class Interpreter {
                 } break;
 
                 case FRAME_INDEX_TARGET: {
-                    const auto &ast = *static_cast<const Index*>(f.ast);
-                    if (scratch.t != Value::ARRAY
-                        && scratch.t != Value::OBJECT
-                        && scratch.t != Value::STRING) {
+                    const auto &ast = *static_cast<const Index *>(f.ast);
+                    if (scratch.t != Value::ARRAY && scratch.t != Value::OBJECT &&
+                        scratch.t != Value::STRING) {
                         throw makeError(ast.location,
-                                        "Can only index objects, strings, and arrays, got "
-                                        + type_str(scratch) + ".");
+                                        "Can only index objects, strings, and arrays, got " +
+                                            type_str(scratch) + ".");
                     }
                     f.val = scratch;
                     f.kind = FRAME_INDEX_INDEX;
                     if (scratch.t == Value::OBJECT) {
-                        auto *self = static_cast<HeapObject*>(scratch.v.h);
+                        auto *self = static_cast<HeapObject *>(scratch.v.h);
                         if (!stack.alreadyExecutingInvariants(self)) {
                             stack.newFrame(FRAME_INVARIANTS, ast.location);
                             Frame &f2 = stack.top();
@@ -2318,8 +2326,11 @@ class Interpreter {
                             if (f2.thunks.size() > 0) {
                                 auto *thunk = f2.thunks[0];
                                 f2.elementId = 1;
-                                stack.newCall(ast.location, thunk,
-                                              thunk->self, thunk->offset, thunk->upValues);
+                                stack.newCall(ast.location,
+                                              thunk,
+                                              thunk->self,
+                                              thunk->offset,
+                                              thunk->upValues);
                                 ast_ = thunk->body;
                                 goto recurse;
                             }
@@ -2337,13 +2348,12 @@ class Interpreter {
                         }
                         stack.pop();
                         Frame &f2 = stack.top();
-                        const auto &ast = *static_cast<const Index*>(f2.ast);
+                        const auto &ast = *static_cast<const Index *>(f2.ast);
                         ast_ = ast.index;
                         goto recurse;
                     }
                     auto *thunk = f.thunks[f.elementId++];
-                    stack.newCall(f.location, thunk,
-                                  thunk->self, thunk->offset, thunk->upValues);
+                    stack.newCall(f.location, thunk, thunk->self, thunk->offset, thunk->upValues);
                     ast_ = thunk->body;
                     goto recurse;
                 } break;
@@ -2353,16 +2363,16 @@ class Interpreter {
                 } break;
 
                 case FRAME_OBJECT: {
-                    const auto &ast = *static_cast<const DesugaredObject*>(f.ast);
+                    const auto &ast = *static_cast<const DesugaredObject *>(f.ast);
                     if (scratch.t != Value::NULL_TYPE) {
                         if (scratch.t != Value::STRING) {
                             throw makeError(ast.location, "Field name was not a string.");
                         }
-                        const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
+                        const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.objectFields.find(fid) != f.objectFields.end()) {
-                            std::string msg = "Duplicate field name: \""
-                                              + encode_utf8(fname) + "\"";
+                            std::string msg =
+                                "Duplicate field name: \"" + encode_utf8(fname) + "\"";
                             throw makeError(ast.location, msg);
                         }
                         f.objectFields[fid].hide = f.fit->hide;
@@ -2379,18 +2389,17 @@ class Interpreter {
                 } break;
 
                 case FRAME_OBJECT_COMP_ARRAY: {
-                    const auto &ast = *static_cast<const ObjectComprehensionSimple*>(f.ast);
+                    const auto &ast = *static_cast<const ObjectComprehensionSimple *>(f.ast);
                     const Value &arr_v = scratch;
                     if (scratch.t != Value::ARRAY) {
                         throw makeError(ast.location,
-                                        "Object comprehension needs array, got "
-                                        + type_str(arr_v));
+                                        "Object comprehension needs array, got " + type_str(arr_v));
                     }
-                    const auto *arr = static_cast<const HeapArray*>(arr_v.v.h);
+                    const auto *arr = static_cast<const HeapArray *>(arr_v.v.h);
                     if (arr->elements.size() == 0) {
                         // Degenerate case.  Just create the object now.
-                        scratch = makeObject<HeapComprehensionObject>(BindingFrame{}, ast.value,
-                                                                      ast.id, BindingFrame{});
+                        scratch = makeObject<HeapComprehensionObject>(
+                            BindingFrame{}, ast.value, ast.id, BindingFrame{});
                     } else {
                         f.kind = FRAME_OBJECT_COMP_ELEMENT;
                         f.val = scratch;
@@ -2402,14 +2411,14 @@ class Interpreter {
                 } break;
 
                 case FRAME_OBJECT_COMP_ELEMENT: {
-                    const auto &ast = *static_cast<const ObjectComprehensionSimple*>(f.ast);
-                    const auto *arr = static_cast<const HeapArray*>(f.val.v.h);
+                    const auto &ast = *static_cast<const ObjectComprehensionSimple *>(f.ast);
+                    const auto *arr = static_cast<const HeapArray *>(f.val.v.h);
                     if (scratch.t != Value::STRING) {
                         std::stringstream ss;
                         ss << "field must be string, got: " << type_str(scratch);
                         throw makeError(ast.location, ss.str());
                     }
-                    const auto &fname = static_cast<const HeapString*>(scratch.v.h)->value;
+                    const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
                     const Identifier *fid = alloc->makeIdentifier(fname);
                     if (f.elements.find(fid) != f.elements.end()) {
                         throw makeError(ast.location,
@@ -2420,8 +2429,8 @@ class Interpreter {
 
                     if (f.elementId == arr->elements.size()) {
                         auto env = capture(ast.freeVariables);
-                        scratch = makeObject<HeapComprehensionObject>(env, ast.value,
-                                                                      ast.id, f.elements);
+                        scratch =
+                            makeObject<HeapComprehensionObject>(env, ast.value, ast.id, f.elements);
                     } else {
                         f.bindings[ast.id] = arr->elements[f.elementId];
                         ast_ = ast.field;
@@ -2430,18 +2439,18 @@ class Interpreter {
                 } break;
 
                 case FRAME_STRING_CONCAT: {
-                    const auto &ast = *static_cast<const Binary*>(f.ast);
+                    const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
                     const Value &rhs = stack.top().val2;
-                    String output;
+                    UString output;
                     if (lhs.t == Value::STRING) {
-                        output.append(static_cast<const HeapString*>(lhs.v.h)->value);
+                        output.append(static_cast<const HeapString *>(lhs.v.h)->value);
                     } else {
                         scratch = lhs;
                         output.append(toString(ast.left->location));
                     }
                     if (rhs.t == Value::STRING) {
-                        output.append(static_cast<const HeapString*>(rhs.v.h)->value);
+                        output.append(static_cast<const HeapString *>(rhs.v.h)->value);
                     } else {
                         scratch = rhs;
                         output.append(toString(ast.right->location));
@@ -2450,56 +2459,52 @@ class Interpreter {
                 } break;
 
                 case FRAME_UNARY: {
-                    const auto &ast = *static_cast<const Unary*>(f.ast);
+                    const auto &ast = *static_cast<const Unary *>(f.ast);
                     switch (scratch.t) {
-
                         case Value::BOOLEAN:
-                        if (ast.op == UOP_NOT) {
-                            scratch = makeBoolean(!scratch.v.b);
-                        } else {
-                            throw makeError(ast.location,
-                                            "Unary operator " + uop_string(ast.op)
-                                            + " does not operate on booleans.");
-                        }
-                        break;
-
-                        case Value::DOUBLE:
-                        switch (ast.op) {
-                            case UOP_PLUS:
+                            if (ast.op == UOP_NOT) {
+                                scratch = makeBoolean(!scratch.v.b);
+                            } else {
+                                throw makeError(ast.location,
+                                                "Unary operator " + uop_string(ast.op) +
+                                                    " does not operate on booleans.");
+                            }
                             break;
 
-                            case UOP_MINUS:
-                            scratch = makeDouble(-scratch.v.d);
-                            break;
+                        case Value::NUMBER:
+                            switch (ast.op) {
+                                case UOP_PLUS: break;
 
-                            case UOP_BITWISE_NOT:
-                            scratch = makeDouble(~(long)(scratch.v.d));
-                            break;
+                                case UOP_MINUS: scratch = makeNumber(-scratch.v.d); break;
 
-                            default:
-                            throw makeError(ast.location,
-                                            "Unary operator " + uop_string(ast.op)
-                                            + " does not operate on numbers.");
-                        }
-                        break;
+                                case UOP_BITWISE_NOT:
+                                    scratch = makeNumber(~(long)(scratch.v.d));
+                                    break;
+
+                                default:
+                                    throw makeError(ast.location,
+                                                    "Unary operator " + uop_string(ast.op) +
+                                                        " does not operate on numbers.");
+                            }
+                            break;
 
                         default:
                             throw makeError(ast.location,
                                             "Unary operator " + uop_string(ast.op) +
-                                            " does not operate on type " + type_str(scratch));
+                                                " does not operate on type " + type_str(scratch));
                     }
                 } break;
 
                 default:
-                std::cerr << "INTERNAL ERROR: Unknown FrameKind:  " << f.kind << std::endl;
-                std::abort();
+                    std::cerr << "INTERNAL ERROR: Unknown FrameKind:  " << f.kind << std::endl;
+                    std::abort();
             }
 
-            popframe:;
+        popframe:;
 
             stack.pop();
 
-            replaceframe:;
+        replaceframe:;
         }
     }
 
@@ -2510,24 +2515,22 @@ class Interpreter {
      *
      * \param multiline If true, will print objects and arrays in an indented fashion.
      */
-    String manifestJson(const LocationRange &loc, bool multiline, const String &indent)
+    UString manifestJson(const LocationRange &loc, bool multiline, const UString &indent)
     {
         // Printing fields means evaluating and binding them, which can trigger
         // garbage collection.
 
-        StringStream ss;
+        UStringStream ss;
         switch (scratch.t) {
             case Value::ARRAY: {
-                HeapArray *arr = static_cast<HeapArray*>(scratch.v.h);
+                HeapArray *arr = static_cast<HeapArray *>(scratch.v.h);
                 if (arr->elements.size() == 0) {
                     ss << U"[ ]";
                 } else {
                     const char32_t *prefix = multiline ? U"[\n" : U"[";
-                    String indent2 = multiline ? indent + U"   " : indent;
+                    UString indent2 = multiline ? indent + U"   " : indent;
                     for (auto *thunk : arr->elements) {
-                        LocationRange tloc = thunk->body == nullptr
-                                           ? loc
-                                           : thunk->body->location;
+                        LocationRange tloc = thunk->body == nullptr ? loc : thunk->body->location;
                         if (thunk->filled) {
                             stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
                             // Keep arr alive when scratch is overwritten
@@ -2548,37 +2551,30 @@ class Interpreter {
                     }
                     ss << (multiline ? U"\n" : U"") << indent << U"]";
                 }
-            }
-            break;
+            } break;
 
-            case Value::BOOLEAN:
-            ss << (scratch.v.b ? U"true" : U"false");
-            break;
+            case Value::BOOLEAN: ss << (scratch.v.b ? U"true" : U"false"); break;
 
-            case Value::DOUBLE:
-            ss << decode_utf8(jsonnet_unparse_number(scratch.v.d));
-            break;
+            case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
 
             case Value::FUNCTION:
-            throw makeError(loc, "Couldn't manifest function in JSON output.");
+                throw makeError(loc, "Couldn't manifest function in JSON output.");
 
-            case Value::NULL_TYPE:
-            ss << U"null";
-            break;
+            case Value::NULL_TYPE: ss << U"null"; break;
 
             case Value::OBJECT: {
-                auto *obj = static_cast<HeapObject*>(scratch.v.h);
+                auto *obj = static_cast<HeapObject *>(scratch.v.h);
                 runInvariants(loc, obj);
                 // Using std::map has the useful side-effect of ordering the fields
                 // alphabetically.
-                std::map<String, const Identifier*> fields;
+                std::map<UString, const Identifier *> fields;
                 for (const auto &f : objectFields(obj, true)) {
                     fields[f->name] = f;
                 }
                 if (fields.size() == 0) {
                     ss << U"{ }";
                 } else {
-                    String indent2 = multiline ? indent + U"   " : indent;
+                    UString indent2 = multiline ? indent + U"   " : indent;
                     const char32_t *prefix = multiline ? U"{\n" : U"{";
                     for (const auto &f : fields) {
                         // pushes FRAME_CALL
@@ -2590,32 +2586,30 @@ class Interpreter {
                         // get GC'd.
                         scratch = stack.top().val;
                         stack.pop();
-                        ss << prefix << indent2 << jsonnet_string_unparse(f.first, false)
-                           << U": " << vstr;
+                        ss << prefix << indent2 << jsonnet_string_unparse(f.first, false) << U": "
+                           << vstr;
                         prefix = multiline ? U",\n" : U", ";
                     }
                     ss << (multiline ? U"\n" : U"") << indent << U"}";
                 }
-            }
-            break;
+            } break;
 
             case Value::STRING: {
-                const String &str = static_cast<HeapString*>(scratch.v.h)->value;
+                const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
                 ss << jsonnet_string_unparse(str, false);
-            }
-            break;
+            } break;
         }
         return ss.str();
     }
 
-    String manifestString(const LocationRange &loc)
+    UString manifestString(const LocationRange &loc)
     {
         if (scratch.t != Value::STRING) {
             std::stringstream ss;
             ss << "Expected string result, got: " << type_str(scratch.t);
             throw makeError(loc, ss.str());
         }
-        return static_cast<HeapString*>(scratch.v.h)->value;
+        return static_cast<HeapString *>(scratch.v.h)->value;
     }
 
     StrMap manifestMulti(bool string)
@@ -2629,9 +2623,9 @@ class Interpreter {
                << "the JSON for that file.";
             throw makeError(loc, ss.str());
         }
-        auto *obj = static_cast<HeapObject*>(scratch.v.h);
+        auto *obj = static_cast<HeapObject *>(scratch.v.h);
         runInvariants(loc, obj);
-        std::map<String, const Identifier*> fields;
+        std::map<UString, const Identifier *> fields;
         for (const auto &f : objectFields(obj, true)) {
             fields[f->name] = f;
         }
@@ -2640,8 +2634,8 @@ class Interpreter {
             const AST *body = objectIndex(loc, obj, f.second, 0);
             stack.top().val = scratch;
             evaluate(body, stack.size());
-            auto vstr = string ? manifestString(body->location)
-                               : manifestJson(body->location, true, U"");
+            auto vstr =
+                string ? manifestString(body->location) : manifestJson(body->location, true, U"");
             // Reset scratch so that the object we're manifesting doesn't
             // get GC'd.
             scratch = stack.top().val;
@@ -2662,11 +2656,9 @@ class Interpreter {
                << "the JSON for each document in the stream.";
             throw makeError(loc, ss.str());
         }
-        auto *arr = static_cast<HeapArray*>(scratch.v.h);
+        auto *arr = static_cast<HeapArray *>(scratch.v.h);
         for (auto *thunk : arr->elements) {
-            LocationRange tloc = thunk->body == nullptr
-                               ? loc
-                               : thunk->body->location;
+            LocationRange tloc = thunk->body == nullptr ? loc : thunk->body->location;
             if (thunk->filled) {
                 stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
                 // Keep arr alive when scratch is overwritten
@@ -2678,32 +2670,31 @@ class Interpreter {
                 stack.top().val = scratch;
                 evaluate(thunk->body, stack.size());
             }
-            String element = manifestJson(tloc, true, U"");
+            UString element = manifestJson(tloc, true, U"");
             scratch = stack.top().val;
             stack.pop();
             r.push_back(encode_utf8(element));
         }
         return r;
     }
-
 };
 
 }  // namespace
 
-std::string jsonnet_vm_execute(
-    Allocator *alloc,
-    const AST *ast,
-    const ExtMap &ext_vars,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *ctx,
-    bool string_output)
+std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
+                               unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+                               const VmNativeCallbackMap &natives,
+                               JsonnetImportCallback *import_callback, void *ctx,
+                               bool string_output)
 {
-    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   natives, import_callback, ctx);
+    Interpreter vm(alloc,
+                   ext_vars,
+                   max_stack,
+                   gc_min_objects,
+                   gc_growth_trigger,
+                   natives,
+                   import_callback,
+                   ctx);
     vm.evaluate(ast, 0);
     if (string_output) {
         return encode_utf8(vm.manifestString(LocationRange("During manifestation")));
@@ -2712,39 +2703,39 @@ std::string jsonnet_vm_execute(
     }
 }
 
-StrMap jsonnet_vm_execute_multi(
-    Allocator *alloc,
-    const AST *ast,
-    const ExtMap &ext_vars,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *ctx,
-    bool string_output)
+StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &ext_vars,
+                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
+                                const VmNativeCallbackMap &natives,
+                                JsonnetImportCallback *import_callback, void *ctx,
+                                bool string_output)
 {
-    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   natives, import_callback, ctx);
+    Interpreter vm(alloc,
+                   ext_vars,
+                   max_stack,
+                   gc_min_objects,
+                   gc_growth_trigger,
+                   natives,
+                   import_callback,
+                   ctx);
     vm.evaluate(ast, 0);
     return vm.manifestMulti(string_output);
 }
 
-std::vector<std::string> jsonnet_vm_execute_stream(
-    Allocator *alloc,
-    const AST *ast,
-    const ExtMap &ext_vars,
-    unsigned max_stack,
-    double gc_min_objects,
-    double gc_growth_trigger,
-    const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback,
-    void *ctx)
+std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *ast,
+                                                   const ExtMap &ext_vars, unsigned max_stack,
+                                                   double gc_min_objects, double gc_growth_trigger,
+                                                   const VmNativeCallbackMap &natives,
+                                                   JsonnetImportCallback *import_callback,
+                                                   void *ctx)
 {
-    Interpreter vm(alloc, ext_vars, max_stack, gc_min_objects, gc_growth_trigger,
-                   natives, import_callback, ctx);
+    Interpreter vm(alloc,
+                   ext_vars,
+                   max_stack,
+                   gc_min_objects,
+                   gc_growth_trigger,
+                   natives,
+                   import_callback,
+                   ctx);
     vm.evaluate(ast, 0);
     return vm.manifestStream();
 }
-
-

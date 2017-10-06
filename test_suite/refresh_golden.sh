@@ -14,17 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
+source "tests.source"
+
 if [ $# -eq 0 ] ; then
     echo "Usage: $0 <filename.jsonnet>" 2>&1
     exit 1
 fi
 
 for FILE in "$@" ; do
+    if [[ $FILE == *.golden ]]; then
+        echo "Specified file $FILE is already golden."
+        echo "Please, specify the input file instead."
+        exit 1
+    fi
+
     if [ ! -r "$FILE" ] ; then
         echo "Could not read: \"$FILE\"" 2>&1
         exit 1
     fi
-    ../jsonnet "$FILE" > "${FILE}.golden" 2>&1
+    "$JSONNET_BIN" "$FILE" > "${FILE}.golden" 2>&1
 done
 
 

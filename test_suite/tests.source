@@ -18,9 +18,39 @@
 EXECUTED=0
 FAILED=0
 
-# Display successful as well as failed tests (useful if they are slow).
-VERBOSE=false
+JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
 
+# Display additional information such as successful tests (useful if they are slow).
+VERBOSE="${VERBOSE:-false}"
+
+separator() {
+    echo -e "\n-----------------------------\n"
+}
+
+get_temp_dir() {
+    if [ -z "$TMP_DIR" ]; then
+        # We use Python to avoid portability problems with `mktemp`.
+        # See: https://unix.stackexchange.com/questions/30091/fix-or-alternative-for-mktemp-in-os-x
+        TMP_DIR="`python2 -c "import tempfile; print(tempfile.mkdtemp(prefix='jsonnet_'))"`"
+        $($VERBOSE) && echo "Created temporary directory $TMP_DIR"
+    fi
+}
+
+remove_temp_dir() {
+    if [ -n "$TMP_DIR" ]; then
+        $($VERBOSE) && echo "Removing temporary directory $TMP_DIR"
+        rm -rf "$TMP_DIR"
+        TMP_DIR=""
+    fi
+}
+
+init() {
+    get_temp_dir
+}
+
+deinit() {
+    remove_temp_dir
+}
 
 test_eval() {
     JSONNET_CMD="$1"
@@ -28,6 +58,9 @@ test_eval() {
     EXPECTED_EXIT_CODE="$3"
     GOLDEN_OUTPUT="$4"
     GOLDEN_KIND="$5"
+    if [ -n "$DISABLE_ERROR_TESTS" ] && [ "$EXPECTED_EXIT_CODE" != 0 ]; then
+        return 0
+    fi
 
     TEST_OUTPUT="$($JSONNET_CMD "$JSONNET_FILE" 2>&1)"
     TEST_EXIT_CODE="$?"
@@ -35,9 +68,13 @@ test_eval() {
 
     if [ "$TEST_EXIT_CODE" -ne "$EXPECTED_EXIT_CODE" ] ; then
         FAILED=$((FAILED + 1))
-        echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$JSONNET_FILE\e[0m"
-        echo "This run's output:"
-        echo "$TEST_OUTPUT"
+        if [ -z "$SUMMARY_ONLY" ]; then
+            echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$JSONNET_FILE\e[0m"
+            echo "This run's output:"
+            echo "$TEST_OUTPUT"
+            echo "Actual exit code $TEST_EXIT_CODE, expected $EXPECTED_EXIT_CODE"
+            separator
+        fi
         return 1
     fi
 
@@ -45,9 +82,12 @@ test_eval() {
         "REGEX")
         if [[ ! "$TEST_OUTPUT" =~ $GOLDEN_OUTPUT ]] ; then
             FAILED=$((FAILED + 1))
-            echo -e "\e[31;1mFAIL\e[0m \e[1m(regex mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
-            echo "This run's output:"
-            echo "$TEST_OUTPUT"
+            if [ -z "$SUMMARY_ONLY" ]; then
+                echo -e "\e[31;1mFAIL\e[0m \e[1m(regex mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
+                echo "This run's output:"
+                echo "$TEST_OUTPUT"
+                separator
+            fi
             return 1
         fi
         ;;
@@ -55,12 +95,25 @@ test_eval() {
         "PLAIN")
         if [ "$TEST_OUTPUT" != "$GOLDEN_OUTPUT" ] ; then
             FAILED=$((FAILED + 1))
-            echo -e "\e[31;1mFAIL\e[0m \e[1m(output mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
-            echo "This run's output:"
-            echo "$TEST_OUTPUT"
-            echo "Expected:"
-            echo "$GOLDEN_OUTPUT"
-            return 1
+            if [ -z "$SUMMARY_ONLY" ]; then
+                echo -e "\e[31;1mFAIL\e[0m \e[1m(output mismatch)\e[0m: \e[36m$JSONNET_FILE\e[0m"
+                echo "This run's output:"
+                echo "$TEST_OUTPUT"
+                echo "Expected:"
+                echo "$GOLDEN_OUTPUT"
+                echo "Diff:"
+                TEST_OUTPUT_FILE="$TMP_DIR/jsonnet_output"
+                TEST_GOLDEN_FILE="$TMP_DIR/jsonnet_golden"
+                echo "$TEST_OUTPUT" > "$TEST_OUTPUT_FILE"
+                echo "$GOLDEN_OUTPUT" > "$TEST_GOLDEN_FILE"
+                # Using git diff for pretty format and pretty colors
+                git --no-pager diff "$TEST_GOLDEN_FILE" "$TEST_OUTPUT_FILE"
+                # The output is often quite long, let's repeat the filename once more
+                # to avoid wasting time on looking for it
+                echo -e "\nTEST FILE ABOVE: \e[36m$JSONNET_FILE\033[0m"
+                separator
+                return 1
+            fi
         fi
         ;;
 

@@ -14,6 +14,8 @@ jsonnet_docs_srcs_zip(
         "bar_menu.5.jsonnet",
         "bar_menu.5.jsonnet.golden",
         "bar_menu.6.jsonnet",
+        "bar_menu.6.manhattan_garnish.txt",
+        "bar_menu.6.jsonnet.golden",
         "bar_menu_utils.libsonnet",
         "bar_menu.7.jsonnet",
         "bar_menu.7.jsonnet.golden",
