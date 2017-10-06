@@ -12,7 +12,7 @@ script:
     - make test
     - python setup.py build
     - python setup.py test
-      # Test CMake scripts.
+    # Test CMake build scripts.
     - cmake . -Bbuild && cmake --build build --target run_tests
 branches:
   only:
