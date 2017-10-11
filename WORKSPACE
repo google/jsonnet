@@ -16,6 +16,8 @@ git_repository(
 new_git_repository(
     name = "com_google_googletest",
     remote = "https://github.com/google/googletest.git",
+
+    # If updating googletest version, also update CMakeLists.txt.in.
     tag = "release-1.8.0",
     build_file = "gmock.BUILD",
 )

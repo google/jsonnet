@@ -7,10 +7,13 @@ before_install:
   - echo $LC_ALL
 before_script:
 script:
+    - set -e
     - rvm get head  # Workaround 'shell_session_update: command not found'
     - make test
     - python setup.py build
     - python setup.py test
+    # Test CMake build scripts.
+    - cmake . -Bbuild && cmake --build build --target run_tests
 branches:
   only:
     - master
