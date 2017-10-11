@@ -63,7 +63,7 @@ limitations under the License.
         local toDigits(str) =
             [std.codepoint(char) - std.codepoint("0") for char in std.stringChars(str)];
         if str[0] == "-" then
-            -std.foldl(addDigit, toDigits(str[1:]), 0)
+            -std.foldl(addDigit, toDigits(str[1]), 0)
         else
             std.foldl(addDigit, toDigits(str), 0),
 
