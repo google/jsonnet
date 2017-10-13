@@ -126,6 +126,7 @@ void usage(std::ostream &o)
     o << "  --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)\n";
     o << "  --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]\n";
     o << "  --[no-]pad-objects      { x: 1, x: 2 } instead of {x: 1, y: 2} (on by default)\n";
+    o << "  --[no-]sort-imports     Sorting of imports (off by default)\n";
     o << "  --debug-desugaring      Unparse the desugared AST without executing it\n";
     o << "  --version               Print version\n";
     o << "\n";
@@ -440,6 +441,8 @@ static bool process_args(int argc, const char **argv, JsonnetConfig *config, Jso
                 jsonnet_fmt_pretty_field_names(vm, false);
             } else if (arg == "--sort-imports") {
                 jsonnet_fmt_sort_imports(vm, true);
+            } else if (arg == "--no-sort-imports") {
+                jsonnet_fmt_sort_imports(vm, false);
             } else if (arg == "--debug-desugaring") {
                 jsonnet_fmt_debug_desugaring(vm, true);
             } else if (arg.length() > 1 && arg[0] == '-') {
