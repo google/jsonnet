@@ -125,4 +125,13 @@ std.assertEqual(4.5 == 4.5, true) &&
 std.assertEqual(4.5 != 3.5, true) &&
 
 std.assertEqual(std.toString(1e20), "100000000000000000000") &&
+
+// Check formatter handles - $ correctly.
+local obj = {
+    f: { f: { f: 1 } },
+    g: - $.f.f.f,
+};
+
+std.assertEqual(obj.g, -1) &&
+
 true
