@@ -2252,14 +2252,20 @@ class Interpreter {
                                 ast.location,
                                 "Array index must be number, got " + type_str(scratch) + ".");
                         }
-                        long i = long(scratch.v.d);
+                        double index = ::floor(scratch.v.d);
                         long sz = array->elements.size();
-                        if (i < 0 || i >= sz) {
+                        if (index < 0 || index >= sz) {
                             std::stringstream ss;
-                            ss << "Array bounds error: " << i << " not within [0, " << sz << ")";
+                            ss << "Array bounds error: " << index << " not within [0, " << sz << ")";
                             throw makeError(ast.location, ss.str());
                         }
-                        auto *thunk = array->elements[i];
+                        if (scratch.v.d != index) {
+                            std::stringstream ss;
+                            ss << "Array index was not integer: " << scratch.v.d;
+                            throw makeError(ast.location, ss.str());
+                        }
+                        // index < sz <= SIZE_T_MAX
+                        auto *thunk = array->elements[size_t(index)];
                         if (thunk->filled) {
                             scratch = thunk->content;
                         } else {
