@@ -36,7 +36,7 @@ To run the output binary, run:
 ### Bazel
 
 Bazel builds are also supported.
-[Install Bazel](https://www.bazel.io/versions/master/docs/install.html) if it is
+Install [Bazel](https://www.bazel.io/versions/master/docs/install.html) if it is
 not installed already. Then, run the following command to build with GCC:
 
 ```
