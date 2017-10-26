@@ -704,8 +704,8 @@ class EnforceMaximumBlankLines : public FmtPass {
     void fodderElement(FodderElement &f)
     {
         if (f.kind != FodderElement::INTERSTITIAL)
-            if (f.blanks > 2)
-                f.blanks = 2;
+            if (f.blanks > opts.maxBlankLines)
+                f.blanks = opts.maxBlankLines;
     }
 };
 
