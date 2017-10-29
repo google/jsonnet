@@ -688,8 +688,7 @@ class Parser {
 
             case Token::TRUE: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, true);
 
-            case Token::NULL_LIT:
-                return alloc->make<LiteralNull>(span(tok), tok.fodder);
+            case Token::NULL_LIT: return alloc->make<LiteralNull>(span(tok), tok.fodder);
 
             // Variables
             case Token::DOLLAR: return alloc->make<Dollar>(span(tok), tok.fodder);

@@ -741,8 +741,8 @@ int main(int argc, const char **argv)
 
                 // Write output JSON.
                 if (config.evalMulti) {
-                    if (!write_multi_output_files(vm, output, config.evalMultiOutputDir,
-                                                  config.outputFile)) {
+                    if (!write_multi_output_files(
+                            vm, output, config.evalMultiOutputDir, config.outputFile)) {
                         jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
