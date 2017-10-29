@@ -526,7 +526,8 @@ static bool read_input(JsonnetConfig *config, std::string *filename, std::string
 }
 
 /** Writes output files for multiple file output */
-static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::string &output_dir)
+static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::string &output_dir,
+                                     const std::string &output_file)
 {
     // If multiple file output is used, then iterate over each string from
     // the sequence of strings returned by jsonnet_evaluate_snippet_multi,
@@ -546,10 +547,26 @@ static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::str
         r[filename] = json;
     }
     jsonnet_realloc(vm, output, 0);
+
+    std::ostream *o;
+    std::ofstream f;
+
+    if (output_file.empty()) {
+        o = &std::cout;
+    } else {
+        f.open(output_file.c_str());
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
+        o = &f;
+    }
+
     for (const auto &pair : r) {
         const std::string &new_content = pair.second;
         const std::string &filename = output_dir + pair.first;
-        std::cout << filename << std::endl;
+        (*o) << filename << std::endl;
         {
             std::ifstream exists(filename.c_str());
             if (exists.good()) {
@@ -569,7 +586,6 @@ static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::str
         if (!f.good()) {
             std::string msg = "Opening output file: " + filename;
             perror(msg.c_str());
-            jsonnet_destroy(vm);
             return false;
         }
         f << new_content;
@@ -577,17 +593,41 @@ static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::str
         if (!f.good()) {
             std::string msg = "Writing to output file: " + filename;
             perror(msg.c_str());
-            jsonnet_destroy(vm);
             return false;
         }
     }
-    std::cout.flush();
+
+    if (output_file.empty()) {
+        std::cout.flush();
+    } else {
+        f.close();
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
+    }
     return true;
 }
 
 /** Writes output files for YAML stream output */
-static bool write_output_stream(JsonnetVm *vm, char *output)
+static bool write_output_stream(JsonnetVm *vm, char *output, const std::string &output_file)
 {
+    std::ostream *o;
+    std::ofstream f;
+
+    if (output_file.empty()) {
+        o = &std::cout;
+    } else {
+        f.open(output_file.c_str());
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
+        o = &f;
+    }
+
     // If YAML stream output is used, then iterate over each string from
     // the sequence of strings returned by jsonnet_evaluate_snippet_stream,
     // and add the --- and ... as defined by the YAML spec.
@@ -601,12 +641,24 @@ static bool write_output_stream(JsonnetVm *vm, char *output)
     }
     jsonnet_realloc(vm, output, 0);
     for (const auto &str : r) {
-        std::cout << "---\n";
-        std::cout << str;
+        (*o) << "---\n";
+        (*o) << str;
     }
     if (r.size() > 0)
-        std::cout << "...\n";
-    std::cout.flush();
+        (*o) << "...\n";
+    o->flush();
+
+    if (output_file.empty()) {
+        std::cout.flush();
+    } else {
+        f.close();
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -615,24 +667,32 @@ static bool write_output_stream(JsonnetVm *vm, char *output)
  */
 static bool write_output_file(const char *output, const std::string &output_file)
 {
-    if (output_file.empty()) {
-        std::cout << output;
-        std::cout.flush();
-        return true;
-    }
+    std::ostream *o;
     std::ofstream f;
-    f.open(output_file.c_str());
-    if (!f.good()) {
-        std::string msg = "Writing to output file: " + output_file;
-        perror(msg.c_str());
-        return false;
+
+    if (output_file.empty()) {
+        o = &std::cout;
+    } else {
+        f.open(output_file.c_str());
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
+        o = &f;
     }
-    f << output;
-    f.close();
-    if (!f.good()) {
-        std::string msg = "Writing to output file: " + output_file;
-        perror(msg.c_str());
-        return false;
+
+    (*o) << output;
+
+    if (output_file.empty()) {
+        std::cout.flush();
+    } else {
+        f.close();
+        if (!f.good()) {
+            std::string msg = "Writing to output file: " + output_file;
+            perror(msg.c_str());
+            return false;
+        }
     }
     return true;
 }
@@ -681,12 +741,13 @@ int main(int argc, const char **argv)
 
                 // Write output JSON.
                 if (config.evalMulti) {
-                    if (!write_multi_output_files(vm, output, config.evalMultiOutputDir)) {
+                    if (!write_multi_output_files(vm, output, config.evalMultiOutputDir,
+                                                  config.outputFile)) {
                         jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
                 } else if (config.evalStream) {
-                    if (!write_output_stream(vm, output)) {
+                    if (!write_output_stream(vm, output, config.outputFile)) {
                         jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
