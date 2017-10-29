@@ -38,7 +38,9 @@ struct JsonnetJsonValue {
     JsonnetJsonValue(JsonnetJsonValue&&) = default;
 
     JsonnetJsonValue(Kind kind, std::string string, double number)
-        : kind(kind), string(string), number(number) {}
+        : kind(kind), string(string), number(number)
+    {
+    }
 
     Kind kind;
     std::string string;

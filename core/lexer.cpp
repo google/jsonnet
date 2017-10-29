@@ -80,9 +80,7 @@ static void lex_ws(const char *&c, unsigned &new_lines, unsigned &indent, const 
                 line_start = c + 1;
                 break;
 
-            case ' ':
-                indent += 1;
-                break;
+            case ' ': indent += 1; break;
 
             // This only works for \t at the beginning of lines, but we strip it everywhere else
             // anyway.  The only case where this will cause a problem is spaces followed by \t

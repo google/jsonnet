@@ -2086,23 +2086,15 @@ class Interpreter {
 
                                 case Value::BOOLEAN:
                                     args2.emplace_back(
-                                        JsonnetJsonValue::BOOL,
-                                        "",
-                                        arg.v.b ? 1.0 : 0.0);
+                                        JsonnetJsonValue::BOOL, "", arg.v.b ? 1.0 : 0.0);
                                     break;
 
                                 case Value::NUMBER:
-                                    args2.emplace_back(
-                                        JsonnetJsonValue::NUMBER,
-                                        "",
-                                        arg.v.d);
+                                    args2.emplace_back(JsonnetJsonValue::NUMBER, "", arg.v.d);
                                     break;
 
                                 case Value::NULL_TYPE:
-                                    args2.emplace_back(
-                                        JsonnetJsonValue::NULL_KIND,
-                                        "",
-                                        0);
+                                    args2.emplace_back(JsonnetJsonValue::NULL_KIND, "", 0);
                                     break;
 
                                 default:
@@ -2256,7 +2248,8 @@ class Interpreter {
                         long sz = array->elements.size();
                         if (index < 0 || index >= sz) {
                             std::stringstream ss;
-                            ss << "Array bounds error: " << index << " not within [0, " << sz << ")";
+                            ss << "Array bounds error: " << index << " not within [0, " << sz
+                               << ")";
                             throw makeError(ast.location, ss.str());
                         }
                         if (scratch.v.d != index) {
