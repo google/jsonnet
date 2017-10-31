@@ -112,8 +112,8 @@ test_eval() {
                 # to avoid wasting time on looking for it
                 echo -e "\nTEST FILE ABOVE: \e[36m$JSONNET_FILE\033[0m"
                 separator
-                return 1
             fi
+            return 1
         fi
         ;;
 
