@@ -210,6 +210,22 @@ std.assertEqual(
     "[empty]\n[s1]\nx = 11\ny = 22\nz = 33\n[s2]\np = yes\nq = \n"
 ) &&
 
+std.assertEqual(
+    std.manifestIni({
+        main: { a: ["1", "2"] },
+        sections: {
+            s2: { p: ["yes", ""] },
+        },
+    }), |||
+        a = 1
+        a = 2
+        [s2]
+        p = yes
+        p = 
+    |||
+) &&
+
+
 std.assertEqual(std.escapeStringJson("hello"), "\"hello\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&
 std.assertEqual(std.escapeStringJson("he\"llo"), "\"he\\\"llo\"") &&

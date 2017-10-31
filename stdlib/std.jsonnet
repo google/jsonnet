@@ -674,8 +674,18 @@ limitations under the License.
         std.foldl(function(a, b) a + b, arrs, []),
 
     manifestIni(ini)::
-        local body_lines(body) = ["%s = %s" % [k, body[k]] for k in std.objectFields(body)],
-              section_lines(sname, sbody) = ["[%s]" % [sname]] + body_lines(sbody),
+        local body_lines(body) =
+            std.join([], [
+                local value_or_values = body[k];
+                if std.type(value_or_values) == "array" then
+                    ["%s = %s" % [k, value] for value in value_or_values]
+                else
+                    ["%s = %s" % [k, value_or_values]]
+
+                for k in std.objectFields(body)
+            ]);
+
+        local section_lines(sname, sbody) = ["[%s]" % [sname]] + body_lines(sbody),
               main_body = if std.objectHas(ini, "main") then body_lines(ini.main) else [],
               all_sections = [section_lines(k, ini.sections[k])
                               for k in std.objectFields(ini.sections)];
