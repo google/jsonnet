@@ -492,13 +492,21 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
 
         jsonnet_desugar(&alloc, expr, &vm->tla);
 
+        unsigned max_stack = vm->maxStack;
+
+        // For the stdlib desugaring.
+        max_stack++;
+
+        // For the TLA desugaring.
+        max_stack++;
+
         jsonnet_static_analysis(expr);
         switch (kind) {
             case REGULAR: {
                 std::string json_str = jsonnet_vm_execute(&alloc,
                                                           expr,
                                                           vm->ext,
-                                                          vm->maxStack,
+                                                          max_stack,
                                                           vm->gcMinObjects,
                                                           vm->gcGrowthTrigger,
                                                           vm->nativeCallbacks,
@@ -515,7 +523,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                     jsonnet_vm_execute_multi(&alloc,
                                              expr,
                                              vm->ext,
-                                             vm->maxStack,
+                                             max_stack,
                                              vm->gcMinObjects,
                                              vm->gcGrowthTrigger,
                                              vm->nativeCallbacks,
@@ -551,7 +559,7 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                     jsonnet_vm_execute_stream(&alloc,
                                               expr,
                                               vm->ext,
-                                              vm->maxStack,
+                                              max_stack,
                                               vm->gcMinObjects,
                                               vm->gcGrowthTrigger,
                                               vm->nativeCallbacks,
