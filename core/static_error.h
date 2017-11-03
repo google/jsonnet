@@ -24,10 +24,14 @@ struct Location {
     unsigned long line;
     unsigned long column;
     Location(void) : line(0), column(0) {}
-    Location(unsigned long line_number, unsigned long column) : line(line_number), column(column) {}
+    Location(unsigned long line, unsigned long column) : line(line), column(column) {}
     bool isSet(void) const
     {
         return line != 0;
+    }
+    Location successor(void) const
+    {
+        return Location(this->line, this->column + 1);
     }
 };
 
@@ -39,6 +43,7 @@ static inline std::ostream &operator<<(std::ostream &o, const Location &loc)
 
 struct LocationRange {
     std::string file;
+    // [begin, end)
     Location begin, end;
     LocationRange(void) {}
     /** This is useful for special locations, e.g. manifestation entry point. */
@@ -61,7 +66,7 @@ static inline std::ostream &operator<<(std::ostream &o, const LocationRange &loc
         if (loc.file.length() > 0)
             o << ":";
         if (loc.begin.line == loc.end.line) {
-            if (loc.begin.column == loc.end.column) {
+            if (loc.begin.column == loc.end.column - 1) {
                 o << loc.begin;
             } else {
                 o << loc.begin << "-" << loc.end.column;
@@ -78,7 +83,7 @@ struct StaticError {
     std::string msg;
     StaticError(const std::string &msg) : msg(msg) {}
     StaticError(const std::string &filename, const Location &location, const std::string &msg)
-        : location(filename, location, location), msg(msg)
+        : location(filename, location, location.successor()), msg(msg)
     {
     }
     StaticError(const LocationRange &location, const std::string &msg)

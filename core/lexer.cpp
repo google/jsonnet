@@ -784,7 +784,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
             throw StaticError(filename, begin, "Internal lexing error:  Pointer did not advance");
         }
 
-        Location end(line_number, c - line_start);
+        Location end(line_number, (c + 1) - line_start);
         r.emplace_back(kind,
                        fodder,
                        data,
@@ -795,7 +795,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
         fresh_line = false;
     }
 
-    Location end(line_number, c - line_start + 1);
+    Location end(line_number, (c + 1) - line_start + 1);
     r.emplace_back(Token::END_OF_FILE, fodder, "", "", "", LocationRange(filename, end, end));
     return r;
 }

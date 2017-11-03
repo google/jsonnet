@@ -1,7 +1,7 @@
 RUNTIME ERROR: foobar
-	error.inside_equals_object.jsonnet:18:22-35	object <b>
-	std.jsonnet:1006:62-65	thunk <b>
-	std.jsonnet:1006:54-65	function <anonymous>
-	std.jsonnet:1006:54-65	function <aux>
-	std.jsonnet:1009:29-44	function <anonymous>
-	std.jsonnet:1010:21-32	
+	error.inside_equals_object.jsonnet:18:22-36	object <b>
+	std.jsonnet:1006:62-66	thunk <b>
+	std.jsonnet:1006:54-66	function <anonymous>
+	std.jsonnet:1006:54-66	function <aux>
+	std.jsonnet:1009:29-45	function <anonymous>
+	std.jsonnet:1010:21-33	
