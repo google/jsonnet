@@ -1,1 +1,1 @@
-STATIC ERROR: error.parse.index_unterminated.jsonnet:18:1: Unexpected end of file.
+STATIC ERROR: error.parse.index_unterminated.jsonnet:18:2-2: Unexpected end of file.
