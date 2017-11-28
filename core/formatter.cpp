@@ -925,6 +925,9 @@ class PrettyFieldNames : public FmtPass {
 
     bool isIdentifier(const UString &str)
     {
+        // Identifiers cannot be zero-length.
+        if (str.length() == 0) return false;
+
         bool first = true;
         for (char32_t c : str) {
             if (!first && c >= '0' && c <= '9')
