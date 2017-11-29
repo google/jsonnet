@@ -795,8 +795,9 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
         fresh_line = false;
     }
 
+    Location begin(line_number, c - line_start + 1);
     Location end(line_number, (c + 1) - line_start + 1);
-    r.emplace_back(Token::END_OF_FILE, fodder, "", "", "", LocationRange(filename, end, end));
+    r.emplace_back(Token::END_OF_FILE, fodder, "", "", "", LocationRange(filename, begin, end));
     return r;
 }
 
