@@ -148,7 +148,7 @@ TEST(Parser, TestInvalidFunctionCall)
 TEST(Parser, TestInvalidLocal)
 {
     testParseError("local", "test:1:6: Expected token IDENTIFIER but got end of file");
-    testParseError("local foo = 1, foo = 2; true", "test:1:16-18: Duplicate local var: foo");
+    testParseError("local foo = 1, foo = 2; true", "test:1:16-19: Duplicate local var: foo");
     testParseError("local foo(a b) = a; true",
                    "test:1:13: Expected a comma before next function parameter.");
     testParseError("local foo(a): a; true", "test:1:13: Expected operator = but got :");
@@ -174,17 +174,17 @@ TEST(Parser, TestInvalidTuple)
 TEST(Parser, TestInvalidComprehension)
 {
     testParseError("{assert x for x in [1, 2, 3]}",
-                   "test:1:11-13: Object comprehension cannot have asserts.");
+                   "test:1:11-14: Object comprehension cannot have asserts.");
     testParseError("{['foo' + x]: true, [x]: x for x in [1, 2, 3]}",
-                   "test:1:28-30: Object comprehension can only have one field.");
+                   "test:1:28-31: Object comprehension can only have one field.");
     testParseError("{foo: x for x in [1, 2, 3]}",
-                   "test:1:9-11: Object comprehensions can only have [e] fields.");
+                   "test:1:9-12: Object comprehensions can only have [e] fields.");
     testParseError("{[x]:: true for x in [1, 2, 3]}",
-                   "test:1:13-15: Object comprehensions cannot have hidden fields.");
+                   "test:1:13-16: Object comprehensions cannot have hidden fields.");
     testParseError("{[x]: true for 1 in [1, 2, 3]}",
                    R"(test:1:16: Expected token IDENTIFIER but got (NUMBER, "1"))");
     testParseError("{[x]: true for x at [1, 2, 3]}",
-                   R"(test:1:18-19: Expected token in but got (IDENTIFIER, "at"))");
+                   R"(test:1:18-20: Expected token in but got (IDENTIFIER, "at"))");
     testParseError("{[x]: true for x in [1, 2 3]}",
                    "test:1:27: Expected a comma before next array element.");
     testParseError("{[x]: true for x in [1, 2, 3] if (a b)}",
@@ -208,8 +208,8 @@ TEST(Parser, TestInvalidArrayKey)
 TEST(Parser, TestInvalidFields)
 {
     testParseError("{foo(x y): z}", "test:1:8: Expected a comma before next method parameter.");
-    testParseError("{foo(x)+: z}", "test:1:2-4: Cannot use +: syntax sugar in a method: foo");
-    testParseError("{foo: 1, foo: 2}", "test:1:10-12: Duplicate field: foo");
+    testParseError("{foo(x)+: z}", "test:1:2-5: Cannot use +: syntax sugar in a method: foo");
+    testParseError("{foo: 1, foo: 2}", "test:1:10-13: Duplicate field: foo");
     testParseError("{foo: (1 2)}", R"_(test:1:10: Expected token ")" but got (NUMBER, "2"))_");
 }
 
@@ -218,7 +218,7 @@ TEST(Parser, TestInvalidLocalInTuple)
     testParseError("{local 1 = 3, true}",
                    R"(test:1:8: Expected token IDENTIFIER but got (NUMBER, "1"))");
     testParseError("{local foo = 1, local foo = 2, true}",
-                   "test:1:23-25: Duplicate local var: foo");
+                   "test:1:23-26: Duplicate local var: foo");
     testParseError("{local foo(a b) = 1, a: true}",
                    "test:1:14: Expected a comma before next function parameter.");
     testParseError("{local foo(a): 1, a: true}", "test:1:14: Expected operator = but got :");
@@ -241,7 +241,7 @@ TEST(Parser, TestInvalidUnexpectedFunction)
     // test:1:2-10 Unexpected: (function, "function") while parsing field
     // definition.
     testParseError("{function(a, b) a+b: true}",
-                   "test:1:2-9: Unexpected: function while parsing field definition");
+                   "test:1:2-10: Unexpected: function while parsing field definition");
 }
 
 TEST(Parser, TestInvalidArray)
@@ -259,14 +259,14 @@ TEST(Parser, TestInvalidExpression)
     // TODO(jsonnet-team): The error output of the following differs from the Go
     // implementation, which is:
     // test:1:1-4 Unexpected: (for, "for") while parsing terminal)
-    testParseError("for", "test:1:1-3: Unexpected: for while parsing terminal");
+    testParseError("for", "test:1:1-4: Unexpected: for while parsing terminal");
     testParseError("", "test:1:1: Unexpected end of file.");
     testParseError("((a b))", R"_(test:1:5: Expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("a.1", R"(test:1:3: Expected token IDENTIFIER but got (NUMBER, "1"))");
     testParseError("super.1", R"(test:1:7: Expected token IDENTIFIER but got (NUMBER, "1"))");
     testParseError("super[(a b)]", R"_(test:1:10: Expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("super[a b]", R"(test:1:9: Expected token "]" but got (IDENTIFIER, "b"))");
-    testParseError("super", "test:1:1-5: Expected . or [ after super.");
+    testParseError("super", "test:1:1-6: Expected . or [ after super.");
 }
 
 TEST(Parser, TestInvalidAssert)
@@ -311,15 +311,15 @@ TEST(Parser, TestInvalidFunction)
 TEST(Parser, TestInvalidImport)
 {
     testParseError("import (a b)", R"_(test:1:11: Expected token ")" but got (IDENTIFIER, "b"))_");
-    testParseError("import (a+b)", "test:1:8-12: Computed imports are not allowed.");
+    testParseError("import (a+b)", "test:1:8-13: Computed imports are not allowed.");
     testParseError("importstr (a b)",
                    R"_(test:1:14: Expected token ")" but got (IDENTIFIER, "b"))_");
-    testParseError("importstr (a+b)", "test:1:11-15: Computed imports are not allowed.");
+    testParseError("importstr (a+b)", "test:1:11-16: Computed imports are not allowed.");
 }
 
 TEST(Parser, TestInvalidOperator)
 {
-    testParseError("1+ <<", "test:1:4-5: Not a unary operator: <<");
+    testParseError("1+ <<", "test:1:4-6: Not a unary operator: <<");
     testParseError("-(a b)", R"_(test:1:5: Expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("1~2", "test:1:2: Not a binary operator: ~");
 }
