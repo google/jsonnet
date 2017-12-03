@@ -170,10 +170,10 @@ struct HeapSimpleObject : public HeapLeafObject {
      *
      * These are evaluated in the captured environment with self and super bound.
      */
-    std::vector<AST *> asserts;
+    ASTs asserts;
 
     HeapSimpleObject(const BindingFrame &up_values,
-                     const std::map<const Identifier *, Field> fields, std::vector<AST *> asserts)
+                     const std::map<const Identifier *, Field> fields, ASTs asserts)
         : upValues(up_values), fields(fields), asserts(asserts)
     {
     }

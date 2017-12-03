@@ -39,31 +39,49 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
 {
     IdSet r;
 
-    if (auto *ast = dynamic_cast<const Apply *>(ast_)) {
+    switch (ast_->type) {
+    case AST_APPLY: {
+        assert(dynamic_cast<Apply *>(ast_));
+        auto* ast = static_cast<Apply *>(ast_);
         append(r, static_analysis(ast->target, in_object, vars));
         for (const auto &arg : ast->args)
             append(r, static_analysis(arg.expr, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Array *>(ast_)) {
+    } break;
+    case AST_APPLY_BRACE: {
+        assert(dynamic_cast<ApplyBrace *>(ast_));
+        // Nothing to do.
+    } break;
+    case AST_ARRAY: {
+        assert(dynamic_cast<Array *>(ast_));
+        auto* ast = static_cast<Array *>(ast_);
         for (auto &el : ast->elements)
             append(r, static_analysis(el.expr, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Binary *>(ast_)) {
+    } break;
+    case AST_BINARY: {
+        assert(dynamic_cast<Binary *>(ast_));
+        auto* ast = static_cast<Binary *>(ast_);
         append(r, static_analysis(ast->left, in_object, vars));
         append(r, static_analysis(ast->right, in_object, vars));
-
-    } else if (dynamic_cast<const BuiltinFunction *>(ast_)) {
+    } break;
+    case AST_BUILTIN_FUNCTION: {
+        assert(dynamic_cast<BuiltinFunction *>(ast_));
         // Nothing to do.
-
-    } else if (auto *ast = dynamic_cast<const Conditional *>(ast_)) {
+    } break;
+    case AST_CONDITIONAL: {
+        assert(dynamic_cast<Conditional *>(ast_));
+        auto* ast = static_cast<Conditional *>(ast_);
         append(r, static_analysis(ast->cond, in_object, vars));
         append(r, static_analysis(ast->branchTrue, in_object, vars));
         append(r, static_analysis(ast->branchFalse, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Error *>(ast_)) {
+    } break;
+    case AST_ERROR: {
+        assert(dynamic_cast<Error *>(ast_));
+        auto* ast = static_cast<Error *>(ast_);
         append(r, static_analysis(ast->expr, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Function *>(ast_)) {
+    } break;
+    case AST_FUNCTION: {
+        assert(dynamic_cast<Function *>(ast_));
+        auto* ast = static_cast<Function *>(ast_);
         auto new_vars = vars;
         IdSet params;
         for (const auto &p : ast->params) {
@@ -83,23 +101,31 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         for (const auto &p : ast->params)
             fv.erase(p.id);
         append(r, fv);
-
-    } else if (dynamic_cast<const Import *>(ast_)) {
+    } break;
+    case AST_IMPORT: {
+        assert(dynamic_cast<Import *>(ast_));
         // Nothing to do.
-
-    } else if (dynamic_cast<const Importstr *>(ast_)) {
+    } break;
+    case AST_IMPORTSTR: {
+        assert(dynamic_cast<Importstr *>(ast_));
         // Nothing to do.
-
-    } else if (auto *ast = dynamic_cast<const InSuper *>(ast_)) {
+    } break;
+    case AST_IN_SUPER: {
+        assert(dynamic_cast<const InSuper *>(ast_));
+        auto* ast = static_cast<const InSuper *>(ast_);
         if (!in_object)
             throw StaticError(ast_->location, "Can't use super outside of an object.");
         append(r, static_analysis(ast->element, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Index *>(ast_)) {
+    } break;
+    case AST_INDEX: {
+        assert(dynamic_cast<const Index *>(ast_));
+        auto* ast = static_cast<const Index *>(ast_);
         append(r, static_analysis(ast->target, in_object, vars));
         append(r, static_analysis(ast->index, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Local *>(ast_)) {
+    } break;
+    case AST_LOCAL: {
+        assert(dynamic_cast<const Local *>(ast_));
+        auto* ast = static_cast<const Local *>(ast_);
         IdSet ast_vars;
         for (const auto &bind : ast->binds) {
             ast_vars.insert(bind.var);
@@ -117,20 +143,26 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
             fvs.erase(bind.var);
 
         append(r, fvs);
-
-    } else if (dynamic_cast<const LiteralBoolean *>(ast_)) {
+    } break;
+    case AST_LITERAL_BOOLEAN: {
+        assert(dynamic_cast<const LiteralBoolean *>(ast_));
         // Nothing to do.
-
-    } else if (dynamic_cast<const LiteralNumber *>(ast_)) {
+    } break;
+    case AST_LITERAL_NUMBER: {
+        assert(dynamic_cast<const LiteralNumber *>(ast_));
         // Nothing to do.
-
-    } else if (dynamic_cast<const LiteralString *>(ast_)) {
+    } break;
+    case AST_LITERAL_STRING: {
+        assert(dynamic_cast<const LiteralString *>(ast_));
         // Nothing to do.
-
-    } else if (dynamic_cast<const LiteralNull *>(ast_)) {
+    } break;
+    case AST_LITERAL_NULL: {
+        assert(dynamic_cast<const LiteralNull *>(ast_));
         // Nothing to do.
-
-    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
+    } break;
+    case AST_DESUGARED_OBJECT: {
+        assert(dynamic_cast<DesugaredObject *>(ast_));
+        auto* ast = static_cast<DesugaredObject *>(ast_);
         for (auto &field : ast->fields) {
             append(r, static_analysis(field.name, in_object, vars));
             append(r, static_analysis(field.body, true, vars));
@@ -138,36 +170,46 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         for (AST *assert : ast->asserts) {
             append(r, static_analysis(assert, true, vars));
         }
-
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
+    } break;
+    case AST_OBJECT_COMPREHENSION_SIMPLE: {
+        assert(dynamic_cast<ObjectComprehensionSimple *>(ast_));
+        auto* ast = static_cast<ObjectComprehensionSimple *>(ast_);
         auto new_vars = vars;
         new_vars.insert(ast->id);
         append(r, static_analysis(ast->field, false, new_vars));
         append(r, static_analysis(ast->value, true, new_vars));
         r.erase(ast->id);
         append(r, static_analysis(ast->array, in_object, vars));
-
-    } else if (dynamic_cast<const Self *>(ast_)) {
+    } break;
+    case AST_SELF: {
+        assert(dynamic_cast<const Self *>(ast_));
         if (!in_object)
             throw StaticError(ast_->location, "Can't use self outside of an object.");
-
-    } else if (auto *ast = dynamic_cast<const SuperIndex *>(ast_)) {
+    } break;
+    case AST_SUPER_INDEX: {
+        assert(dynamic_cast<const SuperIndex *>(ast_));
+        auto* ast = static_cast<const SuperIndex *>(ast_);
         if (!in_object)
             throw StaticError(ast_->location, "Can't use super outside of an object.");
         append(r, static_analysis(ast->index, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
+    } break;
+    case AST_UNARY: {
+        assert(dynamic_cast<const Unary *>(ast_));
+        auto* ast = static_cast<const Unary *>(ast_);
         append(r, static_analysis(ast->expr, in_object, vars));
-
-    } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
+    } break;
+    case AST_VAR: {
+        assert(dynamic_cast<const Var *>(ast_));
+        auto* ast = static_cast<const Var *>(ast_);
         if (vars.find(ast->id) == vars.end()) {
             throw StaticError(ast->location, "Unknown variable: " + encode_utf8(ast->id->name));
         }
         r.insert(ast->id);
-
-    } else {
+    } break;
+    default:
         std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
         std::abort();
+        break;
     }
 
     for (auto *id : r)
