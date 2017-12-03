@@ -21,6 +21,7 @@ limitations under the License.
 #include <cstdlib>
 
 #include <iostream>
+#include <list>
 #include <map>
 #include <string>
 #include <vector>
@@ -128,7 +129,6 @@ struct AST {
     virtual ~AST(void) {}
 };
 
-#include <list>
 typedef std::list<AST *> ASTs;
 
 /** Either an arg in a function apply, or a param in a closure / other function definition.
