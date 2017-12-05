@@ -110,6 +110,11 @@ fi
 do_test "string1" 0 -S -e '"A long\nparagraph."'
 do_test "string2" 1 -S -e 'null'
 
+export JSONNET_PATH=lib1:lib2
+do_test "jsonnet_path1" 0 -e 'importstr "shared.txt"'
+export JSONNET_PATH=lib2:lib1
+do_test "jsonnet_path2" 0 -e 'importstr "shared.txt"'
+
 popd
 
 # Bean counting:
