@@ -23,6 +23,7 @@ limitations under the License.
 #include <iostream>
 #include <list>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -31,9 +32,9 @@ extern "C" {
 }
 
 #ifdef _WIN32
-const char *PATH_SEP = ";";
+const char PATH_SEP = ';';
 #else
-const char *PATH_SEP = ":";
+const char PATH_SEP = ':';
 #endif
 
 std::string next_arg(unsigned &i, const std::vector<std::string> &args)
@@ -707,17 +708,11 @@ int main(int argc, const char **argv)
         const char *jsonnet_path_env = getenv("JSONNET_PATH");
         if (jsonnet_path_env != nullptr) {
             std::list<std::string> jpath;
-            char *input = strdup(jsonnet_path_env);
-            do {
-                const char *path = strtok(input, const_cast<char*>(PATH_SEP));
-                input = nullptr;
-                if (path != nullptr) {
-                    jpath.push_front(path);
-                } else {
-                    break;
-                }
-            } while (true);
-            free(input);
+            std::stringstream ss(jsonnet_path_env);
+            std::string path;
+            while (std::getline(ss, path, PATH_SEP)) {
+                jpath.push_front(path);
+            }
             for (const std::string &path : jpath) {
                 jsonnet_jpath_add(vm, path.c_str());
             }
