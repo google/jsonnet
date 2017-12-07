@@ -143,9 +143,9 @@ ending style in the file is preserved in the string.  This form cannot be used i
 </ul>
 
 <p>Double- and single-quoted strings are allowed to span multiple lines, in which case whatever
-dos/unix end-of-line character appears in the string.  They both understand the following escape
-characters: <code>"'\bfnrt0</code> which have their standard meanings, as well as
-<code>\uXXXX</code> for hexadecimal unicode escapes.</p>
+dos/unix end-of-line character your editor inserts will be put in the string.  They both understand
+the following escape characters: <code>"'\/bfnrt</code> which have their standard meanings, as well
+as <code>\uXXXX</code> for hexadecimal unicode escapes.</p>
 
 <p>Verbatim strings eschew all of the normal string escaping, including hexidecimal unicode escapes.
 Every character in a verbatim string is processed literally, with the exception of doubled
