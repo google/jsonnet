@@ -1,6 +1,6 @@
 RUNTIME ERROR: Object assertion failed.
 	error.obj_assert.fail1.jsonnet:20:23-29	thunk <object_assert>
-	std.jsonnet:1006:54-58	thunk <a>
-	std.jsonnet:1006:54-66	function <anonymous>
-	std.jsonnet:1006:54-66	function <anonymous>
-	std.jsonnet:1010:21-33	
+	std.jsonnet:1008:54-58	thunk <a>
+	std.jsonnet:1008:54-66	function <anonymous>
+	std.jsonnet:1008:54-66	function <anonymous>
+	std.jsonnet:1012:21-33	
