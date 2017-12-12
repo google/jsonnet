@@ -705,12 +705,11 @@ int main(int argc, const char **argv)
     try {
         JsonnetVm *vm = jsonnet_make();
         JsonnetConfig config;
-        const char *jsonnet_path_env = getenv("JSONNET_PATH");
-        if (jsonnet_path_env != nullptr) {
+        if (const char *jsonnet_path_env = getenv("JSONNET_PATH")) {
             std::list<std::string> jpath;
-            std::stringstream ss(jsonnet_path_env);
+            std::istringstream iss(jsonnet_path_env);
             std::string path;
-            while (std::getline(ss, path, PATH_SEP)) {
+            while (std::getline(iss, path, PATH_SEP)) {
                 jpath.push_front(path);
             }
             for (const std::string &path : jpath) {
