@@ -163,6 +163,8 @@ limitations under the License.
                 running
             else if arr[i] == null then
                 aux(arr, i + 1, first, running) tailstrict
+            else if std.type(arr[i]) != std.type(sep) then
+                error "expected %s but arr[%d] was %s " % [std.type(sep), i, std.type(arr[i])]
             else if first then
                 aux(arr, i + 1, false, running + arr[i]) tailstrict
             else
