@@ -11,7 +11,7 @@ Note: Only one filename is supported
 Available eval options:
   -h / --help             This message
   -e / --exec             Treat filename as code
-  -J / --jpath <dir>      Specify an additional library search dir
+  -J / --jpath <dir>      Specify an additional library search dir (right-most wins)
   -o / --output-file <file> Write to the output file rather than stdout
   -m / --multi <dir>      Write multiple files to the directory, list files on stdout
   -y / --yaml-stream      Write output as a YAML stream of JSON documents
@@ -35,6 +35,12 @@ Provide the value as a string:
 Provide a value as Jsonnet code:
   --tla-code <var>[=<code>]    If <code> is omitted, get from environment var <var>
   --tla-code-file <var>=<file> Read the code from the file
+Environment variables:
+JSONNET_PATH is a colon (semicolon on Windows) separated list of directories added
+in reverse order before the paths specified by --jpath (i.e. left-most wins)
+E.g. JSONNET_PATH=a:b jsonnet -J c -J d is equivalent to:
+JSONNET_PATH=d:c:a:b jsonnet
+jsonnet -J b -J a -J c -J d
 
 The fmt command:
 jsonnet fmt {<option>} { <filename> }

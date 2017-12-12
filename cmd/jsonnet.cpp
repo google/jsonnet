@@ -21,13 +21,21 @@ limitations under the License.
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
 extern "C" {
 #include <libjsonnet.h>
 }
+
+#ifdef _WIN32
+const char PATH_SEP = ';';
+#else
+const char PATH_SEP = ':';
+#endif
 
 std::string next_arg(unsigned &i, const std::vector<std::string> &args)
 {
@@ -84,7 +92,7 @@ void usage(std::ostream &o)
     o << "Available eval options:\n";
     o << "  -h / --help             This message\n";
     o << "  -e / --exec             Treat filename as code\n";
-    o << "  -J / --jpath <dir>      Specify an additional library search dir\n";
+    o << "  -J / --jpath <dir>      Specify an additional library search dir (right-most wins)\n";
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
     o << "  -m / --multi <dir>      Write multiple files to the directory, list files on stdout\n";
     o << "  -y / --yaml-stream      Write output as a YAML stream of JSON documents\n";
@@ -108,6 +116,12 @@ void usage(std::ostream &o)
     o << "Provide a value as Jsonnet code:\n";
     o << "  --tla-code <var>[=<code>]    If <code> is omitted, get from environment var <var>\n";
     o << "  --tla-code-file <var>=<file> Read the code from the file\n";
+    o << "Environment variables:\n";
+    o << "JSONNET_PATH is a colon (semicolon on Windows) separated list of directories added\n";
+    o << "in reverse order before the paths specified by --jpath (i.e. left-most wins)\n";
+    o << "E.g. JSONNET_PATH=a:b jsonnet -J c -J d is equivalent to:\n";
+    o << "JSONNET_PATH=d:c:a:b jsonnet\n";
+    o << "jsonnet -J b -J a -J c -J d\n";
     o << "\n";
     o << "The fmt command:\n";
     o << "jsonnet fmt {<option>} { <filename> }\n";
@@ -691,6 +705,17 @@ int main(int argc, const char **argv)
     try {
         JsonnetVm *vm = jsonnet_make();
         JsonnetConfig config;
+        if (const char *jsonnet_path_env = getenv("JSONNET_PATH")) {
+            std::list<std::string> jpath;
+            std::istringstream iss(jsonnet_path_env);
+            std::string path;
+            while (std::getline(iss, path, PATH_SEP)) {
+                jpath.push_front(path);
+            }
+            for (const std::string &path : jpath) {
+                jsonnet_jpath_add(vm, path.c_str());
+            }
+        }
         ArgStatus arg_status = process_args(argc, argv, &config, vm);
         if (arg_status != ARG_CONTINUE) {
             jsonnet_destroy(vm);
