@@ -7,8 +7,8 @@ before_install:
   - echo $LC_ALL
 before_script:
 script:
-    - set -e
     - rvm get head  # Workaround 'shell_session_update: command not found'
+    - set -e
     - make test
     - python setup.py build
     - python setup.py test
