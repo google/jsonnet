@@ -21,6 +21,7 @@ limitations under the License.
 #include <cstdlib>
 
 #include <iostream>
+#include <list>
 #include <map>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@ limitations under the License.
 
 enum ASTType {
     AST_APPLY,
+    AST_APPLY_BRACE,
     AST_ARRAY,
     AST_ARRAY_COMPREHENSION,
     AST_ARRAY_COMPREHENSION_SIMPLE,
@@ -64,6 +66,7 @@ static inline std::string ASTTypeToString(ASTType type)
 {
     switch (type) {
         case AST_APPLY: return "AST_APPLY";
+        case AST_APPLY_BRACE: return "AST_APPLY_BRACE";
         case AST_ARRAY: return "AST_ARRAY";
         case AST_ARRAY_COMPREHENSION: return "AST_ARRAY_COMPREHENSION";
         case AST_ARRAY_COMPREHENSION_SIMPLE: return "AST_ARRAY_COMPREHENSION_SIMPLE";
@@ -126,7 +129,7 @@ struct AST {
     virtual ~AST(void) {}
 };
 
-typedef std::vector<AST *> ASTs;
+typedef std::list<AST *> ASTs;
 
 /** Either an arg in a function apply, or a param in a closure / other function definition.
  *
@@ -214,7 +217,7 @@ struct ApplyBrace : public AST {
     AST *left;
     AST *right;  // This is always an object or object comprehension.
     ApplyBrace(const LocationRange &lr, const Fodder &open_fodder, AST *left, AST *right)
-        : AST(lr, AST_BINARY, open_fodder), left(left), right(right)
+        : AST(lr, AST_APPLY_BRACE, open_fodder), left(left), right(right)
     {
     }
 };

@@ -201,10 +201,10 @@ class Parser {
         // parseArgs returns f(x) with x as an expression.  Convert it here.
         for (auto &p : params) {
             if (p.id == nullptr) {
-                auto *pv = dynamic_cast<Var *>(p.expr);
-                if (pv == nullptr) {
+                if (p.expr->type != AST_VAR) {
                     throw StaticError(p.expr->location, "Could not parse parameter here.");
                 }
+                auto *pv = static_cast<Var *>(p.expr);
                 p.id = pv->id;
                 p.idFodder = pv->openFodder;
                 p.expr = nullptr;
@@ -811,7 +811,8 @@ class Parser {
             case Token::IMPORT: {
                 pop();
                 AST *body = parse(MAX_PRECEDENCE);
-                if (auto *lit = dynamic_cast<LiteralString *>(body)) {
+                if (body->type == AST_LITERAL_STRING) {
+                    auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
                         throw StaticError(lit->location,
                                           "Cannot use text blocks in import statements.");
@@ -827,7 +828,8 @@ class Parser {
             case Token::IMPORTSTR: {
                 pop();
                 AST *body = parse(MAX_PRECEDENCE);
-                if (auto *lit = dynamic_cast<LiteralString *>(body)) {
+                if (body->type == AST_LITERAL_STRING) {
+                    auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
                         throw StaticError(lit->location,
                                           "Cannot use text blocks in import statements.");

@@ -282,70 +282,50 @@ void CompilerPass::visit(Unary *ast)
     expr(ast->expr);
 }
 
+#define VISIT(var,astType,astClass) \
+   case astType: { \
+     assert(dynamic_cast<astClass *>(var)); \
+     auto *ast = static_cast<astClass *>(var); \
+     visit(ast); \
+   } break
+
 void CompilerPass::visitExpr(AST *&ast_)
 {
-    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<BuiltinFunction *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralBoolean *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNumber *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNull *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Self *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
-        visit(ast);
-    } else if (auto *ast = dynamic_cast<Var *>(ast_)) {
-        visit(ast);
-
-    } else {
-        std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
-        std::abort();
+    switch(ast_->type) {
+        VISIT(ast_, AST_APPLY, Apply);
+        VISIT(ast_, AST_APPLY_BRACE, ApplyBrace);
+        VISIT(ast_, AST_ARRAY, Array);
+        VISIT(ast_, AST_ARRAY_COMPREHENSION, ArrayComprehension);
+        // VISIT(ast_, AST_ARRAY_COMPREHENSION, ArrayComprehensionSimple);
+        VISIT(ast_, AST_ASSERT, Assert);
+        VISIT(ast_, AST_BINARY, Binary);
+        VISIT(ast_, AST_BUILTIN_FUNCTION, BuiltinFunction);
+        VISIT(ast_, AST_CONDITIONAL, Conditional);
+        VISIT(ast_, AST_DESUGARED_OBJECT, DesugaredObject);
+        VISIT(ast_, AST_DOLLAR, Dollar);
+        VISIT(ast_, AST_ERROR, Error);
+        VISIT(ast_, AST_FUNCTION, Function);
+        VISIT(ast_, AST_IMPORT, Import);
+        VISIT(ast_, AST_IMPORTSTR, Importstr);
+        VISIT(ast_, AST_INDEX, Index);
+        VISIT(ast_, AST_IN_SUPER, InSuper);
+        VISIT(ast_, AST_LITERAL_BOOLEAN, LiteralBoolean);
+        VISIT(ast_, AST_LITERAL_NULL, LiteralNull);
+        VISIT(ast_, AST_LITERAL_NUMBER, LiteralNumber);
+        VISIT(ast_, AST_LITERAL_STRING, LiteralString);
+        VISIT(ast_, AST_LOCAL, Local);
+        VISIT(ast_, AST_OBJECT, Object);
+        VISIT(ast_, AST_OBJECT_COMPREHENSION, ObjectComprehension);
+        VISIT(ast_, AST_OBJECT_COMPREHENSION_SIMPLE, ObjectComprehensionSimple);
+        VISIT(ast_, AST_PARENS, Parens);
+        VISIT(ast_, AST_SELF, Self);
+        VISIT(ast_, AST_SUPER_INDEX, SuperIndex);
+        VISIT(ast_, AST_UNARY, Unary);
+        VISIT(ast_, AST_VAR, Var);
+        default:
+            std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
+            std::abort();
+            break;
     }
 }
 
@@ -362,70 +342,50 @@ class ClonePass : public CompilerPass {
     virtual void expr(AST *&ast);
 };
 
+#define CLONE(var,astType,astClass) \
+   case astType: { \
+     assert(dynamic_cast<astClass *>(var)); \
+     auto *ast = static_cast<astClass *>(var); \
+     var = alloc.clone(ast); \
+   } break
+
 void ClonePass::expr(AST *&ast_)
 {
-    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<BuiltinFunction *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralBoolean *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNumber *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<LiteralNull *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Self *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
-        ast_ = alloc.clone(ast);
-    } else if (auto *ast = dynamic_cast<Var *>(ast_)) {
-        ast_ = alloc.clone(ast);
-
-    } else {
-        std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
-        std::abort();
+    switch(ast_->type) {
+        CLONE(ast_, AST_APPLY, Apply);
+        CLONE(ast_, AST_APPLY_BRACE, ApplyBrace);
+        CLONE(ast_, AST_ARRAY, Array);
+        CLONE(ast_, AST_ARRAY_COMPREHENSION, ArrayComprehension);
+        // CLONE(ast_, AST_ARRAY_COMPREHENSION, ArrayComprehensionSimple);
+        CLONE(ast_, AST_ASSERT, Assert);
+        CLONE(ast_, AST_BINARY, Binary);
+        CLONE(ast_, AST_BUILTIN_FUNCTION, BuiltinFunction);
+        CLONE(ast_, AST_CONDITIONAL, Conditional);
+        CLONE(ast_, AST_DESUGARED_OBJECT, DesugaredObject);
+        CLONE(ast_, AST_DOLLAR, Dollar);
+        CLONE(ast_, AST_ERROR, Error);
+        CLONE(ast_, AST_FUNCTION, Function);
+        CLONE(ast_, AST_IMPORT, Import);
+        CLONE(ast_, AST_IMPORTSTR, Importstr);
+        CLONE(ast_, AST_INDEX, Index);
+        CLONE(ast_, AST_IN_SUPER, InSuper);
+        CLONE(ast_, AST_LITERAL_BOOLEAN, LiteralBoolean);
+        CLONE(ast_, AST_LITERAL_NULL, LiteralNull);
+        CLONE(ast_, AST_LITERAL_NUMBER, LiteralNumber);
+        CLONE(ast_, AST_LITERAL_STRING, LiteralString);
+        CLONE(ast_, AST_LOCAL, Local);
+        CLONE(ast_, AST_OBJECT, Object);
+        CLONE(ast_, AST_OBJECT_COMPREHENSION, ObjectComprehension);
+        CLONE(ast_, AST_OBJECT_COMPREHENSION_SIMPLE, ObjectComprehensionSimple);
+        CLONE(ast_, AST_PARENS, Parens);
+        CLONE(ast_, AST_SELF, Self);
+        CLONE(ast_, AST_SUPER_INDEX, SuperIndex);
+        CLONE(ast_, AST_UNARY, Unary);
+        CLONE(ast_, AST_VAR, Var);
+        default:
+            std::cerr << "INTERNAL ERROR: Unknown AST: " << ast_ << std::endl;
+            std::abort();
+            break;
     }
 
     CompilerPass::expr(ast_);
