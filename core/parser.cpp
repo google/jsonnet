@@ -104,10 +104,9 @@ class Parser {
         tokens.push_front(tok);
     }
 
-    Token peek(void)
+    const Token &peek(void)
     {
-        Token tok = tokens.front();
-        return tok;
+        return tokens.front();
     }
 
     /** Only call this is peek() is not an EOF token. */
@@ -728,7 +727,9 @@ class Parser {
 
     AST *parse(int precedence)
     {
-        Token begin = peek();
+        // Allocate this on the heap to control stack growth.
+        std::unique_ptr<Token> begin_(new Token(peek()));
+        const Token &begin = *begin_;
 
         switch (begin.kind) {
             // These cases have effectively MAX_PRECEDENCE as the first

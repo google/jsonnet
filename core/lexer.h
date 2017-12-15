@@ -292,7 +292,7 @@ struct Token {
      */
     std::string stringBlockTermIndent;
 
-    UString data32(void)
+    UString data32(void) const
     {
         return decode_utf8(data);
     }
