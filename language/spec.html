@@ -143,9 +143,9 @@ ending style in the file is preserved in the string.  This form cannot be used i
 </ul>
 
 <p>Double- and single-quoted strings are allowed to span multiple lines, in which case whatever
-dos/unix end-of-line character appears in the string.  They both understand the following escape
-characters: <code>"'\bfnrt0</code> which have their standard meanings, as well as
-<code>\uXXXX</code> for hexadecimal unicode escapes.</p>
+dos/unix end-of-line character your editor inserts will be put in the string.  They both understand
+the following escape characters: <code>"'\/bfnrt</code> which have their standard meanings, as well
+as <code>\uXXXX</code> for hexadecimal unicode escapes.</p>
 
 <p>Verbatim strings eschew all of the normal string escaping, including hexidecimal unicode escapes.
 Every character in a verbatim string is processed literally, with the exception of doubled
@@ -1606,14 +1606,18 @@ e ↓ v ∈ String
 
 <div class="sequent-rule"> \[\rule{makeArray} {
 e ↓ n
+\\
+e' ↓ f ∈ Function
 } {
-\texttt{std.makeArray}(e, e') ↓ \array{e'(0) \ldots e'(n - 1)}
+\texttt{std.makeArray}(e, e') ↓ \array{f(0) \ldots f(n - 1)}
 } \] </div>
 
 <div class="sequent-rule"> \[\rule{filter} {
+e ↓ f ∈ Function
+\\
 e' ↓ \array{e_0 \ldots e_{n - 1}}
 \\
-j_1 \ldots j_m = \{ i \ |\  e(e_i) ↓ \true \}
+j_1 \ldots j_m = \{ i \ |\  f(e_i) ↓ \true \}
 } {
 \texttt{std.filter}(e, e') ↓ \array{e_{j_1} \ldots e_{j_m}}
 } \] </div>
