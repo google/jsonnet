@@ -986,8 +986,7 @@ namespace {
 // Precedences used by various compilation units are defined here.
 const int APPLY_PRECEDENCE = 2;         // Function calls and indexing.
 const int UNARY_PRECEDENCE = 4;         // Logical and bitwise negation, unary + -
-const int BEFORE_ELSE_PRECEDENCE = 15;  // True branch of an if.
-const int MAX_PRECEDENCE = 16;          // Local, If, Import, Function, Error
+const int MAX_PRECEDENCE = 15;          // higher than any other precedence
 
 /** These are the binary operator precedences, unary precedence is given by
  * UNARY_PRECEDENCE.

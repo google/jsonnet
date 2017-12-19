@@ -47,6 +47,8 @@ std::string jsonnet_unparse_number(double v)
 
 namespace {
 
+static const Fodder EMPTY_FODDER;
+
 static bool op_is_unary(const std::string &op, UnaryOp &uop)
 {
     auto it = unary_map.find(op);
@@ -562,7 +564,7 @@ class Parser {
         }
     }
 
-    AST *parseTerminal(void)
+    AST *parseTerminalBracketsOrUnary(void)
     {
         Token tok = pop();
         switch (tok.kind) {
@@ -580,7 +582,6 @@ class Parser {
             case Token::IMPORT:
             case Token::IMPORTSTR:
             case Token::LOCAL:
-            case Token::OPERATOR:
             case Token::PAREN_R:
             case Token::SEMICOLON:
             case Token::TAILSTRICT:
@@ -588,6 +589,16 @@ class Parser {
 
             case Token::END_OF_FILE: throw StaticError(tok.location, "Unexpected end of file.");
 
+            case Token::OPERATOR: {
+                UnaryOp uop;
+                if (!op_is_unary(tok.data, uop)) {
+                    std::stringstream ss;
+                    ss << "Not a unary operator: " << tok.data;
+                    throw StaticError(tok.location, ss.str());
+                }
+                AST *expr = parse(UNARY_PRECEDENCE);
+                return alloc->make<Unary>(span(tok, expr), tok.fodder, uop, expr);
+            }
             case Token::BRACE_L: {
                 AST *obj;
                 parseObjectRemainder(obj, tok);
@@ -725,9 +736,10 @@ class Parser {
         return nullptr;  // Quiet, compiler.
     }
 
-    // If the first token makes it easy to parse the rest of the expression, then return it.
-    // For other cases, like infix operators, we return nullptr.
-    AST *maybeParseUnambiguous(void)
+    // If the first token makes it clear that we will parsing a greedy construct, then return the
+    // AST.  Otherwise, return nullptr.  Greedy constructs are those that consume as many tokens
+    // as possible on the right hand side, because they have no closing token.
+    AST *maybeParseGreedy(void)
     {
         // Allocate this on the heap to control stack growth.
         std::unique_ptr<Token> begin_(new Token(peek()));
@@ -867,65 +879,40 @@ class Parser {
         }
     }
 
-    AST *parse(int precedence)
+    // Parse a general expression.
+    //
+    // Consume infix tokens up to (but not including) max_precedence, then stop.
+    AST *parse(unsigned max_precedence)
     {
-        AST *ast = maybeParseUnambiguous();
-        if (ast != nullptr) {
-            return ast;
-        }
+        AST *ast = maybeParseGreedy();
+        // There cannot be an operator after a greedy parse.
+        if (ast != nullptr) return ast;
+
+        // If we get here, we could be parsing an infix construct.
 
         // Allocate this on the heap to control stack growth.
         std::unique_ptr<Token> begin_(new Token(peek()));
         const Token &begin = *begin_;
 
-        // Unary operator.
-        if (begin.kind == Token::OPERATOR) {
-            UnaryOp uop;
-            if (!op_is_unary(begin.data, uop)) {
-                std::stringstream ss;
-                ss << "Not a unary operator: " << begin.data;
-                throw StaticError(begin.location, ss.str());
-            }
-            if (UNARY_PRECEDENCE == precedence) {
-                Token op = pop();
-                AST *expr = parse(precedence);
-                return alloc->make<Unary>(span(op, expr), op.fodder, uop, expr);
-            }
-        }
+        AST *lhs = parseTerminalBracketsOrUnary();
 
-        // Base case
-        if (precedence == 0)
-            return parseTerminal();
+        return parseInfix(lhs, begin, max_precedence);
+    }
 
-        AST *lhs = parse(precedence - 1);
-
-        Fodder begin_fodder;
-
+    AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence)
+    {
         while (true) {
-            // Then next token must be a binary operator.
 
-            // The compiler can't figure out that this is never used uninitialized.
             BinaryOp bop = BOP_PLUS;
+            unsigned op_precedence = 0;
 
-            // Check precedence is correct for this level.  If we're
-            // parsing operators with higher precedence, then return
-            // lhs and let lower levels deal with the operator.
             switch (peek().kind) {
                 // Logical / arithmetic binary operator.
                 case Token::IN:
                 case Token::OPERATOR:
-                    if (peek().data == ":") {
-                        // Special case for the colons in assert.
-                        // Since COLON is no-longer a special token, we have to make sure it
-                        // does not trip the op_is_binary test below.  It should
-                        // terminate parsing of the expression here, returning control
-                        // to the parsing of the actual assert AST.
-                        return lhs;
-                    }
-                    if (peek().data == "::") {
-                        // Special case for [e::]
-                        // We need to stop parsing e when we see the :: and
-                        // avoid tripping the op_is_binary test below.
+                    // These occur if the outer statement was an assert or array slice.
+                    // Either way, we terminate the parsing here.
+                    if (peek().data == ":" || peek().data == "::") {
                         return lhs;
                     }
                     if (!op_is_binary(peek().data, bop)) {
@@ -933,8 +920,7 @@ class Parser {
                         ss << "Not a binary operator: " << peek().data;
                         throw StaticError(peek().location, ss.str());
                     }
-                    if (precedence_map[bop] != precedence)
-                        return lhs;
+                    op_precedence = precedence_map[bop];
                     break;
 
                 // Index, Apply
@@ -942,132 +928,159 @@ class Parser {
                 case Token::BRACKET_L:
                 case Token::PAREN_L:
                 case Token::BRACE_L:
-                    if (APPLY_PRECEDENCE != precedence)
-                        return lhs;
+                    op_precedence = APPLY_PRECEDENCE;
                     break;
 
-                default: return lhs;
+                default: 
+                    // This happens when we reach EOF or the terminating token of an outer context.
+                    return lhs;
             }
 
+            // If higher precedence than the outer recursive call, let that handle it.
+            if (op_precedence >= max_precedence)
+                return lhs;
+
             Token op = pop();
-            if (op.kind == Token::BRACKET_L) {
-                bool is_slice;
-                AST *first = nullptr;
-                Fodder second_fodder;
-                AST *second = nullptr;
-                Fodder third_fodder;
-                AST *third = nullptr;
 
-                if (peek().kind == Token::BRACKET_R)
-                    throw unexpected(pop(), "parsing index");
+            switch (op.kind) {
+                case Token::BRACKET_L: {
+                    bool is_slice;
+                    AST *first = nullptr;
+                    Fodder second_fodder;
+                    AST *second = nullptr;
+                    Fodder third_fodder;
+                    AST *third = nullptr;
 
-                if (peek().data != ":" && peek().data != "::") {
-                    first = parse(MAX_PRECEDENCE);
-                }
+                    if (peek().kind == Token::BRACKET_R)
+                        throw unexpected(pop(), "parsing index");
 
-                if (peek().kind == Token::OPERATOR && peek().data == "::") {
-                    // Handle ::
-                    is_slice = true;
-                    Token joined = pop();
-                    second_fodder = joined.fodder;
+                    if (peek().data != ":" && peek().data != "::") {
+                        first = parse(MAX_PRECEDENCE);
+                    }
 
-                    if (peek().kind != Token::BRACKET_R)
-                        third = parse(MAX_PRECEDENCE);
+                    if (peek().kind == Token::OPERATOR && peek().data == "::") {
+                        // Handle ::
+                        is_slice = true;
+                        Token joined = pop();
+                        second_fodder = joined.fodder;
 
-                } else if (peek().kind != Token::BRACKET_R) {
-                    is_slice = true;
-                    Token delim = pop();
-                    if (delim.data != ":")
-                        throw unexpected(delim, "parsing slice");
+                        if (peek().kind != Token::BRACKET_R)
+                            third = parse(MAX_PRECEDENCE);
 
-                    second_fodder = delim.fodder;
-
-                    if (peek().data != ":" && peek().kind != Token::BRACKET_R)
-                        second = parse(MAX_PRECEDENCE);
-
-                    if (peek().kind != Token::BRACKET_R) {
+                    } else if (peek().kind != Token::BRACKET_R) {
+                        is_slice = true;
                         Token delim = pop();
                         if (delim.data != ":")
                             throw unexpected(delim, "parsing slice");
 
-                        third_fodder = delim.fodder;
+                        second_fodder = delim.fodder;
 
-                        if (peek().kind != Token::BRACKET_R)
-                            third = parse(MAX_PRECEDENCE);
+                        if (peek().data != ":" && peek().kind != Token::BRACKET_R)
+                            second = parse(MAX_PRECEDENCE);
+
+                        if (peek().kind != Token::BRACKET_R) {
+                            Token delim = pop();
+                            if (delim.data != ":")
+                                throw unexpected(delim, "parsing slice");
+
+                            third_fodder = delim.fodder;
+
+                            if (peek().kind != Token::BRACKET_R)
+                                third = parse(MAX_PRECEDENCE);
+                        }
+                    } else {
+                        is_slice = false;
                     }
-                } else {
-                    is_slice = false;
+                    Token end = popExpect(Token::BRACKET_R);
+                    lhs = alloc->make<Index>(span(begin, end),
+                                             EMPTY_FODDER,
+                                             lhs,
+                                             op.fodder,
+                                             is_slice,
+                                             first,
+                                             second_fodder,
+                                             second,
+                                             third_fodder,
+                                             third,
+                                             end.fodder);
+                    break;
                 }
-                Token end = popExpect(Token::BRACKET_R);
-                lhs = alloc->make<Index>(span(begin, end),
-                                         begin_fodder,
-                                         lhs,
-                                         op.fodder,
-                                         is_slice,
-                                         first,
-                                         second_fodder,
-                                         second,
-                                         third_fodder,
-                                         third,
-                                         end.fodder);
-
-            } else if (op.kind == Token::DOT) {
-                Token field_id = popExpect(Token::IDENTIFIER);
-                const Identifier *id = alloc->makeIdentifier(field_id.data32());
-                lhs = alloc->make<Index>(span(begin, field_id),
-                                         begin_fodder,
-                                         lhs,
-                                         op.fodder,
-                                         field_id.fodder,
-                                         id);
-
-            } else if (op.kind == Token::PAREN_L) {
-                ArgParams args;
-                bool got_comma;
-                Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
-                bool tailstrict = false;
-                Fodder tailstrict_fodder;
-                if (peek().kind == Token::TAILSTRICT) {
-                    Token tailstrict_token = pop();
-                    tailstrict_fodder = tailstrict_token.fodder;
-                    tailstrict = true;
+                case Token::DOT: {
+                    Token field_id = popExpect(Token::IDENTIFIER);
+                    const Identifier *id = alloc->makeIdentifier(field_id.data32());
+                    lhs = alloc->make<Index>(span(begin, field_id),
+                                             EMPTY_FODDER,
+                                             lhs,
+                                             op.fodder,
+                                             field_id.fodder,
+                                             id);
+                    break;
                 }
-                lhs = alloc->make<Apply>(span(begin, end),
-                                         begin_fodder,
-                                         lhs,
-                                         op.fodder,
-                                         args,
-                                         got_comma,
-                                         end.fodder,
-                                         tailstrict_fodder,
-                                         tailstrict);
+                case Token::PAREN_L: {
+                    ArgParams args;
+                    bool got_comma;
+                    Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
+                    bool tailstrict = false;
+                    Fodder tailstrict_fodder;
+                    if (peek().kind == Token::TAILSTRICT) {
+                        Token tailstrict_token = pop();
+                        tailstrict_fodder = tailstrict_token.fodder;
+                        tailstrict = true;
+                    }
+                    lhs = alloc->make<Apply>(span(begin, end),
+                                             EMPTY_FODDER,
+                                             lhs,
+                                             op.fodder,
+                                             args,
+                                             got_comma,
+                                             end.fodder,
+                                             tailstrict_fodder,
+                                             tailstrict);
+                    break;
+                }
+                case Token::BRACE_L: {
+                    AST *obj;
+                    Token end = parseObjectRemainder(obj, op);
+                    lhs = alloc->make<ApplyBrace>(span(begin, end), EMPTY_FODDER, lhs, obj);
+                    break;
+                }
 
-            } else if (op.kind == Token::BRACE_L) {
-                AST *obj;
-                Token end = parseObjectRemainder(obj, op);
-                lhs = alloc->make<ApplyBrace>(span(begin, end), begin_fodder, lhs, obj);
+                case Token::IN: {
+                    if (peek().kind == Token::SUPER) {
+                        Token super = pop();
+                        lhs = alloc->make<InSuper>(
+                            span(begin, super), EMPTY_FODDER, lhs, op.fodder, super.fodder);
+                    } else {
+                        AST *rhs = parse(op_precedence);
+                        lhs = alloc->make<Binary>(
+                            span(begin, rhs), EMPTY_FODDER, lhs, op.fodder, bop, rhs);
+                    }
+                    break;
+                }
 
-            } else if (op.kind == Token::IN) {
-                if (peek().kind == Token::SUPER) {
-                    Token super = pop();
-                    lhs = alloc->make<InSuper>(
-                        span(begin, super), begin_fodder, lhs, op.fodder, super.fodder);
-                } else {
-                    AST *rhs = parse(precedence - 1);
+                case Token::OPERATOR: {
+                    AST *rhs = parse(op_precedence);
                     lhs = alloc->make<Binary>(
-                        span(begin, rhs), begin_fodder, lhs, op.fodder, bop, rhs);
+                        span(begin, rhs), EMPTY_FODDER, lhs, op.fodder, bop, rhs);
+                    break;
                 }
 
-            } else {
-                // Logical / arithmetic binary operator.
-                assert(op.kind == Token::OPERATOR);
-                AST *rhs = parse(precedence - 1);
-                lhs = alloc->make<Binary>(
-                    span(begin, rhs), begin_fodder, lhs, op.fodder, bop, rhs);
+                default: {
+                    std::cerr << "Should not be here." << std::endl;
+                    abort();
+                }
             }
-
-            begin_fodder.clear();
         }
+
+        // (1 & ((1 + (1 * 1)) + 1)) & 1
+        //
+        //
+
+/*
+        // Allocate this on the heap to control stack growth.
+        std::unique_ptr<Token> begin_(new Token(peek()));
+        const Token &begin = *begin_;
+*/
     }
 };
 
