@@ -8,6 +8,22 @@ layout: default
 libraries for Python and C.  In future we would like to support more languages by wrapping the C
 API in each case.</p>
 
+<h2 id="server_side">A Warning On Server-Side Evaluation</h2>
+
+<p>If you are creating an API server that will evaluate untrusted Jsonnet code in the same process
+that handles other requests, be aware of your exposure to denial of service attacks.  Since Jsonnet
+allows expressing programs that take unreasonable amounts of CPU time and RAM, it is possible for a
+malicious request to cause its host API server to exceed its OS resources and crash.  Such a crash
+would affect concurrently running handlers for other users, and decrease your capacity until the
+server is restarted.  A simple remedy for this situation is to <tt>exec</tt> the Jsonnet commandline
+binary in a <tt>ulimit</tt> child process where the CPU and RAM can be tightly bounded for the
+specific request.  Communication to and from the commandline binary could be via temporary files or
+pipes.  Thus, only the malicious request fails.</p>
+
+<p>Linking Jsonnet as a library is more appropriate for client-side applications or situations
+where the configuration can be trusted.</p>
+
+
 <h2 id="c_api">C API</h2>
 
 <p>The C API simply wraps the C++ implementation to hide C++ language features like templates,
