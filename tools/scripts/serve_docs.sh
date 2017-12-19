@@ -50,7 +50,7 @@ function main {
   unzip -q bazel-genfiles/doc/jekyll_tree.zip -d $working_dir
 
   cd $working_dir
-  jekyll serve --server 8200 --auto
+  jekyll serve --port 8200 --watch
 }
 
 main
