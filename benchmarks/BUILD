@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-load("/tools/build_defs/jsonnet_dev/jsonnet_docs", "jsonnet_docs_srcs_zip")
+load("//tools/build_defs/jsonnet_dev:jsonnet_docs.bzl", "jsonnet_docs_srcs_zip")
 
 jsonnet_docs_srcs_zip(
     name = "jsonnet_docs_srcs",
