@@ -1933,32 +1933,32 @@ class Interpreter {
                                     // No need to check doubles made from longs
 
                                 case BOP_SHIFT_L: {
-                                    long long_l = lhs.v.d;
-                                    long long_r = rhs.v.d;
+                                    int64_t long_l = lhs.v.d;
+                                    int64_t long_r = rhs.v.d;
                                     scratch = makeNumber(long_l << long_r);
                                 } break;
 
                                 case BOP_SHIFT_R: {
-                                    long long_l = lhs.v.d;
-                                    long long_r = rhs.v.d;
+                                    int64_t long_l = lhs.v.d;
+                                    int64_t long_r = rhs.v.d;
                                     scratch = makeNumber(long_l >> long_r);
                                 } break;
 
                                 case BOP_BITWISE_AND: {
-                                    long long_l = lhs.v.d;
-                                    long long_r = rhs.v.d;
+                                    int64_t long_l = lhs.v.d;
+                                    int64_t long_r = rhs.v.d;
                                     scratch = makeNumber(long_l & long_r);
                                 } break;
 
                                 case BOP_BITWISE_XOR: {
-                                    long long_l = lhs.v.d;
-                                    long long_r = rhs.v.d;
+                                    int64_t long_l = lhs.v.d;
+                                    int64_t long_r = rhs.v.d;
                                     scratch = makeNumber(long_l ^ long_r);
                                 } break;
 
                                 case BOP_BITWISE_OR: {
-                                    long long_l = lhs.v.d;
-                                    long long_r = rhs.v.d;
+                                    int64_t long_l = lhs.v.d;
+                                    int64_t long_r = rhs.v.d;
                                     scratch = makeNumber(long_l | long_r);
                                 } break;
 
