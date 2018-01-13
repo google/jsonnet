@@ -69,7 +69,7 @@ test_eval() {
     if [ "$TEST_EXIT_CODE" -ne "$EXPECTED_EXIT_CODE" ] ; then
         FAILED=$((FAILED + 1))
         if [ -z "$SUMMARY_ONLY" ]; then
-            echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$JSONNET_FILE\e[0m"
+            echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$JSONNET_CMD $JSONNET_FILE\e[0m"
             echo "This run's output:"
             echo "$TEST_OUTPUT"
             echo "Actual exit code $TEST_EXIT_CODE, expected $EXPECTED_EXIT_CODE"
