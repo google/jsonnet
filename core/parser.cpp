@@ -20,6 +20,7 @@ limitations under the License.
 
 #include <iomanip>
 #include <list>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
