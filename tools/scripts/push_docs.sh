@@ -54,6 +54,7 @@ function main {
   fi
 
   local jekyll_tree_zip=${working_dir}/jekyll_tree.zip
+  make doc/js/libjsonnet.js
   bazel build //doc:jekyll_tree
   cp bazel-genfiles/doc/jekyll_tree.zip $jekyll_tree_zip
 
