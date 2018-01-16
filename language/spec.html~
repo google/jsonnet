@@ -143,9 +143,9 @@ ending style in the file is preserved in the string.  This form cannot be used i
 </ul>
 
 <p>Double- and single-quoted strings are allowed to span multiple lines, in which case whatever
-dos/unix end-of-line character appears in the string.  They both understand the following escape
-characters: <code>"'\/bfnrt</code> which have their standard meanings, as well as
-<code>\uXXXX</code> for hexadecimal unicode escapes.</p>
+dos/unix end-of-line character your editor inserts will be put in the string.  They both understand
+the following escape characters: <code>"'\/bfnrt</code> which have their standard meanings, as well
+as <code>\uXXXX</code> for hexadecimal unicode escapes.</p>
 
 <p>Verbatim strings eschew all of the normal string escaping, including hexidecimal unicode escapes.
 Every character in a verbatim string is processed literally, with the exception of doubled
@@ -1408,12 +1408,14 @@ o = \object{\assert{e_1} \ldots \assert{e_m}, f_1\mathop{h_1}e''_1 \ldots f_p\ma
 <div class="sequent-rule"> \[\rule{object-comp} {
 e_{arr} ↓ [ e_1 \ldots e_n ]
 \\
-\{ (f_1, e'_1) \ldots (f_m, e'_m) \} =
-\{ (v, e_{body}[e_i/x]) \ | \ i ∈\{1\ldots n\} ∧ e_{field}[e_i/x] ↓ v ≠ \null \}
+∀i∈\{1 \ldots n\}: e_{field}[e_i/x] ↓ f_i
 \\
-∀i,j∈\{1\ldots m\}: f_i = f_j ⇒ i = j
+∀i,j∈\{1\ldots m\}: f_i = f_j ≠ \null ⇒ i = j
 \\
-o = \object{f_1: e'_1 \ldots f_m: e'_m}
+\{ (f'_1, e'_1) \ldots (f'_m, e'_m) \} =
+\{ (f_i, e_{body}[e_i/x]) \ | \ i ∈\{1\ldots n\} ∧ f_i ≠ \null \}
+\\
+o = \object{f'_1: e'_1 \ldots f'_m: e'_m}
 } {
 \ocomp{e_{field}}{e_{body}}{x}{e_{arr}} ↓ o
 } \] </div>
