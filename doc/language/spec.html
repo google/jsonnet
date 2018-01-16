@@ -374,7 +374,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <tr><td><i>field ∈ Field</i></td><td>::=</td><td>
 <i>fieldname</i>
 [ <code>+</code> ] <i>h</i>
-<i>e</i>
+<i>expr</i>
 </td></tr>
 
 <!-- method -->
@@ -384,7 +384,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 [ <i>params</i> ]
 <code>)</code>
 <i>h</i>
-<i>e</i>
+<i>expr</i>
 </td></tr>
 
 <!-- colons -->
@@ -420,7 +420,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <i>id</i> |
 <i>string</i> |
 <code>[</code>
-<i>e</i>
+<i>expr</i>
 <code>]</code>
 </td></tr>
 
@@ -440,7 +440,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <tr><td><i>bind ∈ Bind</i></td><td>::=</td><td>
 <i>id</i>
 <code>=</code>
-<i>e</i>
+<i>expr</i>
 </td></tr>
 
 <tr><td></td><td> | </td><td>
@@ -449,7 +449,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 [ <i>params</i> ]
 <code>)</code>
 <code>=</code>
-<i>e</i>
+<i>expr</i>
 </td></tr>
 
 </table>
@@ -460,7 +460,7 @@ set are currently parseable, the rest being reserved for possible future use.</p
 <table>
 
 <tr><td><i>args</i></td><td>::=</td><td>
-<i>e</i> { <code>,</code> <i>e</i> } { <code>,</code> <i>id</i> <code>=</code> <i>expr</i> }
+<i>expr</i> { <code>,</code> <i>expr</i> } { <code>,</code> <i>id</i> <code>=</code> <i>expr</i> }
 [ <code>,</code> ]
 </td></tr>
 
@@ -536,7 +536,7 @@ symbols <code>()</code>.</p>
 <code>function</code>, <code>if</code>, <code>import</code>, <code>importstr</code>, and
 <code>local</code>, ambiguity is resolved by consuming as many tokens as possible on the right hand
 side.  For example the parentheses are redundant in <code>local x = 1; (x + x)</code>.  All
-remaining ambiguities are resolved according to the following order of precedence:</p>
+remaining ambiguities are resolved according to the following decreasing order of precedence:</p>
 
 <ol>
 <li><code>e(...)</code> <code>e[...]</code> <code>e.f</code>
