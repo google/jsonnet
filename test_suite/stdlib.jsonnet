@@ -159,6 +159,14 @@ std.assertEqual(std.char(97), "a") &&
 std.assertEqual(std.codepoint("\u0000"), 0) &&
 std.assertEqual(std.char(0), "\u0000") &&
 
+std.assertEqual(std.strReplace('A cat walked by', 'cat', 'dog'), 'A dog walked by') &&
+std.assertEqual(std.strReplace('cat', 'cat', 'dog'), 'dog') &&
+std.assertEqual(std.strReplace('', 'cat', ''), '') &&
+std.assertEqual(std.strReplace('xoxoxoxox', 'xoxox3xox', 'A'), 'xoxoxoxox') &&
+std.assertEqual(std.strReplace('xoxoxox3xox', 'xoxox3xox', 'A'), 'xoA') &&
+std.assertEqual(std.strReplace('A cat is a cat', 'cat', 'dog'), 'A dog is a dog') &&
+std.assertEqual(std.strReplace('wishyfishyisishy', 'ish', 'and'), 'wandyfandyisandy') &&
+
 std.assertEqual(std.map(function(x) x * x, []), []) &&
 std.assertEqual(std.map(function(x) x * x, [1, 2, 3, 4]), [1, 4, 9, 16]) &&
 std.assertEqual(std.map(function(x) x * x, std.filter(function(x) x > 5, std.range(1, 10))), [36, 49, 64, 81, 100]) &&
