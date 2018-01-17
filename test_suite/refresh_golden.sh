@@ -26,7 +26,7 @@ fi
 for FILE in "$@" ; do
     if [[ $FILE == *.golden ]]; then
         echo "Specified file $FILE is already golden."
-        echo "Please, specify the input file instead."
+        echo "Please specify the input file instead."
         exit 1
     fi
 
@@ -34,7 +34,9 @@ for FILE in "$@" ; do
         echo "Could not read: \"$FILE\"" 2>&1
         exit 1
     fi
-    "$JSONNET_BIN" "$FILE" > "${FILE}.golden" 2>&1
+
+    # Avoid set -e terminating us if the run fails.
+    "$JSONNET_BIN" "$FILE" > "${FILE}.golden" 2>&1 || true
 done
 
 
