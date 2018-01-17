@@ -2412,18 +2412,20 @@ class Interpreter {
                 case FRAME_OBJECT_COMP_ELEMENT: {
                     const auto &ast = *static_cast<const ObjectComprehensionSimple *>(f.ast);
                     const auto *arr = static_cast<const HeapArray *>(f.val.v.h);
-                    if (scratch.t != Value::STRING) {
-                        std::stringstream ss;
-                        ss << "field must be string, got: " << type_str(scratch);
-                        throw makeError(ast.location, ss.str());
+                    if (scratch.t != Value::NULL_TYPE) {
+                        if (scratch.t != Value::STRING) {
+                            std::stringstream ss;
+                            ss << "field must be string, got: " << type_str(scratch);
+                            throw makeError(ast.location, ss.str());
+                        }
+                        const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
+                        const Identifier *fid = alloc->makeIdentifier(fname);
+                        if (f.elements.find(fid) != f.elements.end()) {
+                            throw makeError(ast.location,
+                                            "Duplicate field name: \"" + encode_utf8(fname) + "\"");
+                        }
+                        f.elements[fid] = arr->elements[f.elementId];
                     }
-                    const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
-                    const Identifier *fid = alloc->makeIdentifier(fname);
-                    if (f.elements.find(fid) != f.elements.end()) {
-                        throw makeError(ast.location,
-                                        "Duplicate field name: \"" + encode_utf8(fname) + "\"");
-                    }
-                    f.elements[fid] = arr->elements[f.elementId];
                     f.elementId++;
 
                     if (f.elementId == arr->elements.size()) {
