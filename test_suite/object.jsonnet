@@ -55,6 +55,7 @@ std.assertEqual(local x = "baz"; { local x = "bar", [x]: x for x in ["foo"] }, {
 std.assertEqual({ f: "foo", g: { [self.f]: 7 } }, { f: "foo", g: { foo: 7 } }) &&
 
 std.assertEqual({ [k]: null for k in [] }, {}) &&
+std.assertEqual({ [null]: "test" for k in [1] }, {}) &&
 std.assertEqual({ [null]: "test" }, {}) &&
 
 std.assertEqual({ ["" + k]: k for k in [1, 2, 3] }, { "1": 1, "2": 2, "3": 3 }) &&
