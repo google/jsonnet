@@ -26,16 +26,28 @@ limitations under the License.
 
 static const std::vector<std::string> EMPTY;
 
+/** Is the char whitespace (excluding \n). */
+static bool is_horz_ws(char c)
+{
+    return c == ' ' || c == '\t' || c == '\r';
+}
+
+/** Is the char whitespace. */
+static bool is_ws(char c)
+{
+    return c == '\n' || is_horz_ws(c);
+}
+
 /** Strip whitespace from both ends of a string, but only up to margin on the left hand side. */
 static std::string strip_ws(const std::string &s, unsigned margin)
 {
     if (s.size() == 0)
         return s;  // Avoid underflow below.
     size_t i = 0;
-    while (i < s.length() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') && i < margin)
+    while (i < s.length() && is_horz_ws(s[i]) && i < margin)
         i++;
     size_t j = s.size();
-    while (j > i && (s[j - 1] == ' ' || s[j - 1] == '\t' || s[j - 1] == '\r')) {
+    while (j > i && is_horz_ws(s[j - 1])) {
         j--;
     }
     return std::string(&s[i], &s[j]);
@@ -67,7 +79,7 @@ static void lex_ws(const char *&c, unsigned &new_lines, unsigned &indent, const 
 {
     indent = 0;
     new_lines = 0;
-    for (; *c != '\0' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'); c++) {
+    for (; *c != '\0' && is_ws(*c); c++) {
         switch (*c) {
             case '\r':
                 // Ignore.
@@ -100,7 +112,7 @@ static void lex_until_newline(const char *&c, std::string &text, unsigned &blank
     const char *original_c = c;
     const char *last_non_space = c;
     for (; *c != '\0' && *c != '\n'; c++) {
-        if (*c != ' ' && *c != '\t' && *c != '\r')
+        if (!is_horz_ws(*c))
             last_non_space = c;
     }
     text = std::string(original_c, last_non_space - original_c + 1);
@@ -677,12 +689,14 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
 
                     // Text block
                     if (*c == '|' && *(c + 1) == '|' && *(c + 2) == '|') {
-                        if (*(c + 3) != '\n') {
+                        c += 3;  // Skip the "|||".
+                        while (is_horz_ws(*c)) ++c;  // Chomp whitespace at end of line.
+                        if (*c != '\n') {
                             auto msg = "Text block syntax requires new line after |||.";
                             throw StaticError(filename, begin, msg);
                         }
                         std::stringstream block;
-                        c += 4;  // Skip the "|||\n"
+                        c++;  // Skip the "\n"
                         line_number++;
                         // Skip any blank lines at the beginning of the block.
                         while (*c == '\n') {

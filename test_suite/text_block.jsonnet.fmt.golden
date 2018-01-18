@@ -109,6 +109,11 @@ local op2 = "foo" < |||
     foo
 |||;
 
+// whitespace after |||
+local op2 = |||
+    foo
+|||;
+
 std.assertEqual(blank_line3, "\nfoo\n") &&
 
 
