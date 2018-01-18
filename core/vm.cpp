@@ -766,7 +766,8 @@ class Interpreter {
         ::free(content);
 
         if (!success) {
-            std::string msg = "Couldn't open import \"" + encode_utf8(path) + "\": ";
+            std::string epath = encode_utf8(jsonnet_string_escape(path, false));
+            std::string msg = "Couldn't open import \"" + epath + "\": ";
             msg += input;
             throw makeError(loc, msg);
         }
