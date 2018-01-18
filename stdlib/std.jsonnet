@@ -24,6 +24,13 @@ limitations under the License.
 
     local std = self,
 
+    isString(v):: std.type(v) == "string",
+    isNumber(v):: std.type(v) == "number",
+    isBoolean(v):: std.type(v) == "boolean",
+    isObject(v):: std.type(v) == "object",
+    isArray(v):: std.type(v) == "array",
+    isFunction(v):: std.type(v) == "function",
+
     toString(a)::
         if std.type(a) == "string" then a else "" + a,
 
