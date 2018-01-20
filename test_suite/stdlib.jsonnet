@@ -95,6 +95,20 @@ std.assertEqual(std.type({}), "object") &&
 std.assertEqual(std.type("fail"), "string") &&
 std.assertEqual(std.type("" + {}), "string") &&
 
+std.assertEqual(std.isString(""), true) &&
+std.assertEqual(std.isBoolean(true), true) &&
+std.assertEqual(std.isNumber(0), true) &&
+std.assertEqual(std.isObject({}), true) &&
+std.assertEqual(std.isArray([]), true) &&
+std.assertEqual(std.isFunction(function() 0), true) &&
+
+std.assertEqual(std.isString(null), false) &&
+std.assertEqual(std.isBoolean(null), false) &&
+std.assertEqual(std.isNumber(null), false) &&
+std.assertEqual(std.isObject(null), false) &&
+std.assertEqual(std.isArray(null), false) &&
+std.assertEqual(std.isFunction(null), false) &&
+
 std.assertEqual(std.count([true, false, false, true, true, true, false], true), 4) &&
 std.assertEqual(std.count([true, false, false, true, true, true, false], false), 3) &&
 
