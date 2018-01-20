@@ -2240,6 +2240,13 @@ class Interpreter {
                     const Value &target = f.val;
                     if (target.t == Value::ARRAY) {
                         const auto *array = static_cast<HeapArray *>(target.v.h);
+                        if (scratch.t == Value::STRING) {
+                            const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
+                            throw makeError(
+                                ast.location,
+                                "Attempted index an array with string \""
+                                + encode_utf8(jsonnet_string_escape(str, false)) + "\".");
+                        }
                         if (scratch.t != Value::NUMBER) {
                             throw makeError(
                                 ast.location,
