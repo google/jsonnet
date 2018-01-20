@@ -484,6 +484,8 @@ class Unparser {
                 if (ast->value.c_str()[0] != U'\n')
                     o << ast->blockIndent;
                 for (const char32_t *cp = ast->value.c_str(); *cp != U'\0'; ++cp) {
+                    // Formatter always outputs in unix mode.
+                    if (*cp == '\r') continue;
                     std::string utf8;
                     encode_utf8(*cp, utf8);
                     o << utf8;
