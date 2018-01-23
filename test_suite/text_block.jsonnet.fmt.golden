@@ -99,22 +99,28 @@ local blank_line3 = |||
     foo
 |||;
 
+std.assertEqual(blank_line3, "\nfoo\n") &&
+
 // Interaction with operators (1)
 local op1 = "foo" + |||
     foo
 |||;
+
+std.assertEqual(op1, "foofoo\n") &&
 
 // Interaction with operators (2)
 local op2 = "foo" < |||
     foo
 |||;
 
+std.assertEqual(op2, true) &&
+
 // whitespace after |||
-local op2 = |||
+local whitespace_after = |||
     foo
 |||;
 
-std.assertEqual(blank_line3, "\nfoo\n") &&
+std.assertEqual(whitespace_after, "foo\n") &&
 
 
 true
