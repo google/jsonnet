@@ -33,6 +33,14 @@ raise an error. </p>
 <p>Return a string that indicates the type of the value.  The possible return values are:
 "array", "boolean", "function", "null", "number", "object", and "string". </p>
 
+<p>The following functions are also available and return a boolean:
+<code>std.isArray(v)</code>,
+<code>std.isBoolean(v)</code>,
+<code>std.isFunction(v)</code>,
+<code>std.isNumber(v)</code>,
+<code>std.isObject(v)</code>, and
+<code>std.isString(v)</code>.</p>
+
 <h4 id="length">std.length(x)</h4>
 
 <p>Depending on the type of the value given, either returns the number of elements in the array,
@@ -73,6 +81,7 @@ length `arrays`, zero length `objects`, or `null` values.</p>
 <code>std.min(a, b)</code>,
 <code>std.pow(x, n)</code>,
 <code>std.exp(x)</code>,
+<code>std.log(x)</code>,
 <code>std.exponent(x)</code>,
 <code>std.mantissa(x)</code>,
 <code>std.floor(x)</code>,
@@ -154,6 +163,15 @@ it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlim
 
 <p>Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>["foo", "bar"]</code>.  </p>
 <p>Example: <code>std.splitLimit("/foo/", "/", 1)</code> yields <code>["", "foo/"]</code>.  </p>
+
+
+<h4 id="strReplace">std.strReplace(str, from, to)</h4>
+
+<p>Returns a copy of the string in which all occurrences of string <code>from</code> have been replaced
+   with string <code>to</code></p>
+
+<p>Example: <code>std.strReplace('I like to skate with my skateboard', 'skate', 'surf')</code>
+   yields <code>"I like to surf with my surfboard"</code>. </p>
 
 
 <h4 id="stringChars">std.stringChars(str)</h4>
@@ -296,6 +314,42 @@ e = {"f1": False, "f2": 42}
 </code>
 
 
+<h4 id="manifestJsonEx">std.manifestJsonEx(value, indent)</h4>
+
+<p>Convert the given object to a JSON form. <code>indent</code> is a string containing
+one or more whitespaces that are used for indentation:</p>
+
+<code>std.manifestJsonEx(
+{
+    x: [1, 2, 3, true, false, null, "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+}, "    ")
+</code>
+
+
+<p>Yields a string containing this JSON object:</p>
+
+<code>{
+    "x": [
+        1,
+        2,
+        3,
+        true,
+        false,
+        null,
+        "string\nstring"
+    ],
+    "y": {
+        "a": 1,
+        "b": 2,
+        "c": [
+            1,
+            2
+        ]
+    }
+}
+</code>
+
 
 <h3 id="arrays">Arrays</h3>
 
@@ -406,6 +460,11 @@ arrays, possibly forming an array that is not a set (due to not bein ordered wit
 <h4 id="setDiff">std.setDiff(a, b)</h4>
 
 <p>Set difference operation (values in a but not b).</p>
+
+
+<h4 id="setMember">std.setMember(x, arr)</h4>
+
+<p>Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.</p>
 
 
 <h3 id="base64_coding">Encoding</h3>
