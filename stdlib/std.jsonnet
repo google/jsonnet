@@ -190,6 +190,22 @@ limitations under the License.
         else
             std.makeArray(std.length(arr), function(i) func(arr[i])),
 
+    mapWithIndex(func, arr)::
+        if std.type(func) != "function" then
+            error ("std.mapWithIndex first param must be function, got " + std.type(func))
+        else if std.type(arr) != "array" && std.type(arr) != "string" then
+            error ("std.mapWithIndex second param must be array, got " + std.type(arr))
+        else
+            std.makeArray(std.length(arr), function(i) func(i, arr[i])),
+
+    mapWithKey(func, obj)::
+        if std.type(func) != "function" then
+            error ("std.mapWithKey first param must be function, got " + std.type(func))
+        else if std.type(obj) != "object" then
+            error ("std.mapWithKey second param must be object, got " + std.type(obj))
+        else
+            { [k]: func(k, obj[k]) for k in std.objectFields(obj) },
+
     join(sep, arr)::
         local aux(arr, i, first, running) =
             if i >= std.length(arr) then

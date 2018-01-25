@@ -185,6 +185,13 @@ std.assertEqual(std.map(function(x) x * x, []), []) &&
 std.assertEqual(std.map(function(x) x * x, [1, 2, 3, 4]), [1, 4, 9, 16]) &&
 std.assertEqual(std.map(function(x) x * x, std.filter(function(x) x > 5, std.range(1, 10))), [36, 49, 64, 81, 100]) &&
 
+std.assertEqual(std.mapWithIndex(function(i, x) x * i, []), []) &&
+std.assertEqual(std.mapWithIndex(function(i, x) x * i, [1, 2, 3, 4]), [1, 4, 9, 16]) &&
+std.assertEqual(std.mapWithIndex(function(i, x) x * i, std.filter(function(x) x > 5, std.range(1, 10))), [36, 49, 64, 81, 100]) &&
+
+std.assertEqual(std.mapWithKey({}), {}) &&
+std.assertEqual(std.mapWithKey(function(k, o) k + o, {a: 1, b: 2}), {a: "a1", b: "b2"}) &&
+
 std.assertEqual(std.filterMap(function(x) x >= 0, function(x) x * x, [-3, -2, -1, 0, 1, 2, 3]), [0, 1, 4, 9]) &&
 
 std.assertEqual(std.foldl(function(x, y) [x, y], [], "foo"), "foo") &&
