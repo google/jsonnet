@@ -1,6 +1,6 @@
 RUNTIME ERROR: foo was not equal to bar
 	error.obj_assert.fail2.jsonnet:20:32-65	thunk <object_assert>
-	std.jsonnet:1041:54-58	thunk <a>
-	std.jsonnet:1041:54-66	function <anonymous>
-	std.jsonnet:1041:54-66	function <anonymous>
-	std.jsonnet:1045:21-33	
+	std.jsonnet:1057:54-58	thunk <a>
+	std.jsonnet:1057:54-66	function <anonymous>
+	std.jsonnet:1057:54-66	function <anonymous>
+	std.jsonnet:1061:21-33	

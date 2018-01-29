@@ -73,6 +73,14 @@ hidden fields.</p>
 <p>Recursively remove all "empty" members of `x`.  "Empty" is defined as zero
 length `arrays`, zero length `objects`, or `null` values.</p>
 
+
+<h4 id="mapWithKey">std.mapWithKey(func, arr)</h4>
+
+<p>Apply the given function to all fields of the given object, also passing
+  the field name. The function <code>func</code> is expected to take the
+  field name as the first parameter and the field value as the second.</p>
+
+
 <h3 id="math">Mathematical Utilities</h3>
 
 <p>The following mathematical functions are available:
@@ -370,6 +378,14 @@ it should initialize.</p>
 <h4 id="map">std.map(func, arr)</h4>
 
 <p>Apply the given function to every element of the array to form a new array.</p>
+
+
+<h4 id="mapWithIndex">std.mapWithIndex(func, arr)</h4>
+
+<p>Similar to <a href="#map">map</a> above, but it also passes to the
+function the element's index in the array. The function <code>func</code>
+is expected to take the index as the first parameter and the element as the
+second.</p>
 
 
 <h4 id="filterMap">std.filterMap(filter_func, map_func, arr)</h4>
