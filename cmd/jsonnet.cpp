@@ -215,7 +215,7 @@ bool get_var_val(const std::string &var_val, std::string &var, std::string &val)
     return true;
 }
 
-bool get_var_file(const std::string &var_file, std::string &var, std::string &val)
+bool get_var_file(const std::string &var_file, const std::string &imp, std::string &var, std::string &val)
 {
     size_t eq_pos = var_file.find_first_of('=', 0);
     if (eq_pos == std::string::npos) {
@@ -226,8 +226,14 @@ bool get_var_file(const std::string &var_file, std::string &var, std::string &va
     var = var_file.substr(0, eq_pos);
     const std::string path = var_file.substr(eq_pos + 1, std::string::npos);
 
-    std::ifstream file(path);
-    val = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    size_t b, e;
+    val.erase().append(imp).append(" @'");
+    // duplicate all the single quotes in @path to make a quoted string
+    for (b = 0; (e = path.find("'", b)) != std::string::npos; b = e + 1) {
+        val.append(path.substr(b, e - b + 1)).push_back('\'');
+    }
+    val.append(path.substr(b, e - b)).push_back('\'');
+
     return true;
 }
 
@@ -301,9 +307,9 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
             } else if (arg == "--ext-str-file") {
                 std::string var, val;
-                if (!get_var_file(next_arg(i, args), var, val))
+                if (!get_var_file(next_arg(i, args), "importstr", var, val))
                     return ARG_FAILURE;
-                jsonnet_ext_var(vm, var.c_str(), val.c_str());
+                jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--ext-code") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
@@ -311,7 +317,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--ext-code-file") {
                 std::string var, val;
-                if (!get_var_file(next_arg(i, args), var, val))
+                if (!get_var_file(next_arg(i, args), "import", var, val))
                     return ARG_FAILURE;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "-A" || arg == "--tla-str") {
@@ -321,9 +327,9 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 jsonnet_tla_var(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-str-file") {
                 std::string var, val;
-                if (!get_var_file(next_arg(i, args), var, val))
+                if (!get_var_file(next_arg(i, args), "importstr", var, val))
                     return ARG_FAILURE;
-                jsonnet_tla_var(vm, var.c_str(), val.c_str());
+                jsonnet_tla_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-code") {
                 std::string var, val;
                 if (!get_var_val(next_arg(i, args), var, val))
@@ -331,7 +337,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 jsonnet_tla_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--tla-code-file") {
                 std::string var, val;
-                if (!get_var_file(next_arg(i, args), var, val))
+                if (!get_var_file(next_arg(i, args), "import", var, val))
                     return ARG_FAILURE;
                 jsonnet_tla_code(vm, var.c_str(), val.c_str());
 
