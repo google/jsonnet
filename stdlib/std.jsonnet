@@ -129,7 +129,13 @@ limitations under the License.
             else
                 replace_after(start_index, curr_index + 1, acc);
 
-        replace_after(0, 0, ""),
+        // if from_len==1, then we replace by splitting and rejoining the
+        // string which is much faster than recursing on replace_after
+        if from_len == 1 then
+            std.join(to, std.split(str, from))
+        else
+            replace_after(0, 0, ""),
+
 
     range(from, to)::
         std.makeArray(to - from + 1, function(i) i + from),
