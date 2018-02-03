@@ -232,7 +232,7 @@ bool get_var_file(const std::string &var_file, const std::string &imp, std::stri
     for (b = 0; (e = path.find("'", b)) != std::string::npos; b = e + 1) {
         val.append(path.substr(b, e - b + 1)).push_back('\'');
     }
-    val.append(path.substr(b, e - b)).push_back('\'');
+    val.append(path.substr(b)).push_back('\'');
 
     return true;
 }
