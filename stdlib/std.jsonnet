@@ -481,7 +481,7 @@ limitations under the License.
             local whole = std.floor(n_);
             local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
             local zp = zero_pad - prec - dot_size;
-            local str = render_int(n__ / n_ * whole, zp, 0, blank, sign, 10, "");
+            local str = render_int(std.sign(n__) * whole, zp, 0, blank, sign, 10, "");
             if prec == 0 then
                 str + if ensure_pt then "." else ""
             else
@@ -710,6 +710,16 @@ limitations under the License.
             error "std.abs expected number, got " + std.type(n)
         else
             if n > 0 then n else -n,
+
+    sign(n)::
+        if std.type(n) != "number" then
+            error "std.sign expected number, got " + std.type(n)
+        else
+            if n > 0 then
+                1
+            else if n < 0 then
+                -1
+            else 0,
 
     max(a, b)::
         if std.type(a) != "number" then

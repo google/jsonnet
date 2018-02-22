@@ -168,6 +168,7 @@ std.assertEqual(std.format("%.3E", [1000000001]), "1.000E+09") &&
 
 // f
 std.assertEqual(std.format("%f", [910]), "910.000000") &&
+std.assertEqual(std.format("%f", 0), "0.000000") &&
 std.assertEqual(std.format("%.0lf", [910]), "910") &&
 std.assertEqual(std.format("%#f", [-910]), "-910.000000") &&
 std.assertEqual(std.format("%12f", [910]), "  910.000000") &&
