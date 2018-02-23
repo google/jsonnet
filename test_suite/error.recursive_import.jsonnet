@@ -14,4 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-if 3 > 1 then import "error.recursive_import.jsonnet" else true
+if 3 > 1 then import 'error.recursive_import.jsonnet' else true

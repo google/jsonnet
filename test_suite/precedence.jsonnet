@@ -37,8 +37,8 @@ std.assertEqual(false && true || false, false) &&
 std.assertEqual(!false && true || false, true) &&
 std.assertEqual(true && false || false, false) &&
 std.assertEqual(if true then 1 else 2 + 3, 1) &&
-std.assertEqual(":" + if true then "foo" else error "bar" + "baz", ":foo") &&
-std.assertEqual(":" + if true then "foo" else function() "bar" + "baz", ":foo") &&
+std.assertEqual(':' + if true then 'foo' else error 'bar' + 'baz', ':foo') &&
+std.assertEqual(':' + if true then 'foo' else function() 'bar' + 'baz', ':foo') &&
 std.assertEqual(20 * local x = 6; x + 4, 200) &&
 
 true

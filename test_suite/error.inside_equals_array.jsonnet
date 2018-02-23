@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 local A = [1, 2, 3],
-      B = [1, 2, error "foobar"];
+      B = [1, 2, error 'foobar'];
 A == B

@@ -28,7 +28,7 @@ std.assertEqual([1, 4, 9, 16] != [1, 4, 9, 16, 17], true) &&
 std.assertEqual([1, 4, 9, 16, 17] == [1, 4, 9, 16], false) &&
 std.assertEqual([1, 4, 9, 16, 17] != [1, 4, 9, 16], true) &&
 
-std.assertEqual([1, 4, 9, error "foo"][2], 9) &&
+std.assertEqual([1, 4, 9, error 'foo'][2], 9) &&
 std.assertEqual([] + [1, 2, 3] + [4, 5, 6] + [], [1, 2, 3, 4, 5, 6]) &&
 std.assertEqual([] + [], []) &&
 
@@ -41,8 +41,14 @@ std.assertEqual([x * x for x in []], []) &&
 std.assertEqual(local x = 10; [x for x in [x, x, x]], [10, 10, 10]) &&
 
 local arr = [
-    { x: 1, y: 4, z: true }, { x: 1, y: 4, z: false }, { x: 1, y: 6, z: true }, { x: 1, y: 6, z: false },
-    { x: 2, y: 6, z: true }, { x: 2, y: 6, z: false }, { x: 3, y: 6, z: true }, { x: 3, y: 6, z: false },
+  { x: 1, y: 4, z: true },
+  { x: 1, y: 4, z: false },
+  { x: 1, y: 6, z: true },
+  { x: 1, y: 6, z: false },
+  { x: 2, y: 6, z: true },
+  { x: 2, y: 6, z: false },
+  { x: 3, y: 6, z: true },
+  { x: 3, y: 6, z: false },
 ];
 
 std.assertEqual(arr, [{ x: x, y: y, z: z } for x in [1, 2, 3] for y in [1, 4, 6] if x + 2 < y for z in [true, false]]) &&

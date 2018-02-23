@@ -29,33 +29,33 @@ std.assertEqual(x.f, y.f) &&
 
 
 local Mixin1 = {
-    assert self.x > 0,
-    x: super.x,
+  assert self.x > 0,
+  x: super.x,
 };
 
 std.assertEqual({ x: 1 } + Mixin1, { x: 1 }) &&
 
 local Mixin2 = {
-    assert self.x > super.x,
-    x+: self.increment,
-    increment:: 1,
+  assert self.x > super.x,
+  x+: self.increment,
+  increment:: 1,
 };
 
 std.assertEqual({ x: 1 } + Mixin2, { x: 2 }) &&
 
 local Template = {
-    assert self == output,
-    local template = self,
-    local output = {
-        str: "%d %d" % [template.x, template.y],
-    },
-    x:: error "Must set x",
-    y:: error "Must set y",
+  assert self == output,
+  local template = self,
+  local output = {
+    str: '%d %d' % [template.x, template.y],
+  },
+  x:: error 'Must set x',
+  y:: error 'Must set y',
 
-    str: output.str,
+  str: output.str,
 };
 
-std.assertEqual(Template { x: 1, y: 2 }, { str: "1 2" }) &&
+std.assertEqual(Template { x: 1, y: 2 }, { str: '1 2' }) &&
 
 std.assertEqual(std.type({ assert false }), 'object') &&
 

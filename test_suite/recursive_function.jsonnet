@@ -15,19 +15,19 @@ limitations under the License.
 */
 
 local fibonacci(n) =
-    if n <= 1 then
-        1
-    else
-        fibonacci(n - 1) + fibonacci(n - 2);
+  if n <= 1 then
+    1
+  else
+    fibonacci(n - 1) + fibonacci(n - 2);
 
 std.assertEqual(fibonacci(15), 987) &&
 
 // Tail recursive call
 local sum(x, v) =
-    if x <= 0 then
-        v
-    else
-        sum(x - 1, x + v) tailstrict;
+  if x <= 0 then
+    v
+  else
+    sum(x - 1, x + v) tailstrict;
 
 local sz = 10000;
 std.assertEqual(sum(sz, 0), sz * (sz + 1) / 2) &&

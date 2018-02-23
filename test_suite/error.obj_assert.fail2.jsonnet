@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local x = "foo";
-local y = "bar";
+local x = 'foo';
+local y = 'bar';
 
-{ assert true, assert x == y : "%s was not equal to %s" % [x, y], x: 1 } == { x: 1 } &&
+{ assert true, assert x == y : '%s was not equal to %s' % [x, y], x: 1 } == { x: 1 } &&
 
 true

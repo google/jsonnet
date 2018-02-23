@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 {
-    text: |||
-        A paragraph
-        of text.
-    |||,
+  text: |||
+    A paragraph
+    of text.
+  |||,
 }

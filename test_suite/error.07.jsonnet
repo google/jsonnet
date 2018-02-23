@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 local third = function(arr) arr[3];
-local toxic = third([0, 1, 2, error "sarcasm", 4, 5]);
+local toxic = third([0, 1, 2, error 'sarcasm', 4, 5]);
 toxic + 1

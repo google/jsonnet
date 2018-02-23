@@ -14,45 +14,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-std.assertEqual("foo", "foo") &&
-std.assertEqual("foo" == "foo", true) &&
-std.assertEqual("foo" != "bar", true) &&
-std.assertEqual("foo" != "foo", false) &&
-std.assertEqual("foo" == "bar", false) &&
-std.assertEqual("foo" + "bar", "foobar") &&
+std.assertEqual('foo', 'foo') &&
+std.assertEqual('foo' == 'foo', true) &&
+std.assertEqual('foo' != 'bar', true) &&
+std.assertEqual('foo' != 'foo', false) &&
+std.assertEqual('foo' == 'bar', false) &&
+std.assertEqual('foo' + 'bar', 'foobar') &&
 
-std.assertEqual("foo" + true, "footrue") &&
-std.assertEqual("foo" + false, "foofalse") &&
-std.assertEqual("foo" + 0, "foo0") &&
-std.assertEqual("foo" + null, "foonull") &&
+std.assertEqual('foo' + true, 'footrue') &&
+std.assertEqual('foo' + false, 'foofalse') &&
+std.assertEqual('foo' + 0, 'foo0') &&
+std.assertEqual('foo' + null, 'foonull') &&
 
-std.assertEqual(true + "foo", "truefoo") &&
-std.assertEqual(false + "foo", "falsefoo") &&
-std.assertEqual(0 + "foo", "0foo") &&
-std.assertEqual(null + "foo", "nullfoo") &&
+std.assertEqual(true + 'foo', 'truefoo') &&
+std.assertEqual(false + 'foo', 'falsefoo') &&
+std.assertEqual(0 + 'foo', '0foo') &&
+std.assertEqual(null + 'foo', 'nullfoo') &&
 
-std.assertEqual("foo" < "bar", false) &&
-std.assertEqual("foo" <= "bar", false) &&
-std.assertEqual("bar" < "foo", true) &&
-std.assertEqual("bar" <= "foo", true) &&
-std.assertEqual("foo" > "bar", true) &&
-std.assertEqual("foo" >= "bar", true) &&
-std.assertEqual("bar" > "foo", false) &&
-std.assertEqual("bar" >= "foo", false) &&
-std.assertEqual("afoo" < "abar", false) &&
-std.assertEqual("afoo" <= "abar", false) &&
-std.assertEqual("abar" < "afoo", true) &&
-std.assertEqual("abar" <= "afoo", true) &&
-std.assertEqual("afoo" > "abar", true) &&
-std.assertEqual("afoo" >= "abar", true) &&
-std.assertEqual("abar" > "afoo", false) &&
-std.assertEqual("abar" >= "afoo", false) &&
-std.assertEqual("a" >= "a", true) &&
-std.assertEqual("a" <= "a", true) &&
-std.assertEqual("a" > "a", false) &&
-std.assertEqual("a" < "a", false) &&
+std.assertEqual('foo' < 'bar', false) &&
+std.assertEqual('foo' <= 'bar', false) &&
+std.assertEqual('bar' < 'foo', true) &&
+std.assertEqual('bar' <= 'foo', true) &&
+std.assertEqual('foo' > 'bar', true) &&
+std.assertEqual('foo' >= 'bar', true) &&
+std.assertEqual('bar' > 'foo', false) &&
+std.assertEqual('bar' >= 'foo', false) &&
+std.assertEqual('afoo' < 'abar', false) &&
+std.assertEqual('afoo' <= 'abar', false) &&
+std.assertEqual('abar' < 'afoo', true) &&
+std.assertEqual('abar' <= 'afoo', true) &&
+std.assertEqual('afoo' > 'abar', true) &&
+std.assertEqual('afoo' >= 'abar', true) &&
+std.assertEqual('abar' > 'afoo', false) &&
+std.assertEqual('abar' >= 'afoo', false) &&
+std.assertEqual('a' >= 'a', true) &&
+std.assertEqual('a' <= 'a', true) &&
+std.assertEqual('a' > 'a', false) &&
+std.assertEqual('a' < 'a', false) &&
 
-std.assertEqual("alphabet"[7], "t") &&
-std.assertEqual("alphabet"[0], "a") &&
+std.assertEqual('alphabet'[7], 't') &&
+std.assertEqual('alphabet'[0], 'a') &&
 
 true

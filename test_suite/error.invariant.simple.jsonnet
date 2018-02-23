@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 {
-    assert false,
+  assert false,
 }

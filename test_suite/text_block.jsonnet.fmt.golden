@@ -16,111 +16,111 @@ limitations under the License.
 
 // Golden
 local bash_golden = std.lines([
-    "#!/bin/bash",
-    "if [ $# -lt 1 ] ; then",
-    "    echo \"No arguments!\"",
-    "else",
-    "    echo \"$# arguments!\"",
-    "fi",
+  '#!/bin/bash',
+  'if [ $# -lt 1 ] ; then',
+  '    echo "No arguments!"',
+  'else',
+  '    echo "$# arguments!"',
+  'fi',
 ]);
 
 // Soft tabs
 local bash_soft = |||
-    #!/bin/bash
-    if [ $# -lt 1 ] ; then
-        echo "No arguments!"
-    else
-        echo "$# arguments!"
-    fi
+  #!/bin/bash
+  if [ $# -lt 1 ] ; then
+      echo "No arguments!"
+  else
+      echo "$# arguments!"
+  fi
 |||;
 std.assertEqual(bash_golden, bash_soft) &&
 
 // Hard tabs
 local bash_hard = |||
-    #!/bin/bash
-    if [ $# -lt 1 ] ; then
-        echo "No arguments!"
-    else
-        echo "$# arguments!"
-    fi
+  #!/bin/bash
+  if [ $# -lt 1 ] ; then
+      echo "No arguments!"
+  else
+      echo "$# arguments!"
+  fi
 |||;
 std.assertEqual(bash_golden, bash_hard) &&
 
 // Mixed tabs
 local bash_mixed = |||
-    #!/bin/bash
-    if [ $# -lt 1 ] ; then
-        echo "No arguments!"
-    else
-        echo "$# arguments!"
-    fi
+  #!/bin/bash
+  if [ $# -lt 1 ] ; then
+      echo "No arguments!"
+  else
+      echo "$# arguments!"
+  fi
 |||;
 std.assertEqual(bash_golden, bash_mixed) &&
 
 
 // More indent
 local str1 = |||
-    text
+  text
 |||;
 
-std.assertEqual(str1, "text\n") &&
+std.assertEqual(str1, 'text\n') &&
 
 
 // Escape chars
 local str1 = |||
-    \n
+  \n
 |||;
 
-std.assertEqual(str1, "\\n\n") &&
+std.assertEqual(str1, '\\n\n') &&
 
 
 // Blank line with trailing whitespace
 local blank_line1 = |||
-    foo
+  foo
 
-    bar
+  bar
 |||;
 
-std.assertEqual(blank_line1, "foo\n\nbar\n") &&
+std.assertEqual(blank_line1, 'foo\n\nbar\n') &&
 
 
 // Blank line no trailing whitespace
 local blank_line2 = |||
-    foo
+  foo
 
-    bar
+  bar
 |||;
 
-std.assertEqual(blank_line2, "foo\n\nbar\n") &&
+std.assertEqual(blank_line2, 'foo\n\nbar\n') &&
 
 // Initial blank line
 local blank_line3 = |||
 
-    foo
+  foo
 |||;
 
-std.assertEqual(blank_line3, "\nfoo\n") &&
+std.assertEqual(blank_line3, '\nfoo\n') &&
 
 // Interaction with operators (1)
-local op1 = "foo" + |||
-    foo
+local op1 = 'foo' + |||
+  foo
 |||;
 
-std.assertEqual(op1, "foofoo\n") &&
+std.assertEqual(op1, 'foofoo\n') &&
 
 // Interaction with operators (2)
-local op2 = "foo" < |||
-    foo
+local op2 = 'foo' < |||
+  foo
 |||;
 
 std.assertEqual(op2, true) &&
 
 // whitespace after |||
 local whitespace_after = |||
-    foo
+  foo
 |||;
 
-std.assertEqual(whitespace_after, "foo\n") &&
+std.assertEqual(whitespace_after, 'foo\n') &&
 
 
 true

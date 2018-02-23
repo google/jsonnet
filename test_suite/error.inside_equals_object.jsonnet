@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 local A = { x: 1, y: 2 },
-      B = { x: 1, y: error "foobar" };
+      B = { x: 1, y: error 'foobar' };
 A == B

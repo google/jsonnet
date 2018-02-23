@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-local bananas = function(x) error "foo";
+local bananas = function(x) error 'foo';
 local oranges = function(y) bananas(1);
 local apples = function(z) oranges(0);
 apples(2)

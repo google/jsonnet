@@ -65,8 +65,14 @@ std.assertEqual({ [x + ""]: x + foo, local foo = 3 for x in [1, 2, 3] }, { "1": 
 
 
 local obj = {
-    f14true: { x: 1, y: 4, z: true }, f14false: { x: 1, y: 4, z: false }, f16true: { x: 1, y: 6, z: true }, f16false: { x: 1, y: 6, z: false },
-    f26true: { x: 2, y: 6, z: true }, f26false: { x: 2, y: 6, z: false }, f36true: { x: 3, y: 6, z: true }, f36false: { x: 3, y: 6, z: false },
+    f14true: { x: 1, y: 4, z: true },
+    f14false: { x: 1, y: 4, z: false },
+    f16true: { x: 1, y: 6, z: true },
+    f16false: { x: 1, y: 6, z: false },
+    f26true: { x: 2, y: 6, z: true },
+    f26false: { x: 2, y: 6, z: false },
+    f36true: { x: 3, y: 6, z: true },
+    f36false: { x: 3, y: 6, z: false },
 };
 
 std.assertEqual(obj, { ["f" + x + y + z]: { x: x, y: y, z: z } for x in [1, 2, 3] for y in [1, 4, 6] if x + 2 < y for z in [true, false] }) &&
@@ -89,7 +95,8 @@ std.assertEqual({ f+: [3] }, { f: [3] }) &&
 // into a different object scope:
 std.assertEqual(
     { opt:: true, f: { y: 5 } } + { f+: { [if "opt" in super then "x" else "y"]+: 3 } },
-    { f: { x: 3, y: 5 } }) &&
+    { f: { x: 3, y: 5 } }
+) &&
 
 std.assertEqual({ x: 1 } + { a: "x" in super, b: "y" in super }, { x: 1, a: true, b: false }) &&
 std.assertEqual({ x:: 1 } + { a: "x" in super, b: "y" in super }, { a: true, b: false }) &&

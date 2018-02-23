@@ -1,1 +1,0 @@
-STATIC ERROR: error.object_comprehension_local.jsonnet:17:29-31: Locals must appear first in an object comprehension.

@@ -51,18 +51,18 @@ std.assertEqual({ x: 1 } + ({} + { y: super.x }), { x: 1, y: 1 }) &&
 
 
 // grandparents with super visiting all leaves
-local A = { name: "A" },
-      B = { name: "B", sB: super.name },
-      C = { name: "C", sC: super.name },
-      D = { name: "D", sD: super.name };
+local A = { name: 'A' },
+      B = { name: 'B', sB: super.name },
+      C = { name: 'C', sC: super.name },
+      D = { name: 'D', sD: super.name };
 
-std.assertEqual((A + B) + (C + D), { name: "D", sB: "A", sC: "B", sD: "C" }) &&
+std.assertEqual((A + B) + (C + D), { name: 'D', sB: 'A', sC: 'B', sD: 'C' }) &&
 
 // Outer variable
 local a = {
-    d: 0,
-    local outer = self,
-    b: { c: outer.d + 1, c2: a.d + 1 },
+  d: 0,
+  local outer = self,
+  b: { c: outer.d + 1, c2: a.d + 1 },
 };
 
 local e = a.b { d: 4 };
@@ -81,9 +81,9 @@ std.assertEqual({ x: 1, y: 2 } + (local A = { x: super.y, y: super.x }; A + A), 
 
 
 // Object composition: inheritance
-std.assertEqual(local f = "x"; { x: 2 } + { [f]: 1 }, { x: 1 }) &&
+std.assertEqual(local f = 'x'; { x: 2 } + { [f]: 1 }, { x: 1 }) &&
 // more object composition
-std.assertEqual({ x: 3, z: 4 } + { [pair[0]]: pair[1] for pair in [["x", 1], ["y", 2]] }, { x: 1, y: 2, z: 4 }) &&
+std.assertEqual({ x: 3, z: 4 } + { [pair[0]]: pair[1] for pair in [['x', 1], ['y', 2]] }, { x: 1, y: 2, z: 4 }) &&
 // more inheritance and object composition
-std.assertEqual({} + { [k]: k + "_" for k in ["x", "y", "foo", "foobar"] }, { x: "x_", y: "y_", foo: "foo_", foobar: "foobar_" }) &&
+std.assertEqual({} + { [k]: k + '_' for k in ['x', 'y', 'foo', 'foobar'] }, { x: 'x_', y: 'y_', foo: 'foo_', foobar: 'foobar_' }) &&
 true
