@@ -1,0 +1,183 @@
+---
+layout: default
+---
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="kubernetes">Kubernetes</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Kubernetes is a cluster orchestration system for containerized workloads.  Out of the box,
+        it is configured with YAML files, making it a natural fit for Jsonnet.  The following
+        resources may be helpful:
+      </p>
+      <ul>
+        <li>
+          A <a href="https://github.com/google/jsonnet/tree/master/case_studies/kubernetes">Simple
+          example</a> from the Jsonnet repo.
+        </li>
+        <li>
+          <a href="https://ksonnet.io">Ksonnet</a>, by <a href="https://heptio.com">Heptio</a> is a
+          CLI tool that uses a Jsonnet library to generate Kubernetes objects from high-level
+          composable descriptions.
+        </li>
+        <li>
+          <a href="https://github.com/coreos/kpm">Kpm</a> is a similar deployment tool (now
+          deprecated) by <a href="https://coreos.com">CoreOS</a>.
+        </li>
+        <li>
+          <a href="https://www.box.com">Box</a> have <a
+          href="https://blog.box.com/blog/kubernetes-box-microservices-maximum-velocity/">blogged</a>
+          and <a href="https://youtu.be/QIDrdZlEQdw?t=10m35s">spoken about</a> how their internal
+          kubernetes-based infrastructure uses Jsonnet.
+        </li>
+        <li>
+          <a href="https://github.com/deepmind/kapitan">Kapitan</a> by <a
+          href="https://deepmind.com">Deepmind</a> is another tool for driving Kubernetes with
+          Jsonnet.
+        </li>
+        <li>
+          <a href="https://databricks.com">Databricks</a> have <a
+          href="https://databricks.com/blog/2017/06/26/declarative-infrastructure-jsonnet-templating-language.html">written
+          about</a> how they manage infrastructure on Kubernetes using Jsonnet.
+        </li>
+      </ul>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="syntax">Conversion Tool</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        As a convenience, the following tool allows you to convert YAML Kubernetes examples into
+        basic Jsonnet files.  It simply converts the YAML to JSON and then runs the Jsonnet
+        formatter on that JSON to make it look a bit cleaner.  Sorry, the original file's comments
+        are lost during the YAML parsing.  Also, you will want to further clean up the code to
+        remove duplication, but that's the whole point of using Jsonnet.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="kube-convert-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=kube-yaml>
+        kind: ReplicationController
+        apiVersion: v1
+        metadata:
+          name: spark-master-controller
+        spec:
+          replicas: 1
+          selector:
+            component: spark-master
+          template:
+            metadata:
+              labels:
+                component: spark-master
+            spec:
+              containers:
+                - name: spark-master
+                  image: k8s.gcr.io/spark:1.5.2_v1
+                  command: ["/start-master"]
+                  ports:
+                    - containerPort: 7077
+                    - containerPort: 8080
+                  resources:
+                    requests:
+                      cpu: 100m
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="kube-convert-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_click(this, 'kube-convert-output')">output.jsonnet</div>
+      </div>
+      <textarea readonly class="selected code-json" id="kube-convert-output">
+        {
+          kind: 'ReplicationController',
+          apiVersion: 'v1',
+          metadata: {
+            name: 'spark-master-controller',
+          },
+          spec: {
+            replicas: 1,
+            selector: {
+              component: 'spark-master',
+            },
+            template: {
+              metadata: {
+                labels: {
+                  component: 'spark-master',
+                },
+              },
+              spec: {
+                containers: [
+                  {
+                    name: 'spark-master',
+                    image: 'k8s.gcr.io/spark:1.5.2_v1',
+                    command: [
+                      '/start-master',
+                    ],
+                    ports: [
+                      {
+                        containerPort: 7077,
+                      },
+                      {
+                        containerPort: 8080,
+                      },
+                    ],
+                    resources: {
+                      requests: {
+                        cpu: '100m',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }
+      </textarea>
+    </div>
+    <script>
+      yaml_conv_demo(
+        'kube-convert-input',
+        'kube-yaml',
+        'kube.yaml',
+        'kube-convert-output',
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>

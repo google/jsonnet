@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Jsonnet - The Data Templating Language</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="keywords" content="Jsonnet, JSON, YAML, language, configuration, configuration language, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
+    <meta name="description" content="A powerful DSL for elegant description of JSON data." />
+    <meta name="viewport" content="width={{ layout.viewport_width }}">
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- MathJax (for semantics) -->
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX","output/HTML-CSS"],
+        displayAlign: "left",
+        imageFont: null,
+    });
+    </script>
+    <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-53570216-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,700italic,400,600,700" rel="stylesheet" type="text/css">
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="/third_party/CodeMirror/lib/codemirror.css">
+    <script src="/third_party/js-yaml/dist/js-yaml.min.js"></script>
+    <script src="/third_party/CodeMirror/lib/codemirror.js"></script>
+    <script src="/third_party/CodeMirror/mode/yaml/yaml.js"></script>
+    <script src="/third_party/CodeMirror/addon/edit/matchbrackets.js"></script>
+    <script src="/js/codemirror-mode-jsonnet.js"></script>
+
+    <!-- Executing Jsonnet -->
+    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/demo.js"></script>
+
+    <!-- Navigation menus -->
+    <script src="/js/menu.js"></script>
+
+    <!-- jsonnet.org stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/doc.css" />
+    <link rel="stylesheet" media="print" href="/css/desktop.css">
+    <!-- The extra 16px is to account for the scrollbar, which is not always included. -->
+    <link rel="stylesheet" media="screen and (min-width: 1296px)" href="/css/desktop.css">
+    <link rel="stylesheet" media="screen and (max-width: 1295px) and (min-width: 720px)" href="/css/cellphone.css">
+    <link rel="stylesheet" media="screen and (max-width: 719px)" href="/css/cellphone-small.css">
+</head>
+
+<body>
+
+<div id=header>
+  <div class=header2>
+    <a id=header-logo class=header-element href="/"><img src="/img/isologo.svg"></a>
+    <a id=header-title class=header-element href="/">Jsonnet</a>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Learning
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/learning/tutorial.html">Tutorial</a>
+        <a href="/learning/getting_started.html">Getting Started</a>
+        <a href="/learning/tools.html">Tools</a>
+        <a href="/learning/community.html">Community</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Reference
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/ref/language.html">Language Reference</a>
+        <a href="/ref/stdlib.html">Standard Library</a>
+        <a href="/ref/spec.html">Specification</a>
+        <a href="/ref/bindings.html">Bindings</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='find_enclosing_menu(menu_open_popup(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Articles
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
+        <a href="/articles/fractal.1.html">Terraform & Packer</a>
+        <a href="/articles/kubernetes.html">Kubernetes</a>
+      </div>
+    </div>
+    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
+    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+  </div>
+</div>
+
+{{ content }}
+
+<div class="inverse hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p class=footer>
+        Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+      </p>
+    </div>
+  </div>
+</div>
+
+</body>
+
+</html>
+

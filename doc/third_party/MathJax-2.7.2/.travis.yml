@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+- stable
+sudo: false
+script:
+- npm install
+- npm test
+branches:
+  only:
+  - "/^\\d+\\.\\d+/"
+deploy:
+  provider: npm
+  email: manager@mathjax.org
+  api_key:
+    secure: inYGps+hr2lFFtZ93ee0InerDO+ljwsHM7qBGUCwTfEZyvAbaZ8Xa/tkLc/s/IdhzEW79ZTTL/kd/r+SIoTAYqsSOCYtN+lvcK0fLxfzSaTVmr9E44UStz63Yl5wDPD8iq4ultQVLDp3Rbdo5KL9aMWKawA/pNV+QPpawXuUfkk=
+  on:
+    tags: true

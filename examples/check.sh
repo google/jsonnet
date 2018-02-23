@@ -33,7 +33,7 @@ EXAMPLES_DIR="${EXAMPLES_DIR:-./}"
 
 for I in "$EXAMPLES_DIR"/*.jsonnet.golden ; do
     TEST=$(basename "$I" .golden)
-    JSONNET_CMD="$JSONNET_BIN"
+    JSONNET_CMD="$JSONNET_BIN --ext-str prefix='Happy Hour ' --ext-code brunch=true --tla-str prefix='Happy Hour ' --tla-code brunch=true"
     JSONNET_FILE="$EXAMPLES_DIR/$TEST"
     EXPECTED_EXIT_CODE=0
     # We run jsonnet again on the output to disregard formatting

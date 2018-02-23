@@ -49,15 +49,15 @@ for TEST in *.jsonnet ; do
     EXT_PARAMS=""
     TLA_PARAMS=""
     if [[ "$TEST" =~ ^tla[.] ]] ; then
-        TLA_PARAMS="--tla-str var1=test --tla-code var2={x:1,y:2}"
+        TLA_PARAMS="--tla-str var1=test --tla-code var2='{x:1,y:2}'"
     else
-        EXT_PARAMS="--ext-str var1=test --ext-code var2={x:1,y:2}"
+        EXT_PARAMS="--ext-str var1=test --ext-code var2='{x:1,y:2}'"
     fi
 
     if [ -n "$DISABLE_EXT_PARAMS" ]; then
         EXT_PARAMS=""
     fi
-    JSONNET_CMD="$VALGRIND "$JSONNET_BIN" $PARAMS $EXT_PARAMS $TLA_PARAMS"
+    JSONNET_CMD="$VALGRIND $JSONNET_BIN $PARAMS $EXT_PARAMS $TLA_PARAMS"
     test_eval "$JSONNET_CMD" "$TEST" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 done
 

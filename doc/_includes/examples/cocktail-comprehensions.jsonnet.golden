@@ -1,0 +1,48 @@
+{
+  "cocktails": {
+    "Bee's Knees": {
+      "garnish": "Lemon Twist",
+      "ingredients": [
+        {
+          "kind": "Honey Syrup",
+          "qty": 1.3333333333333333
+        },
+        {
+          "kind": "Lemon Juice",
+          "qty": 1.3333333333333333
+        },
+        {
+          "kind": "Farmers Gin",
+          "qty": 1.3333333333333333
+        }
+      ],
+      "served": "Straight Up"
+    },
+    "Screwdriver": {
+      "ingredients": [
+        {
+          "kind": "Vodka",
+          "qty": 1.5
+        },
+        {
+          "kind": "Orange Juice",
+          "qty": 3
+        }
+      ],
+      "served": "On The Rocks"
+    },
+    "Yellow Screwdriver": {
+      "ingredients": [
+        {
+          "kind": "Vodka",
+          "qty": 1.5
+        },
+        {
+          "kind": "Lemonade",
+          "qty": 3
+        }
+      ],
+      "served": "On The Rocks"
+    }
+  }
+}
