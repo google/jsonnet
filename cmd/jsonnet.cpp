@@ -305,7 +305,23 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 if (!get_var_val(next_arg(i, args), var, val))
                     return ARG_FAILURE;
                 jsonnet_ext_var(vm, var.c_str(), val.c_str());
+            } else if (arg == "-E" || arg == "--var" || arg == "--env") {
+                // TODO(dcunnin): Delete this in a future release.
+                std::cerr << "WARNING: jsonnet eval -E, --var and --env are deprecated,"
+                          << " please use -V or --ext-str." << std::endl;
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
+                    return ARG_FAILURE;
+                jsonnet_ext_var(vm, var.c_str(), val.c_str());
             } else if (arg == "--ext-str-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), "importstr", var, val))
+                    return ARG_FAILURE;
+                jsonnet_ext_code(vm, var.c_str(), val.c_str());
+            } else if (arg == "-F" || arg == "--file") {
+                // TODO(dcunnin): Delete this in a future release.
+                std::cerr << "WARNING: jsonnet eval -F and --file are deprecated,"
+                          << " please use --ext-str-file." << std::endl;
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), "importstr", var, val))
                     return ARG_FAILURE;
@@ -315,7 +331,23 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 if (!get_var_val(next_arg(i, args), var, val))
                     return ARG_FAILURE;
                 jsonnet_ext_code(vm, var.c_str(), val.c_str());
+            } else if (arg == "--code-var" || arg == "--code-env") {
+                // TODO(dcunnin): Delete this in a future release.
+                std::cerr << "WARNING: jsonnet eval --code-var and --code-env are deprecated,"
+                          << " please use --ext-code." << std::endl;
+                std::string var, val;
+                if (!get_var_val(next_arg(i, args), var, val))
+                    return ARG_FAILURE;
+                jsonnet_ext_code(vm, var.c_str(), val.c_str());
             } else if (arg == "--ext-code-file") {
+                std::string var, val;
+                if (!get_var_file(next_arg(i, args), "import", var, val))
+                    return ARG_FAILURE;
+                jsonnet_ext_code(vm, var.c_str(), val.c_str());
+            } else if (arg == "--code-file") {
+                // TODO(dcunnin): Delete this in a future release.
+                std::cerr << "WARNING: jsonnet eval --code-file is deprecated,"
+                          << " please use --ext-code-file." << std::endl;
                 std::string var, val;
                 if (!get_var_file(next_arg(i, args), "import", var, val))
                     return ARG_FAILURE;
