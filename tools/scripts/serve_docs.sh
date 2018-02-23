@@ -14,43 +14,21 @@
 # limitations under the License.
 
 # Brings up the Jsonnet website locally.
-#
-# This script builds an archive containing the Jsonnet website, unzips the
-# files into a temporary directory or the WORKING_DIR if provided, and runs
-# jekyll serve.
-#
-# Usage:
-# serve_docs.sh [WORKING_DIR]
 
 set -e
-
-readonly WORKING_DIR=$1
 
 function check {
   which $1 > /dev/null || (echo "$1 not installed. Please install $1."; exit 1)
 }
 
-function main {
-  check bazel
-  check jekyll
 
-  local working_dir=$WORKING_DIR
-  if [ -z "$working_dir" ]; then
-    working_dir=$(mktemp -d "/tmp/jsonnet_jekyll_tree_XXXX")
-    trap "rm -rf ${working_dir}" EXIT
-  fi
+check jekyll
 
-  if [ ! -r 'doc/BUILD' ]; then
-    echo 'No BUILD file found.' >&1
-    echo 'Are you running this script from the root of the Jsonnet repository?' >&1
-    exit 1
-  fi
+if [ ! -r 'doc/_config.yml' ]; then
+echo 'No doc/_config.yml file found.' >&1
+echo 'Are you running this script from the root of the Jsonnet repository?' >&1
+exit 1
+fi
 
-  bazel build //doc:jekyll_tree
-  unzip -q bazel-genfiles/doc/jekyll_tree.zip -d $working_dir
-
-  cd $working_dir
-  jekyll serve --port 8200 --watch
-}
-
-main
+cd doc
+jekyll server --port 8200 --watch

@@ -1,0 +1,188 @@
+---
+layout: default
+---
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="tooling">Tooling</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Aside from the Jsonnet interpreters (which execute the Jsonnet code) there is other softare
+        that can be used to get the most out of Jsonnet.
+      </p>
+      <ul>
+        <li>Formatter, for automatically fixing stylistic problems</li>
+        <li>Linter, for drawing attention to red flags that cannot be fixed automatically</li>
+        <li>Bazel rules, for config generation as part of your build system</li>
+        <li>
+          Editor integration for syntax highlighting and other features
+          <ul>
+            <li>
+              <a href="https://heptio.com">Heptio</a> maintain a <a
+              href="https://github.com/heptio/vscode-jsonnet">vscode</a> extension with quite
+              sophisticated program analysis
+              </li>
+            <li>
+              <a href="https://github.com/google/vim-jsonnet">Vim</a>
+            </li>
+            <li>
+              <a href="https://github.com/google/codemirror-mode-jsonnet">Codemirror,</a> the editor
+              widget used by this website
+            </li>
+            <li>
+              <a href="https://github.com/google/language-jsonnet">Atom</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="formatter">Formatter Demo</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The formatter is a command-line utility bundled with the C++ build of Jsonnet.  You can
+        reformat files in place as so:
+      </p>
+      <pre>jsonnet fmt -i *.jsonnet</pre>
+      <p>
+        It will manage indenting and horizontal spacing within a line and remove excess vertical
+        spacing.  It will convert string literals, comments, fields and some operators into
+        canonical forms as well as enforcing trailing commas.  It will sort imports and remove
+        excess nesting of parentheses.  It will break lines in certain places.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="formatter-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=input-jsonnet>
+        local b = import "b.libsonnet";  # comment
+        local a = import "a.libsonnet";
+
+            local f(x,y)=x+y;
+
+
+
+        local Template = {z: "foo"};
+
+        Template + {
+        "f": ((3)) ,
+        "g g":
+        f(4,2),
+        arr: [[
+          1, 2,
+          ],
+          3,
+          ]
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="formatter-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_click(this, 'formatter-output')">output.jsonnet</div>
+      </div>
+      <textarea readonly class="selected code-json" id="formatter-output">
+        local a = import 'a.libsonnet';
+        local b = import 'b.libsonnet';  // comment
+
+        local f(x, y) = x + y;
+
+
+        local Template = { z: 'foo' };
+
+        Template {
+          f: (3),
+          'g g':
+            f(4, 2),
+          arr: [
+            [
+              1,
+              2,
+            ],
+            3,
+          ],
+        }
+      </textarea>
+    </div>
+    <script>
+      fmt_demo(
+        'formatter-input',
+        'input-jsonnet',
+        'input.jsonnet',
+        'formatter-output',
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="formatter">Linter</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The linter is another command-line utility bundled with the Go build of Jsonnet.  You can
+        check files as so:
+      </p>
+      <pre>jsonnet-lint file.jsonnet</pre>
+      <p>
+        Currently it is rudimentary and only checks for unused variables.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="formatter">Bazel Jsonnet Rules</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        TODO
+      </p>
+    <div style="clear: both"></div>
+  </div>
+</div>

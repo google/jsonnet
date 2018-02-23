@@ -61,6 +61,23 @@ bazel-bin/cmd/jsonnet
 ```
 
 
+### Cmake
+
+TODO: info about cmake
+
+
 ## Contributing
 
 See the [contributing page](http://jsonnet.org/contributing.html) on our website.
+
+
+## Developing Jsonnet
+
+### Running tests
+
+TODO
+
+
+### Locally serving the website
+
+TODO

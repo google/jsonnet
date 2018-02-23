@@ -32,7 +32,7 @@ OPT ?= -O3
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
 MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5
-EMCXXFLAGS = $(CXXFLAGS) -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000
+EMCXXFLAGS = $(CXXFLAGS) -g0 -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000 -s RESERVED_FUNCTION_POINTERS=20
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
 
@@ -127,7 +127,8 @@ libjsonnet++.so: $(LIB_CPP_OBJ)
 	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -o $@
 
 # JavaScript build of C binding
-JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_realloc", "_jsonnet_destroy"]'
+JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_fmt_snippet", "_jsonnet_ext_var", "_jsonnet_ext_code", "_jsonnet_tla_var", "_jsonnet_tla_code", "_jsonnet_realloc", "_jsonnet_destroy", "_jsonnet_import_callback"]'
+
 
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
 	$(EMCXX) -s $(JS_EXPORTED_FUNCTIONS) $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@

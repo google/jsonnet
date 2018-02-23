@@ -1,0 +1,229 @@
+---
+layout: default
+---
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="bindings">Bindings</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        If you don't want to invoke the <tt>jsonnet</tt> commandline utility to evaluate Jsonnet,
+        there are also official libraries for Python, Go, and C.  The C library wraps the C++
+        implementation, hiding all the C++ to make it easy to use Jsonnet from C.  In turn, there is
+        a C++ wrapper around the C library to make it easy to use from client C++ code (surprisingly
+        enough, this actually makes sense)!  There are also various unofficial bindings built on the
+        C API.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>  
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="server_side">A Warning On Server-Side Evaluation</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        If you are creating an API server that will evaluate untrusted Jsonnet code in the same
+        process that handles other requests, be aware of your exposure to denial of service attacks.
+        Since Jsonnet allows expressing programs that take unreasonable amounts of CPU time and RAM,
+        it is possible for a malicious request to cause its host API server to exceed its OS
+        resources and crash.  Such a crash would affect concurrently running handlers for other
+        users, and decrease your capacity until the server is restarted.  A simple remedy for this
+        situation is to <tt>exec</tt> the Jsonnet commandline binary in a <tt>ulimit</tt> child
+        process where the CPU and RAM can be tightly bounded for the specific request.
+        Communication to and from the commandline binary could be via temporary files or pipes.
+        Thus, only the malicious request fails.
+      </p>
+      <p>
+        Linking Jsonnet as a library is more appropriate for client-side applications or situations
+        where the input configuration can be trusted.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>  
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="c_api">C API</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The C API simply wraps the C++ implementation to hide C++ language features like templates,
+        classes, overloading, etc.  This makes it easier to bind to other languages, as C is
+        typically the lowest common denominator across all systems.
+      </p>
+
+      <p>
+        The API is documented in <a
+        href="http://github.com/google/jsonnet/blob/master/include/libjsonnet.h">libjsonnet.h</a>.
+        It is built with 'make libjsonnet.so'.  It is used by the python bindings, the Jsonnet
+        commandline tool, as well as a couple of simpler tests.  Search for #include "libjsonnet.h".
+      </p>
+
+      <p>
+        To use the API, create a JsonnetVM object, set various options, then tell it to evaluate a
+        filename or snippet.  To avoid leaking memory, the result of execution (JSON or error
+        message) and the JsonnetVM object itself must be cleaned up using the provided
+        <tt>jsonnet_realloc</tt> and the <tt>jsonnet_destroy</tt> functions, respectively.
+      </p>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="python_api">Python API</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The Python API wraps the C API in a straightforward way.  It can be installed with <tt>pip
+        install jsonnet</tt> or built directly with <tt>setup.py</tt>.  It supports Python 2.7 and
+        Python 3.
+      </p>
+      <p>
+        The Python module provides two functions, <tt>evaluate_file(filename)</tt> and
+        <tt>evaluate_snippet(filename, expr)</tt>.  In the latter case, the parameter
+        <tt>filename</tt> is used in stack traces, because all errors are given with the "filename"
+        containing the code.
+      </p>
+      <p>
+        Keyword arguments to these functions are used to control the virtual machine.  They are:
+      </p>
+      <ul>
+        <li><tt>max_stack</tt>&nbsp;&nbsp; (number)</li>
+        <li><tt>gc_min_objects</tt>&nbsp;&nbsp; (number)</li>
+        <li><tt>gc_growth_trigger</tt>&nbsp;&nbsp; (number)</li>
+        <li><tt>ext_vars</tt>&nbsp;&nbsp; (dict: string to string)</li>
+        <li><tt>ext_codes</tt>&nbsp;&nbsp; (dict string to string)</li>
+        <li><tt>tla_vars</tt>&nbsp;&nbsp; (dict string to string)</li>
+        <li><tt>tla_codes</tt>&nbsp;&nbsp; (dict string to string)</li>
+        <li><tt>max_trace</tt>&nbsp;&nbsp; (number)</li>
+        <li><tt>import_callback</tt>&nbsp;&nbsp; (see example in python/)</li>
+        <li><tt>native_callbacks</tt>&nbsp;&nbsp; (see example in python/)</li>
+      </ul>
+      <p>
+        The argument <tt>import_callback</tt> can be used to pass a callable, to trap the Jsonnet
+        <code>import</code> and <code>importstr</code> constructs.  This allows, e.g., reading files
+        out of archives or implementing library search paths.  The argument <tt>native_callback</tt>
+        is used to allow execution of arbitrary Python code via <code>std.native(...)</code>.  This
+        is useful so Jsonnet code can access pure functions in the Python ecosystem, such as
+        compression, encryption, encoding, etc.
+      </p>
+      <p>
+        If an error is raised during the evaluation of the Jsonnet code, it is formed into a stack
+        trace and thrown as a python RuntimeError.  Otherwise, the JSON string is returned.  To
+        convert this into objects for easy interpretation in Python, use the <a
+        href="https://docs.python.org/2/library/json.html">json</a> module.  An example:
+      </p>
+      <pre>import json
+import _jsonnet
+
+jsonnet_str = '''
+{
+  person1: {
+    name: "Alice",
+    welcome: "Hello " + self.name + "!",
+  },
+  person2: self.person1 {
+    name: std.extVar("OTHER_NAME"),
+  },
+}
+'''
+
+json_str = _jsonnet.evaluate_snippet(
+    "snippet", jsonnet_str,
+    ext_vars={'OTHER_NAME': 'Bob'})
+
+json_obj = json.loads(json_str)
+for person_id, person in json_obj.iteritems():
+  print '%s is %s, greeted by "%s"' % (
+      person_id,
+      person['name'],
+      person['welcome'])</pre>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="third_party_apis">Unofficial Third Party APIs</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        There are unofficial bindings available for other languages.  These are not supported by
+        Google and may be some versions behind the latest release.
+      </p>
+
+      <ul>
+        <li>
+          <a href="https://github.com/strickyak/jsonnet_cgo">Go</a> but please first consider the
+          <a href="https://github.com/google/go-jsonnet">native port</a>
+        </li>
+        <li>
+          <a href="https://github.com/yuduanchen/luajit-jsonnet">LuaJIT (FFI)</a>
+        </li>
+        <li>
+          <a href="https://github.com/yosuke-furukawa/node-jsonnet">Node.js</a>
+        </li>
+        <li>
+          <a href="https://github.com/Neeke/Jsonnet-PHP">PHP</a>
+        </li>
+        <li>
+          <a href="https://github.com/yugui/ruby-jsonnet">Ruby</a>
+        </li>
+        <li>
+          <a href="https://github.com/anguslees/rust-jsonnet">Rust</a>
+        </li>
+        <li>
+          <a href="https://github.com/yuduanchen/rust-jsonnet">Rust (less comprehensive, older)</a>
+        </li>
+      </ul>
+    <div style="clear: both"></div>
+  </div>
+</div>

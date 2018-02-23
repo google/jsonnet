@@ -1,0 +1,912 @@
+---
+layout: default
+---
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="tutorial">Tutorial</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Let's explore the various features in Jsonnet, and mix some cocktails.  If you're looking at
+        Jsonnet for the first time, this is the right place to be.  For help using the
+        implementation, see <a href="getting_started.html">getting started</a>.  For a detailed
+        systematic overview of the language, check out the <a
+        href="/ref/language.html">reference</a>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="syntax">Syntax</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Any <a href="https://json.org">JSON</a> document is a valid Jsonnet program, so we'll focus
+        on what Jsonnet adds to JSON.  Let's start with an example that does not involve any
+        computation but uses new syntax.
+      </p>
+      <ul>
+        <li>Fields that happen to be valid identifiers have no quotes</li>
+        <li><i>Trailing</i> commas at the end of arrays / objects</li>
+        <li>Comments</li>
+        <li>
+          String literals use <code>"</code> or <code>'</code>.  The single quote is easier on the
+          eyes but either can be used to avoid escaping the other, e.g. <code>"Farmer's Gin"</code>
+          instead of <code>'Farmer\'s Gin'</code>.
+        </li>
+        <li>
+          Text blocks <code>|||</code> allow verbatim text across multiple lines.
+        </li>
+        <li>
+          Verbatim strings <code>@'foo'</code> and <code>@"foo"</code> are for single lines.
+        </li>
+      </ul>
+      <p>
+        Play with the code, e.g., modifying the strings / quantities.  Try adding a "Dry Manhattan"
+        which uses dry red vermouth and is garnished with a lemon slice.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="syntax" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="variables">Variables</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Variables are the simplest way to avoid duplication.
+      </p>
+      <ul>
+        <li>The <code>local</code> keyword defines a variable.</li>
+        <li>Variables defined next to fields end with a comma (<code>,</code>).</li>
+        <li>All other cases end with a semicolon (<code>;</code>).</li>
+      </ul>
+      <p>
+        Try factoring out <code>"Simple Syrup"</code> to the top level or to the same level as
+        the <code>pour</code> variable.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="variables" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="references">References</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Another way to avoid duplication is to refer to another part of the structure.
+      </p>
+      <ul>
+        <li><code>self</code> refers to the current object.</li>
+        <li><code>$</code> refers to the outer-most object.</li>
+        <li><code>['foo']</code> looks up a field.</li>
+        <li><code>.f</code> can be used if the field name is an identifier.</li>
+        <li><code>[10]</code> looks up an array element.</li>
+        <li>Arbitrarily long paths are allowed.</li>
+        <li>Array slices like <code>arr[10:20:2]</code> are allowed, like in Python.</li>
+        <li>Strings can be looked up / sliced too, by unicode codepoint.</li>
+      </ul>
+      <p>
+      Another name for a Tom Collins is a Gin Fizz.  Try adding an alias for that.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="references" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        In order to refer to objects between the current and outer-most object, we use a variable to
+        create a name for that level:
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="inner-reference" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="arithmetic">Arithmetic</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Arithmetic includes numeric operations like multiplication but also various operations on
+        other types.
+      </p>
+      <ul>
+        <li>Use floating point arithmetic, bitwise ops, boolean logic.</li>
+        <li>
+          Strings may be concatenated with <code>+</code>, which implicitly converts
+          one operand to string if needed.
+        </li>
+        <li>Two strings can be compared with <code>&lt;</code> (unicode codepoint order).</li>
+        <li>
+          Objects may be combined with <code>+</code> where the right-hand side wins field
+          conflicts.
+        </li>
+        <li>Test if a field is in an object with <code>in</code>.</li>
+        <li><code>==</code> is deep value equality.</li>
+        <li>Python-compatible string formatting is available via <code>%</code>.  When combined with
+        <code>|||</code> this can be used for templating text files.</li>
+      </ul>
+      <p>Try dividing by zero to see what happens.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="arith" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="functions">Functions</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Like Python, functions have positional parameters, named parameters, and default arguments.
+        Closures are also supported.  The examples below should demonstrate the syntax.  Many
+        functions are already defined in the <a href=/ref/std.html>standard library</a>.
+      </p>
+      <p>
+        Try writing a function <code>is_even</code> that uses the modulo operator <code>%</code> and
+        returns either true or false.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="functions" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        And here's an example with cocktails.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="sours" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="conditionals">Conditionals</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Conditional expressions look like <code>if b then e else e</code>. The
+        <code>else</code> branch is optional and defaults to <code>null</code>.
+      </p>
+      <p>
+        Try adding the missing Large Virgin Mojito:
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="conditionals" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="computed_field_names">Computed Field Names</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Jsonnet objects can be used like a <code>std::map</code> or similar datastructures from
+        regular languages.
+      </p>
+      <ul>
+        <li>Recall that a field lookup can be computed with <code>obj[e]</code></li>
+        <li>The definition equivalent is <code>{[e]: </code>... <code>}</code></li>
+        <li>
+          <code>self</code> or object locals cannot be accessed when field names are being computed,
+          since the object is not yet constructed.
+        </li>
+        <li>
+          If a field name evaluates to <code>null</code> during object construction, the field is
+          omitted.  This works nicely with the default false branch of a conditional (see below).
+        </li>
+      </ul>
+      <p>
+        Try adding <code>[self.f]: 'f'</code> to see what happens, while pondering what that
+        could even mean!
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="computed-fields" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="comprehension">Array and Object Comprehension</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        What if you want to make an array or object and you don't know how many elements / fields
+        they will have at run-time?  Jsonnet has Python-style array and object comprehension
+        constructs to allow this.
+      </p>
+      <ul>
+        <li>Any nesting of <code>for</code> and <code>if</code> can be used.</li>
+        <li>The nest behaves like a loop nest, although the body is written first.</li>
+      </ul>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="comprehensions" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Below, a less contrived example.  The first cocktail has equal parts of three ingredients.
+        The second iterates over an array of records - name prefix and fruit juice.
+      </p>
+      <p>
+        Try adding a "Red Screwdriver" with cranberry juice.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="cocktail-comprehensions" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="imports">Imports</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        It's possible to import both code and raw data from other files.
+      </p>
+      <ul>
+        <li>The <code>import</code> construct is like copy/pasting Jsonnet code.</li>
+        <li>Files designed for import by convention end with <tt>.libsonnet</tt></li>
+        <li>Raw JSON can be imported this way too.</li>
+        <li>The <code>importstr</code> construct is for verbatim UTF-8 text.</li>
+      </ul>
+      <p>
+        Usually, imported Jsonnet content is stashed in a top-level local variable.  This
+        resembles the way other programming languages handle modules.  Jsonnet libraries typically
+        return an object, so that they can easily be extended.  Neither of these conventions are
+        enforced.
+      </p>
+      <p>
+        Try including the Cosmopolitan from the library.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="imports-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=imports-jsonnet>
+{% include examples/imports.jsonnet %}
+      </textarea>
+      <textarea id=martinis-libsonnet>
+{% include examples/martinis.libsonnet %}
+      </textarea>
+      <textarea id=garnish-txt>
+{% include examples/garnish.txt %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="imports-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'imports-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="imports-json-output">
+{% include examples/imports.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'imports-input',
+        {
+          'imports-jsonnet': 'imports.jsonnet',
+          'martinis-libsonnet': 'martinis.libsonnet',
+          'garnish-txt': 'garnish.txt',
+        },
+        'imports.jsonnet',
+        'imports-output',
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The following example shows how to write libraries of functions.  It also shows how to
+        define a local variable in the scope of a function.  Try adding the Bee's Knees from above
+        using the utility library.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="negroni-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=negroni-jsonnet>
+{% include examples/negroni.jsonnet %}
+      </textarea>
+      <textarea id=utils-libsonnet>
+{% include examples/utils.libsonnet %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="negroni-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'negroni-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="negroni-json-output">
+{% include examples/negroni.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'negroni-input',
+        {
+          'negroni-jsonnet': 'negroni.jsonnet',
+          'utils-libsonnet': 'utils.libsonnet',
+        },
+        'negroni.jsonnet',
+        'negroni-output',
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="errors">Errors</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Errors can arise from the language itself (e.g. an array overrun) or thrown from Jsonnet
+        code.  Stack traces provide context for the error.
+      </p>
+      <ul>
+        <li>To raise an error: <code>error "foo"</code></li>
+        <li>To assert a condition before an expression: <code>assert "foo";</code></li>
+        <li>A custom failure message: <code>assert "foo" : "message";</code></li>
+        <li>Assert fields have a property: <code>assert self.f == 10,</code></li>
+        <li>With custom failure message: <code>assert "foo" : "message",</code></li>
+      </ul>
+      <p>
+        Try modifying the code below to trigger the assertion failures, and observe the error
+        messages and stack traces that result.
+      </p>
+      <p>
+        You might wonder why the divide-by-zero is not triggered in the equal_parts function, since
+        that code occurs before the <code>std.length()</code> check.  Jsonnet is a lazy
+        language, so variable initializers are not evaluated until the variable is used.  Evaluation
+        order is very hard to notice.  It only becomes relevant when code throws errors, or takes a
+        long time to execute.  For more discussion of laziness, see <a
+        href=articles/design.html>design rationale</a>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="error-examples" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="parameterize-entire-config">Parameterize Entire Config</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Jsonnet is hermetic: It always generates the same data no matter the execution environment.
+        This is an important property but there are times when you want a few carefully chosen
+        parameters at the top level.  There are two ways to do this, with different properties.
+      </p>
+      <ul>
+        <li>
+          <b>External variables</b>, which are accessible anywhere in the config, or any file,
+          using <code>std.extVar("foo")</code>.
+        </li>
+        <li>
+          <b>Top-level arguments</b>, where the whole config is expressed as a function.
+        </li>
+      </ul>
+      <p>
+        To illustrate the differences, We'll show how the same example is expressed in each case.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="parameterize-entire-config">External variables</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The following example binds two external variables, listed below.  Any Jsonnet value can be
+        bound to an external variable, even functions.
+      </p>
+      <ul>
+        <li><code>prefix</code> is bound to the string <code>"Happy Hour "</code></li>
+        <li><code>brunch</code> is bound to <code>true</code></li>
+      </ul>
+      <p>
+        The values are configured when the Jsonnet virtual machine is initialized, by passing either
+        1) Jsonnet code (which evaluates to the value), 2) or a raw string.  The latter is just a
+        convenience, because escaping a string to pass it as Jsonnet code can be tedious.  To make
+        this concrete, the above variables can be configured with the following commandline:
+      </p>
+      <pre>jsonnet --ext-str prefix="Happy Hour " \
+        --ext-code brunch=true ...
+      </pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="top-level-ext-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=top-level-ext-jsonnet>
+{% include examples/top-level-ext.jsonnet %}
+      </textarea>
+      <textarea id=library-ext-libsonnet>
+{% include examples/library-ext.libsonnet %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="top-level-ext-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_click(this, 'top-level-ext-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="top-level-ext-json-output">
+{% include examples/top-level-ext.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'top-level-ext-input',
+        {
+          'top-level-ext-jsonnet': 'top-level-ext.jsonnet',
+          'library-ext-libsonnet': 'library-ext.libsonnet',
+        },
+        'top-level-ext.jsonnet',
+        'top-level-ext-output',
+        false,
+        {
+          ext_str: {
+            prefix: 'Happy Hour ',
+          },
+          ext_code: {
+            brunch: 'true',
+          },
+        }
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="parameterize-entire-config">Top-level arguments</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Alternatively the same code can be written using top-level arguments, where the whole config
+        is written as a function.  How does this differ to using external variables?
+      </p>
+      <ul>
+        <li>Values must be explicitly threaded through files</li>
+        <li>Default values can be provided</li>
+        <li>The config can be imported as a library and called as a function</li>
+      </ul>
+      <p>
+        Generally, top-level arguments are the safer and easier way to parameterize an entire
+        config, because the variables are not global and it's clear what parts of the config
+        are dependent on their environment.  However, they do require more explicit threading of
+        the values into other imported code.  Here's the equivalent invocation of the Jsonnet
+        command-line tool:
+      </p>
+      <pre>jsonnet --tla-str prefix="Happy Hour " \
+        --tla-code brunch=true ...
+      </pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="top-level-tla-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=top-level-tla-jsonnet>
+{% include examples/top-level-tla.jsonnet %}
+      </textarea>
+      <textarea id=library-tla-libsonnet>
+{% include examples/library-tla.libsonnet %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="top-level-tla-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_click(this, 'top-level-tla-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="top-level-tla-json-output">
+{% include examples/top-level-tla.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'top-level-tla-input',
+        {
+          'top-level-tla-jsonnet': 'top-level-tla.jsonnet',
+          'library-tla-libsonnet': 'library-tla.libsonnet',
+        },
+        'top-level-tla.jsonnet',
+        'top-level-tla-output',
+        false,
+        {
+          tla_str: {
+            prefix: 'Happy Hour ',
+          },
+          tla_code: {
+            brunch: 'true',
+          },
+        }
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="oo">Object-Orientation</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        In general, object-orientation makes it easy to define many variants from a single "base".
+        Unlike Java, C++ and Python, where classes extend other classes, in Jsonnet, objects extend
+        other objects.  We have already discussed some of the raw ingredients for this, albeit in
+        isolation:
+      </p>
+      <ul>
+        <li>Objects (which we inherit from JSON)</li>
+        <li>The <dfn>object composition</dfn> operator <code>+</code>, which merges two objects,
+        choosing the right hand side when fields collide</li>
+        <li>The <code>self</code> keyword, a reference to the current object</li>
+      </ul>
+      <p>
+        When these features are combined together and with the following <i>new</i> features, things
+        get a lot more interesting:
+      </p>
+      <ul>
+        <li>Hidden fields, defined with <code>::</code>, which do not appear in generated JSON</li>
+        <li>The <code>super</code> keyword, which has its usual meaning</li>
+        <li>The <code>+:</code> field syntax for overriding deeply nested fields</li>
+      </ul>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The following example is contrived but demonstrates a few of the features using the
+        classical language of object-orientation, "derived" and "base".
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+{% include demo.inc name="oo-contrived" %}
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Let's make it more concrete by mixing deriving some cocktails that are quite similar from a
+        template that draws out their similarities.  The <code>+</code> operator is actually
+        implicit in these examples. In the common case where you write <code>foo + {
+        </code>...<code> }</code>, i.e. the <code>+</code> is immediately followed by a
+        <code>{</code>, then the <code>+</code> can be elided.  Try explicitly adding the + in the 4
+        cases, below.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="sours-oo-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=sours-oo-jsonnet>
+{% include examples/sours-oo.jsonnet %}
+      </textarea>
+      <textarea id=templates-libsonnet>
+{% include examples/templates.libsonnet %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="sours-oo-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'sours-oo-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="sours-oo-json-output">
+{% include examples/sours-oo.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'sours-oo-input',
+        {
+          'sours-oo-jsonnet': 'sours-oo.jsonnet',
+          'templates-libsonnet': 'templates.libsonnet',
+        },
+        'sours-oo.jsonnet',
+        'sours-oo-output',
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The key to making Jsonnet object-oriented is that the <code>self</code> keyword be "late
+        bound".  In other words, <code>self.foo</code> can have its meaning altered by overriding it
+        on the right hand side of a <code>+</code>.  This would not be the case in a simple "object
+        merge" semantics of <code>+</code>, where <code>self.foo</code> would be fully evaluated to
+        a concrete value before we did the <code>+</code>.  In the above example, the left hand side
+        of the <code>+</code> is <code>templates.Sour</code> (the <code>+</code> is implicit) and
+        the right hand side is an object that overrides <code>spirit</code>.  So in the
+        <code>templates.Sour</code> definition (in <tt>templates.libsonnet</tt>) that causes the
+        reference to <code>drink.spirit</code> in the ingredients list to return
+        <code>"Whiskey"</code> rather than raise the error <code>'Must override "spirit"'</code>.
+      </p>
+      <p>
+        Most of the abstraction in the above example could have been achieved with functions instead
+        of object-orientation.  Indeed, last time we spoke about sours, we used functions for that
+        very purpose.  In general, the choice of whether to use functions or object-orientation is
+        quite a complex one, and can be driven as much by instinct as by anything else.  The most
+        obvious difference is that with object-orientation, you can override any file from the
+        resulting object, whereas with functions you can only pass arguments for the specific
+        parameters of the function.  So, e.g., if the <code>templates.Sour</code> had been
+        implemented as a function that did not parameterize the ingredients list in general way,
+        then it would not have been possible to add that extra ingredient to form the Nor'Easter.
+      </p>
+      <p>
+        So far, every example has used a literal object on the right hand side of the
+        <code>+</code>.  This is consistent with the majority of object-oriented languages. But
+        Jsonnet is more general in that is has <a
+        href="http://www.bracha.org/oopsla90.pdf">mixins</a>.  A Mixin allows you to take some
+        "overrides" and instead of just applying them to an existing object to get a new object, you
+        can pass them around as a first class value and apply them to any object you want.  The
+        following example shows mixins being used to modify cocktails in a general way:
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="mixins-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=mixins-jsonnet>
+{% include examples/mixins.jsonnet %}
+      </textarea>
+      <textarea id=sours-oo-jsonnet2>
+{% include examples/sours-oo.jsonnet %}
+      </textarea>
+      <textarea id=templates-libsonnet2>
+{% include examples/templates.libsonnet %}
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="mixins-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'mixins-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="mixins-json-output">
+{% include examples/mixins.jsonnet.golden %}
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'mixins-input',
+        {
+          'mixins-jsonnet': 'mixins.jsonnet',
+          'sours-oo-jsonnet2': 'sours-oo.jsonnet',
+          'templates-libsonnet2': 'templates.libsonnet',
+        },
+        'mixins.jsonnet',
+        'mixins-output',
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Thank you for completing the Jsonnet tutorial! We hope you enjoyed the accompanying
+        beverages.  At this point, you should be able to build concoctions of your own.  If you want
+        to read about the Jsonnet language in greater and more systematic detail, we recommend the
+        language <a href="/ref/language.html">reference</a>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>

@@ -63,7 +63,7 @@ test_eval() {
     fi
 
     TEST_CMD="$JSONNET_CMD $JSONNET_FILE"
-    TEST_OUTPUT="$($TEST_CMD 2>&1)"
+    TEST_OUTPUT="$(eval $TEST_CMD 2>&1)"
     TEST_EXIT_CODE="$?"
     EXECUTED=$((EXECUTED + 1))
 

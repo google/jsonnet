@@ -1,0 +1,13 @@
+{
+  "object": {
+    "f": 1,
+    "g": 2
+  },
+  "test1": [
+    {
+      "kind": "Whiskey",
+      "qty": 1
+    }
+  ],
+  "test2": 7
+}
