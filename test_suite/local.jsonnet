@@ -15,20 +15,20 @@ limitations under the License.
 */
 
 std.assertEqual(local x = 3; x, 3) &&
-std.assertEqual(local x = error "foo"; 3, 3) &&
+std.assertEqual(local x = error 'foo'; 3, 3) &&
 std.assertEqual(local x = y, y = 3; x, 3) &&
 
-local x = [x, y, "foo"], y = [y, "bar", x];
-std.assertEqual(x[1][1], "bar") &&
-std.assertEqual(y[0][2][2], "foo") &&
+local x = [x, y, 'foo'], y = [y, 'bar', x];
+std.assertEqual(x[1][1], 'bar') &&
+std.assertEqual(y[0][2][2], 'foo') &&
 
-local x = { "0": "zero", "1": y["1"] },
-      y = { "0": x["0"], "1": "one" };
+local x = { '0': 'zero', '1': y['1'] },
+      y = { '0': x['0'], '1': 'one' };
 
 std.assertEqual(x, y) &&
 
-local x = ["zero", y[1]],
-      y = [x[0], "one"];
+local x = ['zero', y[1]],
+      y = [x[0], 'one'];
 
 std.assertEqual(x, y) &&
 

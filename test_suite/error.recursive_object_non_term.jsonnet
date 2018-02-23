@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 local Fib = {
-    n: 1,
-    local outer = self,
-    r: if self.n <= 1 then 1 else (Fib { n: outer.n }).r + (Fib { n: outer.n }).r,
+  n: 1,
+  local outer = self,
+  r: if self.n <= 1 then 1 else (Fib { n: outer.n }).r + (Fib { n: outer.n }).r,
 };
 
 (Fib { n: 15 }).r

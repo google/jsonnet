@@ -16,22 +16,22 @@ limitations under the License.
 
 // Golden
 local bash_golden = std.lines([
-    "#!/bin/bash",
-    "if [ $# -lt 1 ] ; then",
-    "    echo \"No arguments!\"",
-    "else",
-    "    echo \"$# arguments!\"",
-    "fi",
+  "#!/bin/bash",
+  "if [ $# -lt 1 ] ; then",
+  "    echo \"No arguments!\"",
+  "else",
+  "    echo \"$# arguments!\"",
+  "fi",
 ]);
 
 // Soft tabs
 local bash_soft = |||
-    #!/bin/bash
-    if [ $# -lt 1 ] ; then
-        echo "No arguments!"
-    else
-        echo "$# arguments!"
-    fi
+  #!/bin/bash
+  if [ $# -lt 1 ] ; then
+      echo "No arguments!"
+  else
+      echo "$# arguments!"
+  fi
 |||;
 std.assertEqual(bash_golden, bash_soft) &&
 
@@ -48,12 +48,12 @@ std.assertEqual(bash_golden, bash_hard) &&
 
 // Mixed tabs
 local bash_mixed = |||
-  	#!/bin/bash
-  	if [ $# -lt 1 ] ; then
-  	    echo "No arguments!"
-  	else
-  	    echo "$# arguments!"
-  	fi
+  #!/bin/bash
+  if [ $# -lt 1 ] ; then
+      echo "No arguments!"
+  else
+      echo "$# arguments!"
+  fi
 |||;
 std.assertEqual(bash_golden, bash_mixed) &&
 
@@ -103,21 +103,21 @@ std.assertEqual(blank_line3, "\nfoo\n") &&
 
 // Interaction with operators (1)
 local op1 = "foo"+|||
-    foo
+  foo
 |||;
 
 std.assertEqual(op1, "foofoo\n") &&
 
 // Interaction with operators (2)
 local op2 = "foo"<|||
-    foo
+  foo
 |||;
 
 std.assertEqual(op2, true) &&
 
 // whitespace after |||
 local whitespace_after = |||  
-    foo
+  foo
 |||;
 
 std.assertEqual(whitespace_after, "foo\n") &&

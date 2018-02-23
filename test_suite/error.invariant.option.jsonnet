@@ -15,12 +15,12 @@ limitations under the License.
 */
 
 local Base = {
-    local options = ["a", "b", "c"],
-    assert std.length(std.setInter(self.option, options)) > 0 :
-           "Option \"%s\" not in %s." % [self.option, options],
-    option: error "You must set option.",
+  local options = ['a', 'b', 'c'],
+  assert std.length(std.setInter(self.option, options)) > 0 :
+         'Option "%s" not in %s.' % [self.option, options],
+  option: error 'You must set option.',
 };
 
 Base {
-    option: "d",
+  option: 'd',
 }

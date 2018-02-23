@@ -17,16 +17,16 @@ limitations under the License.
 local num_chains = 10, chain_len = 500000;
 
 local chain(last, n) =
-    if n == 0 then
-        last
-    else
-        chain({ next: last, data: 0 }, n - 1) tailstrict;
+  if n == 0 then
+    last
+  else
+    chain({ next: last, data: 0 }, n - 1) tailstrict;
 
 local length(chain, n) =
-    if std.objectHas(chain, "next") then
-        length(chain.next, n + 1) tailstrict
-    else
-        n;
+  if std.objectHas(chain, 'next') then
+    length(chain.next, n + 1) tailstrict
+  else
+    n;
 
 local chain_lens = [length(chain({}, chain_len), 0) for x in std.range(1, num_chains)];
 

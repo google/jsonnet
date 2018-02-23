@@ -15,15 +15,15 @@ limitations under the License.
 */
 
 local Template = {
-    assert self == output,
-    local template = self,
-    local output = {
-        str: "%d %d" % [template.x, template.y],
-    },
-    x:: error "Must set x",
-    y:: error "Must set y",
+  assert self == output,
+  local template = self,
+  local output = {
+    str: '%d %d' % [template.x, template.y],
+  },
+  x:: error 'Must set x',
+  y:: error 'Must set y',
 
-    str: output.str,
+  str: output.str,
 };
 
-Template { x: 1, y: 2, str+: " 4" }
+Template { x: 1, y: 2, str+: ' 4' }

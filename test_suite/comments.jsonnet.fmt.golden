@@ -16,7 +16,7 @@ limitations under the License.
 
 // This kind of comment
 
-# this kind of comment
+// this kind of comment
 
 /* ignore this */ true &&
 
@@ -25,22 +25,22 @@ local x = 1 - /*foo*/ 1;
 
 local x = 1 - /*foo*/ 1;
 
-local x = 1 -  #foo
+local x = 1 -  //foo
           1;
 
 local x = 1 * /*foo*/ 1;
 
-local x = 1 *  #foo
+local x = 1 *  //foo
           1;
 
 local x = 1 - /*+foo*/ 1;
 
-local x = 1 -  #+foo
+local x = 1 -  //+foo
           1;
 
 local x = 1 * /*+foo*/ 1;
 
-local x = 1 *  #+foo
+local x = 1 *  //+foo
           1;
 
 true

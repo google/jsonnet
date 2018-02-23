@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 {
-    assert error "my error message",
+  assert error 'my error message',
 }

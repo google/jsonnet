@@ -15,23 +15,23 @@ limitations under the License.
 */
 
 // Can capture variables from another file.
-std.assertEqual((import "lib/A_20_func.libsonnet")(), 20) &&
+std.assertEqual((import 'lib/A_20_func.libsonnet')(), 20) &&
 
 // Ensure string is quoted.
-std.assertEqual((import "lib/\u0041_20_func.libsonnet")(), 20) &&
-
-# Test single quoted string.
 std.assertEqual((import 'lib/A_20_func.libsonnet')(), 20) &&
-# The block string is hard to test because the filename would include a terminating \n
+
+// Test single quoted string.
+std.assertEqual((import 'lib/A_20_func.libsonnet')(), 20) &&
+// The block string is hard to test because the filename would include a terminating \n
 
 // Each import has its own environment, can't be overidden.
-std.assertEqual(local A = 7; local lib = import "lib/A_20.libsonnet"; lib, 20) &&
-std.assertEqual(local A = 7, lib = import "lib/A_20.libsonnet"; lib, 20) &&
+std.assertEqual(local A = 7; local lib = import 'lib/A_20.libsonnet'; lib, 20) &&
+std.assertEqual(local A = 7, lib = import 'lib/A_20.libsonnet'; lib, 20) &&
 
-std.assertEqual(importstr "lib/some_file.txt", "Hello World!\n") &&
-std.assertEqual(importstr "lib/\u0073ome_file.txt", "Hello World!\n") &&
+std.assertEqual(importstr 'lib/some_file.txt', 'Hello World!\n') &&
+std.assertEqual(importstr 'lib/some_file.txt', 'Hello World!\n') &&
 
-std.assertEqual(import "lib/rel_path.libsonnet", "rel_path") &&
-std.assertEqual(import "lib/rel_path4.libsonnet", "rel_path") &&
+std.assertEqual(import 'lib/rel_path.libsonnet', 'rel_path') &&
+std.assertEqual(import 'lib/rel_path4.libsonnet', 'rel_path') &&
 
 true

@@ -106,8 +106,8 @@ std.assertEqual(4.5 ^ 3.6, 7) &&
 std.assertEqual(5.5 & 3.3, 1) &&
 std.assertEqual(4.5 | 1.9, 5) &&
 
-std.assertEqual(~4.5, -  #
-    5) &&
+std.assertEqual(~4.5, -  //
+  5) &&
 
 std.assertEqual(~4.5, -5) &&
 std.assertEqual(-4.5, 0 - 4.5) &&
@@ -124,12 +124,12 @@ std.assertEqual(4.5 >= 5, false) &&
 std.assertEqual(4.5 == 4.5, true) &&
 std.assertEqual(4.5 != 3.5, true) &&
 
-std.assertEqual(std.toString(1e20), "100000000000000000000") &&
+std.assertEqual(std.toString(1e20), '100000000000000000000') &&
 
 // Check formatter handles - $ correctly.
 local obj = {
-    f: { f: { f: 1 } },
-    g: - $.f.f.f,
+  f: { f: { f: 1 } },
+  g: - $.f.f.f,
 };
 
 std.assertEqual(obj.g, -1) &&

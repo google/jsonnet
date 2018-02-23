@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 function(var1, var2)
-    var1 == "test" && var2 == { x: 1, y: 2 }
+  var1 == 'test' && var2 == { x: 1, y: 2 }

@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 function(name) {
-    name: name,
+  name: name,
 }
