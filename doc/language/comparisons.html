@@ -60,7 +60,7 @@ also has object-oriented semantics in the form of mixins.  Also, Jsonnet is an e
 whereas the Nix expression language is not (in particular it lacks floating point numbers).
 Finally, the Nix expression language is an embedded part of the Nix package manager (and other
 tools), whereas Jsonnet is a standalone evaluator that can sit in front of anything that accepts
-JSON.</p>  
+JSON.</p>
 
 <h2 id="scripting">Comparison With Other Scripting Languages</h2>
 
@@ -73,7 +73,7 @@ modified by someone who only knows JSON.  Any parts of the program which are jus
 make use of the extended Jsonnet constructs) can be modified with predictable results.  Jsonnet's
 pure functional semantics also make modifying the program more predictable.</p>
 
-<p>More importantly, Jsonnet has the property of hermiticity.  This means that regardless of when or
+<p>More importantly, Jsonnet has the property of hermeticity.  This means that regardless of when or
 where a Jsonnet program is evaluated, it will always generate the same JSON.  This means the program
 can be freely converted to data, and thus it can be thought of as equivalent to data.  This is not
 the case with general purpose languages, as they are allowed to read files, contact the network,
@@ -101,7 +101,7 @@ of Jsonnet, and it also does not have the ability to do arithmetic beyond substi
 strings.  Finally, coil binds variables according to <a
 href="http://en.wikipedia.org/wiki/Scope_(computer_science)#Dynamic_scoping">dynamic scoping
 rules</a>, which have long been discredited because they quickly make code very difficult to
-understand.  Jsonnet uses static scoping, like almost all mainstream languages. </p> 
+understand.  Jsonnet uses static scoping, like almost all mainstream languages. </p>
 
 
 <p> <a href="https://github.com/wickman/pystachio">Pystachio</a> is a Python framework that makes it
