@@ -36,7 +36,7 @@ check_file() {
     if [ "$(< $RESULT_FILENAME)" != "$(< $GOLDEN_FILENAME)" ] ; then
         FAILED=$((FAILED + 1))
         if [ -z "$SUMMARY_ONLY" ]; then
-            echo -e "\e[31;1mFAIL\e[0m \e[1m(stdout mismatch)\e[0m: \e[36m$TEST\e[0m"
+            printf -e "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m$TEST\033[0m\n"
             echo "Result output:"
             cat "$RESULT_FILENAME"
             echo "Expected output:"
@@ -46,7 +46,7 @@ check_file() {
             git --no-pager diff --color --no-index "$GOLDEN_FILENAME" "$RESULT_FILENAME"
             # The output is often quite long, let's repeat the filename once more
             # to avoid wasting time on looking for it
-            echo -e "\nTEST ABOVE: \e[36m$TEST\033[0m"
+            printf -e "\nTEST ABOVE: \033[36m$TEST\033[0m\n"
             separator
         fi
         return 1
@@ -69,7 +69,7 @@ do_test() {
         GOLDEN_STDERR="${GOLDEN_STDERR}.${IMPLEMENTATION}"
     fi
 
-    OUT_DIR="out/${TEST}" 
+    OUT_DIR="out/${TEST}"
     STDOUT="${OUT_DIR}/stdout"
     STDERR="${OUT_DIR}/stderr"
 
@@ -94,7 +94,7 @@ do_test() {
     if [ "$TEST_EXIT_CODE" -ne "$EXPECTED_EXIT_CODE" ] ; then
         FAILED=$((FAILED + 1))
         if [ -z "$SUMMARY_ONLY" ]; then
-            echo -e "\e[31;1mFAIL\e[0m \e[1m(exit code)\e[0m: \e[36m$TEST\e[0m"
+            printf "\033[31;1mFAIL\033[0m \033[1m(exit code)\033[0m: \033[36m$TEST\033[0m\n"
             echo "This run's stdout:"
             cat "$STDOUT"
             echo "This run's stderr:"
@@ -108,7 +108,7 @@ do_test() {
     if ! check_file "${TEST}" "${STDOUT}" "${GOLDEN_STDOUT}"; then
         return 1
     fi
-    
+
     if ! check_file "${TEST}" "${STDERR}" "${GOLDEN_STDERR}"; then
         return 1
     fi
