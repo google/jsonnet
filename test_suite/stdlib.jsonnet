@@ -302,6 +302,14 @@ std.assertEqual(std.manifestPythonVars({
   '',
 ])) &&
 
+std.assertEqual(
+  std.manifestXml(
+    ['f', {}, ' ', ['g', 'inside'], 'nope', ['h', { attr: 'yolo' }, ['x', { attr: 'otter' }]]]
+  ),
+  '<f> <g>inside</g>nope<h attr="yolo"><x attr="otter"></x></h></f>'
+) &&
+
+
 std.assertEqual(std.base64('Hello World!'), 'SGVsbG8gV29ybGQh') &&
 std.assertEqual(std.base64('Hello World'), 'SGVsbG8gV29ybGQ=') &&
 std.assertEqual(std.base64('Hello Worl'), 'SGVsbG8gV29ybA==') &&
@@ -390,15 +398,27 @@ std.assertEqual(std.split('/foo/', '/'), ['', 'foo', '']) &&
 std.assertEqual(std.splitLimit('foo/bar', '/', 1), ['foo', 'bar']) &&
 std.assertEqual(std.splitLimit('/foo/', '/', 1), ['', 'foo/']) &&
 
+local some_json = {
+  x: [1, 2, 3, true, false, null, 'string\nstring\n'],
+  arr: [[[]]],
+  y: { a: 1, b: 2, c: [1, 2] },
+  emptyArray: [],
+  emptyObject: {},
+  '"': null,
+};
+
 std.assertEqual(
-  std.manifestJsonEx({
-    x: [1, 2, 3, true, false, null, 'string\nstring'],
-    y: { a: 1, b: 2, c: [1, 2] },
-    emptyArray: [],
-    emptyObject: {},
-  }, '    ') + '\n',
+  std.manifestJsonEx(some_json, '    ') + '\n',
   |||
     {
+        "\"": null,
+        "arr": [
+            [
+                [
+
+                ]
+            ]
+        ],
         "emptyArray": [
 
         ],
@@ -412,7 +432,7 @@ std.assertEqual(
             true,
             false,
             null,
-            "string\nstring"
+            "string\nstring\n"
         ],
         "y": {
             "a": 1,
@@ -423,6 +443,92 @@ std.assertEqual(
             ]
         }
     }
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc(some_json) + '\n',
+  |||
+    "\"": null
+    "arr": 
+      - - []
+    "emptyArray": []
+    "emptyObject": {}
+    "x": 
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y": 
+      "a": 1
+      "b": 2
+      "c": 
+        - 1
+        - 2
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlStream([some_json, some_json, {}, [], 3, '"']),
+  |||
+    ---
+    "\"": null
+    "arr": 
+      - - []
+    "emptyArray": []
+    "emptyObject": {}
+    "x": 
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y": 
+      "a": 1
+      "b": 2
+      "c": 
+        - 1
+        - 2
+    ---
+    "\"": null
+    "arr": 
+      - - []
+    "emptyArray": []
+    "emptyObject": {}
+    "x": 
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y": 
+      "a": 1
+      "b": 2
+      "c": 
+        - 1
+        - 2
+    ---
+    {}
+    ---
+    []
+    ---
+    3
+    ---
+    "\""
+    ...
   |||
 ) &&
 
@@ -443,5 +549,11 @@ std.assertEqual(std.prune([[], {}, null]), []) &&
 std.assertEqual(std.prune({ a: [[], {}, null], b: { a: [], b: {}, c: null } }), {}) &&
 std.assertEqual(std.prune([[[], {}, null], { a: [], b: {}, c: null }]), []) &&
 std.assertEqual(std.prune({ a: [{ b: true }] }), { a: [{ b: true }] }) &&
+
+std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
+std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
+
+std.assertEqual(std.deepJoin(['a', ['b', 'c', [[], 'd', ['e'], 'f', 'g'], [], []], 'h']),
+                'abcdefgh') &&
 
 true
