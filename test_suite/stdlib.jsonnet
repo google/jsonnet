@@ -303,7 +303,7 @@ std.assertEqual(std.manifestPythonVars({
 ])) &&
 
 std.assertEqual(
-  std.manifestXml(
+  std.manifestXmlJsonml(
     ['f', {}, ' ', ['g', 'inside'], 'nope', ['h', { attr: 'yolo' }, ['x', { attr: 'otter' }]]]
   ),
   '<f> <g>inside</g>nope<h attr="yolo"><x attr="otter"></x></h></f>'

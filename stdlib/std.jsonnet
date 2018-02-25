@@ -972,23 +972,23 @@ limitations under the License.
     local vars = ['%s = %s' % [k, std.manifestPython(conf[k])] for k in std.objectFields(conf)];
     std.join('\n', vars + ['']),
 
-  manifestXml(xml)::
-    if !std.isArray(xml) then
-      error 'Expected a JSONML value (an array), got %s' % std.type(xml)
+  manifestXmlJsonml(value)::
+    if !std.isArray(value) then
+      error 'Expected a JSONML value (an array), got %s' % std.type(value)
     else
-      local aux(xml) =
-        if std.isString(xml) then
-          xml
+      local aux(v) =
+        if std.isString(v) then
+          v
         else
-          local tag = xml[0];
-          local has_attrs = std.length(xml) > 1 && std.type(xml[1]) == 'object';
-          local attrs = if has_attrs then xml[1] else {};
+          local tag = v[0];
+          local has_attrs = std.length(v) > 1 && std.type(v[1]) == 'object';
+          local attrs = if has_attrs then v[1] else {};
+          local children = if has_attrs then v[2:] else v[1:];
           local attrs_str =
             std.join('', [' %s="%s"' % [k, attrs[k]] for k in std.objectFields(attrs)]);
-          local children = if has_attrs then xml[2:] else xml[1:];
           std.deepJoin(['<', tag, attrs_str, '>', [aux(x) for x in children], '</', tag, '>']);
 
-      aux(xml),
+      aux(value),
 
   local base64_table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
   local base64_inv = { [base64_table[i]]: i for i in std.range(0, 63) },

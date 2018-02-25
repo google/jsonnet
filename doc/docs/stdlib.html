@@ -379,7 +379,8 @@ one or more whitespaces that are used for indentation:</p>
 <h4 id="manifestYamlDoc">std.manifestYamlDoc(value)</h4>
 
 <p>Convert the given value to a YAML form.  Note that <code>std.manifestJson</code> could also be
-used for this purpose, but this function will produce more canonical-looking YAML.</p>
+used for this purpose, because any JSON is also valid YAML.  But this function will produce more
+canonical-looking YAML.</p>
 
 <code>std.manifestYamlDoc(
 {
@@ -428,12 +429,12 @@ used for this purpose, but this function will produce more canonical-looking YAM
 </code>
 
 
-<h4 id="manifestXml">std.manifestXml(xml)</h4>
+<h4 id="manifestXmlJsonml">std.manifestXmlJsonml(value)</h4>
 
 <p>Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
 containing the XML.</p>
 
-<code>std.manifestXml([
+<code>std.manifestXmlJsonml([
   'svg',
   { height: 100, width: 100 },
   ['circle', { cx: 50, cy: 50, r: 40, stroke: 'black', 'stroke-width': 3, fill: 'red' }],
@@ -446,7 +447,7 @@ containing the XML.</p>
 &lt;/svg&gt;
 </code>
 
-<p>Which looks like this:</p>
+<p>Which represents the following image:</p>
 
 <svg height="100" width="100">
   <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
@@ -455,10 +456,10 @@ containing the XML.</p>
 
 <p>JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next to elements).  This includes the whitespace needed to avoid having all the XML on one line, which is meaningful in XML.  In order to have whitespace in the XML output, it must be present in the JsonML input:</p>
 
-<code>std.manifestXml([
+<code>std.manifestXmlJsonml([
   'svg',
   { height: 100, width: 100 },
-  '\n    ',
+  '\n  ',
   ['circle', { cx: 50, cy: 50, r: 40, stroke: 'black', 'stroke-width': 3, fill: 'red' }],
   '\n',
 ])</code>
