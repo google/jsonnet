@@ -136,6 +136,22 @@ limitations under the License.
     else
       replace_after(0, 0, ''),
 
+  asciiUpper(x)::
+    local cp = std.codepoint;
+    local up_letter(c) = if cp(c) >= 97 && cp(c) < 123 then
+      std.char(cp(c) - 32)
+    else
+      c;
+    std.join('', std.map(up_letter, std.stringChars(x))),
+
+  asciiLower(x)::
+    local cp = std.codepoint;
+    local down_letter(c) = if cp(c) >= 65 && cp(c) < 91 then
+      std.char(cp(c) + 32)
+    else
+      c;
+    std.join('', std.map(down_letter, std.stringChars(x))),
+
 
   range(from, to)::
     std.makeArray(to - from + 1, function(i) i + from),
@@ -235,6 +251,15 @@ limitations under the License.
 
   lines(arr)::
     std.join('\n', arr + ['']),
+
+  deepJoin(arr)::
+    if std.isString(arr) then
+      arr
+    else if std.isArray(arr) then
+      std.join('', [std.deepJoin(x) for x in arr])
+    else
+      error 'Expected string or array, got %s' % std.type(arr),
+
 
   format(str, vals)::
 
@@ -864,7 +889,7 @@ limitations under the License.
         local lines = ['{\n']
                       + std.join([',\n'],
                                  [
-                                   [cindent + indent + '"' + k + '": '
+                                   [cindent + indent + std.escapeStringJson(k) + ': '
                                     + aux(v[k], path + [k], cindent + indent)]
                                    for k in std.objectFields(v)
                                  ])
@@ -872,11 +897,53 @@ limitations under the License.
         std.join('', lines);
     aux(value, [], ''),
 
+  manifestYamlDoc(value)::
+    local aux(v, in_array, in_object, path, cindent) =
+      if v == true then
+        'true'
+      else if v == false then
+        'false'
+      else if v == null then
+        'null'
+      else if std.type(v) == 'number' then
+        '' + v
+      else if std.type(v) == 'string' then
+        local len = std.length(v);
+        if len == 0 then
+          '""'
+        else if v[len - 1] == '\n' then
+          local split = std.split(v, '\n');
+          std.join('\n' + cindent, ['|'] + split[0:std.length(split) - 1])
+        else
+          std.escapeStringJson(v)
+      else if std.type(v) == 'function' then
+        error 'Tried to manifest function at ' + path
+      else if std.type(v) == 'array' then
+        if std.length(v) == 0 then
+          '[]'
+        else
+          local range = std.range(0, std.length(v) - 1);
+          local new_indent = cindent + '  ';
+          local parts = [aux(v[i], true, false, path + [i], new_indent) for i in range];
+          (if in_object then '\n' + cindent else '') + '- ' + std.join('\n' + cindent + '- ', parts)
+      else if std.type(v) == 'object' then
+        if std.length(v) == 0 then
+          '{}'
+        else
+          local new_indent = cindent + '  ';
+          local lines = [
+            cindent + std.escapeStringJson(k) + ': ' + aux(v[k], false, true, path + [k], new_indent)
+            for k in std.objectFields(v)
+          ];
+          (if in_array || in_object then '\n' else '')
+          + std.join('\n', lines);
+    aux(value, false, false, [], ''),
+
   manifestYamlStream(value)::
     if std.type(value) != 'array' then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
-      '---\n' + std.join('\n---\n', [std.manifestJson(e) for e in value]) + '\n...\n',
+      '---\n' + std.join('\n---\n', [std.manifestYamlDoc(e) for e in value]) + '\n...\n',
 
 
   manifestPython(o)::
@@ -905,6 +972,23 @@ limitations under the License.
     local vars = ['%s = %s' % [k, std.manifestPython(conf[k])] for k in std.objectFields(conf)];
     std.join('\n', vars + ['']),
 
+  manifestXmlJsonml(value)::
+    if !std.isArray(value) then
+      error 'Expected a JSONML value (an array), got %s' % std.type(value)
+    else
+      local aux(v) =
+        if std.isString(v) then
+          v
+        else
+          local tag = v[0];
+          local has_attrs = std.length(v) > 1 && std.type(v[1]) == 'object';
+          local attrs = if has_attrs then v[1] else {};
+          local children = if has_attrs then v[2:] else v[1:];
+          local attrs_str =
+            std.join('', [' %s="%s"' % [k, attrs[k]] for k in std.objectFields(attrs)]);
+          std.deepJoin(['<', tag, attrs_str, '>', [aux(x) for x in children], '</', tag, '>']);
+
+      aux(value),
 
   local base64_table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
   local base64_inv = { [base64_table[i]]: i for i in std.range(0, 63) },
