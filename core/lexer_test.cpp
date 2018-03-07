@@ -108,12 +108,12 @@ TEST(Lexer, TestNumbers)
     testLex("number 1.+3",
             "1.+3",
             {},
-            "number 1.+3:1:1: Couldn't lex number, junk after decimal point: +");
-    testLex("number 1e!", "1e!", {}, "number 1e!:1:1: Couldn't lex number, junk after 'E': !");
+            "number 1.+3:1:1: couldn't lex number, junk after decimal point: +");
+    testLex("number 1e!", "1e!", {}, "number 1e!:1:1: couldn't lex number, junk after 'E': !");
     testLex("number 1e+!",
             "1e+!",
             {},
-            "number 1e+!:1:1: Couldn't lex number, junk after exponent sign: !");
+            "number 1e+!:1:1: couldn't lex number, junk after exponent sign: !");
 }
 
 TEST(Lexer, TestDoubleStrings)
@@ -128,7 +128,7 @@ TEST(Lexer, TestDoubleStrings)
             "\"hi\\\n\"",
             {Token(Token::Kind::STRING_DOUBLE, "hi\\\n")},
             "");
-    testLex("double string \"hi", "\"hi", {}, "double string \"hi:1:1: Unterminated string");
+    testLex("double string \"hi", "\"hi", {}, "double string \"hi:1:1: unterminated string");
 }
 
 TEST(Lexer, TestSingleStrings)
@@ -138,7 +138,7 @@ TEST(Lexer, TestSingleStrings)
     testLex("single string 'hi\\''", "'hi\\''", {Token(Token::Kind::STRING_SINGLE, "hi\\'")}, "");
     testLex(
         "single string 'hi\\nl'", "'hi\\\n'", {Token(Token::Kind::STRING_SINGLE, "hi\\\n")}, "");
-    testLex("single string 'hi", "'hi", {}, "single string 'hi:1:1: Unterminated string");
+    testLex("single string 'hi", "'hi", {}, "single string 'hi:1:1: unterminated string");
 }
 
 TEST(Lexer, TestVerbatimDoubleStrings)
@@ -263,7 +263,7 @@ TEST(Lexer, TestBlockStringBadIndent)
     testLex("block string bad indent",
             str,
             {},
-            "block string bad indent:1:1: Text block not terminated with |||");
+            "block string bad indent:1:1: text block not terminated with |||");
 }
 
 TEST(Lexer, TestBlockStringEof)
@@ -271,7 +271,7 @@ TEST(Lexer, TestBlockStringEof)
     const char str[] =
         "|||\n"
         "  test";
-    testLex("block string eof", str, {}, "block string eof:1:1: Unexpected EOF");
+    testLex("block string eof", str, {}, "block string eof:1:1: unexpected EOF");
 }
 
 TEST(Lexer, TestBlockStringNotTerm)
@@ -282,7 +282,7 @@ TEST(Lexer, TestBlockStringNotTerm)
     testLex("block string not term",
             str,
             {},
-            "block string not term:1:1: Text block not terminated with |||");
+            "block string not term:1:1: text block not terminated with |||");
 }
 
 TEST(Lexer, TestBlockStringNoWs)
@@ -294,7 +294,7 @@ TEST(Lexer, TestBlockStringNoWs)
     testLex("block string no ws",
             str,
             {},
-            "block string no ws:1:1: Text block's first line must start with"
+            "block string no ws:1:1: text block's first line must start with"
             " whitespace.");
 }
 
@@ -337,7 +337,7 @@ TEST(Lexer, TestComments)
     testLex("c comment no term",
             "/* hi",
             {},
-            "c comment no term:1:1: Multi-line comment has no terminating */.");
+            "c comment no term:1:1: multi-line comment has no terminating */.");
 }
 
 }  // namespace

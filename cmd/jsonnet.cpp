@@ -159,7 +159,7 @@ long strtol_check(const std::string &str)
     char *ep;
     long r = std::strtol(arg, &ep, 10);
     if (*ep != '\0' || *arg == '\0') {
-        std::cerr << "ERROR: Invalid integer \"" << arg << "\"\n" << std::endl;
+        std::cerr << "ERROR: invalid integer \"" << arg << "\"\n" << std::endl;
         exit(EXIT_FAILURE);
     }
     return r;
@@ -204,7 +204,7 @@ bool get_var_val(const std::string &var_val, std::string &var, std::string &val)
         var = var_val;
         const char *val_cstr = ::getenv(var.c_str());
         if (val_cstr == nullptr) {
-            std::cerr << "ERROR: Environment variable " << var << " was undefined." << std::endl;
+            std::cerr << "ERROR: environment variable " << var << " was undefined." << std::endl;
             return false;
         }
         val = val_cstr;
@@ -286,7 +286,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             if (arg == "-s" || arg == "--max-stack") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 1) {
-                    std::cerr << "ERROR: Invalid --max-stack value: " << l << std::endl;
+                    std::cerr << "ERROR: invalid --max-stack value: " << l << std::endl;
                     return ARG_FAILURE;
                 }
                 jsonnet_max_stack(vm, l);
@@ -376,14 +376,14 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (arg == "--gc-min-objects") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {
-                    std::cerr << "ERROR: Invalid --gc-min-objects value: " << l << std::endl;
+                    std::cerr << "ERROR: invalid --gc-min-objects value: " << l << std::endl;
                     return ARG_FAILURE;
                 }
                 jsonnet_gc_min_objects(vm, l);
             } else if (arg == "-t" || arg == "--max-trace") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {
-                    std::cerr << "ERROR: Invalid --max-trace value: " << l << std::endl;
+                    std::cerr << "ERROR: invalid --max-trace value: " << l << std::endl;
                     return ARG_FAILURE;
                 }
                 jsonnet_max_trace(vm, l);
@@ -392,11 +392,11 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 char *ep;
                 double v = std::strtod(arg, &ep);
                 if (*ep != '\0' || *arg == '\0') {
-                    std::cerr << "ERROR: Invalid number \"" << arg << "\"" << std::endl;
+                    std::cerr << "ERROR: invalid number \"" << arg << "\"" << std::endl;
                     return ARG_FAILURE;
                 }
                 if (v < 0) {
-                    std::cerr << "ERROR: Invalid --gc-growth-trigger \"" << arg << "\""
+                    std::cerr << "ERROR: invalid --gc-growth-trigger \"" << arg << "\""
                               << std::endl;
                     return ARG_FAILURE;
                 }
@@ -417,7 +417,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (arg == "-S" || arg == "--string") {
                 jsonnet_string_output(vm, 1);
             } else if (arg.length() > 1 && arg[0] == '-') {
-                std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
+                std::cerr << "ERROR: unrecognized argument: " << arg << std::endl;
                 return ARG_FAILURE;
             } else {
                 remaining_args.push_back(args[i]);
@@ -432,14 +432,14 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (arg == "-n" || arg == "--indent") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {
-                    std::cerr << "ERROR: Invalid --indent value: " << l << std::endl;
+                    std::cerr << "ERROR: invalid --indent value: " << l << std::endl;
                     return ARG_FAILURE;
                 }
                 jsonnet_fmt_indent(vm, l);
             } else if (arg == "--max-blank-lines") {
                 long l = strtol_check(next_arg(i, args));
                 if (l < 0) {
-                    std::cerr << "ERROR: Invalid --max-blank-lines value: " << l << ""
+                    std::cerr << "ERROR: invalid --max-blank-lines value: " << l << ""
                               << std::endl;
                     return ARG_FAILURE;
                 }
@@ -453,7 +453,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 } else if (val == "l") {
                     jsonnet_fmt_comment(vm, 'l');
                 } else {
-                    std::cerr << "ERROR: Invalid --comment-style value: " << val
+                    std::cerr << "ERROR: invalid --comment-style value: " << val
                               << std::endl;
                     return ARG_FAILURE;
                 }
@@ -466,7 +466,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 } else if (val == "l") {
                     jsonnet_fmt_string(vm, 'l');
                 } else {
-                    std::cerr << "ERROR: Invalid --string-style value: " << val
+                    std::cerr << "ERROR: invalid --string-style value: " << val
                               << std::endl;
                     return ARG_FAILURE;
                 }
@@ -489,7 +489,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (arg == "--debug-desugaring") {
                 jsonnet_fmt_debug_desugaring(vm, true);
             } else if (arg.length() > 1 && arg[0] == '-') {
-                std::cerr << "ERROR: Unrecognized argument: " << arg << std::endl;
+                std::cerr << "ERROR: unrecognized argument: " << arg << std::endl;
                 return ARG_FAILURE;
             } else {
                 remaining_args.push_back(args[i]);
@@ -499,7 +499,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
 
     const char *want = config->filenameIsCode ? "code" : "filename";
     if (remaining_args.size() == 0) {
-        std::cerr << "ERROR: Must give " << want << "\n" << std::endl;
+        std::cerr << "ERROR: must give " << want << "\n" << std::endl;
         usage(std::cerr);
         return ARG_FAILURE;
     }
@@ -508,7 +508,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
     if (!multiple_files_allowed) {
         if (remaining_args.size() > 1) {
             std::string filename = remaining_args[0];
-            std::cerr << "ERROR: Only one " << want << " is allowed\n" << std::endl;
+            std::cerr << "ERROR: only one " << want << " is allowed\n" << std::endl;
             return ARG_FAILURE;
         }
     }
@@ -824,12 +824,12 @@ int main(int argc, const char **argv)
                             output_file = inputFile;
 
                             if (inputFile == "-") {
-                                std::cerr << "ERROR: Cannot use --in-place with stdin" << std::endl;
+                                std::cerr << "ERROR: cannot use --in-place with stdin" << std::endl;
                                 jsonnet_destroy(vm);
                                 return EXIT_FAILURE;
                             }
                             if (config.filenameIsCode) {
-                                std::cerr << "ERROR: Cannot use --in-place with --exec"
+                                std::cerr << "ERROR: cannot use --in-place with --exec"
                                           << std::endl;
                                 jsonnet_destroy(vm);
                                 return EXIT_FAILURE;

@@ -1,4 +1,4 @@
-ERROR: Must give filename
+ERROR: must give filename
 
 Jsonnet commandline interpreter v0.9.5
 

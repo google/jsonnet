@@ -37,7 +37,7 @@ extern "C" {
 
 static void memory_panic(void)
 {
-    fputs("FATAL ERROR: A memory allocation error occurred.\n", stderr);
+    fputs("FATAL ERROR: a memory allocation error occurred.\n", stderr);
     abort();
 }
 
@@ -193,7 +193,7 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
 {
     std::string abs_path;
     if (rel.length() == 0) {
-        err_msg = "The empty string is not a valid filename";
+        err_msg = "the empty string is not a valid filename";
         return IMPORT_STATUS_IO_ERROR;
     }
     // It is possible that rel is actually absolute.
@@ -204,7 +204,7 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
     }
 
     if (abs_path[abs_path.length() - 1] == '/') {
-        err_msg = "Attempted to import a directory";
+        err_msg = "attempted to import a directory";
         return IMPORT_STATUS_IO_ERROR;
     }
 
@@ -243,7 +243,7 @@ static char *default_import_callback(void *ctx, const char *dir, const char *fil
     while (status == IMPORT_STATUS_FILE_NOT_FOUND) {
         if (jpaths.size() == 0) {
             *success = 0;
-            const char *err = "No match locally or in the Jsonnet library paths.";
+            const char *err = "no match locally or in the Jsonnet library paths.";
             char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
             std::strcpy(r, err);
             return r;

@@ -1,2 +1,2 @@
-RUNTIME ERROR: Undefined external variable: x
+RUNTIME ERROR: undefined external variable: x
 	<cmdline>:1:1-16	
