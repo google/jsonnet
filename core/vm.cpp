@@ -378,7 +378,7 @@ class Stack {
     {
         tailCallTrimStack();
         if (calls >= limit) {
-            throw makeError(loc, "Max stack frames exceeded.");
+            throw makeError(loc, "max stack frames exceeded.");
         }
         stack.emplace_back(FRAME_CALL, loc);
         calls++;
@@ -560,10 +560,10 @@ class Interpreter {
     Value makeNumberCheck(const LocationRange &loc, double v)
     {
         if (std::isnan(v)) {
-            throw makeError(loc, "Not a number");
+            throw makeError(loc, "not a number");
         }
         if (std::isinf(v)) {
-            throw makeError(loc, "Overflow");
+            throw makeError(loc, "overflow");
         }
         return makeNumber(v);
     }
@@ -767,7 +767,7 @@ class Interpreter {
 
         if (!success) {
             std::string epath = encode_utf8(jsonnet_string_escape(path, false));
-            std::string msg = "Couldn't open import \"" + epath + "\": ";
+            std::string msg = "couldn't open import \"" + epath + "\": ";
             msg += input;
             throw makeError(loc, msg);
         }
@@ -1147,12 +1147,12 @@ class Interpreter {
         long l = long(args[0].v.d);
         if (l < 0) {
             std::stringstream ss;
-            ss << "Codepoints must be >= 0, got " << l;
+            ss << "codepoints must be >= 0, got " << l;
             throw makeError(loc, ss.str());
         }
         if (l >= JSONNET_CODEPOINT_MAX) {
             std::stringstream ss;
-            ss << "Invalid unicode codepoint, got " << l;
+            ss << "invalid unicode codepoint, got " << l;
             throw makeError(loc, ss.str());
         }
         char32_t c = l;
@@ -1198,7 +1198,7 @@ class Interpreter {
         double a = args[0].v.d;
         double b = args[1].v.d;
         if (b == 0)
-            throw makeError(loc, "Division by zero.");
+            throw makeError(loc, "division by zero.");
         scratch = makeNumberCheck(loc, std::fmod(a, b));
         return nullptr;
     }
@@ -1210,7 +1210,7 @@ class Interpreter {
         std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
-            std::string msg = "Undefined external variable: " + var8;
+            std::string msg = "undefined external variable: " + var8;
             throw makeError(loc, msg);
         }
         const VmExt &ext = it->second;
@@ -1252,7 +1252,7 @@ class Interpreter {
 
             case Value::NULL_TYPE: r = true; break;
 
-            case Value::FUNCTION: throw makeError(loc, "Cannot test equality of functions"); break;
+            case Value::FUNCTION: throw makeError(loc, "cannot test equality of functions"); break;
 
             default:
                 throw makeError(loc,
@@ -1272,7 +1272,7 @@ class Interpreter {
 
         VmNativeCallbackMap::const_iterator nit = nativeCallbacks.find(builtin_name);
         if (nit == nativeCallbacks.end()) {
-            throw makeError(loc, "Unrecognized native function name: " + builtin_name);
+            throw makeError(loc, "unrecognized native function name: " + builtin_name);
         }
 
         const VmNativeCallback &cb = nit->second;
@@ -1383,7 +1383,7 @@ class Interpreter {
         HeapObject *self = obj;
         HeapLeafObject *found = findObject(f, obj, offset, found_at);
         if (found == nullptr) {
-            throw makeError(loc, "Field does not exist: " + encode_utf8(f->name));
+            throw makeError(loc, "field does not exist: " + encode_utf8(f->name));
         }
         if (auto *simp = dynamic_cast<HeapSimpleObject *>(found)) {
             auto it = simp->fields.find(f);
@@ -1659,7 +1659,7 @@ class Interpreter {
                     const auto &ast = *static_cast<const Apply *>(f.ast);
                     if (scratch.t != Value::FUNCTION) {
                         throw makeError(ast.location,
-                                        "Only functions can be called, got " + type_str(scratch));
+                                        "only functions can be called, got " + type_str(scratch));
                     }
                     auto *func = static_cast<HeapClosure *>(scratch.v.h);
 
@@ -1682,13 +1682,13 @@ class Interpreter {
                         } else {
                             if (got_named) {
                                 std::stringstream ss;
-                                ss << "Internal error: got positional param after named at index "
+                                ss << "internal error: got positional param after named at index "
                                    << i;
                                 throw makeError(ast.location, ss.str());
                             }
                             if (i >= func->params.size()) {
                                 std::stringstream ss;
-                                ss << "Too many args, function has " << func->params.size()
+                                ss << "too many args, function has " << func->params.size()
                                    << " parameter(s)";
                                 throw makeError(ast.location, ss.str());
                             }
@@ -1707,13 +1707,13 @@ class Interpreter {
                         f.thunks.push_back(thunk);
                         if (args.find(name) != args.end()) {
                             std::stringstream ss;
-                            ss << "Binding parameter a second time: " << encode_utf8(name->name);
+                            ss << "binding parameter a second time: " << encode_utf8(name->name);
                             throw makeError(ast.location, ss.str());
                         }
                         args[name] = thunk;
                         if (params_needed.find(name) == params_needed.end()) {
                             std::stringstream ss;
-                            ss << "Function has no parameter " << encode_utf8(name->name);
+                            ss << "function has no parameter " << encode_utf8(name->name);
                             throw makeError(ast.location, ss.str());
                         }
                     }
@@ -1730,7 +1730,7 @@ class Interpreter {
                             continue;
                         if (param.def == nullptr) {
                             std::stringstream ss;
-                            ss << "Function parameter " << encode_utf8(param.id->name)
+                            ss << "function parameter " << encode_utf8(param.id->name)
                                << " not bound in call.";
                             throw makeError(ast.location, ss.str());
                         }
@@ -1846,7 +1846,7 @@ class Interpreter {
                         case BOP_IN: {
                             if (lhs.t != Value::STRING) {
                                 throw makeError(ast.location,
-                                                "The left hand side of the 'in' operator should be "
+                                                "the left hand side of the 'in' operator should be "
                                                 "a string,  got " +
                                                     type_str(lhs));
                             }
@@ -1863,7 +1863,7 @@ class Interpreter {
                                 default:
                                     throw makeError(
                                         ast.location,
-                                        "The right hand side of the 'in' operator should be"
+                                        "the right hand side of the 'in' operator should be"
                                         " an object, got " +
                                             type_str(rhs));
                             }
@@ -1875,7 +1875,7 @@ class Interpreter {
                     // Everything else requires matching types.
                     if (lhs.t != rhs.t) {
                         throw makeError(ast.location,
-                                        "Binary operator " + bop_string(ast.op) +
+                                        "binary operator " + bop_string(ast.op) +
                                             " requires "
                                             "matching types, got " +
                                             type_str(lhs) + " and " + type_str(rhs) + ".");
@@ -1893,7 +1893,7 @@ class Interpreter {
                                 scratch = makeArray(elements);
                             } else {
                                 throw makeError(ast.location,
-                                                "Binary operator " + bop_string(ast.op) +
+                                                "binary operator " + bop_string(ast.op) +
                                                     " does not operate on arrays.");
                             }
                             break;
@@ -1906,7 +1906,7 @@ class Interpreter {
 
                                 default:
                                     throw makeError(ast.location,
-                                                    "Binary operator " + bop_string(ast.op) +
+                                                    "binary operator " + bop_string(ast.op) +
                                                         " does not operate on booleans.");
                             }
                             break;
@@ -1927,7 +1927,7 @@ class Interpreter {
 
                                 case BOP_DIV:
                                     if (rhs.v.d == 0)
-                                        throw makeError(ast.location, "Division by zero.");
+                                        throw makeError(ast.location, "division by zero.");
                                     scratch = makeNumberCheck(ast.location, lhs.v.d / rhs.v.d);
                                     break;
 
@@ -1975,25 +1975,25 @@ class Interpreter {
 
                                 default:
                                     throw makeError(ast.location,
-                                                    "Binary operator " + bop_string(ast.op) +
+                                                    "binary operator " + bop_string(ast.op) +
                                                         " does not operate on numbers.");
                             }
                             break;
 
                         case Value::FUNCTION:
                             throw makeError(ast.location,
-                                            "Binary operator " + bop_string(ast.op) +
+                                            "binary operator " + bop_string(ast.op) +
                                                 " does not operate on functions.");
 
                         case Value::NULL_TYPE:
                             throw makeError(ast.location,
-                                            "Binary operator " + bop_string(ast.op) +
+                                            "binary operator " + bop_string(ast.op) +
                                                 " does not operate on null.");
 
                         case Value::OBJECT: {
                             if (ast.op != BOP_PLUS) {
                                 throw makeError(ast.location,
-                                                "Binary operator " + bop_string(ast.op) +
+                                                "binary operator " + bop_string(ast.op) +
                                                     " does not operate on objects.");
                             }
                             auto *lhs_obj = static_cast<HeapObject *>(lhs.v.h);
@@ -2019,7 +2019,7 @@ class Interpreter {
 
                                 default:
                                     throw makeError(ast.location,
-                                                    "Binary operator " + bop_string(ast.op) +
+                                                    "binary operator " + bop_string(ast.op) +
                                                         " does not operate on strings.");
                             }
                         } break;
@@ -2100,7 +2100,7 @@ class Interpreter {
 
                                 default:
                                     throw makeError(ast.location,
-                                                    "Native extensions can only take primitives.");
+                                                    "native extensions can only take primitives.");
                             }
                         }
                         std::vector<const JsonnetJsonValue *> args3;
@@ -2109,7 +2109,7 @@ class Interpreter {
                         }
                         if (nit == nativeCallbacks.end()) {
                             throw makeError(ast.location,
-                                            "Unrecognized builtin name: " + builtin_name);
+                                            "unrecognized builtin name: " + builtin_name);
                         }
                         const VmNativeCallback &cb = nit->second;
 
@@ -2123,7 +2123,7 @@ class Interpreter {
                             if (r->kind != JsonnetJsonValue::STRING) {
                                 throw makeError(
                                     ast.location,
-                                    "Native extension returned an error that was not a string.");
+                                    "native extension returned an error that was not a string.");
                             }
                             std::string rs = r->string;
                             throw makeError(ast.location, rs);
@@ -2182,7 +2182,7 @@ class Interpreter {
                     if (scratch.t != Value::BOOLEAN) {
                         throw makeError(
                             ast.location,
-                            "Condition must be boolean, got " + type_str(scratch) + ".");
+                            "condition must be boolean, got " + type_str(scratch) + ".");
                     }
                     ast_ = scratch.v.b ? ast.branchTrue : ast.branchFalse;
                     stack.pop();
@@ -2197,12 +2197,12 @@ class Interpreter {
                     offset++;
                     if (offset >= countLeaves(self)) {
                         throw makeError(ast.location,
-                                        "Attempt to use super when there is no super class.");
+                                        "attempt to use super when there is no super class.");
                     }
                     if (scratch.t != Value::STRING) {
                         throw makeError(
                             ast.location,
-                            "Super index must be string, got " + type_str(scratch) + ".");
+                            "super index must be string, got " + type_str(scratch) + ".");
                     }
 
                     const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
@@ -2220,7 +2220,7 @@ class Interpreter {
                     offset++;
                     if (scratch.t != Value::STRING) {
                         throw makeError(ast.location,
-                                        "Left hand side of e in super must be string, got " +
+                                        "left hand side of e in super must be string, got " +
                                             type_str(scratch) + ".");
                     }
                     if (offset >= countLeaves(self)) {
@@ -2244,25 +2244,25 @@ class Interpreter {
                             const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
                             throw makeError(
                                 ast.location,
-                                "Attempted index an array with string \""
+                                "attempted index an array with string \""
                                 + encode_utf8(jsonnet_string_escape(str, false)) + "\".");
                         }
                         if (scratch.t != Value::NUMBER) {
                             throw makeError(
                                 ast.location,
-                                "Array index must be number, got " + type_str(scratch) + ".");
+                                "array index must be number, got " + type_str(scratch) + ".");
                         }
                         double index = ::floor(scratch.v.d);
                         long sz = array->elements.size();
                         if (index < 0 || index >= sz) {
                             std::stringstream ss;
-                            ss << "Array bounds error: " << index << " not within [0, " << sz
+                            ss << "array bounds error: " << index << " not within [0, " << sz
                                << ")";
                             throw makeError(ast.location, ss.str());
                         }
                         if (scratch.v.d != index) {
                             std::stringstream ss;
-                            ss << "Array index was not integer: " << scratch.v.d;
+                            ss << "array index was not integer: " << scratch.v.d;
                             throw makeError(ast.location, ss.str());
                         }
                         // index < sz <= SIZE_T_MAX
@@ -2282,7 +2282,7 @@ class Interpreter {
                         if (scratch.t != Value::STRING) {
                             throw makeError(
                                 ast.location,
-                                "Object index must be string, got " + type_str(scratch) + ".");
+                                "object index must be string, got " + type_str(scratch) + ".");
                         }
                         const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
                         auto *fid = alloc->makeIdentifier(index_name);
@@ -2295,19 +2295,19 @@ class Interpreter {
                         if (scratch.t != Value::NUMBER) {
                             throw makeError(
                                 ast.location,
-                                "UString index must be a number, got " + type_str(scratch) + ".");
+                                "string index must be a number, got " + type_str(scratch) + ".");
                         }
                         long sz = obj->value.length();
                         long i = (long)scratch.v.d;
                         if (i < 0 || i >= sz) {
                             std::stringstream ss;
-                            ss << "UString bounds error: " << i << " not within [0, " << sz << ")";
+                            ss << "string bounds error: " << i << " not within [0, " << sz << ")";
                             throw makeError(ast.location, ss.str());
                         }
                         char32_t ch[] = {obj->value[i], U'\0'};
                         scratch = makeString(ch);
                     } else {
-                        std::cerr << "INTERNAL ERROR: Not object / array / string." << std::endl;
+                        std::cerr << "INTERNAL ERROR: not object / array / string." << std::endl;
                         abort();
                     }
                 } break;
@@ -2317,7 +2317,7 @@ class Interpreter {
                     if (scratch.t != Value::ARRAY && scratch.t != Value::OBJECT &&
                         scratch.t != Value::STRING) {
                         throw makeError(ast.location,
-                                        "Can only index objects, strings, and arrays, got " +
+                                        "can only index objects, strings, and arrays, got " +
                                             type_str(scratch) + ".");
                     }
                     f.val = scratch;
@@ -2373,13 +2373,13 @@ class Interpreter {
                     const auto &ast = *static_cast<const DesugaredObject *>(f.ast);
                     if (scratch.t != Value::NULL_TYPE) {
                         if (scratch.t != Value::STRING) {
-                            throw makeError(ast.location, "Field name was not a string.");
+                            throw makeError(ast.location, "field name was not a string.");
                         }
                         const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.objectFields.find(fid) != f.objectFields.end()) {
                             std::string msg =
-                                "Duplicate field name: \"" + encode_utf8(fname) + "\"";
+                                "duplicate field name: \"" + encode_utf8(fname) + "\"";
                             throw makeError(ast.location, msg);
                         }
                         f.objectFields[fid].hide = f.fit->hide;
@@ -2400,7 +2400,7 @@ class Interpreter {
                     const Value &arr_v = scratch;
                     if (scratch.t != Value::ARRAY) {
                         throw makeError(ast.location,
-                                        "Object comprehension needs array, got " + type_str(arr_v));
+                                        "object comprehension needs array, got " + type_str(arr_v));
                     }
                     const auto *arr = static_cast<const HeapArray *>(arr_v.v.h);
                     if (arr->elements.size() == 0) {
@@ -2430,7 +2430,7 @@ class Interpreter {
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.elements.find(fid) != f.elements.end()) {
                             throw makeError(ast.location,
-                                            "Duplicate field name: \"" + encode_utf8(fname) + "\"");
+                                            "duplicate field name: \"" + encode_utf8(fname) + "\"");
                         }
                         f.elements[fid] = arr->elements[f.elementId];
                     }
@@ -2475,7 +2475,7 @@ class Interpreter {
                                 scratch = makeBoolean(!scratch.v.b);
                             } else {
                                 throw makeError(ast.location,
-                                                "Unary operator " + uop_string(ast.op) +
+                                                "unary operator " + uop_string(ast.op) +
                                                     " does not operate on booleans.");
                             }
                             break;
@@ -2492,14 +2492,14 @@ class Interpreter {
 
                                 default:
                                     throw makeError(ast.location,
-                                                    "Unary operator " + uop_string(ast.op) +
+                                                    "unary operator " + uop_string(ast.op) +
                                                         " does not operate on numbers.");
                             }
                             break;
 
                         default:
                             throw makeError(ast.location,
-                                            "Unary operator " + uop_string(ast.op) +
+                                            "unary operator " + uop_string(ast.op) +
                                                 " does not operate on type " + type_str(scratch));
                     }
                 } break;
@@ -2567,7 +2567,7 @@ class Interpreter {
             case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
 
             case Value::FUNCTION:
-                throw makeError(loc, "Couldn't manifest function in JSON output.");
+                throw makeError(loc, "couldn't manifest function in JSON output.");
 
             case Value::NULL_TYPE: ss << U"null"; break;
 
@@ -2615,7 +2615,7 @@ class Interpreter {
     {
         if (scratch.t != Value::STRING) {
             std::stringstream ss;
-            ss << "Expected string result, got: " << type_str(scratch.t);
+            ss << "expected string result, got: " << type_str(scratch.t);
             throw makeError(loc, ss.str());
         }
         return static_cast<HeapString *>(scratch.v.h)->value;
@@ -2627,7 +2627,7 @@ class Interpreter {
         LocationRange loc("During manifestation");
         if (scratch.t != Value::OBJECT) {
             std::stringstream ss;
-            ss << "Multi mode: Top-level object was a " << type_str(scratch.t) << ", "
+            ss << "multi mode: top-level object was a " << type_str(scratch.t) << ", "
                << "should be an object whose keys are filenames and values hold "
                << "the JSON for that file.";
             throw makeError(loc, ss.str());
@@ -2660,7 +2660,7 @@ class Interpreter {
         LocationRange loc("During manifestation");
         if (scratch.t != Value::ARRAY) {
             std::stringstream ss;
-            ss << "Stream mode: Top-level object was a " << type_str(scratch.t) << ", "
+            ss << "stream mode: top-level object was a " << type_str(scratch.t) << ", "
                << "should be an array whose elements hold "
                << "the JSON for each document in the stream.";
             throw makeError(loc, ss.str());

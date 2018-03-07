@@ -1,4 +1,4 @@
-RUNTIME ERROR: Max stack frames exceeded.
+RUNTIME ERROR: max stack frames exceeded.
 	error.function_infinite_default.jsonnet:17:12	thunk <x>
 	error.function_infinite_default.jsonnet:17:17	thunk <y>
 	error.function_infinite_default.jsonnet:17:12	thunk <x>

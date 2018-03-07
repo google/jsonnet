@@ -91,7 +91,7 @@ class Parser {
     StaticError unexpected(const Token &tok, const std::string &while_)
     {
         std::stringstream ss;
-        ss << "Unexpected: " << tok.kind << " while " << while_;
+        ss << "unexpected: " << tok.kind << " while " << while_;
         return StaticError(tok.location, ss.str());
     }
 
@@ -125,12 +125,12 @@ class Parser {
         Token tok = pop();
         if (tok.kind != k) {
             std::stringstream ss;
-            ss << "Expected token " << k << " but got " << tok;
+            ss << "expected token " << k << " but got " << tok;
             throw StaticError(tok.location, ss.str());
         }
         if (data != nullptr && tok.data != data) {
             std::stringstream ss;
-            ss << "Expected operator " << data << " but got " << tok.data;
+            ss << "expected operator " << data << " but got " << tok.data;
             throw StaticError(tok.location, ss.str());
         }
         return tok;
@@ -163,7 +163,7 @@ class Parser {
             }
             if (!first && !got_comma) {
                 std::stringstream ss;
-                ss << "Expected a comma before next " << element_kind << ".";
+                ss << "expected a comma before next " << element_kind << ".";
                 throw StaticError(next.location, ss.str());
             }
             // Either id=expr or id or expr, but note that expr could be id==1 so this needs
@@ -204,7 +204,7 @@ class Parser {
         for (auto &p : params) {
             if (p.id == nullptr) {
                 if (p.expr->type != AST_VAR) {
-                    throw StaticError(p.expr->location, "Could not parse parameter here.");
+                    throw StaticError(p.expr->location, "could not parse parameter here.");
                 }
                 auto *pv = static_cast<Var *>(p.expr);
                 p.id = pv->id;
@@ -224,7 +224,7 @@ class Parser {
         auto *id = alloc->makeIdentifier(var_id.data32());
         for (const auto &bind : binds) {
             if (bind.var == id)
-                throw StaticError(var_id.location, "Duplicate local var: " + var_id.data);
+                throw StaticError(var_id.location, "duplicate local var: " + var_id.data);
         }
         bool is_function = false;
         ArgParams params;
@@ -284,22 +284,22 @@ class Parser {
                     num_fields++;
                 }
                 if (num_asserts > 0) {
-                    auto msg = "Object comprehension cannot have asserts.";
+                    auto msg = "object comprehension cannot have asserts.";
                     throw StaticError(next.location, msg);
                 }
                 if (num_fields != 1) {
-                    auto msg = "Object comprehension can only have one field.";
+                    auto msg = "object comprehension can only have one field.";
                     throw StaticError(next.location, msg);
                 }
                 const ObjectField &field = *field_ptr;
 
                 if (field.hide != ObjectField::INHERIT) {
-                    auto msg = "Object comprehensions cannot have hidden fields.";
+                    auto msg = "object comprehensions cannot have hidden fields.";
                     throw StaticError(next.location, msg);
                 }
 
                 if (field.kind != ObjectField::FIELD_EXPR) {
-                    auto msg = "Object comprehensions can only have [e] fields.";
+                    auto msg = "object comprehensions can only have [e] fields.";
                     throw StaticError(next.location, msg);
                 }
 
@@ -312,7 +312,7 @@ class Parser {
             }
 
             if (!got_comma && !first)
-                throw StaticError(next.location, "Expected a comma before next field.");
+                throw StaticError(next.location, "expected a comma before next field.");
 
             first = false;
             got_comma = false;
@@ -406,7 +406,7 @@ class Parser {
                         if (*od != ':') {
                             throw StaticError(
                                 next.location,
-                                "Expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
+                                "expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
                         }
                         ++colons;
                     }
@@ -421,17 +421,17 @@ class Parser {
                         default:
                             throw StaticError(
                                 next.location,
-                                "Expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
+                                "expected one of :, ::, :::, +:, +::, +:::, got: " + op.data);
                     }
 
                     // Basic checks for invalid Jsonnet code.
                     if (is_method && plus_sugar) {
                         throw StaticError(next.location,
-                                          "Cannot use +: syntax sugar in a method: " + next.data);
+                                          "cannot use +: syntax sugar in a method: " + next.data);
                     }
                     if (kind != ObjectField::FIELD_EXPR) {
                         if (!literal_fields.insert(next.data).second) {
-                            throw StaticError(next.location, "Duplicate field: " + next.data);
+                            throw StaticError(next.location, "duplicate field: " + next.data);
                         }
                     }
 
@@ -468,7 +468,7 @@ class Parser {
                     auto *id = alloc->makeIdentifier(var_id.data32());
 
                     if (binds.find(id) != binds.end()) {
-                        throw StaticError(var_id.location, "Duplicate local var: " + var_id.data);
+                        throw StaticError(var_id.location, "duplicate local var: " + var_id.data);
                     }
                     bool is_method = false;
                     bool func_comma = false;
@@ -558,7 +558,7 @@ class Parser {
             }
             if (maybe_if.kind != Token::FOR) {
                 std::stringstream ss;
-                ss << "Expected for, if or " << end << " after for clause, got: " << maybe_if;
+                ss << "expected for, if or " << end << " after for clause, got: " << maybe_if;
                 throw StaticError(maybe_if.location, ss.str());
             }
             for_fodder = maybe_if.fodder;
@@ -588,13 +588,13 @@ class Parser {
             case Token::TAILSTRICT:
             case Token::THEN: throw unexpected(tok, "parsing terminal");
 
-            case Token::END_OF_FILE: throw StaticError(tok.location, "Unexpected end of file.");
+            case Token::END_OF_FILE: throw StaticError(tok.location, "unexpected end of file.");
 
             case Token::OPERATOR: {
                 UnaryOp uop;
                 if (!op_is_unary(tok.data, uop)) {
                     std::stringstream ss;
-                    ss << "Not a unary operator: " << tok.data;
+                    ss << "not a unary operator: " << tok.data;
                     throw StaticError(tok.location, ss.str());
                 }
                 AST *expr = parse(UNARY_PRECEDENCE);
@@ -649,7 +649,7 @@ class Parser {
                     }
                     if (!got_comma) {
                         std::stringstream ss;
-                        ss << "Expected a comma before next array element.";
+                        ss << "expected a comma before next array element.";
                         throw StaticError(next.location, ss.str());
                     }
                     AST *expr = parse(MAX_PRECEDENCE);
@@ -725,7 +725,7 @@ class Parser {
                         Token bracket_r = popExpect(Token::BRACKET_R);
                         id_fodder = bracket_r.fodder;  // Not id_fodder, but use the same var.
                     } break;
-                    default: throw StaticError(tok.location, "Expected . or [ after super.");
+                    default: throw StaticError(tok.location, "expected . or [ after super.");
                 }
                 return alloc->make<SuperIndex>(
                     span(tok), tok.fodder, next.fodder, index, id_fodder, id);
@@ -819,7 +819,7 @@ class Parser {
                                                  body);
                 } else {
                     std::stringstream ss;
-                    ss << "Expected ( but got " << paren_l;
+                    ss << "expected ( but got " << paren_l;
                     throw StaticError(paren_l.location, ss.str());
                 }
             }
@@ -836,7 +836,7 @@ class Parser {
                     return alloc->make<Import>(span(begin, body), begin.fodder, lit);
                 } else {
                     std::stringstream ss;
-                    ss << "Computed imports are not allowed.";
+                    ss << "computed imports are not allowed.";
                     throw StaticError(body->location, ss.str());
                 }
             }
@@ -853,7 +853,7 @@ class Parser {
                     return alloc->make<Importstr>(span(begin, body), begin.fodder, lit);
                 } else {
                     std::stringstream ss;
-                    ss << "Computed imports are not allowed.";
+                    ss << "computed imports are not allowed.";
                     throw StaticError(body->location, ss.str());
                 }
             }
@@ -865,7 +865,7 @@ class Parser {
                     Token delim = parseBind(binds);
                     if (delim.kind != Token::SEMICOLON && delim.kind != Token::COMMA) {
                         std::stringstream ss;
-                        ss << "Expected , or ; but got " << delim;
+                        ss << "expected , or ; but got " << delim;
                         throw StaticError(delim.location, ss.str());
                     }
                     if (delim.kind == Token::SEMICOLON)
@@ -918,7 +918,7 @@ class Parser {
                     }
                     if (!op_is_binary(peek().data, bop)) {
                         std::stringstream ss;
-                        ss << "Not a binary operator: " << peek().data;
+                        ss << "not a binary operator: " << peek().data;
                         throw StaticError(peek().location, ss.str());
                     }
                     op_precedence = precedence_map[bop];
@@ -1093,7 +1093,7 @@ AST *jsonnet_parse(Allocator *alloc, Tokens &tokens)
     AST *expr = parser.parse(MAX_PRECEDENCE);
     if (tokens.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
-        ss << "Did not expect: " << tokens.front();
+        ss << "did not expect: " << tokens.front();
         throw StaticError(tokens.front().location, ss.str());
     }
 
