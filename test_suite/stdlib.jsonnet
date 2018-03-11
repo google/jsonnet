@@ -404,6 +404,7 @@ local some_json = {
   y: { a: 1, b: 2, c: [1, 2] },
   emptyArray: [],
   emptyObject: {},
+  objectInArray: [{ f: 3 }],
   '"': null,
 };
 
@@ -425,6 +426,11 @@ std.assertEqual(
         "emptyObject": {
 
         },
+        "objectInArray": [
+            {
+                "f": 3
+            }
+        ],
         "x": [
             1,
             2,
@@ -454,6 +460,8 @@ std.assertEqual(
       - - []
     "emptyArray": []
     "emptyObject": {}
+    "objectInArray": 
+      - "f": 3
     "x": 
       - 1
       - 2
@@ -482,6 +490,8 @@ std.assertEqual(
       - - []
     "emptyArray": []
     "emptyObject": {}
+    "objectInArray": 
+      - "f": 3
     "x": 
       - 1
       - 2
@@ -504,6 +514,8 @@ std.assertEqual(
       - - []
     "emptyArray": []
     "emptyObject": {}
+    "objectInArray": 
+      - "f": 3
     "x": 
       - 1
       - 2
