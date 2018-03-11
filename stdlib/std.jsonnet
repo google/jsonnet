@@ -898,7 +898,7 @@ limitations under the License.
     aux(value, [], ''),
 
   manifestYamlDoc(value)::
-    local aux(v, in_array, in_object, path, cindent) =
+    local aux(v, in_object, path, cindent) =
       if v == true then
         'true'
       else if v == false then
@@ -924,7 +924,7 @@ limitations under the License.
         else
           local range = std.range(0, std.length(v) - 1);
           local new_indent = cindent + '  ';
-          local parts = [aux(v[i], true, false, path + [i], new_indent) for i in range];
+          local parts = [aux(v[i], false, path + [i], new_indent) for i in range];
           (if in_object then '\n' + cindent else '') + '- ' + std.join('\n' + cindent + '- ', parts)
       else if std.type(v) == 'object' then
         if std.length(v) == 0 then
@@ -932,12 +932,11 @@ limitations under the License.
         else
           local new_indent = cindent + '  ';
           local lines = [
-            cindent + std.escapeStringJson(k) + ': ' + aux(v[k], false, true, path + [k], new_indent)
+            std.escapeStringJson(k) + ': ' + aux(v[k], true, path + [k], new_indent)
             for k in std.objectFields(v)
           ];
-          (if in_array || in_object then '\n' else '')
-          + std.join('\n', lines);
-    aux(value, false, false, [], ''),
+          (if in_object then '\n' + cindent else '') + std.join('\n' + cindent, lines);
+    aux(value, false, [], ''),
 
   manifestYamlStream(value)::
     if std.type(value) != 'array' then
