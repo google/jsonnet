@@ -133,14 +133,14 @@ void usage(std::ostream &o)
     o << "  -o / --output-file <file> Write to the output file rather than stdout\n";
     o << "  -i / --in-place         Update the Jsonnet file(s) in place.\n";
     o << "  --test                  Exit with failure if reformatting changed the file(s).\n";
-    o << "  -n / --indent <n>       Number of spaces to indent by (default 0, means no change)\n";
+    o << "  -n / --indent <n>       Number of spaces to indent by (default 2, 0 means no change)\n";
     o << "  --max-blank-lines <n>   Max vertical spacing, 0 means no change (default 2)\n";
-    o << "  --string-style <d|s|l>  Enforce double, single quotes or 'leave' (the default)\n";
-    o << "  --comment-style <h|s|l> # (h)  // (s)  or 'leave' (default) never changes she-bang\n";
+    o << "  --string-style <d|s|l>  Enforce double, single (default) quotes or 'leave'\n";
+    o << "  --comment-style <h|s|l> # (h), // (s)(default), or 'leave'; never changes she-bang\n";
     o << "  --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)\n";
     o << "  --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]\n";
     o << "  --[no-]pad-objects      { x: 1, x: 2 } instead of {x: 1, y: 2} (on by default)\n";
-    o << "  --[no-]sort-imports     Sorting of imports (off by default)\n";
+    o << "  --[no-]sort-imports     Sorting of imports (on by default)\n";
     o << "  --debug-desugaring      Unparse the desugared AST without executing it\n";
     o << "  --version               Print version\n";
     o << "\n";
