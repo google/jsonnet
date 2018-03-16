@@ -457,27 +457,27 @@ std.assertEqual(
   |||
     "\"": null
     "arr": 
-      - - []
+    - - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 
-      - "f": 3
+    - "f": 3
     "x": 
-      - 1
-      - 2
-      - 3
-      - true
-      - false
-      - null
-      - |
-        string
-        string
+    - 1
+    - 2
+    - 3
+    - true
+    - false
+    - null
+    - |
+      string
+      string
     "y": 
       "a": 1
       "b": 2
       "c": 
-        - 1
-        - 2
+      - 1
+      - 2
   |||
 ) &&
 
@@ -487,51 +487,51 @@ std.assertEqual(
     ---
     "\"": null
     "arr": 
-      - - []
+    - - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 
-      - "f": 3
+    - "f": 3
     "x": 
-      - 1
-      - 2
-      - 3
-      - true
-      - false
-      - null
-      - |
-        string
-        string
+    - 1
+    - 2
+    - 3
+    - true
+    - false
+    - null
+    - |
+      string
+      string
     "y": 
       "a": 1
       "b": 2
       "c": 
-        - 1
-        - 2
+      - 1
+      - 2
     ---
     "\"": null
     "arr": 
-      - - []
+    - - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 
-      - "f": 3
+    - "f": 3
     "x": 
-      - 1
-      - 2
-      - 3
-      - true
-      - false
-      - null
-      - |
-        string
-        string
+    - 1
+    - 2
+    - 3
+    - true
+    - false
+    - null
+    - |
+      string
+      string
     "y": 
       "a": 1
       "b": 2
       "c": 
-        - 1
-        - 2
+      - 1
+      - 2
     ---
     {}
     ---

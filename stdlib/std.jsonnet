@@ -923,9 +923,10 @@ limitations under the License.
           '[]'
         else
           local range = std.range(0, std.length(v) - 1);
-          local new_indent = cindent + '  ';
-          local parts = [aux(v[i], false, path + [i], new_indent) for i in range];
-          (if in_object then '\n' + cindent else '') + '- ' + std.join('\n' + cindent + '- ', parts)
+          local actual_indent = if in_object then cindent[2:] else cindent;
+          local parts = [aux(v[i], false, path + [i], cindent) for i in range];
+          (if in_object then '\n' + actual_indent else '')
+          + '- ' + std.join('\n' + actual_indent + '- ', parts)
       else if std.type(v) == 'object' then
         if std.length(v) == 0 then
           '{}'
