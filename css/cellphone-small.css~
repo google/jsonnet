@@ -1,0 +1,81 @@
+/* Cellphone width. */
+
+.panel {
+  width: 512px;
+}
+div.header2 {
+  max-width: 640px;
+  height: 48px;
+  padding: 12px 6px;
+}
+#header-title {
+  font-size: 28px;
+  margin-right: 12px;
+}
+a#header-logo img {
+  width: 48px;
+  height: 48px;
+}
+
+.header-element {
+  margin-left: 6px;
+  margin-right: 6px;
+  font-size: 17.5px;
+  line-height: 48px;
+  height: 48px;
+}
+
+a#groupsmark, a#githubmark, a#gomark {
+  width: 32px;
+  height: 32px;
+  margin: 8px 6px;
+}
+div.inverse {
+  background-size: 128px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.hgroup {
+  font-size: 18px;
+}
+
+img#big-logo {
+  height: 189px;
+}
+
+td.side-text {
+}
+
+table.venn {
+  padding-top: 16px;
+}
+
+img#venn {
+  height: 164px;
+  margin-left: auto;
+}
+
+.tab-window-before {
+  margin: 16px 0 0 0;
+}
+
+.tab-window-after {
+  margin: 0 0 16px 0;
+}
+
+.bigarrow {
+  font-size: 64px;
+  transform: rotate(90deg);
+}
+
+p.footer {
+  font-size: 16px;
+  font-style: italic;
+}
+
+img.user-logo {
+    padding: 8px;
+    height: 80px;
+}
+

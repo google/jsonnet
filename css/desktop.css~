@@ -1,0 +1,84 @@
+/* Desktop width. */
+
+.panel {
+  width: 640px;
+  float: left;
+}
+div.header2 {
+  max-width: 1280px;
+  height: 48px;
+  padding: 12px;
+}
+#header-title {
+  font-size: 32px;
+  margin-right: 72px;
+}
+a#header-logo img {
+  width: 48px;
+  height: 48px;
+}
+
+.header-element {
+  margin-left: 24px;
+  margin-right: 24px;
+  font-size: 20px;
+  line-height: 48px;
+  height: 48px;
+}
+
+a#groupsmark, a#githubmark, a#gomark {
+  width: 32px;
+  height: 32px;
+  margin: 8px 16px;
+}
+div.inverse {
+  background-size: 128px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.hgroup {
+  font-size: 18px;
+}
+
+img#big-logo {
+  height: 216px;
+}
+
+td.side-text {
+  padding-left: 64px;
+  padding-right: 64px;
+}
+
+img#venn {
+  height: 200px;
+  margin-left: auto;
+  padding: 8px 16px;
+}
+
+.tab-window-before,
+.tab-window-after {
+  float:left;
+  margin: 16px 0;
+}
+
+.bigarrow {
+  float: left;
+  font-size: 64px;
+  margin: 80px 8px;
+  position: relative;
+}
+
+p.footer {
+  font-size: 16px;
+  font-style: italic;
+}
+
+img.user-logo {
+    padding: 8px;
+    height: 72px;
+}
+
+h1 {
+  margin: 0;
+}

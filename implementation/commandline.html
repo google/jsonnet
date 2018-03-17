@@ -62,10 +62,10 @@ and &lt;option&gt; can be:
   -o / --output-file &lt;file&gt; Write to the output file rather than stdout
   -i / --in-place         Update the Jsonnet file in place.  Same as -o &lt;filename&gt;
   --test                  Exit with failure if reformatting changed the file.
-  -n / --indent &lt;n&gt;       Number of spaces to indent by (default 0, means no change)
+  -n / --indent &lt;n&gt;       Number of spaces to indent by (default 2, 0 means no change)
   --max-blank-lines &lt;n&gt;   Max vertical spacing, 0 means no change (default 2)
-  --string-style &lt;d|s|l&gt;  Enforce double, single quotes or 'leave' (the default)
-  --comment-style &lt;h|s|l&gt; # (h)  // (s)  or 'leave' (default) never changes she-bang
+  --string-style &lt;d|s|l&gt;  Enforce double, single (default) quotes or 'leave'
+  --comment-style &lt;h|s|l&gt; # (h), // (s)(default), or 'leave'; never changes she-bang
   --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)
   --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]
   --[no-]pad-objects      { x: 1, x: 2 } instead of {x: 1, y: 2} (on by default)

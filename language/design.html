@@ -19,7 +19,7 @@ guided by the following criteria: </p>
 
 <ul>
 
-<li><b>Hermiticity</b>:  Code may be treated as data.  The same JSON should be generated regardless
+<li><b>Hermeticity</b>:  Code may be treated as data.  The same JSON should be generated regardless
 of the environment, i.e. without non-deterministic or system-dependent behaviors.  </li>
 
 <li><b>Templating language</b>:  Code should be interleaved with verbatim data so that it is easy to
@@ -146,7 +146,7 @@ restrict <code>super</code> in order to keep the language simple (fewer rules).<
 
 <p>There are ideological and practical reasons for designing Jsonnet as a pure functional language.
 On the practical side, pure functional languages have no side-effects, which (together with
-determinism) gives us the property of hermiticity.  This allows code to be treated as data, because
+determinism) gives us the property of hermeticity.  This allows code to be treated as data, because
 the code will always evaluate to the same thing, and it is not allowed to make changes to its
 environment (e.g. by writing to files).  By analogy, compressed data can be decompressed on demand
 because it will always produce the same data and the decompression process doesn't have any external
@@ -154,7 +154,7 @@ side-effects.</p>
 
 <p>Furthermore, the property of <a
 href="http://en.wikipedia.org/wiki/Referential_transparency_(computer_science)">referential
-transparency</a> essentially extends the hermiticity property into submodules of the Jsonnet code
+transparency</a> essentially extends the hermeticity property into submodules of the Jsonnet code
 itself, which means that different parts of the code cannot interfere with each other and everything
 composes in a very predictable way.  In a language whose purpose is simply to define data, the
 property of referential transparency is very natural.

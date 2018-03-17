@@ -1,0 +1,14 @@
+---
+layout: default
+---
+
+<h1 id="changeme">Changeme</h1>
+
+TODO
+<code>$</code> (syntax borrowed from <a
+        href="http://goessner.net/articles/JsonPath">JsonPath</a>) 
+
+
+        expressions.  They are referenced using standard static <a
+        href="http://en.wikipedia.org/wiki/Scope_(computer_science)">scoping</a> rules.  In the
+

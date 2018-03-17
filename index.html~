@@ -1,0 +1,290 @@
+---
+layout: default
+---
+
+<div class=hgroup>
+  <div class=hgroup-inline>
+    <div class=panel>
+      <table>
+        <tr>
+          <td><img id=big-logo src=img/isologo.svg></td>
+          <td class=side-text>
+            <p>
+              A data templating language<br>
+              for app and tool developers
+            </p>
+            <ul>
+            <li>Generate config data</li>
+            <li>Side-effect free</li>
+            <li>Organize, simplify, unify</li>
+            <li>Manage sprawling config</li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class=panel>
+      <table class=venn>
+        <tr>
+          <td>
+            <p>
+              A simple extension of <a href="http://json.org/">JSON</a><br>
+            </p>
+            <ul>
+            <li>Open source (Apache 2.0)</li>
+            <li>Familiar syntax</li>
+            <li>Reformatter, linter</li>
+            <li>Editor &amp; IDE integrations</li>
+            <li>Formally specified</li>
+            </ul>
+          </td>
+          <td class=venn-cell><img id=venn src=img/venn.svg></td>
+        </tr>
+      </table>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class=hgroup>
+  <div class=hgroup-inline>
+    <div class=panel>
+      <p class=center>Eliminate duplication with object-orientation:</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="example1-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=example1-jsonnet autofocus>
+        // Edit me!
+        {
+          person1: {
+            name: "Alice",
+            welcome: "Hello " + self.name + "!",
+          },
+          person2: self.person1 { name: "Bob" },
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="example1-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'example1-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="example1-json-output">
+        {
+          "person1": {
+            "name": "Alice",
+            "welcome": "Hello Alice!"
+          },
+          "person2": {
+            "name": "Bob",
+            "welcome": "Hello Bob!"
+          }
+        }
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'example1-input',
+        {
+          'example1.jsonnet': 'example1-jsonnet',
+        },
+        'example1-output',
+        false,
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class=hgroup>
+  <div class=hgroup-inline>
+    <div class=panel>
+      <p class=center>Or, use functions:</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="example2-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=example2-jsonnet autofocus>
+        // A function that returns an object.
+        local Person(name='Alice') = {
+          name: name,
+          welcome: 'Hello ' + name + '!',
+        };
+        {
+          person1: Person(),
+          person2: Person('Bob'),
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="example2-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'example2-json-output')">output.json</div>
+      </div>
+      <textarea readonly class="selected code-json" id="example2-json-output">
+        {
+          "person1": {
+            "name": "Alice",
+            "welcome": "Hello Alice!"
+          },
+          "person2": {
+            "name": "Bob",
+            "welcome": "Hello Bob!"
+          }
+        }
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'example2-input',
+        {
+          'example2.jsonnet': 'example2-jsonnet',
+        },
+        'example2-output',
+        false,
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class=hgroup>
+  <div class=hgroup-inline>
+    <div class=panel>
+      <p class=center>
+        Integrate with existing / custom applications.<br>
+        Generate JSON, YAML, INI, and other formats.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="example3-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=example3-jsonnet>
+        local application = 'my-app';
+        local module = 'uwsgi_module';
+        local dir = '/var/www';
+        {
+          'uwsgi.ini': std.manifestIni({
+            sections: {
+              uwsgi: {
+                chdir: dir,
+                base: dir,
+                module: module,
+                pythonpath: dir,
+                socket: dir + '/uwsgi.sock',
+                'chmod-socket': '644',
+                callable: application,
+                logto: '/var/log/uwsgi/uwsgi.log',
+              },
+            },
+          }),
+
+          'init.sh': |||
+            #!/bin/bash
+            touch %s/initialized
+          ||| % dir,
+
+          'cassandra.conf': std.manifestYamlDoc({
+            cluster_name: application,
+            seed_provider: [
+              {
+                class_name: 'SimpleSeedProvider',
+                parameters: [{ seeds: '127.0.0.1' }],
+              },
+            ],
+          }),
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="example3-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'example3-yaml-output')">cassandra.conf</div>
+        <div class=unselected onclick="tab_output_click(this, 'example3-sh-output')">init.sh</div>
+        <div class=unselected onclick="tab_output_click(this, 'example3-ini-output')">uwsgi.ini</div>
+      </div>
+      <textarea readonly class="selected code-json" id="example3-yaml-output">
+        "cluster_name": "my-app"
+        "seed_provider":
+          - "class_name": "SimpleSeedProvider"
+            "parameters":
+              - "seeds": "127.0.0.1"
+      </textarea>
+      <textarea readonly class="unselected code-json" id="example3-sh-output">
+        #!/bin/bash
+        touch /var/www/initialized
+      </textarea>
+      <textarea readonly class="unselected code-json" id="example3-ini-output">
+        [uwsgi]
+        base = /var/www
+        callable = my-app
+        chdir = /var/www
+        chmod-socket = 644
+        logto = /var/log/uwsgi/uwsgi.log
+        module = uwsgi_module
+        pythonpath = /var/www
+        socket = /var/www/uwsgi.sock
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'example3-input',
+        {
+          'example3.jsonnet': 'example3-jsonnet',
+        },
+        'example3-output',
+        true,
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class=hgroup>
+  <div class=hgroup-inline>
+    <div class=panel>
+      <p class=padded>
+        The name Jsonnet is a portmanteau of JSON and <a
+        href="http://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>, pronounced "jay sonnet".  It
+        began life Aug 6 2014 as a 20% project.  The design is influenced by several configuration
+        languages internal to Google, and embodies years of experience configuring some of the
+        world's most complex IT systems.  Jsonnet is now used by many companies and projects.
+      </p>
+    </div>
+
+    <div class=panel>
+      <p class=center>
+        <a href='https://bitnami.com'><img class=user-logo src=img/users/bitnami.png></a>
+        <a href='https://www.box.com'><img class=user-logo src=img/users/box.jpg></a>
+        <a href='https://coreos.com'><img class=user-logo src=img/users/coreos.svg></a>
+        <a href='https://databricks.com'><img class=user-logo src=img/users/databricks.png></a>
+        <a href='https://vr.google.com/daydream/'><img class=user-logo src=img/users/daydream-logo.png></a>
+        <a href='https://deepmind.com'><img class=user-logo src=img/users/deepmind.png></a>
+        <a href='https://grafana.com'><img class=user-logo src=img/users/grafana.svg></a>
+        <a href='https://www.heptio.com'><img class=user-logo src=img/users/heptio.jpg></a>
+        <a href='https://kausal.co'><img class=user-logo src=img/users/kausal.svg></a>
+        <a href='https://www.spinnaker.io'><img class=user-logo src=img/users/spinnaker.png></a>
+      </p class=center>
+    </div>
+    <div style="clear: both"></div>
+  </div>  
+</div>  
