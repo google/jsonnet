@@ -1113,19 +1113,19 @@ limitations under the License.
     aux(a, b, 0, 0, []) tailstrict,
 
   setDiff(a, b, keyF=id)::
-    local aux(a, b, i, j, acc, keyF) =
+    local aux(a, b, i, j, acc) =
       if i >= std.length(a) then
         acc
       else if j >= std.length(b) then
-        aux(a, b, i + 1, j, acc + [a[i]], keyF) tailstrict
+        aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
       else
         if keyF(a[i]) == keyF(b[j]) then
-          aux(a, b, i + 1, j + 1, acc, keyF) tailstrict
+          aux(a, b, i + 1, j + 1, acc) tailstrict
         else if keyF(a[i]) < keyF(b[j]) then
-          aux(a, b, i + 1, j, acc + [a[i]], keyF) tailstrict
+          aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
         else
-          aux(a, b, i, j + 1, acc, keyF) tailstrict;
-    aux(a, b, 0, 0, [], keyF) tailstrict,
+          aux(a, b, i, j + 1, acc) tailstrict;
+    aux(a, b, 0, 0, []) tailstrict,
 
   mergePatch(target, patch)::
     if std.type(patch) == 'object' then
