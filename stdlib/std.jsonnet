@@ -23,6 +23,7 @@ limitations under the License.
 {
 
   local std = self,
+  local id = function(x) x,
 
   isString(v):: std.type(v) == 'string',
   isNumber(v):: std.type(v) == 'number',
@@ -1066,60 +1067,61 @@ limitations under the License.
     std.join('', std.map(function(b) std.char(b), bytes)),
 
   // Quicksort
-  sort(arr)::
+  sort(arr, keyF=id)::
     local l = std.length(arr);
     if std.length(arr) == 0 then
       []
     else
-      local pivot = arr[0];
+      local pivot = keyF(arr[0]);
       local rest = std.makeArray(l - 1, function(i) arr[i + 1]);
-      local left = std.filter(function(x) x <= pivot, rest);
-      local right = std.filter(function(x) x > pivot, rest);
-      std.sort(left) + [pivot] + std.sort(right),
+      local left = std.filter(function(x) keyF(x) < pivot, rest);
+      local right = std.filter(function(x) keyF(x) >= pivot, rest);
+      std.sort(left, keyF) + [arr[0]] + std.sort(right, keyF),
 
-  uniq(arr)::
+  uniq(arr, keyF=id)::
     local f(a, b) =
       if std.length(a) == 0 then
         [b]
-      else if a[std.length(a) - 1] == b then
+      else if keyF(a[std.length(a) - 1]) == keyF(b) then
         a
       else
         a + [b];
     std.foldl(f, arr, []),
 
-  set(arr)::
-    std.uniq(std.sort(arr)),
+  set(arr, keyF=id)::
+    std.uniq(std.sort(arr, keyF), keyF),
 
-  setMember(x, arr)::
+  setMember(x, arr, keyF=id)::
     // TODO(dcunnin): Binary chop for O(log n) complexity
-    std.length(std.setInter([x], arr)) > 0,
+    std.length(std.setInter([x], arr, keyF)) > 0,
 
-  setUnion(a, b)::
-    std.set(a + b),
+  setUnion(a, b, keyF=id)::
+    // NOTE: order matters, values in `a` win due to sort being stable
+    std.set(a + b, keyF),
 
-  setInter(a, b)::
+  setInter(a, b, keyF=id)::
     local aux(a, b, i, j, acc) =
       if i >= std.length(a) || j >= std.length(b) then
         acc
       else
-        if a[i] == b[j] then
+        if keyF(a[i]) == keyF(b[j]) then
           aux(a, b, i + 1, j + 1, acc + [a[i]]) tailstrict
-        else if a[i] < b[j] then
+        else if keyF(a[i]) < keyF(b[j]) then
           aux(a, b, i + 1, j, acc) tailstrict
         else
           aux(a, b, i, j + 1, acc) tailstrict;
     aux(a, b, 0, 0, []) tailstrict,
 
-  setDiff(a, b)::
+  setDiff(a, b, keyF=id)::
     local aux(a, b, i, j, acc) =
       if i >= std.length(a) then
         acc
       else if j >= std.length(b) then
         aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
       else
-        if a[i] == b[j] then
+        if keyF(a[i]) == keyF(b[j]) then
           aux(a, b, i + 1, j + 1, acc) tailstrict
-        else if a[i] < b[j] then
+        else if keyF(a[i]) < keyF(b[j]) then
           aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
         else
           aux(a, b, i, j + 1, acc) tailstrict;
