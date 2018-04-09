@@ -60,7 +60,7 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  * \param rel The path imported by the code.
  * \param found_here Set this byref param to path to the file, absolute or relative to the
  *     process's CWD.  This is necessary so that imports from the content of the imported file can
- *     be resolved correctly.  Allocate memory with jsonnet_realloc.  Only use when *success = 0.
+ *     be resolved correctly.  Allocate memory with jsonnet_realloc.  Only use when *success = 1.
  * \param success Set this byref param to 1 to indicate success and 0 for failure.
  * \returns The content of the imported file, or an error message.
  */
