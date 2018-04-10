@@ -619,6 +619,14 @@ class Interpreter {
         return r;
     }
 
+    Value makeObject(HeapObject *obj)
+    {
+        Value r;
+        r.t = Value::OBJECT;
+        r.v.h = obj;
+        return r;
+    }
+
     Value makeString(const UString &v)
     {
         Value r;
@@ -857,6 +865,7 @@ class Interpreter {
         builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
         builtins["native"] = &Interpreter::builtinNative;
         builtins["md5"] = &Interpreter::builtinMd5;
+        builtins["trace"] = &Interpreter::builtinTrace;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1287,6 +1296,24 @@ class Interpreter {
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         scratch = makeString(decode_utf8(md5(value)));
+        return nullptr;
+    }
+
+    const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        // TODO: This error handling is really bad. Ideally there should be a
+        // Value::OBJECT_OR_ARRAY enum and the validateBuiltinArgs should know how
+        // how to check the type.
+        // TODO: This error handling will only suggest to use an array for the trace
+        // call even though objects are also allowed.
+        validateBuiltinArgs(loc, "trace", args, {Value::STRING, Value::OBJECT});
+
+        std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::cerr << "TRACE " << loc.file << ":" << loc.begin.line << " " <<  str
+            << std::endl;
+
+        auto *obj = static_cast<HeapObject *>(args[1].v.h);
+        scratch = makeObject(obj);
         return nullptr;
     }
 

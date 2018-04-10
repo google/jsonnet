@@ -567,5 +567,8 @@ std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghf
 
 std.assertEqual(std.deepJoin(['a', ['b', 'c', [[], 'd', ['e'], 'f', 'g'], [], []], 'h']),
                 'abcdefgh') &&
+std.assertEqual(std.trace('', {}), {}) &&
+std.assertEqual(std.trace('', { a: {} }), { a: {} }) &&
+std.assertEqual(std.trace('Some Trace Message', { a: {} }), { a: {} }) &&
 
 true

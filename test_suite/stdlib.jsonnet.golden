@@ -1,0 +1,4 @@
+TRACE stdlib.jsonnet:570 
+TRACE stdlib.jsonnet:571 
+TRACE stdlib.jsonnet:572 Some Trace Message
+true
