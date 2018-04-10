@@ -1301,15 +1301,10 @@ class Interpreter {
 
     const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
     {
-        // TODO: This error handling is really bad. Ideally there should be a
-        // Value::OBJECT_OR_ARRAY enum and the validateBuiltinArgs should know how
-        // how to check the type.
-        // TODO: This error handling will only suggest to use an array for the trace
-        // call even though objects are also allowed.
         validateBuiltinArgs(loc, "trace", args, {Value::STRING, Value::OBJECT});
 
         std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
-        std::cerr << "TRACE " << loc.file << ":" << loc.begin.line << " " <<  str
+        std::cerr << "TRACE: " << loc.file << ":" << loc.begin.line << " " <<  str
             << std::endl;
 
         auto *obj = static_cast<HeapObject *>(args[1].v.h);
