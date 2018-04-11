@@ -619,14 +619,6 @@ class Interpreter {
         return r;
     }
 
-    Value makeObject(HeapObject *obj)
-    {
-        Value r;
-        r.t = Value::OBJECT;
-        r.v.h = obj;
-        return r;
-    }
-
     Value makeString(const UString &v)
     {
         Value r;
@@ -892,7 +884,7 @@ class Interpreter {
     {
         if (args.size() == params.size()) {
             for (unsigned i = 0; i < args.size(); ++i) {
-                if (args[i].t != params[i])
+                if (params[i] != Value::ANY && args[i].t != params[i])
                     goto bad;
             }
             return;
@@ -1034,6 +1026,8 @@ class Interpreter {
             case Value::OBJECT: scratch = makeString(U"object"); return nullptr;
 
             case Value::STRING: scratch = makeString(U"string"); return nullptr;
+
+            default: assert(!"Unexpected ValueType in builintType");
         }
         return nullptr;  // Quiet, compiler.
     }
@@ -1301,14 +1295,28 @@ class Interpreter {
 
     const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "trace", args, {Value::STRING, Value::OBJECT});
+        validateBuiltinArgs(loc, "trace", args, {Value::STRING, Value::ANY});
 
         std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
         std::cerr << "TRACE: " << loc.file << ":" << loc.begin.line << " " <<  str
             << std::endl;
 
-        auto *obj = static_cast<HeapObject *>(args[1].v.h);
-        scratch = makeObject(obj);
+        auto t =  args[1].t;
+        if (args[1].isHeap()) {
+            auto *obj = static_cast<HeapEntity *>(args[1].v.h);
+            Value r;
+            r.t = args[1].t;
+            r.v.h = obj;
+            scratch = r;
+        } else if (t == Value::BOOLEAN) {
+            scratch = makeBoolean(args[1].v.b);
+        } else if (t == Value::NUMBER) {
+            scratch = makeNumberCheck(loc,args[1].v.d);
+        } else if (t == Value::NULL_TYPE) {
+            scratch = makeNull();
+        } else {
+            assert(!"Unexpected type in builtinTrace");
+        }
         return nullptr;
     }
 
@@ -2045,6 +2053,8 @@ class Interpreter {
                                                         " does not operate on strings.");
                             }
                         } break;
+                        default: assert(!"Unexpected ValueType in evaluate");
+
                     }
                 } break;
 
@@ -2629,6 +2639,7 @@ class Interpreter {
                 const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
                 ss << jsonnet_string_unparse(str, false);
             } break;
+            default: assert(!"Unexpected ValueType in builintType");
         }
         return ss.str();
     }
