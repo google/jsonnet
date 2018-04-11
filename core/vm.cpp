@@ -1298,7 +1298,6 @@ class Interpreter {
             ss << "Builtin function trace expected string as first parameter but "
                << "got " << type_str(args[0].t);
             throw makeError(loc, ss.str());
-
         }
 
         std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
