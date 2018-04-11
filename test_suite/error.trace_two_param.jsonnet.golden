@@ -1,0 +1,4 @@
+RUNTIME ERROR: Builtin function trace expected string as first parameter but got number
+	error.trace_two_param.jsonnet:17:11-27	thunk <v>
+	error.trace_two_param.jsonnet:19:6	object <anonymous>
+	During manifestation	

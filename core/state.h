@@ -43,9 +43,7 @@ struct Value {
         ARRAY = 0x10,
         FUNCTION = 0x11,
         OBJECT = 0x12,
-        STRING = 0x13,
-
-        ANY = 0xFF00
+        STRING = 0x13
     };
     Type t;
     union {
@@ -70,7 +68,6 @@ std::string type_str(Value::Type t)
         case Value::FUNCTION: return "function";
         case Value::OBJECT: return "object";
         case Value::STRING: return "string";
-        case Value::ANY: return "valuetype";
         default:
             std::cerr << "INTERNAL ERROR: Unknown type: " << t << std::endl;
             std::abort();
