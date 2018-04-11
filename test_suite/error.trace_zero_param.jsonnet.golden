@@ -1,0 +1,4 @@
+RUNTIME ERROR: function parameter str not bound in call.
+	error.trace_zero_param.jsonnet:17:11-22	thunk <v>
+	error.trace_zero_param.jsonnet:19:6	object <anonymous>
+	During manifestation	
