@@ -567,5 +567,16 @@ std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghf
 
 std.assertEqual(std.deepJoin(['a', ['b', 'c', [[], 'd', ['e'], 'f', 'g'], [], []], 'h']),
                 'abcdefgh') &&
+std.assertEqual(std.trace('', null), null) &&
+std.assertEqual(std.trace('', true), true) &&
+std.assertEqual(std.trace('', 77), 77) &&
+std.assertEqual(std.trace('', 77.88), 77.88) &&
+std.assertEqual(std.trace('', 'word'), 'word') &&
+std.assertEqual(std.foldl(std.trace('', function(acc, i) acc + i), [1, 2, 3], 0), 6) &&
+std.assertEqual(std.trace('', {}), {}) &&
+std.assertEqual(std.trace('', { a: {} }), { a: {} }) &&
+std.assertEqual(std.trace('', []), []) &&
+std.assertEqual(std.trace('', [{ a: 'b' }, { a: 'b' }]), [{ a: 'b' }, { a: 'b' }]) &&
+std.assertEqual(std.trace('Some Trace Message', { a: {} }), { a: {} }) &&
 
 true

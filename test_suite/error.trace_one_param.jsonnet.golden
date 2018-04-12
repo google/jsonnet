@@ -1,0 +1,4 @@
+RUNTIME ERROR: function parameter rest not bound in call.
+	error.trace_one_param.jsonnet:17:11-24	thunk <v>
+	error.trace_one_param.jsonnet:19:6	object <anonymous>
+	During manifestation	

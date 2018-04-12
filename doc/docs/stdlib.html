@@ -618,3 +618,34 @@ words, it consumes the output of std.base64().</p>
 <p>Applies <code>patch</code> to <code>target</code> according to <a
 href="https://tools.ietf.org/html/rfc7396">RFC7396</a></p>
 
+<h3 id="Debugging">Debugging</h3>
+
+<h4 id="trace">std.trace(str, rest)</h4>
+
+<p><code>trace</code> outputs the given string <code>str</code> to stderr and
+returns <code>rest</code> as the result.<p>
+<em>Available since version 0.11.0</em>
+
+<p>Example:<br />
+<code>
+local conditionalReturn(cond, in1, in2) =
+    if (cond) then
+        std.trace('cond is true returning ' + std.toString(in1), in1)
+    else
+        std.trace('cond is false returning ' + std.toString(in2), in2);
+
+
+{
+    a: conditionalReturn(true, { b: true }, { c: false }),
+}
+</code></p>
+
+<p>Prints:</p>
+<p><code>
+TRACE: test.jsonnet:3 cond is true returning {"b": true}
+{
+   "a": {
+      "b": true
+   }
+}
+</code></p>

@@ -857,6 +857,7 @@ class Interpreter {
         builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
         builtins["native"] = &Interpreter::builtinNative;
         builtins["md5"] = &Interpreter::builtinMd5;
+        builtins["trace"] = &Interpreter::builtinTrace;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1287,6 +1288,23 @@ class Interpreter {
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         scratch = makeString(decode_utf8(md5(value)));
+        return nullptr;
+    }
+
+    const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if(args[0].t != Value::STRING) {
+            std::stringstream ss;
+            ss << "Builtin function trace expected string as first parameter but "
+               << "got " << type_str(args[0].t);
+            throw makeError(loc, ss.str());
+        }
+
+        std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::cerr << "TRACE: " << loc.file << ":" << loc.begin.line << " " <<  str
+            << std::endl;
+
+        scratch = args[1];
         return nullptr;
     }
 
