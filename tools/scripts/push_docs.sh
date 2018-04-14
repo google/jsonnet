@@ -29,47 +29,45 @@
 
 set -e
 
-readonly WORKING_DIR=$1
-
 readonly JSONNET_REPO="git@github.com:google/jsonnet.git"
 
 function check {
   which $1 > /dev/null || (echo "$1 not installed. Please install $1."; exit 1)
 }
 
-function main {
-  check git
-  check bazel
+check git
+check jekyll
 
-  local working_dir=$WORKING_DIR
-  if [ -z "$working_dir" ]; then
-    working_dir=$(mktemp -d "/tmp/jsonnet_gh_pages_XXXX")
-    trap "rm -rf ${working_dir}" EXIT
-  fi
+if [ ! -r 'doc/_config.yml' ]; then
+  echo 'No doc/_config.yml file found.' >&1
+  echo 'Are you running this script from the root of the Jsonnet repository?' >&1
+  exit 1
+fi
 
-  if [ ! -r 'doc/BUILD' ]; then
-    echo 'No BUILD file found.' >&1
-    echo 'Are you running this script from the root of the Jsonnet repository?' >&1
-    exit 1
-  fi
+working_dir=$1
+if [ -z "$working_dir" ]; then
+  working_dir=$(mktemp -d "/tmp/jsonnet_gh_pages_XXXX")
+  # Clean it up automatically on exit.
+  trap "rm -rf ${working_dir}" EXIT
+fi
 
-  local jekyll_tree_zip=${working_dir}/jekyll_tree.zip
-  make doc/js/libjsonnet.js
-  bazel build //doc:jekyll_tree
-  cp bazel-genfiles/doc/jekyll_tree.zip $jekyll_tree_zip
+git clone $JSONNET_REPO "$working_dir"
 
-  local gh_pages_repo=${working_dir}/gh-pages
-  mkdir $gh_pages_repo
-  git clone $JSONNET_REPO $gh_pages_repo
-
-  cd $gh_pages_repo
+(
+  cd "$working_dir"
   git checkout gh-pages
   rm $(git ls-tree --name-only -r HEAD)
-  unzip -q $jekyll_tree_zip -d $gh_pages_repo
+)
 
+tools/scripts/update_web_content.sh
+cd doc
+jekyll build -d "$working_dir"
+
+(
+  cd "$working_dir"
   git add .
   git commit -am "Update docs."
   git push -u origin gh-pages
-}
+)
 
-main
+
