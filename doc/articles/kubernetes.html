@@ -39,7 +39,7 @@ layout: default
       <p>
         Jsonnet's output JSON can be consumed by <tt>kubecfg</tt> which
         treats it as if it were YAML.  This approach also works for other configuration formats that
-        JSON, such as Javascript or HashiCorp's Configuration Language (<a
+        extend JSON, such as Javascript or HashiCorp's Configuration Language (<a
         href="https://github.com/hashicorp/hcl">HCL</a>).
       </p>
       <p>
@@ -74,7 +74,7 @@ layout: default
           <a href="https://www.box.com">Box</a> have <a
           href="https://blog.box.com/blog/kubernetes-box-microservices-maximum-velocity/">blogged</a>
           and <a href="https://youtu.be/QIDrdZlEQdw?t=10m35s">spoken about</a> how their internal
-          kubernetes-based infrastructure uses Jsonnet.
+          Kubernetes-based infrastructure uses Jsonnet.
         </li>
         <li>
           <a href="https://github.com/deepmind/kapitan">Kapitan</a> by <a
@@ -108,8 +108,8 @@ layout: default
         As a convenience, the following tool allows you to convert YAML Kubernetes examples into
         basic Jsonnet files.  It simply converts the YAML to JSON and then runs the Jsonnet
         formatter on that JSON to make it look a bit cleaner.  Sorry, the original file's comments
-        are lost during the YAML parsing.  Also, you will want to further clean up the code to
-        remove duplication, but that's the whole point of using Jsonnet.
+        are lost during the YAML parsing.  This tool just helps you get started.  You will want to
+        further clean up the code to remove duplication.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -214,6 +214,180 @@ layout: default
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h2 id=collections>Kubernetes Collections</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        In some places, the Kubernetes API objects use lists of named objects or (name, value) pairs
+        rather than using objects to map names to values. This makes those objects hard to reference
+        and extend in Jsonnet.  For example, the containers part of the Pod spec looks like this:
+      </p>
+      <pre>local PodSpec = {
+  containers: [
+    {
+      name: 'foo',
+      env: [
+        { name: 'var1', value: 'somevalue' },
+        { name: 'var2', value: 'somevalue' },
+      ],
+    },
+    {
+      name: 'bar',
+      env: [
+        { name: 'var2', value: 'somevalue' },
+        { name: 'var3', value: 'somevalue' },
+      ],
+    },
+  ],
+};</pre>
+      <p>
+        If we wanted to override this to modify the <code>var3</code> environment variable of
+        <code>bar</code>, we could use array indexes to reference the particular container and
+        environment variable, but the resulting code is brittle and ugly:
+      </p>
+      <pre>PodSpec {
+  containers: [
+    super.containers[0],
+    super.containers[1] {
+      env: [
+        super.env[0],
+        super.env[1] { value: 'othervalue' },
+      ],
+    },
+  ],
+}</pre>
+      <p>
+        A better solution is to use an object to represent the mapping, converting to the Kubernetes
+        representation post-hoc. We can now create a new Pod spec with the same override, specified
+        much more easily and safely:
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="collections-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=pod-spec-jsonnet>
+        local utils = import 'utils.libsonnet';
+
+        local PodSpec = {
+          containersObj:: {
+            foo: {
+              envObj:: {
+                var1: 'somevalue',
+                var2: 'somevalue',
+              },
+              env: utils.pairList(self.envObj),
+            },
+            bar: {
+              envObj:: {
+                var2: 'somevalue',
+                var3: 'somevalue',
+              },
+              env: utils.pairList(self.envObj),
+            },
+          },
+          containers:
+            utils.namedObjectList(self.containersObj),
+        };
+
+        PodSpec {
+          containersObj+: {
+            bar+: { envObj+: { var3: 'othervalue' } }
+          }
+        }
+      </textarea>
+      <textarea id=utils-libsonnet>
+        // utils.libsonnet
+        {
+          pairList(tab, kfield='name',
+                   vfield='value'):: [
+            { [kfield]: k, [vfield]: tab[k] }
+            for k in std.objectFields(tab)
+          ],
+
+          namedObjectList(tab, name_field='name'):: [
+            tab[name] + { [name_field]: name }
+            for name in std.objectFields(tab)
+          ],
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="collections-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'output-json')">
+          output.json
+        </div>
+      </div>
+      <textarea readonly class="selected code-json" id="output-json">
+        {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "var2",
+                  "value": "somevalue"
+                },
+                {
+                  "name": "var3",
+                  "value": "othervalue"
+                }
+              ],
+              "name": "bar"
+            },
+            {
+              "env": [
+                {
+                  "name": "var1",
+                  "value": "somevalue"
+                },
+                {
+                  "name": "var2",
+                  "value": "somevalue"
+                }
+              ],
+              "name": "foo"
+            }
+          ]
+        }
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'collections-input',
+        {
+          'pod-spec-jsonnet': 'pod-spec.jsonnet',
+          'utils-libsonnet': 'utils.libsonnet',
+        },
+        'pod-spec.jsonnet',
+        'collections-output',
+        false,
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Such a pattern also makes referencing easier. Now, you can use the following code to access
+        the same environment variable:
+      </p>
+      <pre>PodSpec.containersObj.bar.envObj.var3</pre>
     </div>
     <div style="clear: both"></div>
   </div>
