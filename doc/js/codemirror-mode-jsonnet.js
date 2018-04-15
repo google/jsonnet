@@ -192,7 +192,7 @@
           identifier = identifier[0];
           // If it's not in the dict, we return null to indicate no special
           // syntax highlighting.
-          return keywords[identifier];
+          return keywords.hasOwnProperty(identifier) ? keywords[identifier] : undefined;
         }
 
         stream.next();
