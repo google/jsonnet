@@ -96,10 +96,11 @@
         Articles
       </div>
       <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
-        <a href="/articles/design.html">Design Rationale</a>
-        <a href="/articles/comparisons.html">Comparisons</a>
         <a href="/articles/fractal.1.html">Terraform & Packer</a>
         <a href="/articles/kubernetes.html">Kubernetes</a>
+        <a href="/articles/output-formats.html">Output Formats</a>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
     <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
@@ -231,14 +232,14 @@
 
       <pre>// multiple_output.jsonnet
 {
-    "a.json": {
-        x: 1,
-        y: $["b.json"].y,
-    },
-    "b.json": {
-        x: $["a.json"].x,
-        y: 2,
-    },
+  "a.json": {
+    x: 1,
+    y: $["b.json"].y,
+  },
+  "b.json": {
+    x: $["a.json"].x,
+    y: 2,
+  },
 }</pre>
 
       <p>
@@ -264,6 +265,61 @@ $ cat b.json
    "y": 2
 }</pre>
 
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="stream">YAML Stream Output</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Unlike JSON, YAML can represent several objects in the same file, separated by <tt>---</tt>.
+        The Jsonnet commandline parameter <tt>-y</tt> causes the tool to expect the Jsonnet
+        execution to yield an array.  Config designed for this mode typically looks like this:
+        It then outputs that array as a sequence of JSON documents
+        separated by <tt>---</tt>, which any YAML parser will interpret as a YAML stream.
+      </p>
+      <pre>// yaml_stream.jsonnet
+local
+  a = {
+    x: 1,
+    y: b.y,
+  },
+  b = {
+    x: a.x,
+    y: 2,
+  };
+
+[a, b]</pre>
+      <p>
+        When executed using <tt>-y</tt>, this will output that array as a sequence of JSON documents
+        separated by <tt>---</tt> and terminated with <tt>...</tt>.  Any YAML parser <i>should</i>
+        interpret this as a YAML stream (people have reported broken parsers, so try it out first).
+      </p>
+      <pre>$ jsonnet -y . yaml_stream.jsonnet
+---
+{
+   "x": 1,
+   "y": 2
+}
+---
+{
+   "x": 1,
+   "y": 2
+}
+...</pre>
     </div>
     <div style="clear: both"></div>
   </div>

@@ -96,10 +96,11 @@
         Articles
       </div>
       <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
-        <a href="/articles/design.html">Design Rationale</a>
-        <a href="/articles/comparisons.html">Comparisons</a>
         <a href="/articles/fractal.1.html">Terraform & Packer</a>
         <a href="/articles/kubernetes.html">Kubernetes</a>
+        <a href="/articles/output-formats.html">Output Formats</a>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
     <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
@@ -120,10 +121,10 @@
               for app and tool developers
             </p>
             <ul>
-            <li>Generate config data</li>
-            <li>Side-effect free</li>
-            <li>Organize, simplify, unify</li>
-            <li>Manage sprawling config</li>
+              <li>Generate config data</li>
+              <li>Side-effect free</li>
+              <li>Organize, simplify, unify</li>
+              <li>Manage sprawling config</li>
             </ul>
           </td>
         </tr>
@@ -137,11 +138,11 @@
               A simple extension of <a href="http://json.org/">JSON</a><br>
             </p>
             <ul>
-            <li>Open source (Apache 2.0)</li>
-            <li>Familiar syntax</li>
-            <li>Reformatter, linter</li>
-            <li>Editor &amp; IDE integrations</li>
-            <li>Formally specified</li>
+              <li>Open source (Apache 2.0)</li>
+              <li>Familiar syntax</li>
+              <li>Reformatter, linter</li>
+              <li>Editor &amp; IDE integrations</li>
+              <li>Formally specified</li>
             </ul>
           </td>
           <td class=venn-cell><img id=venn src=img/venn.svg></td>
@@ -205,6 +206,7 @@
         },
         'example1.jsonnet',
         'example1-output',
+        false,
         false
       );
     </script>
@@ -266,6 +268,7 @@
         },
         'example2.jsonnet',
         'example2-output',
+        false,
         false
       );
     </script>
@@ -373,6 +376,7 @@
         },
         'example3.jsonnet',
         'example3-output',
+        true,
         true
       );
     </script>

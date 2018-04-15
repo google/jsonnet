@@ -96,10 +96,11 @@
         Articles
       </div>
       <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
-        <a href="/articles/design.html">Design Rationale</a>
-        <a href="/articles/comparisons.html">Comparisons</a>
         <a href="/articles/fractal.1.html">Terraform & Packer</a>
         <a href="/articles/kubernetes.html">Kubernetes</a>
+        <a href="/articles/output-formats.html">Output Formats</a>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
     <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
@@ -282,6 +283,7 @@
         },
         'syntax.jsonnet',
         'syntax-output',
+        false,
         false
       );
     </script>
@@ -425,6 +427,7 @@ local house_rum = 'Banks Rum';
         },
         'variables.jsonnet',
         'variables-output',
+        false,
         false
       );
     </script>
@@ -577,6 +580,7 @@ local house_rum = 'Banks Rum';
         },
         'references.jsonnet',
         'references-output',
+        false,
         false
       );
     </script>
@@ -654,6 +658,7 @@ local house_rum = 'Banks Rum';
         },
         'inner-reference.jsonnet',
         'inner-reference-output',
+        false,
         false
       );
     </script>
@@ -787,6 +792,7 @@ local house_rum = 'Banks Rum';
         },
         'arith.jsonnet',
         'arith-output',
+        false,
         false
       );
     </script>
@@ -895,6 +901,7 @@ local object = {
         },
         'functions.jsonnet',
         'functions-output',
+        false,
         false
       );
     </script>
@@ -1008,6 +1015,7 @@ local Sour(spirit, garnish='Lemon twist') = {
         },
         'sours.jsonnet',
         'sours-output',
+        false,
         false
       );
     </script>
@@ -1166,6 +1174,7 @@ local Mojito(virgin=false, large=false) = {
         },
         'conditionals.jsonnet',
         'conditionals-output',
+        false,
         false
       );
     </script>
@@ -1285,6 +1294,7 @@ local Margarita(salted) = {
         },
         'computed-fields.jsonnet',
         'computed-fields-output',
+        false,
         false
       );
     </script>
@@ -1421,6 +1431,7 @@ local arr = std.range(5, 8);
         },
         'comprehensions.jsonnet',
         'comprehensions-output',
+        false,
         false
       );
     </script>
@@ -1550,6 +1561,7 @@ local arr = std.range(5, 8);
         },
         'cocktail-comprehensions.jsonnet',
         'cocktail-comprehensions-output',
+        false,
         false
       );
     </script>
@@ -1696,6 +1708,7 @@ Maraschino Cherry
         },
         'imports.jsonnet',
         'imports-output',
+        false,
         false
       );
     </script>
@@ -1789,6 +1802,7 @@ local utils = import 'utils.libsonnet';
         },
         'negroni.jsonnet',
         'negroni-output',
+        false,
         false
       );
     </script>
@@ -1902,6 +1916,7 @@ assert std.isFunction(subtract);
         },
         'error-examples.jsonnet',
         'error-examples-output',
+        false,
         false
       );
     </script>
@@ -2118,6 +2133,7 @@ else
         'top-level-ext.jsonnet',
         'top-level-ext-output',
         false,
+        false,
         {
           ext_str: {
             prefix: 'Happy Hour ',
@@ -2311,6 +2327,7 @@ function(prefix, brunch=false) {
         'top-level-tla.jsonnet',
         'top-level-tla-output',
         false,
+        false,
         {
           tla_str: {
             prefix: 'Happy Hour ',
@@ -2434,6 +2451,7 @@ local WrapperBase = {
         },
         'oo-contrived.jsonnet',
         'oo-contrived-output',
+        false,
         false
       );
     </script>
@@ -2629,6 +2647,7 @@ local templates = import 'templates.libsonnet';
         },
         'sours-oo.jsonnet',
         'sours-oo-output',
+        false,
         false
       );
     </script>
@@ -2895,6 +2914,7 @@ local templates = import 'templates.libsonnet';
         },
         'mixins.jsonnet',
         'mixins-output',
+        false,
         false
       );
     </script>

@@ -345,6 +345,19 @@ function tab_output_click(tab, output_id) {
   tab.classList.add('selected');
 }
 
+function handle_parsed_content(parsed_content, string_out) {
+    if (string_out) {
+      if (typeof(parsed_content) != 'string') {
+        throw 'RUNTIME ERROR: expected string result.';
+      }
+      // Remove last \n
+      return parsed_content.replace(/\n$/, '');
+    } else {
+      // Original JSON is sorted, ordering is preserved here.
+      return JSON.stringify(parsed_content, null, 2);
+    }
+}
+
 /** Take a bunch of existing HTML and make it into an active Jsonnet demo.
  *
  * The best way to understand how to use this function is to read where it is used.
@@ -356,7 +369,7 @@ function tab_output_click(tab, output_id) {
  * multi: True to enable multi-output mode.
  * top_level: A dict to configure top-level parameterization (tla / ext var).
  */
-function demo(input_id, input_files, main_file, output_id, multi, top_level) {
+function demo(input_id, input_files, main_file, output_id, multi, string_out, top_level) {
   top_level = top_level || {};
   let ext_str = top_level['ext_str'] || {};
   let ext_code = top_level['ext_code'] || {};
@@ -386,20 +399,13 @@ function demo(input_id, input_files, main_file, output_id, multi, top_level) {
         scroll = last_scroll;
       }
       for (let filename in parsed_output) {
-        let output_content = parsed_output[filename];
-        if (typeof(output_content) == 'string') {
-          // Remove last \n
-          output_content = output_content.replace(/\n$/, '');
-        } else {
-          // Original JSON is sorted, ordering is preserved here.
-          output_content = JSON.stringify(output_content, null, 2);
-        }
+        output_content = handle_parsed_content(parsed_output[filename], string_out);
         add_textarea_and_tab(filename, selected, scroll, output_content, 'code-json');
       }
     } else {
-      output_content = JSON.stringify(parsed_output, null, 2);
-      add_textarea_and_tab(
-          last_selected, last_selected, last_scroll, output_content, 'code-json');
+      // Original JSON is sorted, ordering is preserved here.
+      output_content = handle_parsed_content(parsed_output, string_out);
+      add_textarea_and_tab(last_selected, last_selected, last_scroll, output_content, 'code-json');
     }
   });
 }
