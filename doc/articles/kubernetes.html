@@ -15,9 +15,46 @@ layout: default
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Kubernetes is a cluster orchestration system for containerized workloads.  Out of the box,
-        it is configured with YAML files, making it a natural fit for Jsonnet.  The following
-        resources may be helpful:
+        <a href="https://kubernetes.io/">Kubernetes</a> is a cluster orchestration system for
+        containerized workloads.  Out of the box, it is configured with YAML files, making it a
+        natural fit for Jsonnet.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="integrating">Using Jsonnet With Kubernetes</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Jsonnet's output JSON can be consumed by <tt>kubecfg</tt> which
+        treats it as if it were YAML.  This approach also works for other configuration formats that
+        JSON, such as Javascript or HashiCorp's Configuration Language (<a
+        href="https://github.com/hashicorp/hcl">HCL</a>).
+      </p>
+      <p>
+        If we configure only a single Kubernetes object in each run of Jsonnet, we miss out on the
+        ability to remove duplication not just within an object, but across sets of objects with
+        commonalities.  Fortunately, there are three ways to configure sets of Kubernetes objects:
+        Use YAML <a href="/learning/getting_started.html#stream">stream</a> output, <a
+        href="/learning/getting_started.html#multi">multi-file</a> output, or a single kubectl
+        list object.  This latter option is provided by Kubernetes without requiring any special
+        support from Jsonnet.  It allows us to group several Kubernetes objects into a single
+        object.  This is the most popular option because it does not require intermediate files, and
+        other tools don't always reliably support YAML streams.
+      </p>
+        The Kubernetes community has been very active with Jsonnet, and the following resources may
+        be helpful:
       </p>
       <ul>
         <li>

@@ -1,0 +1,333 @@
+---
+layout: default
+---
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="top">Custom Output Formats</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        A Jsonnet evaluation typically outputs a JSON document. For ways to output multiple JSON
+        documents, see <a href="/learning/getting_started.html"></a>.  Whether this integrates
+        cleanly depends on your application.  If you're writing a custom application, then you can
+        simply consume this JSON.  Another option is to write your config as a protocol buffer and
+        deserialize Jsonnet's JSON output using the proto3 canonical JSON representation.
+        Interoperation with YAML is also easy, see <a href="">Kubernetes</a> for an example.
+        To support consumers of syntactically incompatible formats such as INI or XML, custom
+        serialization is needed.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="top">Custom Output Formats</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The INI format provides a simple example.
+      </p>
+      <ul>
+        <li>
+          The content of the INI file has been represented within the JSON object model, i.e. using
+          objects to represent the nesting of the sections.
+        </li>
+        <li>
+          The special <code>main</code> section holds the top-level keys (ones not in any section).
+        </li>
+        <li>
+          The function <code>std.manifestIni</code> (written in Jsonnet) serializes the structure to
+          a string.
+        </li>
+        <li>
+          Jsonnet is run in string output mode <tt>-S</tt> to print the string verbatim rather than
+          encoded as JSON.  
+        </li>
+      </ul>
+      <p>
+        The code below could be exeuted with the command:
+      </p>
+      <pre>$ jsonnet -S ini.jsonnet</pre>
+      <p>
+        Try replacing <code>manifestIni</code>. with <code>manifestJson</code> or
+        <code>manifestPython</code>.  There are many such functions in the standard library, and you
+        can write custom ones too.  Finally, to see the effect of <tt>-S</tt> directly, try
+        replacing the whole buffer with just a string literal.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="ini-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=ini-jsonnet>
+        std.manifestIni({
+          main: {
+            a: 1,
+          },
+          sections: {
+            foo: {
+              a: true,
+              b: 2,
+            },
+            bar: {
+              x: 'text',
+            },
+          },
+        })
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="ini-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'output-ini')">
+          output.ini
+        </div>
+      </div>
+      <textarea readonly class="selected code-json" id="output-ini">
+        a = 1
+        [bar]
+        x = text
+        [foo]
+        a = 1
+        b = 2
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'ini-input',
+        {
+          'ini-jsonnet': 'ini.jsonnet',
+        },
+        'ini.jsonnet',
+        'ini-output',
+        false,
+        true
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Thus, despite internally using the JSON data model, Jsonnet can provide config generation
+        for applications that consume INI.
+      </p>
+      <p>
+        Below is a more complex example where we construct an SVG file by emitting XML.  It shows
+        how to write a custom manifestation function, and also a non-trivial example of representing
+        something in Jsonnet.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="svg-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=svg-jsonnet>
+        local xml = import 'xml.libsonnet';
+
+        local Svg = xml.Element('svg') {
+          height:: 100,
+          width:: 100,
+        };
+
+        local Polygon = xml.Element('polygon') {
+          points: std.join(
+            ' ',
+            [
+              '%s,%s' % coords
+              for coords in self.pointCoords
+            ]
+          ),
+        };
+
+        local Path = xml.Element('path') {
+          cmds:: [],
+          d: std.join('', self.cmds),
+        };
+
+        local ref(element) = 'url(#%s)' % element.id;
+
+        local logo = Svg {
+          version: '1.1',
+          xmlns: 'http://www.w3.org/2000/svg',
+          x: 0,
+          y: 0,
+          width: 90,
+          height: 90,
+          viewBox: '0 0 180 180',
+          bg:: xml.Element('linearGradient') {
+            id: 'bg',
+            gradientUnits: 'userSpaceOnUse',
+            x1: 53,
+            y1: 19,
+            x2: 126,
+            y2: 162,
+            colour1:: '#0091AD',
+            colour2:: '#00728F',
+            local grad = self,
+            has: [
+              xml.Element('stop') {
+                offset: 0,
+                'stop-color': grad.colour1,
+              },
+              xml.Element('stop') {
+                offset: 1,
+                'stop-color': grad.colour2,
+              },
+            ],
+          },
+          line:: Polygon {
+            fill: 'white',
+            pointCoords:: [
+              [0, 38],
+              [90, -14],
+              [180, 38],
+              [180, 142],
+              [90, 194],
+              [0, 142]
+            ],
+          },
+          fill:: Path {
+            fill: ref($.bg),
+            cmds: [
+              'M168,49 v86 L129,82 L168,49 z',
+              'M90,98 l67-59 L90,0 V98 z',
+              'M73,10 L12,45 v90 l61,35 V10 z',
+              'M117,94 L90,116 v63 l63-36 L117,94 z',
+            ],
+          },
+          has: [
+            $.bg,
+            $.line,
+            $.fill,
+          ],
+        };
+
+        xml.manifestXmlObj(logo)
+      </textarea>
+      <textarea id=xml-libsonnet>
+        // Some utility functions for generating XML.
+        {
+          // Serialize a XML document represented as a
+          // Jsonnet value.  Each node of the XML tree
+          // has a field 'tag', and optionally 'attrs'
+          // (an string mapping), and 'has', an array
+          // of children.
+          manifestXmlObj(value)::
+            local aux(v, cindent) =
+              if !std.isObject(v) then
+                error 'Expected a object, got %s'
+                      % std.type(value)
+              else
+                local attrs = [
+                  ' %s="%s"' % [k, v.attrs[k]]
+                  for k in std.objectFields(v.attrs)
+                ];
+                if std.length(v.has) &gt; 0 then
+                  std.deepJoin([
+                    cindent, '&lt;', v.tag, attrs, '&gt;\n',
+                    [
+                      aux(x, cindent + '  ')
+                      for x in v.has
+                    ],
+                    cindent, '&lt;/', v.tag, '&gt;\n'
+                  ])
+                else
+                  std.deepJoin([
+                    cindent, '&lt;', v.tag, attrs, '&gt;',
+                    '&lt;/', v.tag, '&gt;\n']);
+            aux(value, ''),
+
+          // A convenience object whose attributes are
+          // taken from the top-level non-hidden fields
+          // of the object.  This works except for
+          // attributes called 'tag' or 'has'.
+          Element(tag):: {
+            local element = self,
+            tag:: tag,
+            attrs:: {
+              [k]: element[k]
+              for k in std.objectFields(element)
+            },
+            has:: [],
+          },
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="svg-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'output-svg')">
+          output.svg
+        </div>
+      </div>
+      <textarea readonly class="selected code-json" id="output-svg">
+<svg version="1.1" viewBox="0 0 180 180" x="0" xmlns="http://www.w3.org/2000/svg" y="0">
+  <linearGradient gradientUnits="userSpaceOnUse" id="bg" x1="53" x2="126" y1="19" y2="162">
+    <stop offset="0" stop-color="#0091AD"></stop>
+    <stop offset="1" stop-color="#00728F"></stop>
+  </linearGradient>
+  <polygon fill="white" points="0,38 90,-14 180,38 180,142 90,194 0,142"></polygon>
+  <path d="M168,49 v86 L129,82 L168,49 zM90,98 l67-59 L90,0 V98 zM73,10 L12,45 v90 l61,35 V10 zM117,94 L90,116 v63 l63-36 L117,94 z" fill="url(#bg)"></path>
+</svg>
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'svg-input',
+        {
+          'svg-jsonnet': 'svg.jsonnet',
+          'xml-libsonnet': 'xml.libsonnet',
+        },
+        'svg.jsonnet',
+        'svg-output',
+        false,
+        true
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        This approach generalizes widely because JSON is very versatile.  Indeed, its success as an
+        interchange format can be attributed to that versatility.  Using the technique described
+        above, Jsonnet can output any format that can be represented in JSON.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>

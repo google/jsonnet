@@ -24,6 +24,7 @@
         },
         '{{ include.name }}.jsonnet',
         '{{ include.name }}-output',
+        false,
         false
       );
     </script>
