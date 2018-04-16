@@ -62,13 +62,27 @@ layout: default
           example</a> from the Jsonnet repo.
         </li>
         <li>
+          <a href="https://github.com/ksonnet/kubecfg">Kubecfg</a> (whose name may sound familiar to
+          current or ex-Googlers) is an unopiniated tool for evaluating Jsonnet and
+          pushing the results to Kubernetes.  It comes with a <a
+          href="https://github.com/bitnami-labs/kube-libsonnet">useful template library</a>.  See
+          this <a href="https://engineering.bitnami.com/articles/an-example-of-real-kubernetes-bitnami.html">blog post</a>.
+        </li>
+        <li>
           <a href="https://ksonnet.io">Ksonnet</a>, by <a href="https://heptio.com">Heptio</a> is a
-          CLI tool that uses a Jsonnet library to generate Kubernetes objects from high-level
-          composable descriptions.
+          fork of kubecfg which uses a Jsonnet library that is automatically generated from
+          Kubernetes API specifications.  This forms a framework in which Kubernetes objects can be
+          built using high-level composable descriptions.
+        </li>
+        <li>
+          <a href="https://github.com/deepmind/kapitan">Kapitan</a> by <a
+          href="https://deepmind.com">Deepmind</a> is another tool for driving Kubernetes with
+          Jsonnet and textual templating.
         </li>
         <li>
           <a href="https://github.com/coreos/kpm">Kpm</a> is a similar deployment tool (now
-          deprecated) by <a href="https://coreos.com">CoreOS</a>.
+          deprecated) by <a href="https://coreos.com">CoreOS</a> that uses a mixture of Jsonnet and
+          Jinja templating.
         </li>
         <li>
           <a href="https://www.box.com">Box</a> have <a
@@ -77,14 +91,11 @@ layout: default
           Kubernetes-based infrastructure uses Jsonnet.
         </li>
         <li>
-          <a href="https://github.com/deepmind/kapitan">Kapitan</a> by <a
-          href="https://deepmind.com">Deepmind</a> is another tool for driving Kubernetes with
-          Jsonnet.
-        </li>
-        <li>
           <a href="https://databricks.com">Databricks</a> have <a
           href="https://databricks.com/blog/2017/06/26/declarative-infrastructure-jsonnet-templating-language.html">written
-          about</a> how they manage infrastructure on Kubernetes using Jsonnet.
+          about</a> how they manage infrastructure on Kubernetes using Jsonnet.  They also published
+          a <a href="https://github.com/databricks/jsonnet-style-guide">style guide</a>, which may
+          be informative.
         </li>
       </ul>
     </div>
