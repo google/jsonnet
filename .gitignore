@@ -28,10 +28,10 @@ bazel-*
 **/*.tfstate
 **/*.tfstate.backup
 
-build/
-external/
-dist/
-jsonnet.egg-info/
+/build/
+/external/
+/dist/
+/jsonnet.egg-info/
 
 # Cmake
 **/CMakeCache.txt
