@@ -546,6 +546,11 @@ std.assertEqual(
 
 std.assertEqual(std.parseInt('01234567890'), 1234567890) &&
 std.assertEqual(std.parseInt('-01234567890'), -1234567890) &&
+std.assertEqual(std.parseOctal('0755'), 493) &&
+std.assertEqual(std.parseHex('0xff'), 255) &&
+std.assertEqual(std.parseHex('0xFF'), 255) &&
+std.assertEqual(std.parseHex('0Xff'), 255) &&
+std.assertEqual(std.parseHex('0XFF'), 255) &&
 // verified by running md5 -s value
 std.assertEqual(std.md5(''), 'd41d8cd98f00b204e9800998ecf8427e') &&
 std.assertEqual(std.md5('grape'), 'b781cbb29054db12f88f08c6e161c199') &&

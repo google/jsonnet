@@ -35,8 +35,22 @@ for FILE in "$@" ; do
         exit 1
     fi
 
+    EXT_PARAMS=""
+    TLA_PARAMS=""
+    if [[ "$TEST" =~ ^tla[.] ]] ; then
+        TLA_PARAMS="--tla-str var1=test --tla-code var2='{x:1,y:2}'"
+    else
+        EXT_PARAMS="--ext-str var1=test --ext-code var2='{x:1,y:2}'"
+    fi
+
+    if [ -n "$DISABLE_EXT_PARAMS" ]; then
+        EXT_PARAMS=""
+    fi
+    JSONNET_CMD="$JSONNET_BIN $PARAMS $EXT_PARAMS $TLA_PARAMS"
+
     # Avoid set -e terminating us if the run fails.
-    "$JSONNET_BIN" "$FILE" > "${FILE}.golden" 2>&1 || true
+    eval "$JSONNET_CMD" "$FILE" > "${FILE}.golden" 2>&1 || true
+
 done
 
 
