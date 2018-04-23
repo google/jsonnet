@@ -87,13 +87,14 @@ limitations under the License.
       parse_nat(str, 10),
 
   parseOctal(str)::
-    assert std.length(str) > 1 && str[0] == '0' : 'Not an octal number: ' + str;
-    parse_nat(str[1:], 8),
+    assert std.isString(str): 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0: 'Not an octal number: ""';
+    parse_nat(str, 8),
 
   parseHex(str)::
-    local has_prefix = (str[0:2] == '0x' || str[0:2] == "0X");
-    assert std.length(str) > 2 && has_prefix : 'Not hexadecimal: ' + str;
-    parse_nat(str[2:], 16),
+    assert std.isString(str): 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0: 'Not hexadecimal: ""';
+    parse_nat(str, 16),
 
   split(str, c)::
     if std.type(str) != 'string' then

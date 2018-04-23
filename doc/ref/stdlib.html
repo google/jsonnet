@@ -725,8 +725,8 @@ layout: default
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>Parses an unsigned octal integer, which must begin with '0', from the input string.</p>
-      <p>Example: <code>std.parseOctal("0755")</code> yields <code>493</code>.</p>
+      <p>Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.</p>
+      <p>Example: <code>std.parseOctal("755")</code> yields <code>493</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -746,10 +746,9 @@ layout: default
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Parses an unsigned hexademical integer, which must begin with '0x' or '0X', from the input
-        string.
+        Parses an unsigned hexademical integer, from the input string.  Case insensitive.
       </p>
-      <p>Example: <code>std.parseHex("0xff")</code> yields <code>255</code>.</p>
+      <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
