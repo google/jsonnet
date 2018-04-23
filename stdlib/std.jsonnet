@@ -62,18 +62,39 @@ limitations under the License.
   stringChars(str)::
     std.makeArray(std.length(str), function(i) str[i]),
 
-  parseInt(str)::
-    local addDigit(aggregate, digit) =
-      if digit < 0 || digit > 9 then
-        error ('parseInt got string which does not match regex [0-9]+')
+  local parse_nat(str, base) =
+    assert base > 0 && base <= 16 : 'integer base %d invalid' % base;
+    // These codepoints are in ascending order:
+    local zero_code = std.codepoint('0');
+    local upper_a_code = std.codepoint('A');
+    local lower_a_code = std.codepoint('a');
+    local addDigit(aggregate, char) =
+      local code = std.codepoint(char);
+      local digit = if code > lower_a_code then
+        code - lower_a_code + 10
+      else if code > upper_a_code then
+        code - upper_a_code + 10
       else
-        10 * aggregate + digit;
-    local toDigits(str) =
-      [std.codepoint(char) - std.codepoint('0') for char in std.stringChars(str)];
+        code - zero_code;
+      assert digit >= 0 && digit < base : '%s is not a base %d integer' % [str, base];
+      base * aggregate + digit;
+    std.foldl(addDigit, std.stringChars(str), 0),
+
+  parseInt(str)::
     if str[0] == '-' then
-      -std.foldl(addDigit, toDigits(str[1:]), 0)
+      -parse_nat(str[1:], 10)
     else
-      std.foldl(addDigit, toDigits(str), 0),
+      parse_nat(str, 10),
+
+  parseOctal(str)::
+    assert std.isString(str): 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0: 'Not an octal number: ""';
+    parse_nat(str, 8),
+
+  parseHex(str)::
+    assert std.isString(str): 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0: 'Not hexadecimal: ""';
+    parse_nat(str, 16),
 
   split(str, c)::
     if std.type(str) != 'string' then
