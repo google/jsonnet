@@ -811,9 +811,51 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>Parses a signed decimal integer from the input string</p>
+      <p>Parses a signed decimal integer from the input string.</p>
       <p>Example: <code>std.parseInt("123")</code> yields <code>123</code>.</p>
       <p>Example: <code>std.parseInt("-123")</code> yields <code>-123</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseOctal">std.parseOctal(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.</p>
+      <p>Example: <code>std.parseOctal("755")</code> yields <code>493</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseOctal">std.parseHex(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Parses an unsigned hexadecimal integer, from the input string.  Case insensitive.
+      </p>
+      <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
