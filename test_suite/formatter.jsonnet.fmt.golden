@@ -289,7 +289,7 @@ limitations under the License.
 
   field: 1,
 
-  dollarUnary: - $.field,
+  dollarUnary: -$.field,
 
   objects1():: ['something']
                + if true then ['something']
