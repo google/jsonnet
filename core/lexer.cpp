@@ -169,6 +169,17 @@ static bool is_symbol(char c)
     return false;
 }
 
+bool allowed_at_end_of_operator(char c) {
+    switch (c) {
+        case '+':
+        case '-':
+        case '~':
+        case '!':
+        case '$': return false;
+    }
+    return true;
+}
+
 static const std::map<std::string, Token::Kind> keywords = {
     {"assert", Token::ASSERT},
     {"else", Token::ELSE},
@@ -769,8 +780,7 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     }
                     // Not allowed to end with a + - ~ ! unless a single char.
                     // So, wind it back if we need to (but not too far).
-                    while (c > operator_begin + 1 && (*(c - 1) == '+' || *(c - 1) == '-' ||
-                                                      *(c - 1) == '~' || *(c - 1) == '!')) {
+                    while (c > operator_begin + 1 && !allowed_at_end_of_operator(*(c - 1))) {
                         c--;
                     }
                     data += std::string(operator_begin, c);

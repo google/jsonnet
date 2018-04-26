@@ -595,11 +595,7 @@ class Unparser {
 
         } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
             o << uop_string(ast->op);
-            if (dynamic_cast<const Dollar *>(left_recursive_deep(ast->expr))) {
-                unparse(ast->expr, true);
-            } else {
-                unparse(ast->expr, false);
-            }
+            unparse(ast->expr, false);
 
         } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
             o << encode_utf8(ast->id->name);
