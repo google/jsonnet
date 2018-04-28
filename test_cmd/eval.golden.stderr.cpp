@@ -57,6 +57,7 @@ Available fmt options:
   -n / --indent <n>       Number of spaces to indent by (default 2, 0 means no change)
   --max-blank-lines <n>   Max vertical spacing, 0 means no change (default 2)
   --string-style <d|s|l>  Enforce double, single (default) quotes or 'leave'
+  --number-style <d|s|h>  Format default, scientific, or hexfloat
   --comment-style <h|s|l> # (h), // (s)(default), or 'leave'; never changes she-bang
   --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)
   --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]

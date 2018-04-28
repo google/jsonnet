@@ -136,6 +136,7 @@ void usage(std::ostream &o)
     o << "  -n / --indent <n>       Number of spaces to indent by (default 2, 0 means no change)\n";
     o << "  --max-blank-lines <n>   Max vertical spacing, 0 means no change (default 2)\n";
     o << "  --string-style <d|s|l>  Enforce double, single (default) quotes or 'leave'\n";
+    o << "  --number-style <d|s|h>  Format default, scientific, or hexfloat\n";
     o << "  --comment-style <h|s|l> # (h), // (s)(default), or 'leave'; never changes she-bang\n";
     o << "  --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)\n";
     o << "  --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]\n";
@@ -277,6 +278,19 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 return ARG_FAILURE;
             }
             config->outputFile = output_file;
+        } else if (arg == "--number-style") {
+            const std::string val = next_arg(i, args);
+            if (val == "d") {
+                jsonnet_fmt_number(vm, 'd');
+            } else if (val == "s") {
+                jsonnet_fmt_number(vm, 's');
+            } else if (val == "h") {
+                jsonnet_fmt_number(vm, 'h');
+            } else {
+                std::cerr << "ERROR: invalid --number-style value: " << val
+                          << std::endl;
+                return ARG_FAILURE;
+            }
         } else if (arg == "--") {
             // All subsequent args are not options.
             while ((++i) < args.size())

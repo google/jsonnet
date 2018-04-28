@@ -34,7 +34,7 @@ AST *jsonnet_parse(Allocator *alloc, Tokens &tokens);
 
 /** Outputs a number, trying to preserve precision as well as possible.
  */
-std::string jsonnet_unparse_number(double v);
+std::string jsonnet_unparse_number(double v,int numberStyle = 'd');
 
 /** The inverse of jsonnet_parse.
  */

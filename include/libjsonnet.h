@@ -221,6 +221,12 @@ void jsonnet_fmt_max_blank_lines(struct JsonnetVm *vm, int n);
  */
 void jsonnet_fmt_string(struct JsonnetVm *vm, int c);
 
+/** Preferred style for numbers (default, scientific, or hexfloat).
+ *
+ * \param c Number style as a char ('d', 's', or 'h').
+ */
+void jsonnet_fmt_number(struct JsonnetVm *vm, int c);
+
 /** Preferred style for line comments (# or //).
  *
  * \param c Comment style as a char ('h', 's', or 'l' (leave)).

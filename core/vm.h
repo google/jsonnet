@@ -72,6 +72,7 @@ struct VmExt {
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
  * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param number_style Which format to use for output of JSON numbers
  * \throws RuntimeError reports runtime errors in the program.
  * \returns The JSON result in string form.
  */
@@ -80,7 +81,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
                                double gc_min_objects, double gc_growth_trigger,
                                const VmNativeCallbackMap &natives,
                                JsonnetImportCallback *import_callback, void *import_callback_ctx,
-                               bool string_output);
+                               bool string_output, int number_style);
 
 /** Execute the program and return the value as a number of named JSON files.
  *
@@ -96,13 +97,15 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
  * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param number_style Which format to use for output of JSON numbers
  * \throws RuntimeError reports runtime errors in the program.
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::map<std::string, std::string> jsonnet_vm_execute_multi(
     Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
+    JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output,
+    int number_style);
 
 /** Execute the program and return the value as a stream of JSON files.
  *
@@ -119,12 +122,13 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
  * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param number_style Which format to use for output of JSON numbers
  * \throws RuntimeError reports runtime errors in the program.
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::vector<std::string> jsonnet_vm_execute_stream(
     Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx);
+    JsonnetImportCallback *import_callback, void *import_callback_ctx, int number_style);
 
 #endif

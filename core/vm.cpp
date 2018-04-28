@@ -63,7 +63,7 @@ enum FrameKind {
     FRAME_INVARIANTS,            // Caches the thunks that need to be executed one at a time.
     FRAME_LOCAL,                 // Stores thunk bindings as we execute e in local ...; e
     FRAME_OBJECT,  // Stores intermediate state as we execute es in { [e]: ..., [e]: ... }
-    FRAME_OBJECT_COMP_ARRAY,    // e in {f:a for x in e]
+    FRAME_OBJECT_COMP_ARRAY,    // e in {f:a for x in e] }
     FRAME_OBJECT_COMP_ELEMENT,  // Stores intermediate state when building object
     FRAME_STRING_CONCAT,        // Stores intermediate state while co-ercing objects
     FRAME_SUPER_INDEX,          // e in super[e]
@@ -505,6 +505,9 @@ class Interpreter {
     typedef std::map<std::string, BuiltinFunc> BuiltinMap;
     BuiltinMap builtins;
 
+    /** JSON output number style. */
+    int numberStyle;
+
     RuntimeError makeError(const LocationRange &loc, const std::string &msg)
     {
         return stack.makeError(loc, msg);
@@ -814,7 +817,8 @@ class Interpreter {
      */
     Interpreter(Allocator *alloc, const ExtMap &ext_vars, unsigned max_stack, double gc_min_objects,
                 double gc_growth_trigger, const VmNativeCallbackMap &native_callbacks,
-                JsonnetImportCallback *import_callback, void *import_callback_context)
+                JsonnetImportCallback *import_callback, void *import_callback_context,
+                int number_style)
 
         : heap(gc_min_objects, gc_growth_trigger),
           stack(max_stack),
@@ -827,7 +831,8 @@ class Interpreter {
           externalVars(ext_vars),
           nativeCallbacks(native_callbacks),
           importCallback(import_callback),
-          importCallbackContext(import_callback_context)
+          importCallbackContext(import_callback_context),
+          numberStyle(number_style)
     {
         scratch = makeNull();
         builtins["makeArray"] = &Interpreter::builtinMakeArray;
@@ -2582,7 +2587,7 @@ class Interpreter {
 
             case Value::BOOLEAN: ss << (scratch.v.b ? U"true" : U"false"); break;
 
-            case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
+            case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d, numberStyle)); break;
 
             case Value::FUNCTION:
                 throw makeError(loc, "couldn't manifest function in JSON output.");
@@ -2712,7 +2717,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast, const ExtMap &e
                                unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                                const VmNativeCallbackMap &natives,
                                JsonnetImportCallback *import_callback, void *ctx,
-                               bool string_output)
+                               bool string_output, int number_style)
 {
     Interpreter vm(alloc,
                    ext_vars,
@@ -2721,7 +2726,8 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast, const ExtMap &e
                    gc_growth_trigger,
                    natives,
                    import_callback,
-                   ctx);
+                   ctx,
+                   number_style);
     vm.evaluate(ast, 0);
     if (string_output) {
         return encode_utf8(vm.manifestString(LocationRange("During manifestation")));
@@ -2734,7 +2740,7 @@ StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &
                                 unsigned max_stack, double gc_min_objects, double gc_growth_trigger,
                                 const VmNativeCallbackMap &natives,
                                 JsonnetImportCallback *import_callback, void *ctx,
-                                bool string_output)
+                                bool string_output, int number_style)
 {
     Interpreter vm(alloc,
                    ext_vars,
@@ -2743,7 +2749,8 @@ StrMap jsonnet_vm_execute_multi(Allocator *alloc, const AST *ast, const ExtMap &
                    gc_growth_trigger,
                    natives,
                    import_callback,
-                   ctx);
+                   ctx,
+                   number_style);
     vm.evaluate(ast, 0);
     return vm.manifestMulti(string_output);
 }
@@ -2753,7 +2760,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                                                    double gc_min_objects, double gc_growth_trigger,
                                                    const VmNativeCallbackMap &natives,
                                                    JsonnetImportCallback *import_callback,
-                                                   void *ctx)
+                                                   void *ctx, int number_style)
 {
     Interpreter vm(alloc,
                    ext_vars,
@@ -2762,7 +2769,8 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                    gc_growth_trigger,
                    natives,
                    import_callback,
-                   ctx);
+                   ctx,
+                   number_style);
     vm.evaluate(ast, 0);
     return vm.manifestStream();
 }

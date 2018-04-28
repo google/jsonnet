@@ -31,11 +31,16 @@ limitations under the License.
 #include "parser.h"
 #include "static_error.h"
 
-std::string jsonnet_unparse_number(double v)
+std::string jsonnet_unparse_number(double v, int numberStyle)
 {
     std::stringstream ss;
     if (v == floor(v)) {
         ss << std::fixed << std::setprecision(0) << v;
+    } else if (numberStyle == 'h') {
+        ss << std::hexfloat << v;
+    } else if (numberStyle == 's') {
+        ss << std::setprecision(17);
+        ss << std::scientific << v;
     } else {
         // See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
         // Theorem 15

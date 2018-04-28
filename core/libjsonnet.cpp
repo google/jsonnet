@@ -374,6 +374,13 @@ void jsonnet_fmt_string(JsonnetVm *vm, int v)
     vm->fmtOpts.stringStyle = v;
 }
 
+void jsonnet_fmt_number(JsonnetVm *vm, int v)
+{
+    if (v != 'd' && v != 's' && v != 'h')
+        v = 'd';
+    vm->fmtOpts.numberStyle = v;
+}
+
 void jsonnet_fmt_comment(JsonnetVm *vm, int v)
 {
     if (v != 'h' && v != 's' && v != 'l')
@@ -512,7 +519,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                                                           vm->nativeCallbacks,
                                                           vm->importCallback,
                                                           vm->importCallbackContext,
-                                                          vm->stringOutput);
+                                                          vm->stringOutput,
+                                                          vm->fmtOpts.numberStyle);
                 json_str += "\n";
                 *error = false;
                 return from_string(vm, json_str);
@@ -529,7 +537,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                                              vm->nativeCallbacks,
                                              vm->importCallback,
                                              vm->importCallbackContext,
-                                             vm->stringOutput);
+                                             vm->stringOutput,
+                                             vm->fmtOpts.numberStyle);
                 size_t sz = 1;  // final sentinel
                 for (const auto &pair : files) {
                     sz += pair.first.length() + 1;   // include sentinel
@@ -564,7 +573,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                                               vm->gcGrowthTrigger,
                                               vm->nativeCallbacks,
                                               vm->importCallback,
-                                              vm->importCallbackContext);
+                                              vm->importCallbackContext,
+                                              vm->fmtOpts.numberStyle);
                 size_t sz = 1;  // final sentinel
                 for (const auto &doc : documents) {
                     sz += doc.length() + 2;  // Add a '\n' as well as sentinel

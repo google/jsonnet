@@ -21,6 +21,7 @@ limitations under the License.
 
 struct FmtOpts {
     char stringStyle;
+    char numberStyle;
     char commentStyle;
     unsigned indent;
     unsigned maxBlankLines;
@@ -33,6 +34,7 @@ struct FmtOpts {
     bool sortImports;
     FmtOpts(void)
         : stringStyle('s'),
+          numberStyle('d'),
           commentStyle('s'),
           indent(2),
           maxBlankLines(2),
