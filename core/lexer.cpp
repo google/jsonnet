@@ -1,5 +1,6 @@
 /*
 Copyright 2015 Google Inc. All rights reserved.
+Copyright 2018 NVIDIA Corporation. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -226,7 +227,11 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
         AFTER_DIGIT,
         AFTER_E,
         AFTER_EXP_SIGN,
-        AFTER_EXP_DIGIT
+        AFTER_EXP_DIGIT,
+        AFTER_X,
+        AFTER_XDOT,
+        AFTER_XDIGIT,
+        AFTER_P
     } state;
 
     std::string r;
@@ -256,6 +261,9 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                 switch (*c) {
                     case '.': state = AFTER_DOT; break;
 
+                    case 'x':
+                    case 'X': state = AFTER_X; break;
+
                     case 'e':
                     case 'E': state = AFTER_E; break;
 
@@ -264,11 +272,12 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                 break;
 
             case AFTER_ONE_TO_NINE:
+            case AFTER_X:
                 switch (*c) {
-                    case '.': state = AFTER_DOT; break;
+                    case '.': state = (state == AFTER_X) ? AFTER_XDOT : AFTER_DOT; break;
 
                     case 'e':
-                    case 'E': state = AFTER_E; break;
+                    case 'E': state = (state == AFTER_X) ? AFTER_X : AFTER_E; break;
 
                     case '0':
                     case '1':
@@ -279,13 +288,28 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '6':
                     case '7':
                     case '8':
-                    case '9': state = AFTER_ONE_TO_NINE; break;
+                    case '9': state = (state == AFTER_X) ? AFTER_X : AFTER_ONE_TO_NINE; break;
+
+                    case 'a':
+                    case 'A':
+                    case 'b':
+                    case 'B':
+                    case 'c':
+                    case 'C':
+                    case 'd':
+                    case 'D':
+                    case 'f':
+                    case 'F': if (state != AFTER_X) goto end; state = AFTER_X; break;
+
+                    case 'p':
+                    case 'P': if (state != AFTER_X) goto end; state = AFTER_P; break;
 
                     default: goto end;
                 }
                 break;
 
             case AFTER_DOT:
+            case AFTER_XDOT:
                 switch (*c) {
                     case '0':
                     case '1':
@@ -296,7 +320,25 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '6':
                     case '7':
                     case '8':
-                    case '9': state = AFTER_DIGIT; break;
+                    case '9': state = (state==AFTER_XDOT) ? AFTER_XDIGIT : AFTER_DIGIT; break;
+
+                    case 'a':
+                    case 'A':
+                    case 'b':
+                    case 'B':
+                    case 'c':
+                    case 'C':
+                    case 'd':
+                    case 'D':
+                    case 'e':
+                    case 'E':
+                    case 'f':
+                    case 'F':
+                        if (state == AFTER_XDOT) {
+                            state = AFTER_XDIGIT;
+                            break;
+                        }
+                        /* otherwise, fall through */
 
                     default: {
                         std::stringstream ss;
@@ -307,9 +349,10 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                 break;
 
             case AFTER_DIGIT:
+            case AFTER_XDIGIT:
                 switch (*c) {
                     case 'e':
-                    case 'E': state = AFTER_E; break;
+                    case 'E': state = (state == AFTER_XDIGIT) ? AFTER_XDIGIT : AFTER_E; break;
 
                     case '0':
                     case '1':
@@ -320,13 +363,28 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '6':
                     case '7':
                     case '8':
-                    case '9': state = AFTER_DIGIT; break;
+                    case '9': state = (state == AFTER_XDIGIT) ? AFTER_XDIGIT : AFTER_DIGIT; break;
+
+                    case 'a':
+                    case 'A':
+                    case 'b':
+                    case 'B':
+                    case 'c':
+                    case 'C':
+                    case 'd':
+                    case 'D':
+                    case 'f':
+                    case 'F': if (state != AFTER_XDIGIT) goto end; state = AFTER_XDIGIT; break;
+
+                    case 'p':
+                    case 'P': if (state != AFTER_XDIGIT) goto end; state = AFTER_P; break;
 
                     default: goto end;
                 }
                 break;
 
             case AFTER_E:
+            case AFTER_P:
                 switch (*c) {
                     case '+':
                     case '-': state = AFTER_EXP_SIGN; break;
