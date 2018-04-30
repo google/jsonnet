@@ -814,10 +814,18 @@ limitations under the License.
   flattenArrays(arrs)::
     std.foldl(function(a, b) a + b, arrs, []),
 
+  asArray(v)::
+    if v == null then
+      []
+    else if std.isArray(v) then
+      v
+    else
+      [v],
+
   manifestIni(ini)::
     local body_lines(body) =
       std.join([], [
-        ['%s = %s' % [k, v] for v in utils.asArray(body[k])]
+        ['%s = %s' % [k, v] for v in std.asArray(body[k])]
         for k in std.objectFields(body)
       ]);
 
@@ -825,7 +833,7 @@ limitations under the License.
       [],
       [
         ['[%s]' % sname] + body_lines(v)
-        for v in utils.asArray(sbody)
+        for v in std.asArray(sbody)
       ]
     );
 
