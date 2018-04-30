@@ -817,22 +817,26 @@ limitations under the License.
   manifestIni(ini)::
     local body_lines(body) =
       std.join([], [
-        local value_or_values = body[k];
-        if std.type(value_or_values) == 'array' then
-          ['%s = %s' % [k, value] for value in value_or_values]
-        else
-          ['%s = %s' % [k, value_or_values]]
-
+        ['%s = %s' % [k, v] for v in utils.asArray(body[k])]
         for k in std.objectFields(body)
       ]);
 
-    local section_lines(sname, sbody) = ['[%s]' % [sname]] + body_lines(sbody),
-          main_body = if std.objectHas(ini, 'main') then body_lines(ini.main) else [],
-          all_sections = [
+    local section_lines(sname, sbody) = std.join(
+      [],
+      [
+        ['[%s]' % sname] + body_lines(v)
+        for v in utils.asArray(sbody)
+      ]
+    );
+
+    local main_body = if std.objectHas(ini, 'main') then body_lines(ini.main) else [];
+
+    local all_sections = std.join([], [
       section_lines(k, ini.sections[k])
       for k in std.objectFields(ini.sections)
-    ];
-    std.join('\n', main_body + std.flattenArrays(all_sections) + ['']),
+    ]);
+
+    std.lines(std.prune(main_body + all_sections)),
 
   escapeStringJson(str_)::
     local str = std.toString(str_);
