@@ -36,7 +36,7 @@ check_file() {
     if [ "$(< $RESULT_FILENAME)" != "$(< $GOLDEN_FILENAME)" ] ; then
         FAILED=$((FAILED + 1))
         if [ -z "$SUMMARY_ONLY" ]; then
-            printf -e "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m$TEST\033[0m\n"
+            printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m$TEST\033[0m\n"
             echo "Result output:"
             cat "$RESULT_FILENAME"
             echo "Expected output:"
@@ -46,7 +46,7 @@ check_file() {
             git --no-pager diff --color --no-index "$GOLDEN_FILENAME" "$RESULT_FILENAME"
             # The output is often quite long, let's repeat the filename once more
             # to avoid wasting time on looking for it
-            printf -e "\nTEST ABOVE: \033[36m$TEST\033[0m\n"
+            printf "\nTEST ABOVE: \033[36m$TEST\033[0m\n"
             separator
         fi
         return 1
