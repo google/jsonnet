@@ -53,12 +53,7 @@ do_test "double_dash" 0 -e -- -1
 do_test "max_stack1" 1 -s 1 -e 'local x = 1; x'
 do_test "max_stack2" 1 --max-stack 1 -e 'local x = 1; x'
 do_test "max_stack3" 0 --max-stack 2 -e 'local x = 1; x'
-# TODO(https://github.com/google/go-jsonnet/issues/145) Fix this problem in the Go implementation.
-if [ "${IMPLEMENTATION}" == "golang" ] ; then
-    do_test "max_stack4" 1 --max-stack 7 -e 'local f(n, c=0) = if n == 0 then c else f(n - 1, c + n) tailstrict; f(100)'
-else
-    do_test "max_stack4" 0 --max-stack 7 -e 'local f(n, c=0) = if n == 0 then c else f(n - 1, c + n) tailstrict; f(100)'
-fi
+do_test "max_stack4" 0 --max-stack 7 -e 'local f(n, c=0) = if n == 0 then c else f(n - 1, c + n) tailstrict; f(100)'
 do_test "max_stack5" 1 --max-stack 0 -e 'true'
 do_test "max_stack6" 1 --max-stack -1 -e 'true'
 do_test "jpath1" 0 --jpath "lib1" -e 'import "lib1_test.jsonnet"'
