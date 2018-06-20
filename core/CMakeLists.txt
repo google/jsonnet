@@ -1,6 +1,6 @@
 # libjsonnet
 
-# Remember to update Bazel and Makefile builds when updating this list! 
+# Remember to update Bazel and Makefile builds when updating this list!
 set(LIBJSONNET_HEADERS
     ast.h
     desugarer.h
@@ -29,7 +29,7 @@ set(LIBJSONNET_SOURCE
     vm.cpp)
 
 add_library(libjsonnet SHARED ${LIBJSONNET_HEADERS} ${LIBJSONNET_SOURCE})
-add_dependencies(libjsonnet md5 stdlib)
+add_dependencies(libjsonnet md5)
 target_link_libraries(libjsonnet md5)
 
 # CMake prepends CMAKE_SHARED_LIBRARY_PREFIX to shared libraries, so without

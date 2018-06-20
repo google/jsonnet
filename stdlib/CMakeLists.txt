@@ -1,15 +1,6 @@
 # Utility to convert file to a list of integeters.
 
-add_executable(to_c_array to_c_array.cpp)
-
-# Custom command that will only build stdlib when it changes.
-add_custom_command(
-	OUTPUT ${PROJECT_SOURCE_DIR}/core/std.jsonnet.h
-	COMMAND ${GLOBAL_OUTPUT_PATH}/to_c_array
-			    ${PROJECT_SOURCE_DIR}/stdlib/std.jsonnet
-					${PROJECT_SOURCE_DIR}/core/std.jsonnet.h
-	DEPENDS to_c_array std.jsonnet)
-
-# Standard library build target that libjsonnet can depend on.
-add_custom_target(stdlib ALL
-	DEPENDS ${PROJECT_SOURCE_DIR}/core/std.jsonnet.h)
+file(READ ${PROJECT_SOURCE_DIR}/stdlib/std.jsonnet STD_JSONNET_DATA HEX)
+string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," STD_JSONNET_DATA ${STD_JSONNET_DATA})
+set(STD_JSONNET_DATA "${STD_JSONNET_DATA}0x00")
+file(WRITE ${PROJECT_SOURCE_DIR}/core/std.jsonnet.h ${STD_JSONNET_DATA})
