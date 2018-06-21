@@ -1273,11 +1273,11 @@ class Interpreter {
 
         VmNativeCallbackMap::const_iterator nit = nativeCallbacks.find(builtin_name);
         if (nit == nativeCallbacks.end()) {
-            throw makeError(loc, "unrecognized native function name: " + builtin_name);
+            scratch = makeNull();
+        } else {
+            const VmNativeCallback &cb = nit->second;
+            scratch = makeNativeBuiltin(builtin_name, cb.params);
         }
-
-        const VmNativeCallback &cb = nit->second;
-        scratch = makeNativeBuiltin(builtin_name, cb.params);
         return nullptr;
     }
 
