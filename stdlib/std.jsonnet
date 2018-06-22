@@ -147,9 +147,9 @@ limitations under the License.
         acc + str[start_index:curr_index]
       else if found_at(curr_index) then
         local new_index = curr_index + std.length(from);
-        replace_after(new_index, new_index, acc + str[start_index:curr_index] + to)
+        replace_after(new_index, new_index, acc + str[start_index:curr_index] + to) tailstrict
       else
-        replace_after(start_index, curr_index + 1, acc);
+        replace_after(start_index, curr_index + 1, acc) tailstrict;
 
     // if from_len==1, then we replace by splitting and rejoining the
     // string which is much faster than recursing on replace_after
