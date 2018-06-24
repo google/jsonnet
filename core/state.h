@@ -26,7 +26,18 @@ typedef unsigned char GarbageCollectionMark;
 /** Supertype of everything that is allocated on the heap.
  */
 struct HeapEntity {
+    enum Type : unsigned char {
+        THUNK,
+        ARRAY,
+        CLOSURE,
+        STRING,
+        SIMPLE_OBJECT,
+        COMPREHENSION_OBJECT,
+        EXTENDED_OBJECT,
+    };
     GarbageCollectionMark mark;
+    Type type;
+    HeapEntity(Type type_) : type(type_) {}
     virtual ~HeapEntity() {}
 };
 
@@ -92,6 +103,7 @@ typedef std::map<const Identifier *, HeapThunk *> BindingFrame;
 
 /** Supertype of all objects.  Types of Value::OBJECT will point at these.  */
 struct HeapObject : public HeapEntity {
+    HeapObject(Type type) : HeapEntity(type) {}
 };
 
 /** Hold an unevaluated expression.  This implements lazy semantics.
@@ -122,7 +134,7 @@ struct HeapThunk : public HeapEntity {
     const AST *body;
 
     HeapThunk(const Identifier *name, HeapObject *self, unsigned offset, const AST *body)
-        : filled(false), name(name), self(self), offset(offset), body(body)
+        : HeapEntity(THUNK), filled(false), name(name), self(self), offset(offset), body(body)
     {
     }
 
@@ -140,11 +152,15 @@ struct HeapArray : public HeapEntity {
     // time after creation.  Thus, elements are not GCed as the array is being
     // created.
     std::vector<HeapThunk *> elements;
-    HeapArray(const std::vector<HeapThunk *> &elements) : elements(elements) {}
+    HeapArray(const std::vector<HeapThunk *> &elements)
+        : HeapEntity(ARRAY), elements(elements)
+    {
+    }
 };
 
 /** Supertype of all objects that are not super objects or extended objects.  */
 struct HeapLeafObject : public HeapObject {
+    HeapLeafObject(Type type) : HeapObject(type) {}
 };
 
 /** Objects created via the simple object constructor construct. */
@@ -174,7 +190,7 @@ struct HeapSimpleObject : public HeapLeafObject {
 
     HeapSimpleObject(const BindingFrame &up_values,
                      const std::map<const Identifier *, Field> fields, ASTs asserts)
-        : upValues(up_values), fields(fields), asserts(asserts)
+        : HeapLeafObject(SIMPLE_OBJECT), upValues(up_values), fields(fields), asserts(asserts)
     {
     }
 };
@@ -187,7 +203,10 @@ struct HeapExtendedObject : public HeapObject {
     /** The right hand side of the construct. */
     HeapObject *right;
 
-    HeapExtendedObject(HeapObject *left, HeapObject *right) : left(left), right(right) {}
+    HeapExtendedObject(HeapObject *left, HeapObject *right)
+        : HeapObject(EXTENDED_OBJECT), left(left), right(right)
+    {
+    }
 };
 
 /** Objects created by the ObjectComprehensionSimple construct. */
@@ -214,7 +233,7 @@ struct HeapComprehensionObject : public HeapLeafObject {
 
     HeapComprehensionObject(const BindingFrame &up_values, const AST *value, const Identifier *id,
                             const std::map<const Identifier *, HeapThunk *> &comp_values)
-        : upValues(up_values), value(value), id(id), compValues(comp_values)
+        : HeapLeafObject(COMPREHENSION_OBJECT), upValues(up_values), value(value), id(id), compValues(comp_values)
     {
     }
 };
@@ -244,7 +263,8 @@ struct HeapClosure : public HeapEntity {
     std::string builtinName;
     HeapClosure(const BindingFrame &up_values, HeapObject *self, unsigned offset,
                 const Params &params, const AST *body, const std::string &builtin_name)
-        : upValues(up_values),
+        : HeapEntity(CLOSURE),
+          upValues(up_values),
           self(self),
           offset(offset),
           params(params),
@@ -257,7 +277,7 @@ struct HeapClosure : public HeapEntity {
 /** Stores a simple string on the heap. */
 struct HeapString : public HeapEntity {
     const UString value;
-    HeapString(const UString &value) : value(value) {}
+    HeapString(const UString &value) : HeapEntity(STRING), value(value) {}
 };
 
 /** The heap does memory management, i.e. garbage collection. */
@@ -346,40 +366,66 @@ class Heap {
             if (curr->mark != thisMark) {
                 curr->mark = thisMark;
 
-                if (auto *obj = dynamic_cast<HeapSimpleObject *>(curr)) {
-                    for (auto upv : obj->upValues)
-                        addIfHeapEntity(upv.second, s.children);
-
-                } else if (auto *obj = dynamic_cast<HeapExtendedObject *>(curr)) {
-                    addIfHeapEntity(obj->left, s.children);
-                    addIfHeapEntity(obj->right, s.children);
-
-                } else if (auto *obj = dynamic_cast<HeapComprehensionObject *>(curr)) {
-                    for (auto upv : obj->upValues)
-                        addIfHeapEntity(upv.second, s.children);
-                    for (auto upv : obj->compValues)
-                        addIfHeapEntity(upv.second, s.children);
-
-                } else if (auto *arr = dynamic_cast<HeapArray *>(curr)) {
-                    for (auto el : arr->elements)
-                        addIfHeapEntity(el, s.children);
-
-                } else if (auto *func = dynamic_cast<HeapClosure *>(curr)) {
-                    for (auto upv : func->upValues)
-                        addIfHeapEntity(upv.second, s.children);
-                    if (func->self)
-                        addIfHeapEntity(func->self, s.children);
-
-                } else if (auto *thunk = dynamic_cast<HeapThunk *>(curr)) {
-                    if (thunk->filled) {
-                        if (thunk->content.isHeap())
-                            addIfHeapEntity(thunk->content.v.h, s.children);
-                    } else {
-                        for (auto upv : thunk->upValues)
+                switch(curr->type) {
+                    case HeapEntity::SIMPLE_OBJECT: {
+                        assert(dynamic_cast<HeapSimpleObject *>(curr));
+                        auto *obj = static_cast<HeapSimpleObject *>(curr);
+                        for (auto upv : obj->upValues)
                             addIfHeapEntity(upv.second, s.children);
-                        if (thunk->self)
-                            addIfHeapEntity(thunk->self, s.children);
+                        break;
                     }
+                    case HeapEntity::EXTENDED_OBJECT: {
+                        assert(dynamic_cast<HeapExtendedObject *>(curr));
+                        auto *obj = static_cast<HeapExtendedObject *>(curr);
+                        addIfHeapEntity(obj->left, s.children);
+                        addIfHeapEntity(obj->right, s.children);
+                        break;
+                    }
+                    case HeapEntity::COMPREHENSION_OBJECT: {
+                        assert(dynamic_cast<HeapComprehensionObject *>(curr));
+                        auto *obj = static_cast<HeapComprehensionObject *>(curr);
+                        for (auto upv : obj->upValues)
+                            addIfHeapEntity(upv.second, s.children);
+                        for (auto upv : obj->compValues)
+                            addIfHeapEntity(upv.second, s.children);
+                        break;
+                    }
+                    case HeapEntity::ARRAY: {
+                        assert(dynamic_cast<HeapArray *>(curr));
+                        auto *arr = static_cast<HeapArray *>(curr);
+                        for (auto el : arr->elements)
+                            addIfHeapEntity(el, s.children);
+                        break;
+                    }
+                    case HeapEntity::CLOSURE: {
+                        assert(dynamic_cast<HeapClosure *>(curr));
+                        auto *func = static_cast<HeapClosure *>(curr);
+                        for (auto upv : func->upValues)
+                            addIfHeapEntity(upv.second, s.children);
+                        if (func->self)
+                            addIfHeapEntity(func->self, s.children);
+                        break;
+                    }
+                    case HeapEntity::THUNK: {
+                        assert(dynamic_cast<HeapThunk *>(curr));
+                        auto *thunk = static_cast<HeapThunk *>(curr);
+                        if (thunk->filled) {
+                            if (thunk->content.isHeap())
+                                addIfHeapEntity(thunk->content.v.h, s.children);
+                        } else {
+                            for (auto upv : thunk->upValues)
+                                addIfHeapEntity(upv.second, s.children);
+                            if (thunk->self)
+                                addIfHeapEntity(thunk->self, s.children);
+                        }
+                        break;
+                    }
+                    case HeapEntity::STRING:
+                        assert(dynamic_cast<HeapString *>(curr));
+                        break;
+                    default:
+                        assert(false);
+                        break;
                 }
             }
 
