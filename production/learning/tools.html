@@ -122,8 +122,8 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Aside from the Jsonnet interpreters (which execute the Jsonnet code) there is other softare
-        that can be used to get the most out of Jsonnet.
+        Aside from the Jsonnet interpreters (which execute the Jsonnet code) these additional
+        software tools allow you to get the most out of Jsonnet:
       </p>
       <ul>
         <li>Formatter, for automatically fixing stylistic problems</li>
@@ -146,6 +146,11 @@
             </li>
             <li>
               <a href="https://github.com/google/language-jsonnet">Atom</a>
+            </li>
+            <li>
+              <a href="https://databricks.com/">Databricks</a> maintain an <a
+              href="https://github.com/databricks/intellij-jsonnet">IntelliJ</a> plugin with jump to
+              imported files and local variables.
             </li>
           </ul>
         </li>
@@ -189,6 +194,7 @@
       <div class="tab-header">
       </div>
       <textarea id=input-jsonnet>
+        # Edit me!
         local b = import "b.libsonnet";  # comment
         local a = import "a.libsonnet";
 
@@ -216,6 +222,7 @@
         <div class=selected onclick="tab_click(this, 'formatter-output')">output.jsonnet</div>
       </div>
       <textarea readonly class="selected code-json" id="formatter-output">
+        // Edit me!
         local a = import 'a.libsonnet';
         local b = import 'b.libsonnet';  // comment
 

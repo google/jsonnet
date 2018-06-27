@@ -274,7 +274,7 @@ div.rules {
             </li>
             <li>
               Text block, beginning with <code>|||</code>, followed by optional whitespace and a
-              new-line.  The next line must be prefixed with some non-zero length whitespace
+              new-line.  The next non-blank line must be prefixed with some non-zero length whitespace
               <i>W</i>.  The block ends at the first subsequent line that does not begin with
               <i>W</i>, and it is an error if this line does not contain some optional whitespace
               followed by <code>|||</code>.  The content of the string is the concatenation of all
@@ -329,7 +329,7 @@ div.rules {
             </li>
             <li>
               If the sequence has more than one character, it is not allowed to end in any of
-              <code>+-~!</code>
+              <code>+-~!$</code>
             </li>
           </ul>
         </li>
@@ -402,7 +402,7 @@ div.rules {
           <td>|</td>
           <td>
             <code>[</code>
-            [ <i>expr</i> { <code>,</code> <i>expr</i> } [ <code>,</code> ]
+            [ <i>expr</i> { <code>,</code> <i>expr</i> } [ <code>,</code> ] ]
             <code>]</code>
           </td>
         </tr> 
@@ -453,7 +453,7 @@ div.rules {
             <i>expr</i>
             <code>[</code>
             <code>:</code> [ <i>expr</i>
-            [ <code>:</code> [ <i>expr</i> ] ] ] ]
+            [ <code>:</code> [ <i>expr</i> ] ] ]
             <code>]</code>
           </td>
         </tr>
@@ -655,7 +655,7 @@ div.rules {
             <code>]</code>
             <code>:</code>
             <i>expr</i>
-            [ { <code>,</code> <i>objlocal</i> } [ <code>,</code> ] ]
+            [ { <code>,</code> <i>objlocal</i> } ] [ <code>,</code> ] 
             <i>forspec</i> <i>compspec</i>
           </td>
         </tr>
