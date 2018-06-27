@@ -21,7 +21,7 @@ local house_rum = 'Banks Rum';
   // A definition next to fields.
   local pour = 1.5,
 
-  Daiquri: {
+  Daiquiri: {
     ingredients: [
       { kind: house_rum, qty: pour },
       { kind: 'Lime', qty: 1 },
