@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:latest AS builder
 
 RUN apk -U add build-base
 
@@ -7,8 +7,12 @@ WORKDIR /opt
 COPY . /opt/jsonnet
 
 RUN cd jsonnet && \
-    make && \
-    mv jsonnet /usr/local/bin && \
-    rm -rf /opt/jsonnet
+    make
+
+FROM alpine:latest
+
+RUN apk add --no-cache libstdc++ 
+
+COPY --from=builder /opt/jsonnet/jsonnet /usr/local/bin
 
 ENTRYPOINT ["/usr/local/bin/jsonnet"]
