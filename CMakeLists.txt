@@ -98,7 +98,7 @@ include_directories(
     third_party/md5
     core)
 
-install(DIRECTORY include DESTINATION include)
+install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 add_subdirectory(stdlib)
 add_subdirectory(third_party/md5)
