@@ -44,6 +44,11 @@ if [ ! -r 'doc/_config.yml' ]; then
   exit 1
 fi
 
+if [ ! -r 'doc/js/libjsonnet.js' ]; then
+  echo 'Cannot push as docs/js/libjsonnet.js has not been built.' >&1
+  exit 1
+fi
+
 working_dir=$1
 if [ -z "$working_dir" ]; then
   working_dir=$(mktemp -d "/tmp/jsonnet_gh_pages_XXXX")

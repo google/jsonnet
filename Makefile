@@ -129,9 +129,11 @@ libjsonnet++.so: $(LIB_CPP_OBJ)
 # JavaScript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_fmt_snippet", "_jsonnet_ext_var", "_jsonnet_ext_code", "_jsonnet_tla_var", "_jsonnet_tla_code", "_jsonnet_realloc", "_jsonnet_destroy", "_jsonnet_import_callback"]'
 
+JS_RUNTIME_METHODS = 'EXTRA_EXPORTED_RUNTIME_METHODS=["cwrap", "_free", "getValue", "lengthBytesUTF8", "_malloc", "Pointer_stringify", "setValue", "stringToUTF8", "addFunction"]'
+
 
 libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
-	$(EMCXX) -s $(JS_EXPORTED_FUNCTIONS) $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
+	$(EMCXX) -s WASM=0 -s $(JS_EXPORTED_FUNCTIONS) -s $(JS_RUNTIME_METHODS) $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
 
 # Copy javascript build to doc directory
 doc/js/libjsonnet.js: libjsonnet.js
