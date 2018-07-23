@@ -1,0 +1,1929 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Jsonnet - The Data Templating Language</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="keywords" content="Jsonnet, JSON, YAML, language, configuration, configuration language, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
+    <meta name="description" content="A powerful DSL for elegant description of JSON data." />
+    <meta name="viewport" content="width=576">
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- MathJax (for semantics) -->
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX","output/HTML-CSS"],
+        displayAlign: "left",
+        imageFont: null,
+    });
+    </script>
+    <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-53570216-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,700italic,400,600,700" rel="stylesheet" type="text/css">
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="/third_party/CodeMirror/lib/codemirror.css">
+    <script src="/third_party/js-yaml/dist/js-yaml.min.js"></script>
+    <script src="/third_party/CodeMirror/lib/codemirror.js"></script>
+    <script src="/third_party/CodeMirror/mode/yaml/yaml.js"></script>
+    <script src="/third_party/CodeMirror/addon/edit/matchbrackets.js"></script>
+    <script src="/js/codemirror-mode-jsonnet.js"></script>
+
+    <!-- Executing Jsonnet -->
+    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/demo.js"></script>
+
+    <!-- Navigation menus -->
+    <script src="/js/menu.js"></script>
+
+    <!-- jsonnet.org stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/doc.css" />
+    <link rel="stylesheet" media="print" href="/css/desktop.css">
+    <!-- The extra 16px is to account for the scrollbar, which is not always included. -->
+    <link rel="stylesheet" media="screen and (min-width: 1296px)" href="/css/desktop.css">
+    <link rel="stylesheet" media="screen and (max-width: 1295px) and (min-width: 720px)" href="/css/cellphone.css">
+    <link rel="stylesheet" media="screen and (max-width: 719px)" href="/css/cellphone-small.css">
+</head>
+
+<body>
+
+<div id=header>
+  <div class=header2>
+    <a id=header-logo class=header-element href="/"><img src="/img/isologo.svg"></a>
+    <a id=header-title class=header-element href="/">Jsonnet</a>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Learning
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/learning/tutorial.html">Tutorial</a>
+        <a href="/learning/getting_started.html">Getting Started</a>
+        <a href="/learning/tools.html">Tools</a>
+        <a href="/learning/community.html">Community</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Reference
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/ref/language.html">Language Reference</a>
+        <a href="/ref/stdlib.html">Standard Library</a>
+        <a href="/ref/spec.html">Specification</a>
+        <a href="/ref/bindings.html">Bindings</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='find_enclosing_menu(menu_open_popup(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Articles
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/articles/fractal.1.html">Terraform & Packer</a>
+        <a href="/articles/kubernetes.html">Kubernetes</a>
+        <a href="/articles/output-formats.html">Output Formats</a>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
+      </div>
+    </div>
+    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
+    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="standard_library">Standard Library</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        This page describes the functions available in Jsonnet's standard library, i.e. the object
+        implicitly bound to the <code>std</code> variable. Some of the standard library functions
+        can be implemented in Jsonnet.  Their code can be found in the <tt>std.jsonnet</tt> file.
+        The behavior of some of the other functions, i.e. the ones that expose extra functionality
+        not otherwise available to programmers, is described formally in the <a
+        href="/language/spec.html">specification</a>.
+      </p>
+      <p>
+        The standard library is implicitly added to all Jsonnet programs by enclosing them in a
+        local construct.  For example, if the program given by the user is <code>{x: "foo"}</code>,
+        then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>.  The
+        functions in the standard library are all hidden fields of the <code>std</code> object.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="ext_vars">External Variables</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="extVar">std.extVar(x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        If an external variable with the given name was defined, return its string value.
+        Otherwise, raise an error.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="types_reflection">Types and Reflection</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="thisFile">std.thisFile</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Note that this is a field. It contains the current Jsonnet filename as a string.
+      </p>
+    <div style="clear: both"></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="type">std.type(x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Return a string that indicates the type of the value.  The possible return values are:
+        "array", "boolean", "function", "null", "number", "object", and "string".
+      </p>
+      <p>
+        The following functions are also available and return a boolean:
+        <code>std.isArray(v)</code>, <code>std.isBoolean(v)</code>, <code>std.isFunction(v)</code>,
+        <code>std.isNumber(v)</code>, <code>std.isObject(v)</code>, and
+        <code>std.isString(v)</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="length">std.length(x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Depending on the type of the value given, either returns the number of elements in the
+        array, the number of codepoints in the string, the number of parameters in the function, or
+        the number of fields in the object.  Raises an error if given a primitive value, i.e.
+        <code>null</code>, <code>true</code> or <code>false</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectHas">std.objectHas(o, f)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns <code>true</code> if the given object has the field (given as a string), otherwise
+        <code>false</code>.  Raises an error if the arguments are not object and string
+        respectively.  Returns false if the field is hidden.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectFields">std.objectFields(o)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns an array of strings, each element being a field from the given object.  Does not include
+      hidden fields.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectHasAll">std.objectHasAll(o, f)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>As <code>std.objectHas</code> but also includes hidden fields.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectFieldsAll">std.objectFieldsAll(o)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>As <code>std.objectFields</code> but also includes hidden fields.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="prune">std.prune(x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Recursively remove all "empty" members of `x`.  "Empty" is defined as zero
+      length `arrays`, zero length `objects`, or `null` values.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="mapWithKey">std.mapWithKey(func, obj)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Apply the given function to all fields of the given object, also passing
+        the field name. The function <code>func</code> is expected to take the
+        field name as the first parameter and the field value as the second.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="math">Mathematical Utilities</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        The following mathematical functions are available:
+      </p>
+      <ul>
+        <ul><code>std.abs(n)</code></ul>
+        <ul><code>std.sign(n)</code></ul>
+        <ul><code>std.max(a, b)</code></ul>
+        <ul><code>std.min(a, b)</code></ul>
+        <ul><code>std.pow(x, n)</code></ul>
+        <ul><code>std.exp(x)</code></ul>
+        <ul><code>std.log(x)</code></ul>
+        <ul><code>std.exponent(x)</code></ul>
+        <ul><code>std.mantissa(x)</code></ul>
+        <ul><code>std.floor(x)</code></ul>
+        <ul><code>std.ceil(x)</code></ul>
+        <ul><code>std.sqrt(x)</code></ul>
+        <ul><code>std.sin(x)</code></ul>
+        <ul><code>std.cos(x)</code></ul>
+        <ul><code>std.tan(x)</code></ul>
+        <ul><code>std.asin(x)</code></ul>
+        <ul><code>std.acos(x)</code></ul>
+        <ul><code>std.atan(x)</code></ul>
+      </ul>
+      <p>
+        The function <code>std.mod(a, b)</code> is what the % operator is desugared to.  It performs
+        modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
+        it does Python-style string formatting with <code>std.format()</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="assertions_debugging">Assertions and Debugging</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="assertEqual">std.assertEqual(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error message.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="string">String Manipulation</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="toString">std.toString(a)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Convert the given argument to a string.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="codepoint">std.codepoint(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns the positive integer representing the unicode codepoint of the character in the
+        given single-character string.  This function is the inverse of <code>std.char(n)</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="char">std.char(n)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.
+        This function is the inverse of <code>std.codepoint(str)</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="substr">std.substr(s, from, len)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
+        and is <code>len</code> codepoints long.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="startsWith">std.startsWith(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Returns whether the string a is prefixed by the string b.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="endsWith">std.endsWith(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Returns whether the string a is suffixed by the string b.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="substr">std.substr(s, from, len)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
+        and is <code>len</code> codepoints long.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="split">std.split(str, c)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Split the string <code>str</code> into an array of strings, divided by the single character
+        <code>c</code>.
+      </p>
+      <p>
+        Example: <code>std.split("foo/bar", "/")</code> yields <code>["foo", "bar"]</code>.
+      </p>
+      <p>
+        Example: <code>std.split("/foo/", "/")</code> yields <code>["", "foo", ""]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="splitLimit">std.splitLimit(str, c, maxsplits)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
+        array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
+      </p>
+      <p>
+        Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>["foo", "bar"]</code>.
+      </p>
+      <p>
+        Example: <code>std.splitLimit("/foo/", "/", 1)</code> yields <code>["", "foo/"]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="strReplace">std.strReplace(str, from, to)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns a copy of the string in which all occurrences of string <code>from</code> have been
+        replaced with string <code>to</code>
+      </p>
+      <p>
+        Example: <code>std.strReplace('I like to skate with my skateboard', 'skate', 'surf')</code>
+        yields <code>"I like to surf with my surfboard"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="asciiUpper">std.asciiUpper(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Returns a copy of the string in which all ASCII letters are capitalized.</p>
+      <p>Example: <code>std.asciiUpper('100 Cats!')</code> yields <code>"100 CATS!"</code>. </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="asciiLower">std.asciiLower(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Returns a copy of the string in which all ASCII letters are lower cased.</p>
+      <p>Example: <code>std.asciiLower('100 Cats!')</code> yields <code>"100 cats!"</code>. </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="stringChars">std.stringChars(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Split the string <code>str</code> into an array of strings, each containing a single
+        codepoint.
+      </p>
+      <p>
+        Example: <code>std.stringChars("foo")</code> yields <code>["f", "o", "o"]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="format">std.format(str, vals)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Format the string <code>str</code> using the values in <code>vals</code>.  The values can be
+        an array, an object, or in other cases are treated as if they were provided in a singleton
+        array.  The string formatting follows the <a
+        href="https://docs.python.org/2/library/stdtypes.html#string-formatting">same rules</a> as
+        Python.  The <code>%</code> operator can be used as a shorthand for this function.
+      </p>
+      <p>
+        Example: <code>std.format("Hello %03d", 12)</code> yields <code>"Hello 012"</code>.
+      </p>
+      <p>
+        Example: <code>"Hello %03d" % 12</code> yields <code>"Hello 012"</code>.
+      </p>
+      <p>
+        Example: <code>"Hello %s, age %d" % ["Foo", 25]</code> yields <code>"Hello Foo, age
+        25"</code>.
+      </p>
+      <p>
+        Example: <code>"Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}</code> yields
+        <code>"Hello Foo, age 25"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseInt">std.parseInt(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Parses a signed decimal integer from the input string.</p>
+      <p>Example: <code>std.parseInt("123")</code> yields <code>123</code>.</p>
+      <p>Example: <code>std.parseInt("-123")</code> yields <code>-123</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseOctal">std.parseOctal(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.</p>
+      <p>Example: <code>std.parseOctal("755")</code> yields <code>493</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseOctal">std.parseHex(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Parses an unsigned hexadecimal integer, from the input string.  Case insensitive.
+      </p>
+      <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="escapeStringBash">std.escapeStringBash(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code>
+        by changing them to a sequence <tt>'"'"'</tt>.  This allows injection of arbitrary strings
+        as arguments of commands in bash scripts.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="escapeStringDollars">std.escapeStringDollars(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert $ to $$ in <code>str</code>.  This allows injection of arbitrary strings into
+        systems that use $ for string interpolation (like Terraform).
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="escapeStringJson">std.escapeStringJson(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert <code>str</code> to allow it to be embedded in a JSON representation, within a
+        string.  This adds quotes, escapes backslashes, and escapes unprintable characters.
+      </p>
+      <p>
+        Example:<br />
+        <code>{
+            local description = "Multiline\nc:\\path",
+            json: "{name: %s}" % std.escapeStringJson(description)
+        }</code><br />
+        yields: <code>{"json": "{name: \"Multiline\\nc:\\\\path\"}"}</code>
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="escapeStringPython">std.escapeStringPython(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert <code>str</code> to allow it to be embedded in Python.  This is an alias for
+        std.escapeStringJson.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="manifestation">Manifestation</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestIni">std.manifestIni(v)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given structure to a string in <a
+        href="http://en.wikipedia.org/wiki/INI_file">INI format</a>.  This allows using Jsonnet's
+        object model to build a configuration to be consumed by an application expecting an INI
+        file.  The data is in the form of a set of sections, each containing a key/value mapping.
+        These examples should make it clear:
+      </p>
+
+
+      <pre>{
+    main: { a: "1", b: "2" },
+    sections: {
+        s1: {x: "11", y: "22", z: "33"},
+        s2: {p: "yes", q: ""},
+        empty: {},
+    }
+}</pre>
+
+      <p>
+        Yields a string containing this INI file:
+      </p>
+
+      <pre>a = 1
+b = 2
+[empty]
+[s1]
+x = 11
+y = 22
+z = 33
+[s2]
+p = yes
+q = </pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestPython">std.manifestPython(v)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given value to a JSON-like form that is compatible with Python.  The chief
+        differences are True / False / None instead of true / false / null.
+      </p>
+
+      <pre>{
+  b: ["foo", "bar"],
+  c: true,
+  d: null,
+  e: { f1: false, f2: 42 },
+}</pre>
+
+      <p>
+        Yields a string containing Python code like:
+      </p>
+
+      <pre>{
+  "b": ["foo", "bar"],
+  "c": True,
+  "d": None,
+  "e": {"f1": False, "f2": 42}
+}</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestPythonVars">std.manifestPythonVars(v)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given object to a JSON-like form that is compatible with Python.  The key
+        difference to <code>std.manifestPython</code> is that the top level is represented as a list
+        of Python global variables.
+      </p>
+
+      <pre>{
+  b: ["foo", "bar"],
+  c: true,
+  d: null,
+  e: { f1: false, f2: 42 },
+}</pre>
+
+      <p>
+        Yields a string containing this Python code:
+      </p>
+
+      <pre>b = ["foo", "bar"]
+c = True
+d = None
+e = {"f1": False, "f2": 42}</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestJsonEx">std.manifestJsonEx(value, indent)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given object to a JSON form. <code>indent</code> is a string containing
+      one or more whitespaces that are used for indentation:
+      </p>
+      <pre>std.manifestJsonEx(
+{
+    x: [1, 2, 3, true, false, null,
+        "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+}, "    ")</pre>
+      <p>Yields a string containing this JSON object:</p>
+      <pre>{
+    "x": [
+        1,
+        2,
+        3,
+        true,
+        false,
+        null,
+        "string\nstring"
+    ],
+    "y": {
+        "a": 1,
+        "b": 2,
+        "c": [
+            1,
+            2
+        ]
+    }
+}</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestYamlDoc">std.manifestYamlDoc(value)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given value to a YAML form.  Note that <code>std.manifestJson</code> could also
+        be used for this purpose, because any JSON is also valid YAML.  But this function will
+        produce more canonical-looking YAML.
+      </p>
+
+      <pre>std.manifestYamlDoc(
+{
+    x: [1, 2, 3, true, false, null,
+        "string\nstring\n"],
+    y: { a: 1, b: 2, c: [1, 2] },
+})</pre>
+
+      <p>Yields a string containing this YAML:</p>
+
+      <pre>"x": 
+  - 1
+  - 2
+  - 3
+  - true
+  - false
+  - null
+  - |
+    string
+    string
+"y": 
+  "a": 1
+  "b": 2
+  "c": 
+    - 1
+    - 2</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestYamlStream">std.manifestYamlStream(value)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Given an array of values, emit a YAML "stream", which is a sequence of documents separated
+        by <code>---</code>.
+      </p>
+
+      <code>std.manifestYamlStream(['a', 1, []])</code>
+
+      <p>Yields this string:</p>
+
+      <pre>---
+"a"
+---
+1
+---
+[]
+...</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestXmlJsonml">std.manifestXmlJsonml(value)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
+        containing the XML.
+      </p>
+
+      <pre>std.manifestXmlJsonml([
+  'svg', { height: 100, width: 100 },
+  [
+    'circle', {
+      cx: 50, cy: 50, r: 40,
+       stroke: 'black', 'stroke-width': 3,
+       fill: 'red',
+    }
+  ],
+])</pre>
+
+      <p>
+        Yields a string containing this XML (all on one line):
+      </p>
+
+      <pre>&lt;svg height="100" width="100"&gt;
+  &lt;circle cx="50" cy="50" fill="red" r="40"
+  stroke="black" stroke-width="3"&gt;&lt;/circle&gt;
+&lt;/svg&gt;</pre>
+      <p>
+        Which represents the following image:
+      </p>
+      <svg height="100" width="100">
+        <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+        Sorry, your browser does not support inline SVG.  
+      </svg> 
+      <p>
+        JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next
+        to elements).  This includes the whitespace needed to avoid having all the XML on one line,
+        which is meaningful in XML.  In order to have whitespace in the XML output, it must be
+        present in the JsonML input:
+      </p>
+      <pre>std.manifestXmlJsonml([
+  'svg',
+  { height: 100, width: 100 },
+  '\n  ',
+  [
+    'circle',
+    {
+      cx: 50, cy: 50, r: 40, stroke: 'black',
+      'stroke-width': 3, fill: 'red',
+    }
+  ],
+  '\n',
+])</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="arrays">Arrays</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="makeArray">std.makeArray(sz, func)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize
+        each element.  Func is expected to be a function that takes a single parameter, the index of
+        the element it should initialize.
+      </p>
+      <p>
+        Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="count">std.count(arr, x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Return the number of times that x occurs in arr.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="map">std.map(func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Apply the given function to every element of the array to form a new array.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="mapWithIndex">std.mapWithIndex(func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Similar to <a href="#map">map</a> above, but it also passes to the function the element's
+        index in the array. The function <code>func</code> is expected to take the index as the
+        first parameter and the element as the second.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="filterMap">std.filterMap(filter_func, map_func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        This is primarily used to desugar array comprehension syntax.  It first filters, then maps
+        thte given array, using the two functions provided.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="filter">std.filter(func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Return a new array containing all the elements of <code>arr</code> for which the
+        <code>func</code> function returns true.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="foldl">std.foldl(func, arr, init)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Classic foldl function.  Calls the function on the result of the previous function call and
+        each array element, or <code>init</code> in the case of the initial element.  Traverses the
+        array from left to right.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="foldr">std.foldr(func, arr, init)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Classic foldl function.  Calls the function on each array element and the result of the
+        previous function call, or <code>init</code> in the case of the initial element.  Traverses
+        the array from right to left.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="range">std.range(from, to)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Return an array of ascending numbers between the two limits, inclusively.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="join">std.join(sep, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        If <code>sep</code> is a string, then <code>arr</code> must be an array of strings, in which
+        case they are concatenated with <code>sep</code> used as a delimiter.  If <code>sep</code>
+        is an array, then <code>arr</code> must be an array of arrays, in which case the arrays are
+        concatenated in the same way, to produce a single array.
+      </p>
+      <p>
+        Example1: <code>std.join(".", ["www", "google", "com"])</code> yields
+        <code>"www.google.com"</code>.
+      </p>
+      <p>
+        Example2: <code>std.join([9, 9], [[1], [2, 3]])</code> yields <code>[1, 9, 9, 2, 3]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="lines">std.lines(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Concatenate an array of strings into a text file with newline characters after each string.
+        This is suitable for constructing bash scripts and the like.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="flattenArrays">std.flattenArrays(arrs)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Concatenate an array of arrays into a single array.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sort">std.sort(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Sorts the array using the <= operator.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="uniq">std.uniq(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Removes successive duplicates.  When given a sorted array, removes all duplicates.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="sets">Sets</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Sets are represented as ordered arrays without duplicates.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="set">std.set(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Syntax sugar for std.uniq(std.sort(arr)).</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="setInter">std.setInter(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Set intersection operation (values in both a and b).</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="setUnion">std.setUnion(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Set union operation (values in either a or b).  Note that + on sets will simply concatenate
+        the arrays, possibly forming an array that is not a set (due to not bein ordered without
+        duplicates).
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="setDiff">std.setDiff(a, b)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Set difference operation (values in a but not b).</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="setMember">std.setMember(x, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="base64_coding">Encoding</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="base64">std.base64(v)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Encodes the given value into a base64 string.  The encoding sequence is A-Za-z0-9+/ with =
+        to pad the output to a multiple of 4 characters.  The value can be a string or an array of
+        numbers, but the codepoints / numbers must be in the 0 to 255 range.  The resulting string
+        has no line breaks.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="base64DecodeBytes">std.base64DecodeBytes(s)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Decodes the given base64 string into an array of bytes (number values).  Currently assumes
+        the input string has no linebreaks and is padded to a multiple of 4 (with the = character).
+        In other words, it consumes the output of std.base64().
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="base64Decode">std.base64Decode(s)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Behaves like std.base64DecodeBytes() except returns a string instead of an array of bytes.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="base64">std.md5(s)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Encodes the given value into an MD5 string.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="json_merge_patch">JSON Merge Patch</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="mergePatch">std.mergePatch(target, patch)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Applies <code>patch</code> to <code>target</code> according to <a
+        href="https://tools.ietf.org/html/rfc7396">RFC7396</a>
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="Debugging">Debugging</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="trace">std.trace(str, rest)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Outputs the given string <code>str</code> to stderr and
+        returns <code>rest</code> as the result.
+      <p>
+      <em>Available since version 0.11.0</em>
+      <p>Example:</p>
+      <p>
+      <pre>local conditionalReturn(cond, in1, in2) =
+    if (cond) then
+        std.trace('cond is true returning '
+                  + std.toString(in1), in1)
+    else
+        std.trace('cond is false returning '
+                  + std.toString(in2), in2);
+
+
+{
+    a: conditionalReturn(true, { b: true }, { c: false }),
+} </pre>
+      </p>
+      <p>Prints:</p>
+      <p>
+      <pre>TRACE: test.jsonnet:3 cond is true returning {"b": true}
+{
+   "a": {
+      "b": true
+   }
+}</pre>
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+
+
+<div class="inverse hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p class=footer>
+        Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+      </p>
+    </div>
+  </div>
+</div>
+
+</body>
+
+</html>
+
