@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
         // Write byte value of c to stdout.
         out_file << (int)c;
     }
+    out_file << ",0";
 
     return 0;
 }
