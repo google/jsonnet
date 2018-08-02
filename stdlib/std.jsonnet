@@ -70,9 +70,9 @@ limitations under the License.
     local lower_a_code = std.codepoint('a');
     local addDigit(aggregate, char) =
       local code = std.codepoint(char);
-      local digit = if code > lower_a_code then
+      local digit = if code >= lower_a_code then
         code - lower_a_code + 10
-      else if code > upper_a_code then
+      else if code >= upper_a_code then
         code - upper_a_code + 10
       else
         code - zero_code;

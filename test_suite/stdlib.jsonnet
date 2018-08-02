@@ -552,6 +552,10 @@ std.assertEqual(std.parseHex('ff'), 255) &&
 std.assertEqual(std.parseHex('FF'), 255) &&
 std.assertEqual(std.parseHex('0ff'), 255) &&
 std.assertEqual(std.parseHex('0FF'), 255) &&
+std.assertEqual(std.parseHex('a'), 10) &&
+std.assertEqual(std.parseHex('A'), 10) &&
+std.assertEqual(std.parseHex('4a'), 74) &&
+
 // verified by running md5 -s value
 std.assertEqual(std.md5(''), 'd41d8cd98f00b204e9800998ecf8427e') &&
 std.assertEqual(std.md5('grape'), 'b781cbb29054db12f88f08c6e161c199') &&
