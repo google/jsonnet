@@ -1211,8 +1211,8 @@ class Interpreter {
         std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
-            std::string msg = "undefined external variable: " + var8;
-            throw makeError(loc, msg);
+            scratch = makeNull();
+            return nullptr;
         }
         const VmExt &ext = it->second;
         if (ext.isCode) {
