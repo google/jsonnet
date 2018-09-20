@@ -87,6 +87,7 @@ link_directories(${GLOBAL_OUTPUT_PATH})
 include_directories(
     include
     third_party/md5
+    third_party/json
     core)
 
 install(DIRECTORY include DESTINATION include)

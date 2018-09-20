@@ -1,10 +1,32 @@
-language: cpp
-compiler:
-  - gcc
-  - clang
+language: generic
+matrix:
+  include:
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++-4.9 CC=gcc-4.9
+      addons:
+        apt:
+          packages:
+            - g++-4.9
+          sources: &sources
+            - llvm-toolchain-precise-3.8
+            - ubuntu-toolchain-r-test
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
+      addons:
+        apt:
+          packages:
+            - clang-3.8
+          sources: *sources
+    - os: osx
+      osx_image: xcode8
+      env: CC=gcc-4.9 && CXX=g++-4.9
+    - os: osx
+      osx_image: xcode8
+      env: CC=clang && CXX=clang++
 before_install:
   - echo $LANG
   - echo $LC_ALL
+  - $CXX --version
 before_script:
 script:
 #    - rvm get head  # Workaround 'shell_session_update: command not found'
@@ -28,6 +50,3 @@ notifications:
       - "chat.freenode.net#jsonnet"
     template:
       - "%{repository}/%{branch} (%{commit} - %{author}): %{message}"
-os:
-  - linux
-  - osx
