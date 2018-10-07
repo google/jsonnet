@@ -139,7 +139,7 @@ void usage(std::ostream &o)
     o << "  --comment-style <h|s|l> # (h), // (s)(default), or 'leave'; never changes she-bang\n";
     o << "  --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)\n";
     o << "  --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]\n";
-    o << "  --[no-]pad-objects      { x: 1, x: 2 } instead of {x: 1, y: 2} (on by default)\n";
+    o << "  --[no-]pad-objects      { x: 1, y: 2 } instead of {x: 1, y: 2} (on by default)\n";
     o << "  --[no-]sort-imports     Sorting of imports (on by default)\n";
     o << "  --debug-desugaring      Unparse the desugared AST without executing it\n";
     o << "  --version               Print version\n";

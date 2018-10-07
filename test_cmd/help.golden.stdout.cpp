@@ -58,7 +58,7 @@ Available fmt options:
   --comment-style <h|s|l> # (h), // (s)(default), or 'leave'; never changes she-bang
   --[no-]pretty-field-names Use syntax sugar for fields and indexing (on by default)
   --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]
-  --[no-]pad-objects      { x: 1, x: 2 } instead of {x: 1, y: 2} (on by default)
+  --[no-]pad-objects      { x: 1, y: 2 } instead of {x: 1, y: 2} (on by default)
   --[no-]sort-imports     Sorting of imports (on by default)
   --debug-desugaring      Unparse the desugared AST without executing it
   --version               Print version
