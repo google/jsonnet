@@ -380,6 +380,22 @@ class Unparser {
                 unparse(ast->branchTrue, true);
             }
 
+        } else if (auto *ast = dynamic_cast<const Switch *>(ast_)) {
+            o << "switch";
+            unparse(ast->pivot, true);
+            fill(ast->ofFodder, true, true);
+            o << "for";
+            for (size_t i = 0; i < ast->cases.size(); i++) {
+              fill(ast->whenFodders[i], true, true);
+              o << "if";
+              unparse(ast->cases[i], true);
+              fill(ast->thenFodders[i], true, true);
+              o << "then";
+              unparse(ast->branches[i], true);
+            }
+            fill(ast->elseFodder, true, true);
+            o << "else";
+            unparse(ast->elseBranch, true);
         } else if (dynamic_cast<const Dollar *>(ast_)) {
             o << "$";
 
@@ -1737,6 +1753,8 @@ class FixIndentation {
                 expr(ast->branchFalse, false_indent, true);
             }
 
+        } else if (auto *ast = dynamic_cast<Switch *>(ast_)) {
+          // TODO - Sam
         } else if (dynamic_cast<Dollar *>(ast_)) {
             column++;  // $
 

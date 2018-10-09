@@ -39,6 +39,7 @@ enum ASTType {
     AST_BINARY,
     AST_BUILTIN_FUNCTION,
     AST_CONDITIONAL,
+    AST_SWITCH,
     AST_DESUGARED_OBJECT,
     AST_DOLLAR,
     AST_ERROR,
@@ -74,6 +75,7 @@ static inline std::string ASTTypeToString(ASTType type)
         case AST_BINARY: return "AST_BINARY";
         case AST_BUILTIN_FUNCTION: return "AST_BUILTIN_FUNCTION";
         case AST_CONDITIONAL: return "AST_CONDITIONAL";
+        case AST_SWITCH: return "AST_SWITCH";
         case AST_DESUGARED_OBJECT: return "AST_DESUGARED_OBJECT";
         case AST_DOLLAR: return "AST_DOLLAR";
         case AST_ERROR: return "AST_ERROR";
@@ -397,6 +399,47 @@ struct Conditional : public AST {
           branchTrue(branch_true),
           elseFodder(else_fodder),
           branchFalse(branch_false)
+    {
+    }
+};
+
+/** Represents switch expressions.
+ *
+ * The parser converts the AST into a if/else chain, but keeps
+ * enough of the original structure for formatting.
+ */
+struct Switch : public AST {
+    AST* pivot;
+    Fodder ofFodder;
+    std::vector<AST*> cases;
+    std::vector<Fodder> whenFodders;
+    std::vector<AST*> branches;
+    std::vector<Fodder> thenFodders;
+    AST* elseBranch;
+    Fodder elseFodder;
+    AST* ifChain;
+
+    Switch(const LocationRange &lr, const Fodder &open_fodder,
+           AST *pivot,
+           Fodder of_fodder,
+           const std::vector<AST*> &cases,
+           const std::vector<Fodder> &when_fodders,
+           const std::vector<AST*> &branches,
+           const std::vector<Fodder> &then_fodders,
+           AST *else_branch,
+           const Fodder &else_fodder,
+           AST *if_chain
+           )
+       : AST(lr, AST_SWITCH, open_fodder),
+         pivot(pivot),
+         ofFodder(of_fodder),
+         cases(cases),
+         whenFodders(when_fodders),
+         branches(branches),
+         thenFodders(then_fodders),
+         elseBranch(else_branch),
+         elseFodder(else_fodder),
+         ifChain(if_chain)
     {
     }
 };

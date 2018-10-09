@@ -49,6 +49,7 @@ std::string jsonnet_unparse_number(double v)
 namespace {
 
 static const Fodder EMPTY_FODDER;
+static const LocationRange EMPTY_RANGE;
 
 static bool op_is_unary(const std::string &op, UnaryOp &uop)
 {
@@ -579,6 +580,7 @@ class Parser {
             case Token::FOR:
             case Token::FUNCTION:
             case Token::IF:
+            case Token::SWITCH:
             case Token::IN:
             case Token::IMPORT:
             case Token::IMPORTSTR:
@@ -799,6 +801,88 @@ class Parser {
                                                 branch_true,
                                                 Fodder{},
                                                 nullptr);
+            }
+
+            case Token::SWITCH: {
+                pop();
+                AST *pivot = parse(MAX_PRECEDENCE);
+                Token of = popExpect(Token::FOR);
+
+                std::vector<Conditional*> conds;
+                std::vector<AST*> cases;
+                std::vector<AST*> branches;
+                std::vector<Fodder> when_fodders;
+                std::vector<Fodder> then_fodders;
+
+                while (conds.size() < 1024) {
+                    switch(peek().kind) {
+                        case Token::IF: {
+                            Token when_ = pop();
+                            AST *case_ = parse(MAX_PRECEDENCE);
+                            AST *predicate = alloc->make<Binary>(EMPTY_RANGE,
+                                                                 EMPTY_FODDER,
+                                                                 pivot,
+                                                                 EMPTY_FODDER,
+                                                                 BOP_MANIFEST_EQUAL,
+                                                                 case_);
+                            Token then = popExpect(Token::THEN);
+                            AST *branch = parse(MAX_PRECEDENCE);
+                            Conditional *cond = alloc->make<Conditional>(EMPTY_RANGE,
+                                                                 EMPTY_FODDER,
+                                                                 predicate,
+                                                                 EMPTY_FODDER,
+                                                                 branch,
+                                                                 EMPTY_FODDER,
+                                                                 nullptr);
+                            cases.push_back(case_);
+                            branches.push_back(branch);
+                            conds.push_back(cond);
+                            when_fodders.push_back(when_.fodder);
+                            then_fodders.push_back(then.fodder);
+                            break;
+                        }
+
+                        case Token::ELSE: {
+                            Token else_ = pop();
+                            AST *else_branch = parse(MAX_PRECEDENCE);
+
+                            auto span_end = else_branch;
+
+                            for (size_t i = 0; i < conds.size(); i++) {
+                                size_t j = i + 1;
+                                if (j < conds.size()) {
+                                    conds[i]->branchFalse = conds[j];
+                                } else {
+                                    conds[i]->branchFalse = else_branch;
+                                }
+                            }
+
+                            AST *if_chain = conds.empty() ? else_branch : conds[0];
+
+                            return alloc->make<Switch>(span(begin, span_end),
+                                                       begin.fodder,
+                                                       pivot,
+                                                       of.fodder,
+                                                       cases,
+                                                       when_fodders,
+                                                       branches,
+                                                       then_fodders,
+                                                       else_branch,
+                                                       else_.fodder,
+                                                       if_chain);
+                        }
+
+                        default: {
+                            std::stringstream ss;
+                            ss << "expected if or then but got " << peek();
+                            throw StaticError(peek().location, ss.str());
+                        }
+                    }
+                }
+
+                std::stringstream ss;
+                ss << "switch case limit exceeded";
+                throw StaticError(peek().location, ss.str());
             }
 
             case Token::FUNCTION: {

@@ -26,6 +26,12 @@ local f(x) =
   else
     'huge';
 
+local g(x) =
+  switch x for
+  if 'hello' then 42
+  if 'world' then 37
+  else 54;
+
 std.assertEqual(f(-10), 'negative') &&
 std.assertEqual(f(0), 'zero') &&
 std.assertEqual(f(3), 'small') &&
@@ -40,5 +46,9 @@ std.assertEqual(if true then (if false then 'f') else 'y', null) &&
 std.assertEqual(if true then if true then 'f' + 'y', 'fy') &&
 std.assertEqual(if false then (if true then 'f') + 'y', null) &&
 std.assertEqual((if false then (if true then 'f')) + 'y', 'nully') &&
+
+std.assertEqual(g('hello'), 42) &&
+std.assertEqual(g('world'), 37) &&
+std.assertEqual(g('other'), 54) &&
 
 true

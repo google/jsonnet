@@ -74,6 +74,11 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         append(r, static_analysis(ast->branchTrue, in_object, vars));
         append(r, static_analysis(ast->branchFalse, in_object, vars));
     } break;
+    case AST_SWITCH: {
+        assert(dynamic_cast<Switch *>(ast_));
+        auto* ast = static_cast<Switch *>(ast_);
+        append(r, static_analysis(ast->ifChain, in_object, vars));
+    } break;
     case AST_ERROR: {
         assert(dynamic_cast<Error *>(ast_));
         auto* ast = static_cast<Error *>(ast_);

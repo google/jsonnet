@@ -173,6 +173,22 @@ void CompilerPass::visit(Conditional *ast)
     }
 }
 
+void CompilerPass::visit(Switch *ast)
+{
+    // TODO?
+    //expr(ast->pivot);
+    //for(size_t i = 0; i < ast->conds.size(); i++) {
+    //    expr(ast->conds[i]);
+    //    fodder(ast->when_fodders[i]);
+	//expr(ast->branches[i]);
+	//fodder(ast->then_fodders[i]);
+    //}
+    //expr(ast->else_branch);
+    //fodder(ast->else_fodder);
+  // TODO - Sam
+    expr(ast->ifChain);
+}
+
 void CompilerPass::visit(Error *ast)
 {
     expr(ast->expr);
@@ -301,6 +317,7 @@ void CompilerPass::visitExpr(AST *&ast_)
         VISIT(ast_, AST_BINARY, Binary);
         VISIT(ast_, AST_BUILTIN_FUNCTION, BuiltinFunction);
         VISIT(ast_, AST_CONDITIONAL, Conditional);
+        VISIT(ast_, AST_SWITCH, Switch);
         VISIT(ast_, AST_DESUGARED_OBJECT, DesugaredObject);
         VISIT(ast_, AST_DOLLAR, Dollar);
         VISIT(ast_, AST_ERROR, Error);

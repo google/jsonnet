@@ -631,6 +631,8 @@ class Desugarer {
                 ast->branchFalse = null();
             desugar(ast->branchFalse, obj_level);
 
+        } else if (auto *ast = dynamic_cast<Switch *>(ast_)) {
+            desugar(ast->ifChain, obj_level);
         } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
             if (obj_level == 0) {
                 throw StaticError(ast->location, "No top-level object found.");

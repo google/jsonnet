@@ -30,6 +30,9 @@ limitations under the License.
 #include "string_utils.h"
 #include "vm.h"
 
+static const Fodder EF;
+static const LocationRange E;
+
 namespace {
 
 /** Turn a path e.g. "/a/b/c" into a dir, e.g. "/a/b/".  If there is no path returns "".
@@ -1502,6 +1505,12 @@ class Interpreter {
                 const auto &ast = *static_cast<const Conditional *>(ast_);
                 stack.newFrame(FRAME_IF, ast_);
                 ast_ = ast.cond;
+                goto recurse;
+            } break;
+
+            case AST_SWITCH: {
+                const auto &ast = *static_cast<const Switch *>(ast_);
+                ast_ = ast.ifChain;
                 goto recurse;
             } break;
 

@@ -261,6 +261,7 @@ struct Token {
         FOR,
         FUNCTION,
         IF,
+        SWITCH,
         IMPORT,
         IMPORTSTR,
         IN,
@@ -344,6 +345,7 @@ struct Token {
             case FOR: return "for";
             case FUNCTION: return "function";
             case IF: return "if";
+            case SWITCH: return "switch";
             case IMPORT: return "import";
             case IMPORTSTR: return "importstr";
             case IN: return "in";

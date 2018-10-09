@@ -59,6 +59,8 @@ class CompilerPass {
 
     virtual void visit(Conditional *ast);
 
+    virtual void visit(Switch *ast);
+
     virtual void visit(Dollar *) {}
 
     virtual void visit(Error *ast);
