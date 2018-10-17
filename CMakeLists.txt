@@ -91,6 +91,11 @@ include_directories(
 
 install(DIRECTORY include DESTINATION include)
 
+if (BUILD_TESTS)
+    # Set JSONNET_BIN variable required for regression tests.
+    file(TO_NATIVE_PATH ${GLOBAL_OUTPUT_PATH}/jsonnet JSONNET_BIN)
+endif()
+
 add_subdirectory(stdlib)
 add_subdirectory(third_party/md5)
 add_subdirectory(core)
@@ -98,11 +103,6 @@ add_subdirectory(cmd)
 add_subdirectory(test_suite)
 
 if (BUILD_TESTS)
-    # Set JSONNET_CMD variable required for regression tests.
-    file(TO_NATIVE_PATH ${GLOBAL_OUTPUT_PATH}/jsonnet JSONNET_CMD)
-    set(CTEST_ENVIRONMENT
-        "JSONNET_CMD=${JSONNET_CMD}")
-
     # s`run_tests` target builds and runs all tests. The cmake-generated `test`
     # target runs tests without building them.
     add_custom_target(run_tests COMMAND ${CMAKE_CTEST_COMMAND}
@@ -111,3 +111,5 @@ if (BUILD_TESTS)
     )
 
 endif()
+
+
