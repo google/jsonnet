@@ -853,7 +853,7 @@ limitations under the License.
         '\\t'
       else
         local cp = std.codepoint(ch);
-        if cp < 32 || (cp >= 126 && cp <= 159) then
+        if cp < 32 || (cp >= 128 && cp <= 159) then
           '\\u%04x' % [cp]
         else
           ch;

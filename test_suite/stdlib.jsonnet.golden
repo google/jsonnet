@@ -1,4 +1,3 @@
-TRACE: stdlib.jsonnet:580 
 TRACE: stdlib.jsonnet:581 
 TRACE: stdlib.jsonnet:582 
 TRACE: stdlib.jsonnet:583 
@@ -8,5 +7,6 @@ TRACE: stdlib.jsonnet:586
 TRACE: stdlib.jsonnet:587 
 TRACE: stdlib.jsonnet:588 
 TRACE: stdlib.jsonnet:589 
-TRACE: stdlib.jsonnet:590 Some Trace Message
+TRACE: stdlib.jsonnet:590 
+TRACE: stdlib.jsonnet:591 Some Trace Message
 true
