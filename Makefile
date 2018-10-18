@@ -84,6 +84,7 @@ ALL_HEADERS = \
 	core/vm.h \
 	core/std.jsonnet.h \
 	include/libjsonnet.h \
+	include/libjsonnet_fmt.h \
 	include/libjsonnet++.h \
 	third_party/md5/md5.h
 

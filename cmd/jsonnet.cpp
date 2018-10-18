@@ -29,6 +29,7 @@ limitations under the License.
 
 extern "C" {
 #include <libjsonnet.h>
+#include <libjsonnet_fmt.h>
 }
 
 #ifdef _WIN32
