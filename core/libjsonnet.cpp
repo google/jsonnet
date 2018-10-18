@@ -26,6 +26,7 @@ limitations under the License.
 
 extern "C" {
 #include "libjsonnet.h"
+#include "libjsonnet_fmt.h"
 }
 
 #include "desugarer.h"

@@ -7,6 +7,7 @@ set(LIBJSONNET_HEADERS
     formatter.h
     lexer.h
     ../include/libjsonnet.h
+    ../include/libjsonnet_fmt.h
     parser.h
     pass.h
     state.h

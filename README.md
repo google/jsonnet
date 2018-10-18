@@ -63,8 +63,14 @@ bazel-bin/cmd/jsonnet
 
 ### Cmake
 
-TODO: info about cmake
 
+```
+cmake . -Bbuild
+```
+
+```
+cmake --build build --target run_tests
+```
 
 ## Contributing
 

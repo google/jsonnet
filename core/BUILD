@@ -30,6 +30,7 @@ cc_library(
     ],
     deps = [
         "//include:libjsonnet",
+        "//include:libjsonnet_fmt",
         "//stdlib:std",
         "//third_party/md5:libmd5",
     ],
