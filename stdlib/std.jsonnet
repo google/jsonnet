@@ -81,6 +81,8 @@ limitations under the License.
     std.foldl(addDigit, std.stringChars(str), 0),
 
   parseInt(str)::
+    assert std.isString(str): 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0 && str != "-": 'Not an integer: "%s"' % [str];
     if str[0] == '-' then
       -parse_nat(str[1:], 10)
     else
