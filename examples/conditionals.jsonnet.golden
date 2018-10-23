@@ -63,6 +63,18 @@
         "kind": "Mint",
         "qty": 6,
         "unit": "leaves"
+      },
+      {
+         "kind": "Lime",
+         "qty": 0.5
+      },
+      {
+         "kind": "Simple Syrup",
+         "qty": 0.5
+      },
+      {
+         "kind": "Soda",
+         "qty": 3
       }
     ],
     "served": "Over crushed ice"
