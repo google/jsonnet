@@ -393,6 +393,277 @@ class Desugarer {
         return super_vars;
     }
 
+    AST* makeArrayComprehension(ArrayComprehension *ast, unsigned obj_level) {
+        int n = ast->specs.size();
+        AST *zero = make<LiteralNumber>(E, EF, "0.0");
+        AST *one = make<LiteralNumber>(E, EF, "1.0");
+        auto *_r = id(U"$r");
+        auto *_l = id(U"$l");
+        std::vector<const Identifier *> _i(n);
+        for (int i = 0; i < n; ++i) {
+            UStringStream ss;
+            ss << U"$i_" << i;
+            _i[i] = id(ss.str());
+        }
+        std::vector<const Identifier *> _aux(n);
+        for (int i = 0; i < n; ++i) {
+            UStringStream ss;
+            ss << U"$aux_" << i;
+            _aux[i] = id(ss.str());
+        }
+
+        // Build it from the inside out.  We keep wrapping 'in' with more ASTs.
+        assert(ast->specs[0].kind == ComprehensionSpec::FOR);
+
+        int last_for = n - 1;
+        while (ast->specs[last_for].kind != ComprehensionSpec::FOR)
+            last_for--;
+        // $aux_{last_for}($i_{last_for} + 1, $r + [body])
+        AST *in = make<Apply>(
+            ast->body->location,
+            EF,
+            var(_aux[last_for]),
+            EF,
+            ArgParams{{make<Binary>(E, EF, var(_i[last_for]), EF, BOP_PLUS, one), EF},
+                {make<Binary>(E, EF, var(_r), EF, BOP_PLUS, singleton(ast->body)), EF}},
+            false,  // trailingComma
+            EF,
+            EF,
+            true  // tailstrict
+        );
+        for (int i = n - 1; i >= 0; --i) {
+            const ComprehensionSpec &spec = ast->specs[i];
+            AST *out;
+            if (i > 0) {
+                int prev_for = i - 1;
+                while (ast->specs[prev_for].kind != ComprehensionSpec::FOR)
+                    prev_for--;
+
+                // aux_{prev_for}($i_{prev_for} + 1, $r)
+                out = make<Apply>(  // False branch.
+                    E,
+                    EF,
+                    var(_aux[prev_for]),
+                    EF,
+                    ArgParams{{
+                        make<Binary>(E, EF, var(_i[prev_for]), EF, BOP_PLUS, one),
+                            EF,
+                            },
+                      {
+                        var(_r),
+                            EF,
+                            }},
+                    false,  // trailingComma
+                    EF,
+                    EF,
+                    true  // tailstrict
+                );
+            } else {
+                out = var(_r);
+            }
+            switch (spec.kind) {
+                case ComprehensionSpec::IF: {
+                  /*
+                    if [[[...cond...]]] then
+                    [[[...in...]]]
+                    else
+                    [[[...out...]]]
+                  */
+                    in = make<Conditional>(ast->location,
+                                           EF,
+                                           spec.expr,
+                                           EF,
+                                           in,  // True branch.
+                                           EF,
+                                           out);  // False branch.
+                } break;
+                case ComprehensionSpec::FOR: {
+                    /*
+                      local $l = [[[...array...]]]
+                      aux_{i}(i_{i}, r) =
+                      if i_{i} >= std.length($l) then
+                      [[[...out...]]]
+                      else
+                      local [[[...var...]]] = $l[i_{i}];
+                      [[[...in...]]];
+                      if std.type($l) == "array" then
+                      aux_{i}(0, $r) tailstrict
+                      else
+                      error "In comprehension, can only iterate over array..";
+                    */
+                    in = make<Local>(
+                        ast->location,
+                        EF,
+                        Local::Binds{
+                          bind(_l, spec.expr),  // Need to check expr is an array
+                              bind(_aux[i],
+                                   make<Function>(
+                                       ast->location,
+                                       EF,
+                                       EF,
+                                       ArgParams{{EF, _i[i], EF}, {EF, _r, EF}},
+                                       false,  // trailingComma
+                                       EF,
+                                       make<Conditional>(ast->location,
+                                                         EF,
+                                                         make<Binary>(E,
+                                                                      EF,
+                                                                      var(_i[i]),
+                                                                      EF,
+                                                                      BOP_GREATER_EQ,
+                                                                      length(var(_l))),
+                                                         EF,
+                                                         out,
+                                                         EF,
+                                                         make<Local>(
+                                                             ast->location,
+                                                             EF,
+                                                             singleBind(spec.var,
+                                                                        make<Index>(E,
+                                                                                    EF,
+                                                                                    var(_l),
+                                                                                    EF,
+                                                                                    false,
+                                                                                    var(_i[i]),
+                                                                                    EF,
+                                                                                    nullptr,
+                                                                                    EF,
+                                                                                    nullptr,
+                                                                                    EF)),
+                                                             in))))},
+                        make<Conditional>(
+                            ast->location,
+                            EF,
+                            equals(ast->location, type(var(_l)), str(U"array")),
+                            EF,
+                            make<Apply>(
+                                E,
+                                EF,
+                                var(_aux[i]),
+                                EF,
+                                ArgParams{{zero, EF},
+                                  {
+                                    i == 0 ? make<Array>(
+                                        E, EF, Array::Elements{}, false, EF)
+                                        : static_cast<AST *>(var(_r)),
+                                        EF,
+                                        }},
+                                false,  // trailingComma
+                                EF,
+                                EF,
+                                true),  // tailstrict
+                            EF,
+                            error(ast->location,
+                                  U"In comprehension, can only iterate over array.")));
+                } break;
+            }
+        }
+
+        return in;
+    }
+
+    AST* makeObject(Object *ast, unsigned obj_level) {
+        // Hidden variable to allow outer/top binding.
+        if (obj_level == 0) {
+            const Identifier *hidden_var = id(U"$");
+            auto *body = make<Self>(E, EF);
+            ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
+        }
+
+        SuperVars svs = desugarFields(ast, ast->fields, obj_level);
+
+        DesugaredObject::Fields new_fields;
+        ASTs new_asserts;
+        for (const ObjectField &field : ast->fields) {
+            if (field.kind == ObjectField::ASSERT) {
+                new_asserts.push_back(field.expr2);
+            } else if (field.kind == ObjectField::FIELD_EXPR) {
+                new_fields.emplace_back(field.hide, field.expr1, field.expr2);
+            } else {
+                std::cerr << "INTERNAL ERROR: field should have been desugared: " << field.kind
+                          << std::endl;
+            }
+        }
+
+        AST* retval = make<DesugaredObject>(ast->location, new_asserts, new_fields);
+        if (svs.size() > 0) {
+            Local::Binds binds;
+            for (const auto &pair : svs) {
+                if (pair.second == nullptr) {
+                    // Self binding
+                    binds.push_back(bind(pair.first, make<Self>(E, EF)));
+                } else {
+                    // Super binding
+                    binds.push_back(bind(pair.first, pair.second));
+                }
+            }
+            retval = make<Local>(ast->location, EF, binds, retval);
+        }
+
+        return retval;
+    }
+
+    AST* makeObjectComprehension(ObjectComprehension *ast, unsigned obj_level) {
+        // Hidden variable to allow outer/top binding.
+        if (obj_level == 0) {
+            const Identifier *hidden_var = id(U"$");
+            auto *body = make<Self>(E, EF);
+            ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
+        }
+
+        SuperVars svs = desugarFields(ast, ast->fields, obj_level);
+
+        for (ComprehensionSpec &spec : ast->specs)
+            desugar(spec.expr, obj_level);
+
+        AST *field = ast->fields.front().expr1;
+        AST *value = ast->fields.front().expr2;
+
+        /*  {
+            [arr[0]]: local x = arr[1], y = arr[2], z = arr[3]; val_expr
+            for arr in [ [key_expr, x, y, z] for ...  ]
+            }
+        */
+        auto *_arr = id(U"$arr");
+        AST *zero = make<LiteralNumber>(E, EF, "0.0");
+        int counter = 1;
+        Local::Binds binds;
+        Array::Elements arr_e{Array::Element(field, EF)};
+        for (ComprehensionSpec &spec : ast->specs) {
+            if (spec.kind == ComprehensionSpec::FOR) {
+                std::stringstream num;
+                num << counter++;
+                binds.push_back(bind(spec.var,
+                                     make<Index>(E,
+                                                 EF,
+                                                 var(_arr),
+                                                 EF,
+                                                 false,
+                                                 make<LiteralNumber>(E, EF, num.str()),
+                                                 EF,
+                                                 nullptr,
+                                                 EF,
+                                                 nullptr,
+                                                 EF)));
+                arr_e.emplace_back(var(spec.var), EF);
+            }
+        }
+        AST *arr = make<ArrayComprehension>(ast->location,
+                                            EF,
+                                            make<Array>(ast->location, EF, arr_e, false, EF),
+                                            EF,
+                                            false,
+                                            ast->specs,
+                                            EF);
+        desugar(arr, obj_level);
+        return make<ObjectComprehensionSimple>(
+            ast->location,
+            make<Index>(E, EF, var(_arr), EF, false, zero, EF, nullptr, EF, nullptr, EF),
+            make<Local>(ast->location, EF, binds, value),
+            _arr,
+            arr);
+    }
+
     void desugar(AST *&ast_, unsigned obj_level)
     {
         if (auto *ast = dynamic_cast<Apply *>(ast_)) {
@@ -415,172 +686,7 @@ class Desugarer {
                 desugar(spec.expr, obj_level);
             desugar(ast->body, obj_level + 1);
 
-            int n = ast->specs.size();
-            AST *zero = make<LiteralNumber>(E, EF, "0.0");
-            AST *one = make<LiteralNumber>(E, EF, "1.0");
-            auto *_r = id(U"$r");
-            auto *_l = id(U"$l");
-            std::vector<const Identifier *> _i(n);
-            for (int i = 0; i < n; ++i) {
-                UStringStream ss;
-                ss << U"$i_" << i;
-                _i[i] = id(ss.str());
-            }
-            std::vector<const Identifier *> _aux(n);
-            for (int i = 0; i < n; ++i) {
-                UStringStream ss;
-                ss << U"$aux_" << i;
-                _aux[i] = id(ss.str());
-            }
-
-            // Build it from the inside out.  We keep wrapping 'in' with more ASTs.
-            assert(ast->specs[0].kind == ComprehensionSpec::FOR);
-
-            int last_for = n - 1;
-            while (ast->specs[last_for].kind != ComprehensionSpec::FOR)
-                last_for--;
-            // $aux_{last_for}($i_{last_for} + 1, $r + [body])
-            AST *in = make<Apply>(
-                ast->body->location,
-                EF,
-                var(_aux[last_for]),
-                EF,
-                ArgParams{{make<Binary>(E, EF, var(_i[last_for]), EF, BOP_PLUS, one), EF},
-                          {make<Binary>(E, EF, var(_r), EF, BOP_PLUS, singleton(ast->body)), EF}},
-                false,  // trailingComma
-                EF,
-                EF,
-                true  // tailstrict
-            );
-            for (int i = n - 1; i >= 0; --i) {
-                const ComprehensionSpec &spec = ast->specs[i];
-                AST *out;
-                if (i > 0) {
-                    int prev_for = i - 1;
-                    while (ast->specs[prev_for].kind != ComprehensionSpec::FOR)
-                        prev_for--;
-
-                    // aux_{prev_for}($i_{prev_for} + 1, $r)
-                    out = make<Apply>(  // False branch.
-                        E,
-                        EF,
-                        var(_aux[prev_for]),
-                        EF,
-                        ArgParams{{
-                                      make<Binary>(E, EF, var(_i[prev_for]), EF, BOP_PLUS, one),
-                                      EF,
-                                  },
-                                  {
-                                      var(_r),
-                                      EF,
-                                  }},
-                        false,  // trailingComma
-                        EF,
-                        EF,
-                        true  // tailstrict
-                    );
-                } else {
-                    out = var(_r);
-                }
-                switch (spec.kind) {
-                    case ComprehensionSpec::IF: {
-                        /*
-                            if [[[...cond...]]] then
-                                [[[...in...]]]
-                            else
-                                [[[...out...]]]
-                        */
-                        in = make<Conditional>(ast->location,
-                                               EF,
-                                               spec.expr,
-                                               EF,
-                                               in,  // True branch.
-                                               EF,
-                                               out);  // False branch.
-                    } break;
-                    case ComprehensionSpec::FOR: {
-                        /*
-                            local $l = [[[...array...]]]
-                                  aux_{i}(i_{i}, r) =
-                                if i_{i} >= std.length($l) then
-                                    [[[...out...]]]
-                                else
-                                    local [[[...var...]]] = $l[i_{i}];
-                                    [[[...in...]]];
-                            if std.type($l) == "array" then
-                                aux_{i}(0, $r) tailstrict
-                            else
-                                error "In comprehension, can only iterate over array..";
-                        */
-                        in = make<Local>(
-                            ast->location,
-                            EF,
-                            Local::Binds{
-                                bind(_l, spec.expr),  // Need to check expr is an array
-                                bind(_aux[i],
-                                     make<Function>(
-                                         ast->location,
-                                         EF,
-                                         EF,
-                                         ArgParams{{EF, _i[i], EF}, {EF, _r, EF}},
-                                         false,  // trailingComma
-                                         EF,
-                                         make<Conditional>(ast->location,
-                                                           EF,
-                                                           make<Binary>(E,
-                                                                        EF,
-                                                                        var(_i[i]),
-                                                                        EF,
-                                                                        BOP_GREATER_EQ,
-                                                                        length(var(_l))),
-                                                           EF,
-                                                           out,
-                                                           EF,
-                                                           make<Local>(
-                                                               ast->location,
-                                                               EF,
-                                                               singleBind(spec.var,
-                                                                          make<Index>(E,
-                                                                                      EF,
-                                                                                      var(_l),
-                                                                                      EF,
-                                                                                      false,
-                                                                                      var(_i[i]),
-                                                                                      EF,
-                                                                                      nullptr,
-                                                                                      EF,
-                                                                                      nullptr,
-                                                                                      EF)),
-                                                               in))))},
-                            make<Conditional>(
-                                ast->location,
-                                EF,
-                                equals(ast->location, type(var(_l)), str(U"array")),
-                                EF,
-                                make<Apply>(
-                                    E,
-                                    EF,
-                                    var(_aux[i]),
-                                    EF,
-                                    ArgParams{{zero, EF},
-                                              {
-                                                  i == 0 ? make<Array>(
-                                                               E, EF, Array::Elements{}, false, EF)
-                                                         : static_cast<AST *>(var(_r)),
-                                                  EF,
-                                              }},
-                                    false,  // trailingComma
-                                    EF,
-                                    EF,
-                                    true),  // tailstrict
-                                EF,
-                                error(ast->location,
-                                      U"In comprehension, can only iterate over array.")));
-                    } break;
-                }
-            }
-
-            ast_ = in;
+            ast_ = makeArrayComprehension(ast, obj_level);
 
         } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
             desugar(ast->cond, obj_level);
@@ -748,101 +854,10 @@ class Desugarer {
             }
 
         } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
-            // Hidden variable to allow outer/top binding.
-            if (obj_level == 0) {
-                const Identifier *hidden_var = id(U"$");
-                auto *body = make<Self>(E, EF);
-                ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
-            }
-
-            SuperVars svs = desugarFields(ast, ast->fields, obj_level);
-
-            DesugaredObject::Fields new_fields;
-            ASTs new_asserts;
-            for (const ObjectField &field : ast->fields) {
-                if (field.kind == ObjectField::ASSERT) {
-                    new_asserts.push_back(field.expr2);
-                } else if (field.kind == ObjectField::FIELD_EXPR) {
-                    new_fields.emplace_back(field.hide, field.expr1, field.expr2);
-                } else {
-                    std::cerr << "INTERNAL ERROR: field should have been desugared: " << field.kind
-                              << std::endl;
-                }
-            }
-            ast_ = make<DesugaredObject>(ast->location, new_asserts, new_fields);
-            if (svs.size() > 0) {
-                Local::Binds binds;
-                for (const auto &pair : svs) {
-                    if (pair.second == nullptr) {
-                        // Self binding
-                        binds.push_back(bind(pair.first, make<Self>(E, EF)));
-                    } else {
-                        // Super binding
-                        binds.push_back(bind(pair.first, pair.second));
-                    }
-                }
-                ast_ = make<Local>(ast->location, EF, binds, ast_);
-            }
+            ast_ = makeObject(ast, obj_level);
 
         } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
-            // Hidden variable to allow outer/top binding.
-            if (obj_level == 0) {
-                const Identifier *hidden_var = id(U"$");
-                auto *body = make<Self>(E, EF);
-                ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
-            }
-
-            SuperVars svs = desugarFields(ast, ast->fields, obj_level);
-
-            for (ComprehensionSpec &spec : ast->specs)
-                desugar(spec.expr, obj_level);
-
-            AST *field = ast->fields.front().expr1;
-            AST *value = ast->fields.front().expr2;
-
-            /*  {
-                    [arr[0]]: local x = arr[1], y = arr[2], z = arr[3]; val_expr
-                    for arr in [ [key_expr, x, y, z] for ...  ]
-                }
-            */
-            auto *_arr = id(U"$arr");
-            AST *zero = make<LiteralNumber>(E, EF, "0.0");
-            int counter = 1;
-            Local::Binds binds;
-            Array::Elements arr_e{Array::Element(field, EF)};
-            for (ComprehensionSpec &spec : ast->specs) {
-                if (spec.kind == ComprehensionSpec::FOR) {
-                    std::stringstream num;
-                    num << counter++;
-                    binds.push_back(bind(spec.var,
-                                         make<Index>(E,
-                                                     EF,
-                                                     var(_arr),
-                                                     EF,
-                                                     false,
-                                                     make<LiteralNumber>(E, EF, num.str()),
-                                                     EF,
-                                                     nullptr,
-                                                     EF,
-                                                     nullptr,
-                                                     EF)));
-                    arr_e.emplace_back(var(spec.var), EF);
-                }
-            }
-            AST *arr = make<ArrayComprehension>(ast->location,
-                                                EF,
-                                                make<Array>(ast->location, EF, arr_e, false, EF),
-                                                EF,
-                                                false,
-                                                ast->specs,
-                                                EF);
-            desugar(arr, obj_level);
-            ast_ = make<ObjectComprehensionSimple>(
-                ast->location,
-                make<Index>(E, EF, var(_arr), EF, false, zero, EF, nullptr, EF, nullptr, EF),
-                make<Local>(ast->location, EF, binds, value),
-                _arr,
-                arr);
+            ast_ = makeObjectComprehension(ast, obj_level);
 
         } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
             desugar(ast->field, obj_level);
