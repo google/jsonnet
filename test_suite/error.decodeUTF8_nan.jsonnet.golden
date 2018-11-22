@@ -1,0 +1,2 @@
+RUNTIME ERROR: Element 0 of the provided array was not a number
+	error.decodeUTF8_nan.jsonnet:1:1-24	

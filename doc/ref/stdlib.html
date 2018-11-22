@@ -863,6 +863,11 @@ layout: default
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="parseJson">std.parseJson(str)</h4>
+      <p>
+        Parses a JSON string.
+      </p>
+      <em>Available in upcoming release.</em>
+      <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -871,11 +876,32 @@ layout: default
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>
-        Parses a JSON string.
-      </p>
+      <h4 id="encodeUTF8">std.encodeUTF8(str)</h4>
       <em>Available in upcoming release.</em>
-      <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
+      <p>
+        Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers representing bytes.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="decodeUTF8">std.decodeUTF8(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available in upcoming release.</em>
+      <p>
+        Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns a string.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
