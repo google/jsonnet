@@ -448,6 +448,7 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
 static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename;
+    const char *jpathdir = NULL;
     char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
@@ -458,7 +459,7 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     PyObject *native_callbacks = NULL;
     struct JsonnetVm *vm;
     static char *kwlist[] = {
-        "filename",
+        "filename", "jpathdir",
         "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
         "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
         "native_callbacks",
@@ -468,8 +469,8 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "s|IIdOOOOIOO", kwlist,
-        &filename,
+        args, keywds, "s|sIIdOOOOIOO", kwlist,
+        &filename, &jpathdir,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
         &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
         &native_callbacks)) {
@@ -481,6 +482,8 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
+    if (jpathdir != NULL)
+      jsonnet_jpath_add(vm, jpathdir);
     if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
     if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
     if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
@@ -502,6 +505,7 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename, *src;
+    const char *jpathdir = NULL;
     char *out;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
@@ -512,7 +516,7 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     PyObject *native_callbacks = NULL;
     struct JsonnetVm *vm;
     static char *kwlist[] = {
-        "filename", "src",
+        "filename", "src", "jpathdir",
         "max_stack", "gc_min_objects", "gc_growth_trigger", "ext_vars",
         "ext_codes", "tla_vars", "tla_codes", "max_trace", "import_callback",
         "native_callbacks",
@@ -522,8 +526,8 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "ss|IIdOOOOIOO", kwlist,
-        &filename, &src,
+        args, keywds, "ss|sIIdOOOOIOO", kwlist,
+        &filename, &src, &jpathdir,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
         &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
         &native_callbacks)) {
@@ -535,6 +539,8 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
+    if (jpathdir != NULL)
+      jsonnet_jpath_add(vm, jpathdir);
     if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
     if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
     if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
