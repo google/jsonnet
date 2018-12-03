@@ -1407,8 +1407,8 @@ class Interpreter {
         const auto *str = static_cast<const HeapString *>(args[0].v.h);
         UString new_str(str->value);
         for (int i = 0; i < new_str.size(); ++i) {
-            if (new_str[i] > 64 && new_str[i] < 91) {
-                new_str[i] = new_str[i] + 32;
+            if (new_str[i] >= 'A' && new_str[i] <= 'Z') {
+                new_str[i] = new_str[i] - 'A' + 'a';
             }
         }
         scratch = makeString(new_str);
@@ -1421,8 +1421,8 @@ class Interpreter {
         const auto *str = static_cast<const HeapString *>(args[0].v.h);
         UString new_str(str->value);
         for (int i = 0; i < new_str.size(); ++i) {
-            if (new_str[i] > 96 && new_str[i] < 123) {
-                new_str[i] = new_str[i] - 32;
+            if (new_str[i] >= 'a' && new_str[i] <= 'z') {
+                new_str[i] = new_str[i] - 'a' + 'A';
             }
         }
         scratch = makeString(new_str);
