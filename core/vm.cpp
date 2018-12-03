@@ -858,6 +858,12 @@ class Interpreter {
         builtins["native"] = &Interpreter::builtinNative;
         builtins["md5"] = &Interpreter::builtinMd5;
         builtins["trace"] = &Interpreter::builtinTrace;
+        builtins["splitLimit"] = &Interpreter::builtinSplitLimit;
+        builtins["substr"] = &Interpreter::builtinSubstr;
+        builtins["range"] = &Interpreter::builtinRange;
+        builtins["strReplace"] = &Interpreter::builtinStrReplace;
+        builtins["asciiLower"] = &Interpreter::builtinAsciiLower;
+        builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1305,6 +1311,121 @@ class Interpreter {
             << std::endl;
 
         scratch = args[1];
+        return nullptr;
+    }
+
+    const AST *builtinSplitLimit(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "splitLimit", args, {Value::STRING, Value::STRING, Value::NUMBER});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        const auto *c = static_cast<const HeapString *>(args[1].v.h);
+        long maxsplits = long(args[2].v.d);
+        int start = 0;
+        int test = 0;
+        scratch = makeArray({});
+        auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
+        while (test < str->value.size() && (maxsplits == -1 ||
+                                            maxsplits > elements.size())) {
+            if (c->value[0] == str->value[test]) {
+                auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+                elements.push_back(th);
+                th->fill(makeString(str->value.substr(start, test - start)));
+                start = test + 1;
+                test = start;
+            } else {
+                ++test;
+            }
+        }
+        auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+        elements.push_back(th);
+        th->fill(makeString(str->value.substr(start)));
+
+        return nullptr;
+    }
+
+    const AST *builtinSubstr(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "substr", args, {Value::STRING, Value::NUMBER, Value::NUMBER});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        long from = long(args[1].v.d);
+        long len = long(args[2].v.d);
+        if (len + from > str->value.size()) {
+          len = str->value.size() - from;
+        }
+        if (len <= 0) {
+          scratch = makeString(U"");
+        } else {
+          scratch = makeString(str->value.substr(from, len));
+        }
+        return nullptr;
+    }
+
+    const AST *builtinRange(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "range", args, {Value::NUMBER, Value::NUMBER});
+        long from = long(args[0].v.d);
+        long to = long(args[1].v.d);
+        long len = to - from + 1;
+        scratch = makeArray({});
+        if (len > 0) {
+            auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
+            for (int i = 0; i < len; ++i) {
+                auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+                elements.push_back(th);
+                th->fill(makeNumber(from + i));
+            }
+        }
+        return nullptr;
+    }
+
+    const AST *builtinStrReplace(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "strReplace", args, {Value::STRING, Value::STRING, Value::STRING});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        const auto *from = static_cast<const HeapString *>(args[1].v.h);
+        const auto *to = static_cast<const HeapString *>(args[2].v.h);
+        if (from->value.empty()) {
+          throw makeError(loc, "'from' string must not be zero length.");
+        }
+        UString new_str(str->value);
+        UString::size_type pos = 0;
+        while (pos < new_str.size()) {
+            auto index = new_str.find(from->value, pos);
+            if (index == new_str.npos) {
+                break;
+            }
+            new_str.replace(index, from->value.size(), to->value);
+            pos = index + to->value.size();
+        }
+        scratch = makeString(new_str);
+        return nullptr;
+    }
+
+    const AST *builtinAsciiLower(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "asciiLower", args, {Value::STRING});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        UString new_str(str->value);
+        for (int i = 0; i < new_str.size(); ++i) {
+            if (new_str[i] > 64 && new_str[i] < 91) {
+                new_str[i] = new_str[i] + 32;
+            }
+        }
+        scratch = makeString(new_str);
+        return nullptr;
+    }
+
+    const AST *builtinAsciiUpper(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "asciiUpper", args, {Value::STRING});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        UString new_str(str->value);
+        for (int i = 0; i < new_str.size(); ++i) {
+            if (new_str[i] > 96 && new_str[i] < 123) {
+                new_str[i] = new_str[i] - 32;
+            }
+        }
+        scratch = makeString(new_str);
         return nullptr;
     }
 
