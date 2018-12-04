@@ -68,6 +68,8 @@ enum FrameKind {
     FRAME_STRING_CONCAT,        // Stores intermediate state while co-ercing objects
     FRAME_SUPER_INDEX,          // e in super[e]
     FRAME_UNARY,                // e in -e
+    FRAME_BUILTIN_JOIN_STRINGS, // When executing std.join over strings, used to hold intermediate state.
+    FRAME_BUILTIN_JOIN_ARRAYS,  // When executing std.join over arrays, used to hold intermediate state.
 };
 
 /** A frame on the stack.
@@ -125,6 +127,9 @@ struct Frame {
 
     /** Used for a variety of purposes. */
     std::vector<HeapThunk *> thunks;
+
+    /** Used for accumulating a joined string. */
+    UString str;
 
     /** The context is used in error messages to attempt to find a reasonable name for the
      * object, function, or thunk value being executed.  If it is a thunk, it is filled
@@ -864,6 +869,7 @@ class Interpreter {
         builtins["strReplace"] = &Interpreter::builtinStrReplace;
         builtins["asciiLower"] = &Interpreter::builtinAsciiLower;
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
+        builtins["join"] = &Interpreter::builtinJoin;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1427,6 +1433,118 @@ class Interpreter {
         }
         scratch = makeString(new_str);
         return nullptr;
+    }
+
+    void joinString(UString &running, const Value &sep, unsigned idx, const Value &elt)
+    {
+        if (elt.t == Value::NULL_TYPE) {
+            return;
+        }
+        if (elt.t != Value::STRING) {
+            std::stringstream ss;
+            ss << "expected string but arr[" << idx << "] was " << type_str(elt);
+            throw makeError(stack.top().location, ss.str());
+        }
+        if (!running.empty()) {
+            running.append(static_cast<HeapString *>(sep.v.h)->value);
+        }
+        running.append(static_cast<HeapString *>(elt.v.h)->value);
+    }
+
+    const AST *joinStrings(const Value &sep, const Value &arr, unsigned idx, UString running)
+    {
+        const auto& elements = static_cast<HeapArray*>(arr.v.h)->elements;
+        if (idx >= elements.size()) {
+            scratch = makeString(running);
+        } else {
+            for (int i = idx; i < elements.size(); ++i) {
+                auto *th = elements[i];
+                if (th->filled) {
+                    joinString(running, sep, i, th->content);
+                } else {
+                    Frame &f = stack.top();
+                    f.kind = FRAME_BUILTIN_JOIN_STRINGS;
+                    f.val = sep;
+                    f.val2 = arr;
+                    f.str = running;
+                    f.elementId = i;
+                    f.self = th->self;
+                    f.offset = th->offset;
+                    f.bindings = th->upValues;
+                    return th->body;
+                }
+            }
+            scratch = makeString(running);
+        }
+        return nullptr;
+    }
+
+    void joinArray(std::vector<HeapThunk*> &running, const Value &sep, unsigned idx, const Value &elt)
+    {
+        if (elt.t == Value::NULL_TYPE) {
+            return;
+        }
+        if (elt.t != Value::ARRAY) {
+            std::stringstream ss;
+            ss << "expected array but arr[" << idx << "] was " << type_str(elt);
+            throw makeError(stack.top().location, ss.str());
+        }
+        if (!running.empty()) {
+            auto& elts = static_cast<HeapArray *>(sep.v.h)->elements;
+            running.insert(running.end(), elts.begin(), elts.end());
+        }
+        auto& elts = static_cast<HeapArray *>(elt.v.h)->elements;
+        running.insert(running.end(), elts.begin(), elts.end());
+    }
+
+    const AST *joinArrays(const Value &sep, const Value &arr, unsigned idx, std::vector<HeapThunk*> &running)
+    {
+        const auto& elements = static_cast<HeapArray*>(arr.v.h)->elements;
+        if (idx >= elements.size()) {
+          scratch = makeArray(running);
+        } else {
+            for (int i = idx; i < elements.size(); ++i) {
+                auto *th = elements[i];
+                if (th->filled) {
+                    joinArray(running, sep, i, th->content);
+                } else {
+                    Frame &f = stack.top();
+                    f.kind = FRAME_BUILTIN_JOIN_ARRAYS;
+                    f.val = sep;
+                    f.val2 = arr;
+                    f.thunks = running;
+                    f.elementId = i;
+                    f.self = th->self;
+                    f.offset = th->offset;
+                    f.bindings = th->upValues;
+                    return th->body;
+                }
+            }
+            scratch = makeArray(running);
+        }
+        return nullptr;
+    }
+
+    const AST *builtinJoin(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if (args[0].t != Value::ARRAY && args[0].t != Value::STRING) {
+            std::stringstream ss;
+            ss << "join first parameter should be string or array, got " << type_str(args[0]);
+            throw makeError(loc, ss.str());
+        }
+        if (args[1].t != Value::ARRAY) {
+            std::stringstream ss;
+            ss << "join second parameter should be array, got " << type_str(args[1]);
+            throw makeError(loc, ss.str());
+        }
+        Frame &f = stack.top();
+        if (args[0].t == Value::STRING) {
+            f.str.clear();
+            return joinStrings(args[0], args[1], 0, f.str);
+        } else {
+            f.thunks.clear();
+            return joinArrays(args[0], args[1], 0, f.thunks);
+        }
     }
 
     void jsonToHeap(const std::unique_ptr<JsonnetJsonValue> &v, bool &filled, Value &attach)
@@ -2640,6 +2758,26 @@ class Interpreter {
                             throw makeError(ast.location,
                                             "unary operator " + uop_string(ast.op) +
                                                 " does not operate on type " + type_str(scratch));
+                    }
+                } break;
+
+                case FRAME_BUILTIN_JOIN_STRINGS: {
+                    joinString(f.str, f.val, f.elementId, scratch);
+                    f.elementId++;
+                    auto *ast = joinStrings(f.val, f.val2, f.elementId, f.str);
+                    if (ast != nullptr) {
+                        ast_ = ast;
+                        goto recurse;
+                    }
+                } break;
+
+                case FRAME_BUILTIN_JOIN_ARRAYS: {
+                    joinArray(f.thunks, f.val, f.elementId, scratch);
+                    f.elementId++;
+                    auto *ast = joinArrays(f.val, f.val2, f.elementId, f.thunks);
+                    if (ast != nullptr) {
+                        ast_ = ast;
+                        goto recurse;
                     }
                 } break;
 
