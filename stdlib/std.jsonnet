@@ -35,6 +35,18 @@ limitations under the License.
   toString(a)::
     if std.type(a) == 'string' then a else '' + a,
 
+  substr(str, from, len)::
+    if std.type(str) != 'string' then
+      error 'substr first parameter should be a string, got ' + std.type(str)
+    else if std.type(from) != 'number' then
+      error 'substr second parameter should be a number, got ' + std.type(from)
+    else if std.type(len) != 'number' then
+      error 'substr third parameter should be a number, got ' + std.type(len)
+    else if len < 0 then
+      error 'substr third parameter should be greater than zero, got ' + len
+    else
+      std.join('', std.makeArray(len, function(i) str[i + from])),
+
   startsWith(a, b)::
     if std.length(a) < std.length(b) then
       false
@@ -96,6 +108,77 @@ limitations under the License.
     else
       std.splitLimit(str, c, -1),
 
+  splitLimit(str, c, maxsplits)::
+    if std.type(str) != 'string' then
+      error 'std.splitLimit first parameter should be a string, got ' + std.type(str)
+    else if std.type(c) != 'string' then
+      error 'std.splitLimit second parameter should be a string, got ' + std.type(c)
+    else if std.length(c) != 1 then
+      error 'std.splitLimit second parameter should have length 1, got ' + std.length(c)
+    else if std.type(maxsplits) != 'number' then
+      error 'std.splitLimit third parameter should be a number, got ' + std.type(maxsplits)
+    else
+      local aux(str, delim, i, arr, v) =
+        local c = str[i];
+        local i2 = i + 1;
+        if i >= std.length(str) then
+          arr + [v]
+        else if c == delim && (maxsplits == -1 || std.length(arr) < maxsplits) then
+          aux(str, delim, i2, arr + [v], '') tailstrict
+        else
+          aux(str, delim, i2, arr, v + c) tailstrict;
+      aux(str, c, 0, [], ''),
+
+  strReplace(str, from, to)::
+    assert std.type(str) == 'string';
+    assert std.type(from) == 'string';
+    assert std.type(to) == 'string';
+    assert from != '' : "'from' string must not be zero length.";
+
+    // Cache for performance.
+    local str_len = std.length(str);
+    local from_len = std.length(from);
+
+    // True if from is at str[i].
+    local found_at(i) = str[i:i + from_len] == from;
+
+    // Return the remainder of 'str' starting with 'start_index' where
+    // all occurrences of 'from' after 'curr_index' are replaced with 'to'.
+    local replace_after(start_index, curr_index, acc) =
+      if curr_index > str_len then
+        acc + str[start_index:curr_index]
+      else if found_at(curr_index) then
+        local new_index = curr_index + std.length(from);
+        replace_after(new_index, new_index, acc + str[start_index:curr_index] + to) tailstrict
+      else
+        replace_after(start_index, curr_index + 1, acc) tailstrict;
+
+    // if from_len==1, then we replace by splitting and rejoining the
+    // string which is much faster than recursing on replace_after
+    if from_len == 1 then
+      std.join(to, std.split(str, from))
+    else
+      replace_after(0, 0, ''),
+
+  asciiUpper(x)::
+    local cp = std.codepoint;
+    local up_letter(c) = if cp(c) >= 97 && cp(c) < 123 then
+      std.char(cp(c) - 32)
+    else
+      c;
+    std.join('', std.map(up_letter, std.stringChars(x))),
+
+  asciiLower(x)::
+    local cp = std.codepoint;
+    local down_letter(c) = if cp(c) >= 65 && cp(c) < 91 then
+      std.char(cp(c) + 32)
+    else
+      c;
+    std.join('', std.map(down_letter, std.stringChars(x))),
+
+
+  range(from, to)::
+    std.makeArray(to - from + 1, function(i) i + from),
 
   slice(indexable, index, end, step)::
     local invar =

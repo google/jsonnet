@@ -16,6 +16,8 @@ limitations under the License.
 
 #include <cassert>
 
+#include <algorithm>
+
 #include "ast.h"
 #include "desugarer.h"
 #include "lexer.h"
@@ -919,9 +921,17 @@ class Desugarer {
             Identifiers params;
             for (const auto &p : decl.params)
                 params.push_back(id(p));
-            fields.emplace_back(ObjectField::HIDDEN,
-                                str(decl.name),
-                                make<BuiltinFunction>(E, encode_utf8(decl.name), params));
+            auto name = str(decl.name);
+            auto fn = make<BuiltinFunction>(E, encode_utf8(decl.name), params);
+            auto field = std::find_if(fields.begin(), fields.end(),
+                [=](const DesugaredObject::Field& f) {
+                    return static_cast<LiteralString*>(f.name)->value == decl.name;
+                });
+            if (field != fields.end()) {
+                field->body = fn;
+            } else {
+                fields.emplace_back(ObjectField::HIDDEN, name, fn);
+            }
         }
         fields.emplace_back(
             ObjectField::HIDDEN, str(U"thisFile"), str(decode_utf8(ast->location.file)));
