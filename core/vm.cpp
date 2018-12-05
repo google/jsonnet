@@ -1468,9 +1468,7 @@ class Interpreter {
                     f.val2 = arr;
                     f.str = running;
                     f.elementId = i;
-                    f.self = th->self;
-                    f.offset = th->offset;
-                    f.bindings = th->upValues;
+                    stack.newCall(f.location, th, th->self, th->offset, th->upValues);
                     return th->body;
                 }
             }
@@ -1514,9 +1512,7 @@ class Interpreter {
                     f.val2 = arr;
                     f.thunks = running;
                     f.elementId = i;
-                    f.self = th->self;
-                    f.offset = th->offset;
-                    f.bindings = th->upValues;
+                    stack.newCall(f.location, th, th->self, th->offset, th->upValues);
                     return th->body;
                 }
             }
