@@ -14,6 +14,7 @@ Available eval options:
   -J / --jpath <dir>      Specify an additional library search dir
   -o / --output-file <file> Write to the output file rather than stdout
   -m / --multi <dir>      Write multiple files to the directory, list files on stdout
+  -c / --create-output-dirs  Automatically creates all parent directories for files
   -y / --yaml-stream      Write output as a YAML stream of JSON documents
   -S / --string           Expect a string, manifest as plain text
   -s / --max-stack <n>    Number of allowed stack frames
