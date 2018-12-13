@@ -1,0 +1,12 @@
+TRACE: trace.jsonnet:17 
+TRACE: trace.jsonnet:18 
+TRACE: trace.jsonnet:19 
+TRACE: trace.jsonnet:20 
+TRACE: trace.jsonnet:21 
+TRACE: trace.jsonnet:22 
+TRACE: trace.jsonnet:23 
+TRACE: trace.jsonnet:24 
+TRACE: trace.jsonnet:25 
+TRACE: trace.jsonnet:26 
+TRACE: trace.jsonnet:27 Some Trace Message
+true

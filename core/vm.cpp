@@ -23,12 +23,15 @@ limitations under the License.
 
 #include "desugarer.h"
 #include "json.h"
+#include "json.hpp"
 #include "md5.h"
 #include "parser.h"
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"
 #include "vm.h"
+
+using json = nlohmann::json;
 
 namespace {
 
@@ -870,6 +873,7 @@ class Interpreter {
         builtins["asciiLower"] = &Interpreter::builtinAsciiLower;
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
         builtins["join"] = &Interpreter::builtinJoin;
+        builtins["parseJson"] = &Interpreter::builtinParseJson;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1433,6 +1437,75 @@ class Interpreter {
         }
         scratch = makeString(new_str);
         return nullptr;
+    }
+
+    const AST *builtinParseJson(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "parseJson", args, {Value::STRING});
+
+        std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+
+        auto j = json::parse(value);
+
+        bool filled;
+
+        otherJsonToHeap(j, filled, scratch);
+
+        return nullptr;
+    }
+
+    void otherJsonToHeap(const json &v, bool &filled, Value &attach) {
+        // In order to not anger the garbage collector, assign to attach immediately after
+        // making the heap object.
+        switch (v.type()) {
+            case json::value_t::string:
+                attach = makeString(decode_utf8(v.get<std::string>()));
+                filled = true;
+                break;
+
+            case json::value_t::boolean:
+                attach = makeBoolean(v.get<bool>());
+                filled = true;
+                break;
+
+            case json::value_t::number_integer:
+            case json::value_t::number_unsigned:
+            case json::value_t::number_float:
+                attach = makeNumber(v.get<double>());
+                filled = true;
+                break;
+
+            case json::value_t::null:
+                attach = makeNull();
+                filled = true;
+                break;
+
+            case json::value_t::array:{
+                attach = makeArray(std::vector<HeapThunk *>(v.size()));
+                filled = true;
+                auto *arr = static_cast<HeapArray *>(attach.v.h);
+                for (size_t i = 0; i < v.size(); ++i) {
+                    arr->elements[i] = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+                    otherJsonToHeap(v[i], arr->elements[i]->filled, arr->elements[i]->content);
+                }
+            } break;
+
+            case json::value_t::object: {
+                attach = makeObject<HeapComprehensionObject>(
+                    BindingFrame{}, jsonObjVar, idJsonObjVar, BindingFrame{});
+                filled = true;
+                auto *obj = static_cast<HeapComprehensionObject *>(attach.v.h);
+                for (auto it = v.begin(); it != v.end(); ++it) {
+                    auto *thunk = makeHeap<HeapThunk>(idJsonObjVar, nullptr, 0, nullptr);
+                    obj->compValues[alloc->makeIdentifier(decode_utf8(it.key()))] = thunk;
+                    otherJsonToHeap(it.value(), thunk->filled, thunk->content);
+                }
+            } break;
+
+            case json::value_t::discarded: {
+                abort();
+            }
+        }
     }
 
     void joinString(UString &running, const Value &sep, unsigned idx, const Value &elt)

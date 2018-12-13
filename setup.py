@@ -58,7 +58,7 @@ jsonnet_ext = Extension(
     '_jsonnet',
     sources=MODULE_SOURCES,
     extra_objects=LIB_OBJECTS,
-    include_dirs = ['include', 'third_party/md5'],
+    include_dirs = ['include', 'third_party/md5', 'third_party/json'],
     language='c++'
 )
 
