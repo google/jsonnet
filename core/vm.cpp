@@ -2082,13 +2082,14 @@ class Interpreter {
                     // Cache these, because pop will invalidate them.
                     std::vector<HeapThunk *> thunks_copy = f.thunks;
 
+                    const AST *f_ast = f.ast;
                     stack.pop();
 
                     if (func->body == nullptr) {
                         // Built-in function.
                         // Give nullptr for self because noone looking at this frame will
                         // attempt to bind to self (it's native code).
-                        stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f.ast);
+                        stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f_ast);
                         stack.top().thunks = thunks_copy;
                         stack.top().val = scratch;
                         goto replaceframe;
