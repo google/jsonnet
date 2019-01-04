@@ -208,10 +208,12 @@ std.assertEqual(std.join([], [[1, 2], [3, 4, 5], [6]]), [1, 2, 3, 4, 5, 6]) &&
 std.assertEqual(std.join(['a', 'b'], [[]]), []) &&
 std.assertEqual(std.join(['a', 'b'], []), []) &&
 std.assertEqual(std.join(['a', 'b'], [null, [1, 2], null, [3, 4, 5], [6], null]), [1, 2, 'a', 'b', 3, 4, 5, 'a', 'b', 6]) &&
+std.assertEqual(std.join(['a', 'b'], [[], [1, 2]]), ['a', 'b', 1, 2]) &&
 std.assertEqual(std.join('', [null, '12', null, '345', '6', null]), '123456') &&
 std.assertEqual(std.join('ab', ['']), '') &&
 std.assertEqual(std.join('ab', []), '') &&
 std.assertEqual(std.join('ab', [null, '12', null, '345', '6', null]), '12ab345ab6') &&
+std.assertEqual(std.join('ab', ['', '12']), 'ab12') &&
 std.assertEqual(std.lines(['a', null, 'b']), 'a\nb\n') &&
 
 std.assertEqual(std.flattenArrays([[1, 2, 3], [4, 5, 6], []]), [1, 2, 3, 4, 5, 6]) &&
