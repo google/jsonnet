@@ -459,7 +459,7 @@ std.assertEqual(
 std.assertEqual(
   std.manifestYamlDoc([{ x: [1, 2, 3] }]) + '\n',
   |||
-    - "x": 
+    - "x":
       - 1
       - 2
       - 3
@@ -469,7 +469,7 @@ std.assertEqual(
 std.assertEqual(
   std.manifestYamlDoc({ x: [1, 2, 3] }) + '\n',
   |||
-    "x": 
+    "x":
     - 1
     - 2
     - 3
@@ -479,11 +479,11 @@ std.assertEqual(
 std.assertEqual(
   std.manifestYamlDoc([[[1, 2], [3, 4]]]) + '\n',
   |||
-    - 
-      - 
+    -
+      -
         - 1
         - 2
-      - 
+      -
         - 3
         - 4
   |||
@@ -492,11 +492,11 @@ std.assertEqual(
 std.assertEqual(
   std.manifestYamlDoc({ x: [[[1, [1], 1]]] }) + '\n',
   |||
-    "x": 
-    - 
-      - 
+    "x":
+    -
+      -
         - 1
-        - 
+        -
           - 1
         - 1
   |||
@@ -505,12 +505,12 @@ std.assertEqual(
 std.assertEqual(
   std.manifestYamlDoc({ x: [[[1, { f: 3, g: [1, 2] }, 1]]] }) + '\n',
   |||
-    "x": 
-    - 
-      - 
+    "x":
+    -
+      -
         - 1
         - "f": 3
-          "g": 
+          "g":
           - 1
           - 2
         - 1
@@ -518,17 +518,44 @@ std.assertEqual(
 ) &&
 
 std.assertEqual(
+  std.manifestYamlDoc('hello\nworld\n') + '\n',
+  |||
+    |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc(['hello\nworld\n']) + '\n',
+  |||
+    - |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ f: 'hello\nworld\n' }) + '\n',
+  |||
+    "f": |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
   std.manifestYamlDoc(some_json) + '\n',
   |||
     "\"": null
-    "arr": 
-    - 
+    "arr":
+    -
       - []
     "emptyArray": []
     "emptyObject": {}
-    "objectInArray": 
+    "objectInArray":
     - "f": 3
-    "x": 
+    "x":
     - 1
     - 2
     - 3
@@ -538,12 +565,130 @@ std.assertEqual(
     - |
       string
       string
-    "y": 
+    "y":
       "a": 1
       "b": 2
-      "c": 
+      "c":
       - 1
       - 2
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc([{ x: [1, 2, 3] }], indent_array_in_object=true) + '\n',
+  |||
+    - "x":
+        - 1
+        - 2
+        - 3
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [1, 2, 3] }, indent_array_in_object=true) + '\n',
+  |||
+    "x":
+      - 1
+      - 2
+      - 3
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc([[[1, 2], [3, 4]]], indent_array_in_object=true) + '\n',
+  |||
+    -
+      -
+        - 1
+        - 2
+      -
+        - 3
+        - 4
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [[[1, [1], 1]]] }, indent_array_in_object=true) + '\n',
+  |||
+    "x":
+      -
+        -
+          - 1
+          -
+            - 1
+          - 1
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [[[1, { f: 3, g: [1, 2] }, 1]]] }, indent_array_in_object=true) + '\n',
+  |||
+    "x":
+      -
+        -
+          - 1
+          - "f": 3
+            "g":
+              - 1
+              - 2
+          - 1
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc('hello\nworld\n', indent_array_in_object=true) + '\n',
+  |||
+    |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc(['hello\nworld\n'], indent_array_in_object=true) + '\n',
+  |||
+    - |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ f: 'hello\nworld\n' }, indent_array_in_object=true) + '\n',
+  |||
+    "f": |
+      hello
+      world
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc(some_json, indent_array_in_object=true) + '\n',
+  |||
+    "\"": null
+    "arr":
+      -
+        - []
+    "emptyArray": []
+    "emptyObject": {}
+    "objectInArray":
+      - "f": 3
+    "x":
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y":
+      "a": 1
+      "b": 2
+      "c":
+        - 1
+        - 2
   |||
 ) &&
 
@@ -552,14 +697,14 @@ std.assertEqual(
   |||
     ---
     "\"": null
-    "arr": 
-    - 
+    "arr":
+    -
       - []
     "emptyArray": []
     "emptyObject": {}
-    "objectInArray": 
+    "objectInArray":
     - "f": 3
-    "x": 
+    "x":
     - 1
     - 2
     - 3
@@ -569,22 +714,22 @@ std.assertEqual(
     - |
       string
       string
-    "y": 
+    "y":
       "a": 1
       "b": 2
-      "c": 
+      "c":
       - 1
       - 2
     ---
     "\"": null
-    "arr": 
-    - 
+    "arr":
+    -
       - []
     "emptyArray": []
     "emptyObject": {}
-    "objectInArray": 
+    "objectInArray":
     - "f": 3
-    "x": 
+    "x":
     - 1
     - 2
     - 3
@@ -594,12 +739,77 @@ std.assertEqual(
     - |
       string
       string
-    "y": 
+    "y":
       "a": 1
       "b": 2
-      "c": 
+      "c":
       - 1
       - 2
+    ---
+    {}
+    ---
+    []
+    ---
+    3
+    ---
+    "\""
+    ...
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlStream([some_json, some_json, {}, [], 3, '"'], indent_array_in_object=true),
+  |||
+    ---
+    "\"": null
+    "arr":
+      -
+        - []
+    "emptyArray": []
+    "emptyObject": {}
+    "objectInArray":
+      - "f": 3
+    "x":
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y":
+      "a": 1
+      "b": 2
+      "c":
+        - 1
+        - 2
+    ---
+    "\"": null
+    "arr":
+      -
+        - []
+    "emptyArray": []
+    "emptyObject": {}
+    "objectInArray":
+      - "f": 3
+    "x":
+      - 1
+      - 2
+      - 3
+      - true
+      - false
+      - null
+      - |
+        string
+        string
+    "y":
+      "a": 1
+      "b": 2
+      "c":
+        - 1
+        - 2
     ---
     {}
     ---
