@@ -81,21 +81,21 @@ limitations under the License.
     std.foldl(addDigit, std.stringChars(str), 0),
 
   parseInt(str)::
-    assert std.isString(str): 'Expected string, got ' + std.type(str);
-    assert std.length(str) > 0 && str != "-": 'Not an integer: "%s"' % [str];
+    assert std.isString(str) : 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0 && str != '-' : 'Not an integer: "%s"' % [str];
     if str[0] == '-' then
       -parse_nat(str[1:], 10)
     else
       parse_nat(str, 10),
 
   parseOctal(str)::
-    assert std.isString(str): 'Expected string, got ' + std.type(str);
-    assert std.length(str) > 0: 'Not an octal number: ""';
+    assert std.isString(str) : 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0 : 'Not an octal number: ""';
     parse_nat(str, 8),
 
   parseHex(str)::
-    assert std.isString(str): 'Expected string, got ' + std.type(str);
-    assert std.length(str) > 0: 'Not hexadecimal: ""';
+    assert std.isString(str) : 'Expected string, got ' + std.type(str);
+    assert std.length(str) > 0 : 'Not hexadecimal: ""';
     parse_nat(str, 16),
 
   split(str, c)::
@@ -1259,7 +1259,7 @@ limitations under the License.
       if pat_len == 0 || str_len == 0 || pat_len > str_len then
         []
       else
-        std.filter(function(i) str[i:i+pat_len] == pat, std.range(0, str_len - pat_len)),
+        std.filter(function(i) str[i:i + pat_len] == pat, std.range(0, str_len - pat_len)),
 
   find(value, arr)::
     if std.type(arr) != 'array' then
