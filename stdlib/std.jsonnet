@@ -921,8 +921,8 @@ limitations under the License.
         std.join('', lines);
     aux(value, [], ''),
 
-  manifestYamlDoc(value)::
-    local aux(v, in_array, in_object, path, cindent) =
+  manifestYamlDoc(value, indent_array_in_object=false)::
+    local aux(v, path, cindent) =
       if v == true then
         'true'
       else if v == false then
@@ -937,7 +937,7 @@ limitations under the License.
           '""'
         else if v[len - 1] == '\n' then
           local split = std.split(v, '\n');
-          std.join('\n' + cindent, ['|'] + split[0:std.length(split) - 1])
+          std.join('\n' + cindent + '  ', ['|'] + split[0:std.length(split) - 1])
         else
           std.escapeStringJson(v)
       else if std.type(v) == 'function' then
@@ -946,44 +946,71 @@ limitations under the License.
         if std.length(v) == 0 then
           '[]'
         else
+          local params(value) =
+            if std.isArray(value) && std.length(value) > 0 then {
+              // While we could avoid the new line, it yields YAML that is
+              // hard to read, e.g.:
+              // - - - 1
+              //     - 2
+              //   - - 3
+              //     - 4
+              new_indent: cindent + '  ',
+              space: '\n' + self.new_indent,
+            } else if std.isObject(value) && std.length(value) > 0 then {
+              new_indent: cindent + '  ',
+              // In this case we can start on the same line as the - because the indentation
+              // matches up then.  The converse is not true, because fields are not always
+              // 1 character long.
+              space: ' ',
+            } else {
+              // In this case, new_indent is only used in the case of multi-line strings.
+              new_indent: cindent,
+              space: ' ',
+            };
           local range = std.range(0, std.length(v) - 1);
-          // If we're in object than drop the indent we would usually have.  This allows e.g.
-          // ports:
-          // - 80
-          // instead of
-          // ports:
-          //   - 80
-          local actual_indent = if in_object then cindent[2:] else cindent;
-          local new_indent = actual_indent + '  ';
-          local parts = [aux(v[i], true, false, path + [i], new_indent) for i in range];
-          // While we could avoid the new line in the case of in_array, it yields YAML that is
-          // hard to read, e.g.:
-          // - - - 1
-          //     - 2
-          //   - - 3
-          //     - 4
-          (if in_array || in_object then '\n' + actual_indent else '')
-          + '- ' + std.join('\n' + actual_indent + '- ', parts)
+          local parts = [
+            '-' + param.space + aux(v[i], path + [i], param.new_indent)
+            for i in range
+            for param in [params(v[i])]
+          ];
+          std.join('\n' + cindent, parts)
       else if std.type(v) == 'object' then
         if std.length(v) == 0 then
           '{}'
         else
-          local new_indent = cindent + '  ';
+          local params(value) =
+            if std.isArray(value) && std.length(value) > 0 then {
+              // Not indenting allows e.g.
+              // ports:
+              // - 80
+              // instead of
+              // ports:
+              //   - 80
+              new_indent: if indent_array_in_object then cindent + '  ' else cindent,
+              space: '\n' + self.new_indent,
+            } else if std.isObject(value) && std.length(value) > 0 then {
+              new_indent: cindent + '  ',
+              space: '\n' + self.new_indent,
+            } else {
+              // In this case, new_indent is only used in the case of multi-line strings.
+              new_indent: cindent,
+              space: ' ',
+            };
           local lines = [
-            std.escapeStringJson(k) + ': ' + aux(v[k], false, true, path + [k], new_indent)
+            std.escapeStringJson(k) + ':' + param.space + aux(v[k], path + [k], param.new_indent)
             for k in std.objectFields(v)
+            for param in [params(v[k])]
           ];
-          // If we're in an array, we can start on the same line as the - because the indentation
-          // matches up then.  The converse is not true, because fields are not always
-          // 1 character long.
-          (if in_object then '\n' + cindent else '') + std.join('\n' + cindent, lines);
-    aux(value, false, false, [], ''),
+          std.join('\n' + cindent, lines);
+    aux(value, [], ''),
 
-  manifestYamlStream(value)::
+  manifestYamlStream(value, indent_array_in_object=false)::
     if std.type(value) != 'array' then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
-      '---\n' + std.join('\n---\n', [std.manifestYamlDoc(e) for e in value]) + '\n...\n',
+      '---\n' + std.join(
+        '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object) for e in value]
+      ) + '\n...\n',
 
 
   manifestPython(o)::
