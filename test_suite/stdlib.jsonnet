@@ -455,12 +455,75 @@ std.assertEqual(
   |||
 ) &&
 
+
+std.assertEqual(
+  std.manifestYamlDoc([{ x: [1, 2, 3] }]) + '\n',
+  |||
+    - "x": 
+      - 1
+      - 2
+      - 3
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [1, 2, 3] }) + '\n',
+  |||
+    "x": 
+    - 1
+    - 2
+    - 3
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc([[[1, 2], [3, 4]]]) + '\n',
+  |||
+    - 
+      - 
+        - 1
+        - 2
+      - 
+        - 3
+        - 4
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [[[1, [1], 1]]] }) + '\n',
+  |||
+    "x": 
+    - 
+      - 
+        - 1
+        - 
+          - 1
+        - 1
+  |||
+) &&
+
+std.assertEqual(
+  std.manifestYamlDoc({ x: [[[1, { f: 3, g: [1, 2] }, 1]]] }) + '\n',
+  |||
+    "x": 
+    - 
+      - 
+        - 1
+        - "f": 3
+          "g": 
+          - 1
+          - 2
+        - 1
+  |||
+) &&
+
 std.assertEqual(
   std.manifestYamlDoc(some_json) + '\n',
   |||
     "\"": null
     "arr": 
-    - - []
+    - 
+      - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 
@@ -490,7 +553,8 @@ std.assertEqual(
     ---
     "\"": null
     "arr": 
-    - - []
+    - 
+      - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 
@@ -514,7 +578,8 @@ std.assertEqual(
     ---
     "\"": null
     "arr": 
-    - - []
+    - 
+      - []
     "emptyArray": []
     "emptyObject": {}
     "objectInArray": 

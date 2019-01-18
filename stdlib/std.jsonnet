@@ -922,7 +922,7 @@ limitations under the License.
     aux(value, [], ''),
 
   manifestYamlDoc(value)::
-    local aux(v, in_object, path, cindent) =
+    local aux(v, in_array, in_object, path, cindent) =
       if v == true then
         'true'
       else if v == false then
@@ -947,9 +947,22 @@ limitations under the License.
           '[]'
         else
           local range = std.range(0, std.length(v) - 1);
+          // If we're in object than drop the indent we would usually have.  This allows e.g.
+          // ports:
+          // - 80
+          // instead of
+          // ports:
+          //   - 80
           local actual_indent = if in_object then cindent[2:] else cindent;
-          local parts = [aux(v[i], false, path + [i], cindent) for i in range];
-          (if in_object then '\n' + actual_indent else '')
+          local new_indent = actual_indent + '  ';
+          local parts = [aux(v[i], true, false, path + [i], new_indent) for i in range];
+          // While we could avoid the new line in the case of in_array, it yields YAML that is
+          // hard to read, e.g.:
+          // - - - 1
+          //     - 2
+          //   - - 3
+          //     - 4
+          (if in_array || in_object then '\n' + actual_indent else '')
           + '- ' + std.join('\n' + actual_indent + '- ', parts)
       else if std.type(v) == 'object' then
         if std.length(v) == 0 then
@@ -957,11 +970,14 @@ limitations under the License.
         else
           local new_indent = cindent + '  ';
           local lines = [
-            std.escapeStringJson(k) + ': ' + aux(v[k], true, path + [k], new_indent)
+            std.escapeStringJson(k) + ': ' + aux(v[k], false, true, path + [k], new_indent)
             for k in std.objectFields(v)
           ];
+          // If we're in an array, we can start on the same line as the - because the indentation
+          // matches up then.  The converse is not true, because fields are not always
+          // 1 character long.
           (if in_object then '\n' + cindent else '') + std.join('\n' + cindent, lines);
-    aux(value, false, [], ''),
+    aux(value, false, false, [], ''),
 
   manifestYamlStream(value)::
     if std.type(value) != 'array' then
