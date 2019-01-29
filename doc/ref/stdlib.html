@@ -1568,6 +1568,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Sets are represented as ordered arrays without duplicates.</p>
+      <p>
+        Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
+        on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)<code>.
+        If that is not the case, the functions will quietly return non-meaningful results.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1625,9 +1630,13 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Set union operation (values in either a or b).  Note that + on sets will simply concatenate
-        the arrays, possibly forming an array that is not a set (due to not bein ordered without
+        Set union operation (values in any of <code>a</code> or <code>b</code>).  Note that + on sets will simply concatenate
+        the arrays, possibly forming an array that is not a set (due to not being ordered without
         duplicates).
+      </p>
+      <p>
+        Example1: <code>std.setUnion([1, 2], [2, 3])</code> yields
+        <code>[1, 2, 3]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
