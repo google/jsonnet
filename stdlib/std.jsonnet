@@ -1162,8 +1162,22 @@ limitations under the License.
     std.length(std.setInter([x], arr, keyF)) > 0,
 
   setUnion(a, b, keyF=id)::
-    // NOTE: order matters, values in `a` win due to sort being stable
-    std.set(a + b, keyF),
+    // NOTE: order matters, values in `a` win
+    local aux(a, b, i, j, acc) =
+      if i >= std.length(a) then
+        acc + b[j:]
+      else if j >= std.length(b) then
+        acc + a[i:]
+      else
+        local ak = keyF(a[i]);
+        local bk = keyF(b[j]);
+        if ak == bk then
+          aux(a, b, i + 1, j + 1, acc + [a[i]]) tailstrict
+        else if ak < bk then
+          aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
+        else
+          aux(a, b, i, j + 1, acc + [b[j]]) tailstrict;
+    aux(a, b, 0, 0, []),
 
   setInter(a, b, keyF=id)::
     local aux(a, b, i, j, acc) =
@@ -1183,7 +1197,7 @@ limitations under the License.
       if i >= std.length(a) then
         acc
       else if j >= std.length(b) then
-        aux(a, b, i + 1, j, acc + [a[i]]) tailstrict
+        acc + a[i:]
       else
         if keyF(a[i]) == keyF(b[j]) then
           aux(a, b, i + 1, j + 1, acc) tailstrict
