@@ -880,4 +880,19 @@ std.assertEqual(std.find('a', ['a']), [0]) &&
 std.assertEqual(std.find('a', ['a', ['a'], 'b', 'a']), [0, 3]) &&
 std.assertEqual(std.find(['a'], [['a']]), [0]) &&
 
+std.assertEqual(std.encodeUTF8(''), []) &&
+std.assertEqual(std.encodeUTF8('A'), [65]) &&
+std.assertEqual(std.encodeUTF8('AAA'), [65, 65, 65]) &&
+std.assertEqual(std.encodeUTF8('§'), [194, 167]) &&
+std.assertEqual(std.encodeUTF8('Zażółć gęślą jaźń'), [90, 97, 197, 188, 195, 179, 197, 130, 196, 135, 32, 103, 196, 153, 197, 155, 108, 196, 133, 32, 106, 97, 197, 186, 197, 132]) &&
+std.assertEqual(std.encodeUTF8('😃'), [240, 159, 152, 131]) &&
+
+std.assertEqual(std.decodeUTF8([]), '') &&
+std.assertEqual(std.decodeUTF8([65]), 'A') &&
+std.assertEqual(std.decodeUTF8([65, 65, 65]), 'AAA') &&
+std.assertEqual(std.decodeUTF8([(function(x) 65)(42)]), 'A') &&
+std.assertEqual(std.decodeUTF8([65 + 1 - 1]), 'A') &&
+std.assertEqual(std.decodeUTF8([90, 97, 197, 188, 195, 179, 197, 130, 196, 135, 32, 103, 196, 153, 197, 155, 108, 196, 133, 32, 106, 97, 197, 186, 197, 132]), 'Zażółć gęślą jaźń') &&
+std.assertEqual(std.decodeUTF8([240, 159, 152, 131]), '😃') &&
+
 true

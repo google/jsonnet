@@ -73,6 +73,7 @@ enum FrameKind {
     FRAME_UNARY,                // e in -e
     FRAME_BUILTIN_JOIN_STRINGS, // When executing std.join over strings, used to hold intermediate state.
     FRAME_BUILTIN_JOIN_ARRAYS,  // When executing std.join over arrays, used to hold intermediate state.
+    FRAME_BUILTIN_DECODE_UTF8,  // When executing std.decodeUTF8, used to hold intermediate state.
 };
 
 /** A frame on the stack.
@@ -134,6 +135,9 @@ struct Frame {
     /** Used for accumulating a joined string. */
     UString str;
     bool first;
+
+    /** Used for accumulating bytes */
+    std::string bytes;
 
     /** The context is used in error messages to attempt to find a reasonable name for the
      * object, function, or thunk value being executed.  If it is a thunk, it is filled
@@ -875,6 +879,8 @@ class Interpreter {
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
         builtins["join"] = &Interpreter::builtinJoin;
         builtins["parseJson"] = &Interpreter::builtinParseJson;
+        builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
+        builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1306,6 +1312,65 @@ class Interpreter {
 
         scratch = makeString(decode_utf8(md5(value)));
         return nullptr;
+    }
+
+    const AST *builtinEncodeUTF8(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "encodeUTF8", args, {Value::STRING});
+
+        std::string byteString = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+
+        scratch = makeArray({});
+        auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
+        for (const auto c : byteString) {
+            auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+            elements.push_back(th);
+            th->fill(makeNumber(uint8_t(c)));
+        }
+        return nullptr;
+    }
+
+    const AST *decodeUTF8(void)
+    {
+        Frame &f = stack.top();
+        const auto& elements = static_cast<HeapArray*>(f.val.v.h)->elements;
+        while (f.elementId < elements.size()) {
+            auto *th = elements[f.elementId];
+            if (th->filled) {
+                auto b = th->content;
+                if (b.t != Value::NUMBER) {
+                    std::stringstream ss;
+                    ss << "Element " << f.elementId << " of the provided array was not a number";
+                    throw makeError(stack.top().location, ss.str());
+                } else {
+                    double d = b.v.d;
+                    if (d < 0 || d > 255 || d != int(d)) {
+                        std::stringstream ss;
+                        ss << "Element " << f.elementId << " of the provided array was not an integer in range [0,255]";
+                        throw makeError(stack.top().location, ss.str());
+                    }
+                    f.bytes.push_back(uint8_t(d));
+                }
+                f.elementId++;
+            } else {
+                stack.newCall(f.location, th, th->self, th->offset, th->upValues);
+                return th->body;
+            }
+        }
+        scratch = makeString(decode_utf8(f.bytes));
+        return nullptr;
+    }
+
+    const AST *builtinDecodeUTF8(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "decodeUTF8", args, {Value::ARRAY});
+
+        Frame &f = stack.top();
+        f.kind = FRAME_BUILTIN_DECODE_UTF8;
+        f.val = args[0]; // arr
+        f.bytes.clear();
+        f.elementId = 0;
+        return decodeUTF8();
     }
 
     const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
@@ -2849,6 +2914,14 @@ class Interpreter {
                     joinArray(f.first, f.thunks, f.val, f.elementId, scratch);
                     f.elementId++;
                     auto *ast = joinArrays();
+                    if (ast != nullptr) {
+                        ast_ = ast;
+                        goto recurse;
+                    }
+                } break;
+
+                 case FRAME_BUILTIN_DECODE_UTF8: {
+                    auto *ast = decodeUTF8();
                     if (ast != nullptr) {
                         ast_ = ast;
                         goto recurse;
