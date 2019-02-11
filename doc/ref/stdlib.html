@@ -1520,7 +1520,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="sort">std.sort(arr)</h4>
+      <h4 id="sort">std.sort(arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1530,6 +1530,9 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Sorts the array using the <= operator.</p>
+      <p>Optional argument <code>keyF</code> is a single argument function used to extract comparison
+         key from each list element. Default value is identity function <code>keyF=function(x) x</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1573,6 +1576,11 @@ e = {"f1": False, "f2": 42}</pre>
         on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)<code>.
         If that is not the case, the functions will quietly return non-meaningful results.
       </p>
+      <p>
+        All <code>set.set*</code> functions accept <code>keyF</code> function of one argument, which can be
+        used to extract key to use from each element. All Set operations then use extracted key for the purpose
+        of identifying uniqueness. Default value is identity function <code>local id = function(x) x</code>
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1582,7 +1590,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="set">std.set(arr)</h4>
+      <h4 id="set">std.set(arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1601,7 +1609,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setInter">std.setInter(a, b)</h4>
+      <h4 id="setInter">std.setInter(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1620,7 +1628,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setUnion">std.setUnion(a, b)</h4>
+      <h4 id="setUnion">std.setUnion(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1638,6 +1646,10 @@ e = {"f1": False, "f2": 42}</pre>
         Example1: <code>std.setUnion([1, 2], [2, 3])</code> yields
         <code>[1, 2, 3]</code>.
       </p>
+      <p>
+        Example2: <code>std.setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}],keyF=function(x) x.n)</code> yields
+        <code>[{n: "A", v:1}, {n: "B"}, {n: "C"}]</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1647,7 +1659,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setDiff">std.setDiff(a, b)</h4>
+      <h4 id="setDiff">std.setDiff(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1666,7 +1678,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setMember">std.setMember(x, arr)</h4>
+      <h4 id="setMember">std.setMember(x, arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
