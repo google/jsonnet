@@ -31,11 +31,11 @@ cc_library(
     includes = ["."],
     linkopts = ["-lm"],
     deps = [
+        ":hash",
         "//include:libjsonnet",
         "//include:libjsonnet_fmt",
         "//stdlib:std",
         "//third_party/json",
-        "//third_party/md5:libmd5",
     ],
 )
 
@@ -64,5 +64,20 @@ cc_test(
     deps = [
         ":libjsonnet",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "hash",
+    srcs = [
+        "hash.cpp",
+    ],
+    hdrs = [
+        "hash.h",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
     ],
 )

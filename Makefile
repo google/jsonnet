@@ -29,9 +29,9 @@ OD ?= od
 
 OPT ?= -O3
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5 -Ithird_party/json
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/json
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
-MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5 -Ithird_party/json
+MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/json
 EMCXXFLAGS = $(CXXFLAGS) -g0 -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000 -s RESERVED_FUNCTION_POINTERS=20
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0
 LDFLAGS ?=
@@ -52,7 +52,7 @@ LIB_SRC = \
 	core/static_analysis.cpp \
 	core/string_utils.cpp \
 	core/vm.cpp \
-	third_party/md5/md5.cpp
+	hash/hash.cpp
 
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
@@ -83,10 +83,10 @@ ALL_HEADERS = \
 	core/string_utils.h \
 	core/vm.h \
 	core/std.jsonnet.h \
+	hash/hash.h \
 	include/libjsonnet.h \
 	include/libjsonnet_fmt.h \
 	include/libjsonnet++.h \
-	third_party/md5/md5.h \
 	third_party/json/json.hpp
 
 default: jsonnet
