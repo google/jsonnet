@@ -1553,11 +1553,11 @@ class Interpreter {
                 break;
 
             case json::value_t::array:{
-                attach = makeArray(std::vector<HeapThunk *>(v.size()));
+                attach = makeArray(std::vector<HeapThunk *>{});
                 filled = true;
                 auto *arr = static_cast<HeapArray *>(attach.v.h);
                 for (size_t i = 0; i < v.size(); ++i) {
-                    arr->elements[i] = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+                    arr->elements.push_back(makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
                     otherJsonToHeap(v[i], arr->elements[i]->filled, arr->elements[i]->content);
                 }
             } break;
