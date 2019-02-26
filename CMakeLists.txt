@@ -5,6 +5,7 @@ include(ExternalProject)
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
+option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
     "Output artifacts directory.")
 
@@ -33,7 +34,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 # known locations on the local machine. Downloading the library ourselves
 # allows us to pin to a specific version and makes things easier for users
 # who don't have package managers.
-if (BUILD_TESTS)
+if (BUILD_TESTS AND NOT USE_SYSTEM_GTEST)
     enable_testing()
 
     # Generate and download googletest project.
@@ -66,6 +67,10 @@ if (BUILD_TESTS)
 
     # Include googletest headers.
     include_directories("${gtest_SOURCE_DIR}/include")
+
+elseif (BUILD_TESTS AND USE_SYSTEM_GTEST)
+	enable_testing()
+	add_subdirectory(/usr/src/googletest ${GLOBAL_OUTPUT_PATH}/googletest-build)
 endif()
 
 # Compiler flags.
