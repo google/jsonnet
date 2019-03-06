@@ -36,6 +36,8 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
+#define LIB_JSONNET_VERSION "v0.12.1"
+
 static void memory_panic(void)
 {
     fputs("FATAL ERROR: a memory allocation error occurred.\n", stderr);
