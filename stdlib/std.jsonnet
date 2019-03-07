@@ -1132,17 +1132,41 @@ limitations under the License.
     local bytes = std.base64DecodeBytes(str);
     std.join('', std.map(function(b) std.char(b), bytes)),
 
-  // Quicksort
+  // Merge-sort for long arrays and naive quicksort for shorter ones
   sort(arr, keyF=id)::
+    local quickSort(arr, keyF=id) = 
+      local l = std.length(arr);
+      if std.length(arr) <= 1 then
+        arr
+      else
+        local pos = 0;
+        local pivot = keyF(arr[pos]);
+        local rest = std.makeArray(l - 1, function(i) if i < pos then arr[i] else arr[i + 1]);
+        local left = std.filter(function(x) keyF(x) < pivot, rest);
+        local right = std.filter(function(x) keyF(x) >= pivot, rest);
+        quickSort(left, keyF) + [arr[pos]] + quickSort(right, keyF);
+
+    local merge(a, b) =
+      local la = std.length(a), lb = std.length(b);
+      local aux(i, j, prefix) = 
+      if i == la then
+        prefix + b[j:]
+      else if j == lb then
+        prefix + a[i:]
+      else
+        if keyF(a[i]) <= keyF(b[j]) then
+          aux(i + 1, j, prefix + [a[i]]) tailstrict
+        else
+          aux(i, j + 1, prefix + [b[j]]) tailstrict;
+      aux(0, 0, []);
+
     local l = std.length(arr);
-    if std.length(arr) == 0 then
-      []
+    if std.length(arr) <= 30 then
+      quickSort(arr, keyF=keyF)
     else
-      local pivot = keyF(arr[0]);
-      local rest = std.makeArray(l - 1, function(i) arr[i + 1]);
-      local left = std.filter(function(x) keyF(x) < pivot, rest);
-      local right = std.filter(function(x) keyF(x) >= pivot, rest);
-      std.sort(left, keyF) + [arr[0]] + std.sort(right, keyF),
+      local mid = std.floor(l/ 2);
+      local left = arr[:mid], right = arr[mid:];
+      merge(std.sort(left, keyF=keyF), std.sort(right, keyF=keyF)),
 
   uniq(arr, keyF=id)::
     local f(a, b) =
