@@ -970,6 +970,11 @@
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="parseJson">std.parseJson(str)</h4>
+      <p>
+        Parses a JSON string.
+      </p>
+      <em>Available in upcoming release.</em>
+      <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -978,11 +983,32 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>
-        Parses a JSON string.
-      </p>
+      <h4 id="encodeUTF8">std.encodeUTF8(str)</h4>
       <em>Available in upcoming release.</em>
-      <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
+      <p>
+        Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers representing bytes.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="decodeUTF8">std.decodeUTF8(arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available in upcoming release.</em>
+      <p>
+        Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns a string.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1627,7 +1653,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="sort">std.sort(arr)</h4>
+      <h4 id="sort">std.sort(arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1637,6 +1663,9 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Sorts the array using the <= operator.</p>
+      <p>Optional argument <code>keyF</code> is a single argument function used to extract comparison
+         key from each list element. Default value is identity function <code>keyF=function(x) x</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1675,6 +1704,16 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Sets are represented as ordered arrays without duplicates.</p>
+      <p>
+        Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
+        on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)<code>.
+        If that is not the case, the functions will quietly return non-meaningful results.
+      </p>
+      <p>
+        All <code>set.set*</code> functions accept <code>keyF</code> function of one argument, which can be
+        used to extract key to use from each element. All Set operations then use extracted key for the purpose
+        of identifying uniqueness. Default value is identity function <code>local id = function(x) x</code>
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1684,7 +1723,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="set">std.set(arr)</h4>
+      <h4 id="set">std.set(arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1693,7 +1732,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>Syntax sugar for std.uniq(std.sort(arr)).</p>
+      <p>Shortcut for std.uniq(std.sort(arr)).</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1703,7 +1742,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setInter">std.setInter(a, b)</h4>
+      <h4 id="setInter">std.setInter(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1722,7 +1761,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setUnion">std.setUnion(a, b)</h4>
+      <h4 id="setUnion">std.setUnion(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1732,9 +1771,17 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Set union operation (values in either a or b).  Note that + on sets will simply concatenate
-        the arrays, possibly forming an array that is not a set (due to not bein ordered without
+        Set union operation (values in any of <code>a</code> or <code>b</code>).  Note that + on sets will simply concatenate
+        the arrays, possibly forming an array that is not a set (due to not being ordered without
         duplicates).
+      </p>
+      <p>
+        Example1: <code>std.setUnion([1, 2], [2, 3])</code> yields
+        <code>[1, 2, 3]</code>.
+      </p>
+      <p>
+        Example2: <code>std.setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}],keyF=function(x) x.n)</code> yields
+        <code>[{n: "A", v:1}, {n: "B"}, {n: "C"}]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1745,7 +1792,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setDiff">std.setDiff(a, b)</h4>
+      <h4 id="setDiff">std.setDiff(a, b, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1764,7 +1811,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="setMember">std.setMember(x, arr)</h4>
+      <h4 id="setMember">std.setMember(x, arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1802,7 +1849,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Encodes the given value into a base64 string.  The encoding sequence is A-Za-z0-9+/ with =
+        Encodes the given value into a base64 string.  The encoding sequence is <code>A-Za-z0-9+/</code> with <code>=</code>
         to pad the output to a multiple of 4 characters.  The value can be a string or an array of
         numbers, but the codepoints / numbers must be in the 0 to 255 range.  The resulting string
         has no line breaks.
