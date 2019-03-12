@@ -556,6 +556,28 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="substr">std.findSubstr(pat, str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns an array that contains the indexes of all occurances of <code>pat</code> in 
+        <code>str</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="startsWith">std.startsWith(a, b)</h4>
     </div>
     <div style="clear: both"></div>
@@ -585,28 +607,6 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>Returns whether the string a is suffixed by the string b.</p>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="substr">std.substr(s, from, len)</h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-        and is <code>len</code> codepoints long.
-      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -802,69 +802,6 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="parseInt">std.parseInt(str)</h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>Parses a signed decimal integer from the input string.</p>
-      <p>Example: <code>std.parseInt("123")</code> yields <code>123</code>.</p>
-      <p>Example: <code>std.parseInt("-123")</code> yields <code>-123</code>.</p>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="parseOctal">std.parseOctal(str)</h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.</p>
-      <p>Example: <code>std.parseOctal("755")</code> yields <code>493</code>.</p>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="parseOctal">std.parseHex(str)</h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        Parses an unsigned hexadecimal integer, from the input string.  Case insensitive.
-      </p>
-      <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
       <h4 id="escapeStringBash">std.escapeStringBash(str)</h4>
     </div>
     <div style="clear: both"></div>
@@ -958,6 +895,98 @@
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="manifestation">Parsing</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseInt">std.parseInt(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Parses a signed decimal integer from the input string.</p>
+      <p>Example: <code>std.parseInt("123")</code> yields <code>123</code>.</p>
+      <p>Example: <code>std.parseInt("-123")</code> yields <code>-123</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseOctal">std.parseOctal(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.</p>
+      <p>Example: <code>std.parseOctal("755")</code> yields <code>493</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseHex">std.parseHex(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Parses an unsigned hexadecimal integer, from the input string.  Case insensitive.
+      </p>
+      <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseJson">std.parseJson(str)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Parses a JSON string.
+      </p>
+      <em>Available in upcoming release.</em>
+      <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -1353,6 +1382,28 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="count">std.find(value, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns an array that contains the indexes of all occurances of <code>value</code> in 
+        <code>arr</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="map">std.map(func, arr)</h4>
     </div>
     <div style="clear: both"></div>
@@ -1406,7 +1457,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         This is primarily used to desugar array comprehension syntax.  It first filters, then maps
-        thte given array, using the two functions provided.
+        the given array, using the two functions provided.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1879,7 +1930,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Outputs the given string <code>str</code> to stderr and
         returns <code>rest</code> as the result.
-      <p>
+      </p>
       <em>Available since version 0.11.0</em>
       <p>Example:</p>
       <p>
