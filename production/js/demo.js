@@ -32,7 +32,7 @@ let ctx_mapping = { };
 let ctx_counter = 1;
 
 // We don't use ctx, instead just rely on Javascript's cloure environment.
-let import_callback = addFunction(function (ctx_, base_, rel_, found_here_, success_) {
+let import_callback = Runtime.addFunction(function (ctx_, base_, rel_, found_here_, success_) {
   let vm = ctx_mapping[ctx_].vm
   let files = ctx_mapping[ctx_].files
   let base = Module.Pointer_stringify(base_);

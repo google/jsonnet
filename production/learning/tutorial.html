@@ -123,7 +123,7 @@
     <div class="panel">
       <p>
         Let's explore the various features in Jsonnet, and mix some cocktails.  All example codes
-        can be edited, allowing you to experience the language interactively.  If you're looking at
+        can be editted, allowing you to experience the language interactively.  If you're looking at
         Jsonnet for the first time, this is the right place to be.  For help using the
         implementation, see <a href="getting_started.html">getting started</a>.  For a detailed
         systematic overview of the language, check out the <a
@@ -1068,11 +1068,9 @@ local Mojito(virgin=false, large=false) = {
       qty: 6 * factor,
       unit: 'leaves',
     },
-  ] + (
-    if virgin then [] else [
-      { kind: 'Banks', qty: 1.5 * factor },
-    ]
-  ) + [
+  ] + if virgin then [] else [
+    { kind: 'Banks', qty: 1.5 * factor },
+  ] + [
     { kind: 'Lime', qty: 0.5 * factor },
     { kind: 'Simple Syrup', qty: 0.5 * factor },
     { kind: 'Soda', qty: 3 * factor },
@@ -1161,18 +1159,6 @@ local Mojito(virgin=false, large=false) = {
         "kind": "Mint",
         "qty": 6,
         "unit": "leaves"
-      },
-      {
-         "kind": "Lime",
-         "qty": 0.5
-      },
-      {
-         "kind": "Simple Syrup",
-         "qty": 0.5
-      },
-      {
-         "kind": "Soda",
-         "qty": 3
       }
     ],
     "served": "Over crushed ice"
