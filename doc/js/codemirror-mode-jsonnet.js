@@ -84,7 +84,7 @@
               return "string-2";
             }
           } else {
-            if (stream.match(/\\[\\"'bfnrt0]/)) {
+            if (stream.match(/\\[\\"'\/bfnrt0]/)) {
               return "string-2";
             }
             if (stream.match(/\\u[0-9a-fA-F]{4}/)) {
@@ -178,7 +178,7 @@
         // Enter text block.
         if (stream.match(/\|\|\|/)) {
           state.textBlock = true;
-          state.textBlockCol = null;
+          state.textBlockIndent = null;
           return "string";
         }
 
