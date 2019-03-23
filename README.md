@@ -93,7 +93,7 @@ First, you need to build the JavaScript version of Jsonnet (which requires [_ems
 make doc/js/libjsonnet.js
 ```
 
-Then inside `doc` directory you can generate and serve the website using [Jekyll](https://jekyllrb.com/):
+Then, inside the _doc_ directory, you can generate and serve the website using [Jekyll](https://jekyllrb.com/):
 ```
 jekyll serve --watch --livereload
 ```
