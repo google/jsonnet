@@ -102,5 +102,5 @@ Or you can do the same more concisely:
 jekyll s -w -l
 ```
 
-This should serve the website, automatically rebuild when you change underlying files and automatically
+This should serve the website, automatically rebuild when you change any underlying files, and automatically
 refresh your browser when that happens.
