@@ -88,7 +88,7 @@ make && make libjsonnet.so &&  ./tests.sh
 
 ### Locally serving the website
 
-First, you need to build JS version of Jsonnet (requires emscripten):
+First, you need to build the JavaScript version of Jsonnet (which requires [_emscripten_](https://emscripten.org/)):
 ```
 make doc/js/libjsonnet.js
 ```
