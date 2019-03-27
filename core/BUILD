@@ -28,15 +28,15 @@ cc_library(
         "unicode.h",
         "vm.h",
     ],
+    includes = ["."],
+    linkopts = ["-lm"],
     deps = [
+        ":hash",
         "//include:libjsonnet",
         "//include:libjsonnet_fmt",
         "//stdlib:std",
-        "//third_party/json:json",
-        "//third_party/md5:libmd5",
+        "//third_party/json",
     ],
-    linkopts = ["-lm"],
-    includes = ["."],
 )
 
 cc_test(
@@ -45,7 +45,7 @@ cc_test(
     deps = [
         ":libjsonnet",
         # Note: On Ubuntu, apt-get install libgtest-dev google-mock
-        "//external:googletest_main",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -54,7 +54,7 @@ cc_test(
     srcs = ["parser_test.cpp"],
     deps = [
         ":libjsonnet",
-        "//external:googletest_main",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -63,6 +63,21 @@ cc_test(
     srcs = ["libjsonnet_test.cpp"],
     deps = [
         ":libjsonnet",
-        "//external:googletest_main",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "hash",
+    srcs = [
+        "hash.cpp",
+    ],
+    hdrs = [
+        "hash.h",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
     ],
 )

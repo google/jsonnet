@@ -21,10 +21,10 @@ limitations under the License.
 #include <set>
 #include <string>
 
+#include "core/hash.h"
 #include "desugarer.h"
 #include "json.h"
 #include "json.hpp"
-#include "md5.h"
 #include "parser.h"
 #include "state.h"
 #include "static_analysis.h"
@@ -869,7 +869,12 @@ class Interpreter {
         builtins["extVar"] = &Interpreter::builtinExtVar;
         builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
         builtins["native"] = &Interpreter::builtinNative;
+#ifndef DISABLE_INSECURE_HASH
         builtins["md5"] = &Interpreter::builtinMd5;
+#else
+        builtins["md5"] = &Interpreter::builtinMd5Disabled;
+#endif
+        builtins["sha256"] = &Interpreter::builtinSha256;
         builtins["trace"] = &Interpreter::builtinTrace;
         builtins["splitLimit"] = &Interpreter::builtinSplitLimit;
         builtins["substr"] = &Interpreter::builtinSubstr;
@@ -1310,7 +1315,23 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
-        scratch = makeString(decode_utf8(md5(value)));
+        scratch = makeString(decode_utf8(jsonnet::hash::Md5(value)));
+        return nullptr;
+    }
+
+    const AST *builtinMd5Disabled(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        throw makeError(
+            loc, "std.md5 was disabled at compile time because it is insecure. Use std.sha256.");
+    }
+
+    const AST *builtinSha256(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "sha255", args, {Value::STRING});
+
+        std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+
+        scratch = makeString(decode_utf8(jsonnet::hash::Sha256(value)));
         return nullptr;
     }
 
