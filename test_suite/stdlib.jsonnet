@@ -822,6 +822,20 @@ std.assertEqual(
   |||
 ) &&
 
+std.assertEqual(
+  std.manifestYamlStream([{}, [], 3, '"'], c_document_end=false),
+  |||
+    ---
+    {}
+    ---
+    []
+    ---
+    3
+    ---
+    "\""
+  |||
+) &&
+
 std.assertEqual(std.parseInt('01234567890'), 1234567890) &&
 std.assertEqual(std.parseInt('-01234567890'), -1234567890) &&
 std.assertEqual(std.parseOctal('755'), 493) &&

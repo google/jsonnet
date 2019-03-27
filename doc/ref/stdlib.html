@@ -1112,11 +1112,12 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
 
       <pre>std.manifestYamlDoc(
-{
+  {
     x: [1, 2, 3, true, false, null,
         "string\nstring\n"],
     y: { a: 1, b: 2, c: [1, 2] },
-})</pre>
+  },
+  indent_array_in_object=false)</pre>
 
       <p>Yields a string containing this YAML:</p>
 
@@ -1136,6 +1137,10 @@ e = {"f1": False, "f2": 42}</pre>
   "c": 
     - 1
     - 2</pre>
+
+      <p>The <code>indent_array_in_object</code> param adds additional indentation which some people
+      may find easier to read.</p>
+
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1156,10 +1161,13 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Given an array of values, emit a YAML "stream", which is a sequence of documents separated
-        by <code>---</code>.
+        by <code>---</code> and ending with <code>...</code>.
       </p>
 
-      <code>std.manifestYamlStream(['a', 1, []])</code>
+      <pre>std.manifestYamlStream(
+  ['a', 1, []],
+  indent_array_in_object=false,
+  c_document_end=true)</pre>
 
       <p>Yields this string:</p>
 
@@ -1170,6 +1178,9 @@ e = {"f1": False, "f2": 42}</pre>
 ---
 []
 ...</pre>
+
+      <p>The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.</p>
+      <p>The <code>c_document_end</code> param adds the optional terminating <code>...</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>

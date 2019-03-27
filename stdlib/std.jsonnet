@@ -1004,13 +1004,13 @@ limitations under the License.
           std.join('\n' + cindent, lines);
     aux(value, [], ''),
 
-  manifestYamlStream(value, indent_array_in_object=false)::
+  manifestYamlStream(value, indent_array_in_object=false, c_document_end=true)::
     if std.type(value) != 'array' then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
       '---\n' + std.join(
         '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object) for e in value]
-      ) + '\n...\n',
+      ) + if c_document_end then '\n...\n' else '\n',
 
 
   manifestPython(o)::
@@ -1134,7 +1134,7 @@ limitations under the License.
 
   // Merge-sort for long arrays and naive quicksort for shorter ones
   sort(arr, keyF=id)::
-    local quickSort(arr, keyF=id) = 
+    local quickSort(arr, keyF=id) =
       local l = std.length(arr);
       if std.length(arr) <= 1 then
         arr
@@ -1148,23 +1148,23 @@ limitations under the License.
 
     local merge(a, b) =
       local la = std.length(a), lb = std.length(b);
-      local aux(i, j, prefix) = 
-      if i == la then
-        prefix + b[j:]
-      else if j == lb then
-        prefix + a[i:]
-      else
-        if keyF(a[i]) <= keyF(b[j]) then
-          aux(i + 1, j, prefix + [a[i]]) tailstrict
+      local aux(i, j, prefix) =
+        if i == la then
+          prefix + b[j:]
+        else if j == lb then
+          prefix + a[i:]
         else
-          aux(i, j + 1, prefix + [b[j]]) tailstrict;
+          if keyF(a[i]) <= keyF(b[j]) then
+            aux(i + 1, j, prefix + [a[i]]) tailstrict
+          else
+            aux(i, j + 1, prefix + [b[j]]) tailstrict;
       aux(0, 0, []);
 
     local l = std.length(arr);
     if std.length(arr) <= 30 then
       quickSort(arr, keyF=keyF)
     else
-      local mid = std.floor(l/ 2);
+      local mid = std.floor(l / 2);
       local left = arr[:mid], right = arr[mid:];
       merge(std.sort(left, keyF=keyF), std.sort(right, keyF=keyF)),
 
