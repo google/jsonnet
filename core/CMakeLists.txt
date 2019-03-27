@@ -34,7 +34,8 @@ target_link_libraries(libjsonnet md5)
 
 # CMake prepends CMAKE_SHARED_LIBRARY_PREFIX to shared libraries, so without
 # this step the output would be |liblibjsonnet|.
-set_target_properties(libjsonnet PROPERTIES OUTPUT_NAME jsonnet)
+set_target_properties(libjsonnet PROPERTIES OUTPUT_NAME jsonnet
+	VERSION 0.12.1 SOVERSION 0)
 install(TARGETS libjsonnet DESTINATION lib)
 
 # Static library for jsonnet command-line tool.
