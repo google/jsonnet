@@ -1,6 +1,7 @@
 # Travis CI runs CMake 2.8.7 so we are pinned to that verison.
 cmake_minimum_required(VERSION 2.8.7)
 include(ExternalProject)
+include(GNUInstallDirs)
 
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
@@ -95,13 +96,12 @@ include_directories(
     third_party/json
     core)
 
-install(DIRECTORY include DESTINATION include)
-
 if (BUILD_TESTS)
     # Set JSONNET_BIN variable required for regression tests.
     file(TO_NATIVE_PATH ${GLOBAL_OUTPUT_PATH}/jsonnet JSONNET_BIN)
 endif()
 
+add_subdirectory(include)
 add_subdirectory(stdlib)
 add_subdirectory(third_party/md5)
 add_subdirectory(core)
