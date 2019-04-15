@@ -1,11 +1,6 @@
 // A benchmark for builtin sort
 
-// TODO(sbarzowski) reverse functions should probably be a part of std
-local reverse(arr) =
-  local l = std.length(arr);
-  std.makeArray(l, function(i) arr[l - i - 1])
-;
-
+local reverse = std.reverse;
 local sort = std.sort;
 
 true
