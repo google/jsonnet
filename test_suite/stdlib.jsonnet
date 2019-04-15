@@ -323,6 +323,12 @@ std.assertEqual(std.base64Decode('SGVsbG8gV29ybGQ='), 'Hello World') &&
 std.assertEqual(std.base64Decode('SGVsbG8gV29ybA=='), 'Hello Worl') &&
 std.assertEqual(std.base64Decode(''), '') &&
 
+std.assertEqual(std.reverse([]), []) &&
+std.assertEqual(std.reverse([1]), [1]) &&
+std.assertEqual(std.reverse([1, 2]), [2, 1]) &&
+std.assertEqual(std.reverse([1, 2, 3]), [3, 2, 1]) &&
+std.assertEqual(std.reverse([[1, 2, 3]]), [[1, 2, 3]]) &&
+
 std.assertEqual(std.sort([]), []) &&
 std.assertEqual(std.sort([1]), [1]) &&
 std.assertEqual(std.sort([1, 2]), [1, 2]) &&

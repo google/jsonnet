@@ -1132,6 +1132,10 @@ limitations under the License.
     local bytes = std.base64DecodeBytes(str);
     std.join('', std.map(function(b) std.char(b), bytes)),
 
+  reverse(arr)::
+    local l = std.length(arr);
+    std.makeArray(l, function(i) arr[l - i - 1]),
+
   // Merge-sort for long arrays and naive quicksort for shorter ones
   sort(arr, keyF=id)::
     local quickSort(arr, keyF=id) = 

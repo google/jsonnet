@@ -1,6 +1,6 @@
 RUNTIME ERROR: Object assertion failed.
 	error.invariant.equality.jsonnet:17:10-15	thunk <object_assert>
-	std.jsonnet:1298:42-46	thunk <a>
-	std.jsonnet:1298:42-54	function <anonymous>
-	std.jsonnet:1298:42-54	function <anonymous>
-	std.jsonnet:1302:11-23	
+	std.jsonnet:1302:42-46	thunk <a>
+	std.jsonnet:1302:42-54	function <anonymous>
+	std.jsonnet:1302:42-54	function <anonymous>
+	std.jsonnet:1306:11-23	
