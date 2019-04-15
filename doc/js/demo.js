@@ -35,8 +35,8 @@ let ctx_counter = 1;
 let import_callback = addFunction(function (ctx_, base_, rel_, found_here_, success_) {
   let vm = ctx_mapping[ctx_].vm
   let files = ctx_mapping[ctx_].files
-  let base = Module.Pointer_stringify(base_);
-  let rel = Module.Pointer_stringify(rel_);
+  let base = Module.UTF8ToString(base_);
+  let rel = Module.UTF8ToString(rel_);
   let abs_path;
   // It is possible that rel is actually absolute.
   if (rel[0] == '/') {
@@ -77,7 +77,7 @@ function jsonnet_evaluate_snippet_wrapped(
   let output_ptr = jsonnet_evaluate_snippet(vm, filename, code, error_ptr);
   let error = Module.getValue(error_ptr, 'i32*');
   Module._free(error_ptr);
-  let result = Module.Pointer_stringify(output_ptr);
+  let result = Module.UTF8ToString(output_ptr);
   jsonnet_realloc(vm, output_ptr, 0);
   jsonnet_destroy(vm);
   delete ctx_mapping[ctx_ptr];
@@ -94,7 +94,7 @@ function jsonnet_fmt_snippet_wrapped(filename, code) {
   let output_ptr = jsonnet_fmt_snippet(vm, filename, code, error_ptr);
   let error = Module.getValue(error_ptr, 'i32*');
   Module._free(error_ptr);
-  let result = Module.Pointer_stringify(output_ptr);
+  let result = Module.UTF8ToString(output_ptr);
   jsonnet_realloc(vm, output_ptr, 0);
   jsonnet_destroy(vm);
   if (error) {
