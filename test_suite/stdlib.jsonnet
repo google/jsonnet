@@ -157,6 +157,16 @@ std.assertEqual(std.toString([1, 2, 'foo']), '[1, 2, "foo"]') &&
 
 std.assertEqual(std.substr('cookie', 1, 3), 'ook') &&
 std.assertEqual(std.substr('cookie', 1, 0), '') &&
+std.assertEqual(std.substr('cookie', 1, 15), 'ookie') &&
+std.assertEqual(std.substr('cookie', 0, 5), 'cooki') &&
+std.assertEqual(std.substr('cookie', 0, 6), 'cookie') &&
+std.assertEqual(std.substr('cookie', 0, 15), 'cookie') &&
+std.assertEqual(std.substr('cookie', 3, 1), 'k') &&
+std.assertEqual(std.substr('cookie', 20, 1), '') &&
+std.assertEqual(std.substr('cookie', 6, 1), '') &&
+
+
+std.assertEqual(std.substr('ąę', 1, 1), 'ę') &&
 
 std.assertEqual(std.startsWith('food', 'foo'), true) &&
 std.assertEqual(std.startsWith('food', 'food'), true) &&

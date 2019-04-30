@@ -45,7 +45,7 @@ limitations under the License.
     else if len < 0 then
       error 'substr third parameter should be greater than zero, got ' + len
     else
-      std.join('', std.makeArray(len, function(i) str[i + from])),
+      std.join('', std.makeArray(std.max(0, std.min(len, std.length(str) - from)), function(i) str[i + from])),
 
   startsWith(a, b)::
     if std.length(a) < std.length(b) then
