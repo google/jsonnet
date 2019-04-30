@@ -1435,6 +1435,10 @@ class Interpreter {
             ss << "substr third parameter should be greater than zero, got " << len;
             throw makeError(loc, ss.str());
         }
+        if (from > str->value.size()) {
+            scratch = makeString(UString());
+            return nullptr;
+        }
         if (size_t(len + from) > str->value.size()) {
           len = str->value.size() - from;
         }

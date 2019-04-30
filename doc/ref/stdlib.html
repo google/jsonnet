@@ -438,7 +438,8 @@ layout: default
     <div class="panel">
       <p>
         Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-        and is <code>len</code> codepoints long.
+        and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than 
+        <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
       </p>
     </div>
     <div style="clear: both"></div>
