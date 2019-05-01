@@ -660,7 +660,7 @@ limitations under the License.
           local tmp = if code.fw == '*' then {
             j: j + 1,
             fw: if j >= std.length(arr) then
-              error 'Not enough values to format: ' + std.length(arr)
+              error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + j)
             else
               arr[j],
           } else {
@@ -670,7 +670,7 @@ limitations under the License.
           local tmp2 = if code.prec == '*' then {
             j: tmp.j + 1,
             prec: if tmp.j >= std.length(arr) then
-              error 'Not enough values to format: ' + std.length(arr)
+              error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + tmp.j)
             else
               arr[tmp.j],
           } else {
@@ -682,7 +682,7 @@ limitations under the License.
             if j2 < std.length(arr) then
               arr[j2]
             else
-              error 'Not enough values to format, got ' + std.length(arr);
+              error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + j2);
           local s =
             if code.ctype == '%' then
               '%'
