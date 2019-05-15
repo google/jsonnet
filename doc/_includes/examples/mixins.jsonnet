@@ -20,10 +20,10 @@ local NoAlcohol = {
     ] else [
       ingredient,
     ],
-  ingredients: [
+  ingredients: std.flattenArrays([
     Substitute(i)
     for i in super.ingredients
-  ],
+  ]),
 };
 
 local PartyMode = {

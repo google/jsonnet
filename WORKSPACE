@@ -12,7 +12,6 @@ git_repository(
 git_repository(
     name = "com_google_googletest",
     remote = "https://github.com/google/googletest.git",
-
     # If updating googletest version, also update CMakeLists.txt.in.
     commit = "2fe3bd994b3189899d93f1d5a881e725e046fdc2", # release: release-1.8.1
     shallow_since = "1535728917 -0400",

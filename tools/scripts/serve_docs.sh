@@ -31,4 +31,5 @@ exit 1
 fi
 
 cd doc
+# TODO: use --livereload, but it's not available on Jekyll 3.1.6
 jekyll server --port 8200 --watch
