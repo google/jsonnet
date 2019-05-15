@@ -355,9 +355,8 @@ class Desugarer {
                     UStringStream ss;
                     ss << U"$outer_super_index" << (counter++);
                     const Identifier *super_var = desugarer->id(ss.str());
-                    AST *index = super_index->index;
                     // Desugaring of expr should already have occurred.
-                    assert(index != nullptr);
+                    assert(super_index->index != nullptr);
                     // Re-use super_index since we're replacing it here.
                     superVars.emplace_back(super_var, super_index);
                     expr = alloc.make<Var>(expr->location, expr->openFodder, super_var);
@@ -405,7 +404,7 @@ class Desugarer {
         return super_vars;
     }
 
-    AST* makeArrayComprehension(ArrayComprehension *ast, unsigned obj_level) {
+    AST* makeArrayComprehension(ArrayComprehension *ast) {
         int n = ast->specs.size();
         AST *zero = make<LiteralNumber>(E, EF, "0.0");
         AST *one = make<LiteralNumber>(E, EF, "1.0");
@@ -698,7 +697,7 @@ class Desugarer {
                 desugar(spec.expr, obj_level);
             desugar(ast->body, obj_level + 1);
 
-            ast_ = makeArrayComprehension(ast, obj_level);
+            ast_ = makeArrayComprehension(ast);
 
         } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
             desugar(ast->cond, obj_level);
