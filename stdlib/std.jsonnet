@@ -543,7 +543,7 @@ limitations under the License.
 
     // Render floating point in scientific form
     local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, trailing, caps, prec) =
-      local exponent = std.floor(std.log(std.abs(n__)) / std.log(10));
+      local exponent = if n__ == 0 then 0 else std.floor(std.log(std.abs(n__)) / std.log(10));
       local suff = (if caps then 'E' else 'e')
                    + render_int(exponent, 3, 0, false, true, 10, '');
       local mantissa = n__ / std.pow(10, exponent);
