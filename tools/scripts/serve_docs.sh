@@ -31,4 +31,4 @@ exit 1
 fi
 
 cd doc
-jekyll server --port 8200 --watch
+jekyll server --port 8200 --watch --livereload
