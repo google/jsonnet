@@ -81,9 +81,28 @@ See the [contributing page](http://jsonnet.org/contributing.html) on our website
 
 ### Running tests
 
-TODO
+To run the comprehensive suite:
+
+```
+make test
+```
 
 
 ### Locally serving the website
 
-TODO
+First, you need to build the JavaScript version of Jsonnet (which requires
+[_emscripten_](https://emscripten.org/)):
+
+```
+make doc/js/libjsonnet.js
+```
+
+Then, from the root of the repository you can generate and serve the website using
+[Jekyll](https://jekyllrb.com/):
+
+```
+tools/scripts/serve_docs.sh
+```
+
+This should the website on localhost:8080, automatically rebuild when you change any underlying
+files, and automatically refresh your browser when that happens.
