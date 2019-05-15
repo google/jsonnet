@@ -355,9 +355,8 @@ class Desugarer {
                     UStringStream ss;
                     ss << U"$outer_super_index" << (counter++);
                     const Identifier *super_var = desugarer->id(ss.str());
-                    AST *index = super_index->index;
                     // Desugaring of expr should already have occurred.
-                    assert(index != nullptr);
+                    assert(super_index->index != nullptr);
                     // Re-use super_index since we're replacing it here.
                     superVars.emplace_back(super_var, super_index);
                     expr = alloc.make<Var>(expr->location, expr->openFodder, super_var);
