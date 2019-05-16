@@ -19,6 +19,7 @@ EXECUTED=0
 FAILED=0
 
 JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
+JSONNETFMT_BIN="${JSONNETFMT_BIN:-../jsonnetfmt}"
 
 # Display additional information such as successful tests (useful if they are slow).
 VERBOSE="${VERBOSE:-false}"

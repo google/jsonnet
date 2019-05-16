@@ -63,6 +63,7 @@ LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cpp=.o)
 
 ALL = \
 	jsonnet \
+	jsonnetfmt \
 	libjsonnet.so \
 	libjsonnet++.so \
 	libjsonnet_test_snippet \
@@ -89,11 +90,11 @@ ALL_HEADERS = \
 	third_party/md5/md5.h \
 	third_party/json/json.hpp
 
-default: jsonnet
+default: jsonnet jsonnetfmt
 
 all: $(ALL)
 
-test: jsonnet libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
+test: jsonnet jsonnetfmt libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
 	./tests.sh
 
 reformat:
@@ -104,6 +105,7 @@ test-formatting:
 
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
+	cmd/jsonnetfmt.cpp \
 	core/libjsonnet_test_snippet.c \
 	core/libjsonnet_test_file.c
 
@@ -118,8 +120,12 @@ core/desugarer.cpp: core/std.jsonnet.h
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 # Commandline executable.
-jsonnet: cmd/jsonnet.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< $(LIB_SRC:.cpp=.o) -o $@
+jsonnet: cmd/jsonnet.cpp cmd/utils.cpp $(LIB_OBJ)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+
+# Commandline executable (reformatter).
+jsonnetfmt: cmd/jsonnetfmt.cpp cmd/utils.cpp $(LIB_OBJ)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
 
 # C binding.
 libjsonnet.so: $(LIB_OBJ)

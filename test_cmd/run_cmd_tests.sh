@@ -31,21 +31,17 @@ rm -rf out
 
 do_test "no_args" 1
 do_test "help" 0 --help
-do_test "eval" 1 eval
-do_test "nosuchcommand" 1 nosuchcommand
 do_test "version1" 0 -v
 do_test "version2" 0 --version
 do_test "bad_out" 1 "test.jsonnet" -o ""
 do_test "simple1" 0 "test.jsonnet"
-do_test "simple2" 0 eval "test.jsonnet"
-do_test "simple3" 0 eval -
-do_test "simple4" 1 eval "nosuchfile.jsonnet"
+do_test "simple3" 0 -
+do_test "simple4" 1 "nosuchfile.jsonnet"
 do_test "simple5" 1 "test.jsonnet" "test.jsonnet"
 if do_test "simple_out" 0 "test.jsonnet" -o "out/simple_out/custom_output"; then
     check_file "simple_out" "out/simple_out/custom_output" "simple_out.golden.custom_output"
 fi
 do_test "exec1" 0 -e "{ a: 1, b: 2, c: 3 }"
-do_test "exec2" 0 eval -e "{ a: 1, b: 2, c: 3 }"
 if do_test "exec_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/exec_out/custom_output"; then
     check_file "exec_out" "out/exec_out/custom_output" "exec_out.golden.custom_output"
 fi
@@ -112,6 +108,25 @@ export JSONNET_PATH=lib1:lib2
 do_test "jsonnet_path1" 0 -e 'importstr "shared.txt"'
 export JSONNET_PATH=lib2:lib1
 do_test "jsonnet_path2" 0 -e 'importstr "shared.txt"'
+
+do_fmt_test "fmt_no_args" 1
+do_fmt_test "fmt_help" 0 --help
+do_fmt_test "fmt_version1" 0 -v
+do_fmt_test "fmt_version2" 0 --version
+do_fmt_test "fmt_bad_out" 1 "test.jsonnet" -o ""
+do_fmt_test "fmt_simple1" 0 "test.jsonnet"
+do_fmt_test "fmt_simple3" 0 -
+do_fmt_test "fmt_simple4" 1 "nosuchfile.jsonnet"
+do_fmt_test "fmt_simple5" 1 "test.jsonnet" "test.jsonnet"
+if do_fmt_test "fmt_simple_out" 0 "test.jsonnet" -o "out/fmt_simple_out/custom_output"; then
+    check_file "fmt_simple_out" "out/fmt_simple_out/custom_output" "fmt_simple_out.golden.custom_output"
+fi
+do_fmt_test "fmt1" 0 -e "{ a: 1, b: 2, c: 3 }"
+if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/fmt_out/custom_output"; then
+    check_file "fmt_out" "out/fmt_out/custom_output" "fmt_out.golden.custom_output"
+fi
+do_fmt_test "fmt_double_dash" 0 -e -- -1
+
 
 popd
 

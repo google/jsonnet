@@ -11,6 +11,7 @@
 *.dSYM
 
 jsonnet
+jsonnetfmt
 _jsonnet.so
 libjsonnet.so
 libjsonnet++.so
