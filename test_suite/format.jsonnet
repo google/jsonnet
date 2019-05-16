@@ -135,6 +135,7 @@ std.assertEqual(std.format('thing-%#-8.4X', [910.3]), 'thing-0X038E  ') &&
 // e
 std.assertEqual(std.format('%e', [910]), '9.100000e+02') &&
 std.assertEqual(std.format('%e', [0]), '0.000000e+00') &&
+std.assertEqual(std.format('%e', [3.94066e-324]), '5.000000e-324') &&
 std.assertEqual(std.format('%.0le', [910]), '9e+02') &&
 std.assertEqual(std.format('%.0le', [0]), '0e+00') &&
 std.assertEqual(std.format('%#e', [-910]), '-9.100000e+02') &&

@@ -546,7 +546,12 @@ limitations under the License.
       local exponent = if n__ == 0 then 0 else std.floor(std.log(std.abs(n__)) / std.log(10));
       local suff = (if caps then 'E' else 'e')
                    + render_int(exponent, 3, 0, false, true, 10, '');
-      local mantissa = n__ / std.pow(10, exponent);
+      local mantissa = if exponent == -324 then
+        // Avoid a rounding error where std.pow(10, -324) is 0
+        // -324 is the smallest exponent possible.
+        n__ * 10 / std.pow(10, exponent + 1)
+      else
+        n__ / std.pow(10, exponent);
       local zp2 = zero_pad - std.length(suff);
       render_float_dec(mantissa, zp2, blank, sign, ensure_pt, trailing, prec) + suff;
 
