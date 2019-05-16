@@ -47,3 +47,5 @@ Testing/
 ^Makefile/
 
 **/.DS_Store
+
+.vscode
