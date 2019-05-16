@@ -5,6 +5,7 @@ include(GNUInstallDirs)
 
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
+option(BUILD_JSONNETFMT "Build jsonnetfmt command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING

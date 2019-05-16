@@ -21,6 +21,7 @@ FAILED=0
 
 
 JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
+JSONNETFMT_BIN="${JSONNETFMT_BIN:-../jsonnetfmt}"
 
 # Used to account for known differences in the two implementations.
 IMPLEMENTATION="${IMPLEMENTATION:-cpp}"
@@ -53,10 +54,11 @@ check_file() {
     fi
 }
 
-do_test() {
-    TEST="$1"
-    EXPECTED_EXIT_CODE="$2"
-    shift 2
+do_test_aux() {
+    BINARY="$1"
+    TEST="$2"
+    EXPECTED_EXIT_CODE="$3"
+    shift 3
 
     STDIN="${TEST}.stdin"
     GOLDEN_STDOUT="${TEST}.golden.stdout"
@@ -87,7 +89,7 @@ do_test() {
 
 
     mkdir -p "${OUT_DIR}"
-    "${JSONNET_BIN}" "$@" >"${STDOUT}" 2>"${OUT_DIR}/stderr" <"${STDIN}"
+    "${BINARY}" "$@" >"${STDOUT}" 2>"${OUT_DIR}/stderr" <"${STDIN}"
     TEST_EXIT_CODE="$?"
     EXECUTED=$((EXECUTED + 1))
 
@@ -112,4 +114,20 @@ do_test() {
     if ! check_file "${TEST}" "${STDERR}" "${GOLDEN_STDERR}"; then
         return 1
     fi
+}
+
+do_test() {
+    TEST="$1"
+    EXPECTED_EXIT_CODE="$2"
+    shift 2
+    do_test_aux "${JSONNET_BIN}" "$TEST" "$EXPECTED_EXIT_CODE" "$@"
+    return $?
+}
+
+do_fmt_test() {
+    TEST="$1"
+    EXPECTED_EXIT_CODE="$2"
+    shift 2
+    do_test_aux "${JSONNETFMT_BIN}" "$TEST" "$EXPECTED_EXIT_CODE" "$@"
+    return $?
 }

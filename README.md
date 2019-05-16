@@ -33,6 +33,12 @@ To run the output binary, run:
 ./jsonnet
 ```
 
+To run the reformatter, run:
+
+```
+./jsonnetfmt
+```
+
 ### Bazel
 
 Bazel builds are also supported.
@@ -40,24 +46,25 @@ Install [Bazel](https://www.bazel.io/versions/master/docs/install.html) if it is
 not installed already. Then, run the following command to build with GCC:
 
 ```
-bazel build -c opt //cmd:jsonnet
+bazel build -c opt //cmd:all
 ```
 
 To build with Clang, use one of these two options:
 
 ```
-env CC=clang CXX=clang++ bazel build -c opt //cmd:jsonnet
+env CC=clang CXX=clang++ bazel build -c opt //cmd:all
 
 # OR
 
-bazel build -c opt --action_env=CC=clang --action_env=CXX=clang++ //cmd:jsonnet
+bazel build -c opt --action_env=CC=clang --action_env=CXX=clang++ //cmd:all
 ```
 
-This builds the `jsonnet` target defined in [`cmd/BUILD`](./cmd/BUILD). To
-launch the output binary, run:
+This builds the `jsonnet` and `jsonnetfmt` targets defined in [`cmd/BUILD`](./cmd/BUILD). To launch
+the output binaries, run:
 
 ```
 bazel-bin/cmd/jsonnet
+bazel-bin/cmd/jsonnetfmt
 ```
 
 

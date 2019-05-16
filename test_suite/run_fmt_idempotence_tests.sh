@@ -45,11 +45,11 @@ for TEST in *.jsonnet ../examples/*.jsonnet ../examples/terraform/*.jsonnet ../b
     fi
 
     EXPECTED_EXIT_CODE=0
-    JSONNET_CMD="$VALGRIND "$JSONNET_BIN" fmt"
-    test_eval "$JSONNET_CMD" "$FMT_FILE" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
+    JSONNETFMT_CMD="$VALGRIND "$JSONNETFMT_BIN""
+    test_eval "$JSONNETFMT_CMD" "$FMT_FILE" "$EXPECTED_EXIT_CODE" "$GOLDEN_OUTPUT" "$GOLDEN_KIND"
 
     # when we're at it, let's test --test (on the same file)
-    test_eval "$JSONNET_CMD --test" "$FMT_FILE" "$EXPECTED_EXIT_CODE" "" "$GOLDEN_KIND"
+    test_eval "$JSONNETFMT_CMD --test" "$FMT_FILE" "$EXPECTED_EXIT_CODE" "" "$GOLDEN_KIND"
 done
 
 if [ $FAILED -eq 0 ] ; then
