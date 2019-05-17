@@ -109,6 +109,8 @@ do_test "jsonnet_path1" 0 -e 'importstr "shared.txt"'
 export JSONNET_PATH=lib2:lib1
 do_test "jsonnet_path2" 0 -e 'importstr "shared.txt"'
 
+if [ -z "$DISABLE_FMT_TESTS" ]; then
+
 do_fmt_test "fmt_no_args" 1
 do_fmt_test "fmt_help" 0 --help
 do_fmt_test "fmt_version1" 0 -v
@@ -126,6 +128,8 @@ if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/fmt_out/custom_outp
     check_file "fmt_out" "out/fmt_out/custom_output" "fmt_out.golden.custom_output"
 fi
 do_fmt_test "fmt_double_dash" 0 -e -- -1
+
+fi
 
 
 popd
