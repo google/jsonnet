@@ -34,7 +34,7 @@ CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
 MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5 -Ithird_party/json
 EMCXXFLAGS = $(CXXFLAGS) -g0 -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000 -s RESERVED_FUNCTION_POINTERS=20 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
-LDFLAGS ?=
+LDFLAGS ?= -lre2
 
 SHARED_LDFLAGS ?= -shared
 
@@ -121,11 +121,11 @@ core/desugarer.cpp: core/std.jsonnet.h
 
 # Commandline executable.
 jsonnet: cmd/jsonnet.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+	$(CXX) $(CXXFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@ $(LDFLAGS)
 
 # Commandline executable (reformatter).
 jsonnetfmt: cmd/jsonnetfmt.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+	$(CXX) $(CXXFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@ $(LDFLAGS)
 
 # C binding.
 libjsonnet.so: $(LIB_OBJ)

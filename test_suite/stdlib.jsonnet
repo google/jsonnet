@@ -925,4 +925,74 @@ std.assertEqual(std.decodeUTF8([65 + 1 - 1]), 'A') &&
 std.assertEqual(std.decodeUTF8([90, 97, 197, 188, 195, 179, 197, 130, 196, 135, 32, 103, 196, 153, 197, 155, 108, 196, 133, 32, 106, 97, 197, 186, 197, 132]), 'Zażółć gęślą jaźń') &&
 std.assertEqual(std.decodeUTF8([240, 159, 152, 131]), '😃') &&
 
+std.assertEqual(std.regexFullMatch(@'e', 'hello'), null) &&
+
+std.assertEqual(
+  std.regexFullMatch(@'h.*o', 'hello'),
+  {
+    string: 'hello',
+    captures: [],
+    namedCaptures: {},
+  }
+) &&
+
+std.assertEqual(
+  std.regexFullMatch(@'h(.*)o', 'hello'),
+  {
+    string: 'hello',
+    captures: ['ell'],
+    namedCaptures: {},
+  }
+) &&
+
+std.assertEqual(
+  std.regexFullMatch(@'h(?P<mid>.*)o', 'hello'),
+  {
+    string: 'hello',
+    captures: ['ell'],
+    namedCaptures: {
+      mid: 'ell',
+    },
+  }
+) &&
+
+std.assertEqual(std.regexPartialMatch(@'world', 'hello'), null) &&
+
+std.assertEqual(
+  std.regexPartialMatch(@'e', 'hello'),
+  {
+    string: 'hello',
+    captures: [],
+    namedCaptures: {},
+  }
+) &&
+
+std.assertEqual(
+  std.regexPartialMatch(@'e(.*)o', 'hello'),
+  {
+    string: 'hello',
+    captures: ['ll'],
+    namedCaptures: {},
+  }
+) &&
+
+std.assertEqual(
+  std.regexPartialMatch(@'e(?P<mid>.*)o', 'hello'),
+  {
+    string: 'hello',
+    captures: ['ll'],
+    namedCaptures: {
+      mid: 'll',
+    },
+  }
+) &&
+
+std.assertEqual(std.regexQuoteMeta(@'1.5-2.0?'), '1\\.5\\-2\\.0\\?') &&
+
+std.assertEqual(std.regexReplace('wishyfishyisishy', @'ish', 'and'), 'wandyfishyisishy') &&
+std.assertEqual(std.regexReplace('yabba dabba doo', @'b+', 'd'), 'yada dabba doo') &&
+
+std.assertEqual(std.regexGlobalReplace('wishyfishyisishy', @'ish', 'and'), 'wandyfandyisandy') &&
+std.assertEqual(std.regexGlobalReplace('yabba dabba doo', @'b+', 'd'), 'yada dada doo') &&
+
 true
