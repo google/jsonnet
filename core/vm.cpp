@@ -28,6 +28,7 @@ limitations under the License.
 #include "parser.h"
 #include "ryml_std.hpp" // include this before any other ryml header
 #include "ryml.hpp"
+#include "re2/re2.h"
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"
@@ -48,6 +49,10 @@ limitations under the License.
 using json = nlohmann::json;
 
 namespace {
+
+static const Fodder EF;  // Empty fodder.
+
+static const LocationRange E;  // Empty.
 
 /** Turn a path e.g. "/a/b/c" into a dir, e.g. "/a/b/".  If there is no path returns "".
  */
@@ -938,6 +943,11 @@ class Interpreter {
         builtins["parseYaml"] = &Interpreter::builtinParseYaml;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
+        builtins["regexFullMatch"] = &Interpreter::builtinRegexFullMatch;
+        builtins["regexPartialMatch"] = &Interpreter::builtinRegexPartialMatch;
+        builtins["regexQuoteMeta"] = &Interpreter::builtinRegexQuoteMeta;
+        builtins["regexReplace"] = &Interpreter::builtinRegexReplace;
+        builtins["regexGlobalReplace"] = &Interpreter::builtinRegexGlobalReplace;
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
@@ -1438,6 +1448,129 @@ class Interpreter {
         f.bytes.clear();
         f.elementId = 0;
         return decodeUTF8();
+    }
+
+    const AST *regexMatch(const std::string &pattern, const std::string &string, bool full)
+    {
+        RE2 re(pattern, RE2::CannedOptions::Quiet);
+        if (!re.ok()) {
+            std::stringstream ss;
+            ss << "Invalid regex '" << re.pattern() << "': " << re.error();
+            throw makeError(stack.top().location, ss.str());
+        }
+
+        int num_groups = re.NumberOfCapturingGroups();
+
+        std::vector<std::string> rcaptures(num_groups);
+        std::vector<RE2::Arg> rargv(num_groups);
+        std::vector<const RE2::Arg*> rargs(num_groups);
+        for (int i = 0; i < num_groups; ++i) {
+            rargs[i] = &rargv[i];
+            rargv[i] = &rcaptures[i];
+        }
+
+        if (full ? RE2::FullMatchN(string, re, rargs.data(), num_groups)
+                 : RE2::PartialMatchN(string, re, rargs.data(), num_groups)) {
+            std::map<const Identifier *, HeapSimpleObject::Field> fields;
+
+            const Identifier *fid = alloc->makeIdentifier(U"string");
+            fields[fid].hide = ObjectField::VISIBLE;
+            fields[fid].body = alloc->make<LiteralString>(E, EF, decode_utf8(string), LiteralString::DOUBLE, "", "");
+
+            fid = alloc->makeIdentifier(U"captures");
+            fields[fid].hide = ObjectField::VISIBLE;
+            std::vector<Array::Element> captures;
+            for (int i = 0; i < num_groups; ++i) {
+                captures.push_back(Array::Element(
+                    alloc->make<LiteralString>(E, EF, decode_utf8(rcaptures[i]), LiteralString::DOUBLE, "", ""),
+                    EF));
+            }
+            fields[fid].body = alloc->make<Array>(E, EF, captures, false, EF);
+
+            fid = alloc->makeIdentifier(U"namedCaptures");
+            fields[fid].hide = ObjectField::VISIBLE;
+            DesugaredObject::Fields named_captures;
+            const std::map<std::string, int> &named_groups = re.NamedCapturingGroups();
+            for (auto it = named_groups.cbegin(); it != named_groups.cend(); ++it) {
+                named_captures.push_back(DesugaredObject::Field(
+                    ObjectField::VISIBLE,
+                    alloc->make<LiteralString>(E, EF, decode_utf8(it->first), LiteralString::DOUBLE, "", ""),
+                    alloc->make<LiteralString>(E, EF, decode_utf8(rcaptures[it->second-1]), LiteralString::DOUBLE, "", "")));
+            }
+            fields[fid].body = alloc->make<DesugaredObject>(E, ASTs{}, named_captures);
+
+            scratch = makeObject<HeapSimpleObject>(BindingFrame{}, fields, ASTs{});
+        } else {
+            scratch = makeNull();
+        }
+        return nullptr;
+    }
+
+    const AST *builtinRegexFullMatch(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "regexFullMatch", args, {Value::STRING, Value::STRING});
+
+        std::string pattern = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::string string = encode_utf8(static_cast<HeapString *>(args[1].v.h)->value);
+
+        return regexMatch(pattern, string, true);
+    }
+
+    const AST *builtinRegexPartialMatch(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "regexPartialMatch", args, {Value::STRING, Value::STRING});
+
+        std::string pattern = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::string string = encode_utf8(static_cast<HeapString *>(args[1].v.h)->value);
+
+        return regexMatch(pattern, string, false);
+    }
+
+    const AST *builtinRegexQuoteMeta(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "regexQuoteMeta", args, {Value::STRING});
+        scratch = makeString(decode_utf8(RE2::QuoteMeta(encode_utf8(static_cast<HeapString *>(args[0].v.h)->value))));
+        return nullptr;
+    }
+
+    const AST *builtinRegexReplace(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "regexReplace", args, {Value::STRING, Value::STRING, Value::STRING});
+
+        std::string string = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::string pattern = encode_utf8(static_cast<HeapString *>(args[1].v.h)->value);
+        std::string replace = encode_utf8(static_cast<HeapString *>(args[2].v.h)->value);
+
+        RE2 re(pattern, RE2::CannedOptions::Quiet);
+        if(!re.ok()) {
+            std::stringstream ss;
+            ss << "Invalid regex '" << re.pattern() << "': " << re.error();
+            throw makeError(stack.top().location, ss.str());
+        }
+
+        RE2::Replace(&string, re, replace);
+        scratch = makeString(decode_utf8(string));
+        return nullptr;
+    }
+
+    const AST *builtinRegexGlobalReplace(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "regexGlobalReplace", args, {Value::STRING, Value::STRING, Value::STRING});
+
+        std::string string = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        std::string pattern = encode_utf8(static_cast<HeapString *>(args[1].v.h)->value);
+        std::string replace = encode_utf8(static_cast<HeapString *>(args[2].v.h)->value);
+
+        RE2 re(pattern, RE2::CannedOptions::Quiet);
+        if(!re.ok()) {
+            std::stringstream ss;
+            ss << "Invalid regex '" << re.pattern() << "': " << re.error();
+            throw makeError(stack.top().location, ss.str());
+        }
+
+        RE2::GlobalReplace(&string, re, replace);
+        scratch = makeString(decode_utf8(string));
+        return nullptr;
     }
 
     const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)

@@ -37,6 +37,7 @@ cc_library(
         "//third_party/json",
         "//third_party/md5:libmd5",
         "//third_party/rapidyaml:ryml",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
 
