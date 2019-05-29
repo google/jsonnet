@@ -29,9 +29,11 @@ OD ?= od
 
 OPT ?= -O3
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -Iinclude -Ithird_party/md5 -Ithird_party/json
-CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC -Iinclude
-MAKEDEPENDFLAGS ?= -Iinclude -Ithird_party/md5 -Ithird_party/json
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC
+CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
+CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
+CFLAGS += -Iinclude
+MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
 EMCXXFLAGS = $(CXXFLAGS) -g0 -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s OUTLINING_LIMIT=10000 -s RESERVED_FUNCTION_POINTERS=20 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 LDFLAGS ?=
