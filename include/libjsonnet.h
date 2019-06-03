@@ -24,7 +24,7 @@ limitations under the License.
  * of using the library.
  */
 
-#define LIB_JSONNET_VERSION "v0.12.1"
+#define LIB_JSONNET_VERSION "v0.13.0"
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
  * http://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between
