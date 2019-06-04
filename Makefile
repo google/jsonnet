@@ -40,6 +40,9 @@ LDFLAGS ?=
 
 SHARED_LDFLAGS ?= -shared
 
+VERSION = 0.13.0
+SOVERSION = 0
+
 ################################################################################
 # End of user-servicable parts
 ################################################################################
@@ -67,7 +70,11 @@ ALL = \
 	jsonnet \
 	jsonnetfmt \
 	libjsonnet.so \
+	libjsonnet.so.$(SOVERSION) \
+	libjsonnet.so.$(VERSION) \
 	libjsonnet++.so \
+	libjsonnet++.so.$(SOVERSION) \
+	libjsonnet++.so.$(VERSION) \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
 	libjsonnet.js \
@@ -91,6 +98,11 @@ ALL_HEADERS = \
 	include/libjsonnet++.h \
 	third_party/md5/md5.h \
 	third_party/json/json.hpp
+
+SONAME = -soname
+ifeq ($(shell uname -s),Darwin)
+	SONAME = -install_name
+endif
 
 default: jsonnet jsonnetfmt
 
@@ -130,11 +142,17 @@ jsonnetfmt: cmd/jsonnetfmt.cpp cmd/utils.cpp $(LIB_OBJ)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
 
 # C binding.
-libjsonnet.so: $(LIB_OBJ)
-	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -o $@
+libjsonnet.so.$(VERSION): $(LIB_OBJ)
+	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME),libjsonnet.so.$(SOVERSION) -o $@
 
-libjsonnet++.so: $(LIB_CPP_OBJ)
-	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -o $@
+libjsonnet++.so.$(VERSION): $(LIB_CPP_OBJ)
+	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME),libjsonnet++.so.$(SOVERSION) -o $@
+
+%.so.$(SOVERSION): %.so.$(VERSION)
+	ln -s $< $@
+
+%.so: %.so.$(SOVERSION)
+	ln -s $< $@
 
 # JavaScript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_fmt_snippet", "_jsonnet_ext_var", "_jsonnet_ext_code", "_jsonnet_tla_var", "_jsonnet_tla_code", "_jsonnet_realloc", "_jsonnet_destroy", "_jsonnet_import_callback"]'
