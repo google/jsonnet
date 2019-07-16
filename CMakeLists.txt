@@ -95,7 +95,8 @@ include_directories(
     include
     third_party/md5
     third_party/json
-    core)
+    core
+    cpp)
 
 if (BUILD_TESTS)
     # Set JSONNET_BIN variable required for regression tests.
@@ -106,6 +107,7 @@ add_subdirectory(include)
 add_subdirectory(stdlib)
 add_subdirectory(third_party/md5)
 add_subdirectory(core)
+add_subdirectory(cpp)
 add_subdirectory(cmd)
 add_subdirectory(test_suite)
 
