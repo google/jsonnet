@@ -14,5 +14,6 @@ FROM alpine:latest
 RUN apk add --no-cache libstdc++ 
 
 COPY --from=builder /opt/jsonnet/jsonnet /usr/local/bin
+COPY --from=builder /opt/jsonnet/jsonnetfmt /usr/local/bin
 
 ENTRYPOINT ["/usr/local/bin/jsonnet"]

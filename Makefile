@@ -29,6 +29,8 @@ OD ?= od
 
 OPT ?= -O3
 
+PREFIX ?= /usr/local
+
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC
 CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
@@ -66,20 +68,32 @@ LIB_CPP_SRC = \
 
 LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cpp=.o)
 
-ALL = \
+BINS = \
 	jsonnet \
-	jsonnetfmt \
+	jsonnetfmt
+
+LIBS = \
 	libjsonnet.so \
 	libjsonnet.so.$(SOVERSION) \
 	libjsonnet.so.$(VERSION) \
 	libjsonnet++.so \
 	libjsonnet++.so.$(SOVERSION) \
 	libjsonnet++.so.$(VERSION) \
+
+ALL = \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
 	libjsonnet.js \
 	doc/js/libjsonnet.js \
+	$(BINS) \
+	$(LIBS) \
 	$(LIB_OBJ)
+
+# public headers
+INCS = \
+	include/libjsonnet.h \
+	include/libjsonnet_fmt.h \
+	include/libjsonnet++.h
 
 ALL_HEADERS = \
 	core/ast.h \
@@ -93,11 +107,15 @@ ALL_HEADERS = \
 	core/string_utils.h \
 	core/vm.h \
 	core/std.jsonnet.h \
-	include/libjsonnet.h \
-	include/libjsonnet_fmt.h \
-	include/libjsonnet++.h \
 	third_party/md5/md5.h \
-	third_party/json/json.hpp
+	third_party/json/json.hpp \
+	$(INCS)
+
+
+default: $(LIBS) $(BINS)
+
+bins: jsonnet jsonnetfmt
+libs: libjsonnet.so libjsonnet++.so
 
 SONAME = -soname
 ifeq ($(shell uname -s),Darwin)
@@ -105,6 +123,14 @@ ifeq ($(shell uname -s),Darwin)
 endif
 
 default: jsonnet jsonnetfmt
+
+install: bins libs
+	mkdir -p $(PREFIX)/bin
+	cp $(BINS) $(PREFIX)/bin/
+	mkdir -p $(PREFIX)/lib
+	cp $(LIBS) $(PREFIX)/lib/
+	mkdir -p $(PREFIX)/include
+	cp $(INCS) $(PREFIX)/include/
 
 all: $(ALL)
 
