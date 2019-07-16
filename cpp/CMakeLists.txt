@@ -28,7 +28,7 @@ add_library(libjsonnet++_static STATIC ${LIBJSONNETPP_SOURCE})
 add_dependencies(libjsonnet++_static jsonnet)
 target_link_libraries(libjsonnet++_static libjsonnet_static)
 set_target_properties(libjsonnet++_static PROPERTIES OUTPUT_NAME jsonnet++)
-install(TARGETS libjsonnet_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+install(TARGETS libjsonnet++_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
 # Tests
 function(add_test_executablepp test_name)
