@@ -728,6 +728,7 @@ class Desugarer {
                 } break;
 
                 case BOP_MANIFEST_UNEQUAL: invert = true;
+                /* fallthrough */
                 case BOP_MANIFEST_EQUAL: {
                     ast_ = equals(ast->location, ast->left, ast->right);
                     if (invert)
