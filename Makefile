@@ -175,10 +175,10 @@ libjsonnet++.so.$(VERSION): $(LIB_CPP_OBJ)
 	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME),libjsonnet++.so.$(SOVERSION) -o $@
 
 %.so.$(SOVERSION): %.so.$(VERSION)
-	ln -s $< $@
+	ln -sf $< $@
 
 %.so: %.so.$(SOVERSION)
-	ln -s $< $@
+	ln -sf $< $@
 
 # JavaScript build of C binding
 JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_fmt_snippet", "_jsonnet_ext_var", "_jsonnet_ext_code", "_jsonnet_tla_var", "_jsonnet_tla_code", "_jsonnet_realloc", "_jsonnet_destroy", "_jsonnet_import_callback"]'
