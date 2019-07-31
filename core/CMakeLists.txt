@@ -32,10 +32,16 @@ add_library(libjsonnet SHARED ${LIBJSONNET_HEADERS} ${LIBJSONNET_SOURCE})
 add_dependencies(libjsonnet md5 stdlib)
 target_link_libraries(libjsonnet md5)
 
+file(STRINGS ${CMAKE_SOURCE_DIR}/include/libjsonnet.h JSONNET_VERSION_DEF
+     REGEX "[#]define[ \t]+LIB_JSONNET_VERSION[ \t]+")
+string(REGEX REPLACE ".*\"v([^\"]+)\".*" "\\1" JSONNET_VERSION ${JSONNET_VERSION_DEF})
+message("Extracted Jsonnet version: " ${JSONNET_VERSION})
+
+
 # CMake prepends CMAKE_SHARED_LIBRARY_PREFIX to shared libraries, so without
 # this step the output would be |liblibjsonnet|.
 set_target_properties(libjsonnet PROPERTIES OUTPUT_NAME jsonnet
-	VERSION     "0.13.0"
+	VERSION     "${JSONNET_VERSION}"
 	SOVERSION   "0"
 	PUBLIC_HEADER "${LIB_HEADER}")
 install(TARGETS libjsonnet

@@ -24,6 +24,13 @@ limitations under the License.
  * of using the library.
  */
 
+/** The version string of th Jsonnet interpreter.
+ *
+ * This is currently grepped out of this file by setup.py, Makefile, and CMakeLists.txt so be aware
+ * of that when making changes.
+ *
+ * If this isn't the sae as jsonnet_version() then you've got a mismatched binary / header.
+ */
 #define LIB_JSONNET_VERSION "v0.13.0"
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
