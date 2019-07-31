@@ -42,7 +42,7 @@ LDFLAGS ?=
 
 SHARED_LDFLAGS ?= -shared
 
-VERSION = 0.13.0
+VERSION := $(shell grep '\#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
 SOVERSION = 0
 
 ################################################################################
@@ -149,7 +149,7 @@ MAKEDEPEND_SRCS = \
 	core/libjsonnet_test_snippet.c \
 	core/libjsonnet_test_file.c
 
-depend:
+depend: core/std.jsonnet.h
 	rm -f Makefile.depend
 	for FILE in $(LIB_SRC) $(MAKEDEPEND_SRCS) ; do $(CXX) -MM $(CXXFLAGS) $$FILE -MT $$(dirname $$FILE)/$$(basename $$FILE .cpp).o >> Makefile.depend ; done
 
@@ -219,7 +219,7 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 	echo >> $@
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.*
 
 -include Makefile.depend
 
