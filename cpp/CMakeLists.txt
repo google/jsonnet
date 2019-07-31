@@ -46,6 +46,6 @@ endfunction()
 
 if (BUILD_TESTS)
     add_test_executablepp(libjsonnet++_test)
-    add_test(libjsonnet++_test ${GLOBAL_OUTPUT_PATH}/libjsonnet++_test)
-
+    # Run this in the source tree because it needs to access testdata files.
+    add_test(NAME libjsonnet++_test COMMAND ${GLOBAL_OUTPUT_PATH}/libjsonnet++_test WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endif()

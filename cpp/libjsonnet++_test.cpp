@@ -26,6 +26,10 @@ namespace jsonnet {
 std::string readFile(const std::string& filename)
 {
     std::ifstream in(filename);
+    if (!in.good()){
+        ADD_FAILURE() << "Could not open: " << filename;
+        return "";
+    }
     return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
