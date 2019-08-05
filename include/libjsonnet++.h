@@ -65,6 +65,16 @@ class Jsonnet {
     /// Add to the default import callback's library search path.
     void addImportPath(const std::string& path);
 
+    /// Bind a string top-level argument for a top-level parameter.
+    ///
+    /// Argument values are copied so memory should be managed by caller.
+    void bindTlaVar(const std::string& key, const std::string& value);
+
+    /// Bind a code top-level argument for a top-level parameter.
+    ///
+    /// Argument values are copied so memory should be managed by caller.
+    void bindTlaCodeVar(const std::string& key, const std::string& value);
+
     /// Bind a Jsonnet external variable to the given value.
     ///
     /// Argument values are copied so memory should be managed by caller.

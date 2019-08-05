@@ -68,6 +68,16 @@ void Jsonnet::setMaxTrace(uint32_t lines)
     ::jsonnet_max_trace(vm_, static_cast<unsigned>(lines));
 }
 
+void Jsonnet::bindTlaVar(const std::string& key, const std::string& value)
+{
+    ::jsonnet_tla_var(vm_, key.c_str(), value.c_str());
+}
+
+void Jsonnet::bindTlaCodeVar(const std::string& key, const std::string& value)
+{
+    ::jsonnet_tla_code(vm_, key.c_str(), value.c_str());
+}
+
 void Jsonnet::bindExtVar(const std::string& key, const std::string& value)
 {
     ::jsonnet_ext_var(vm_, key.c_str(), value.c_str());
