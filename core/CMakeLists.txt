@@ -1,6 +1,6 @@
 # libjsonnet
 
-# Remember to update Bazel and Makefile builds when updating this list! 
+# Remember to update Bazel and Makefile builds when updating this list!
 set(LIBJSONNET_HEADERS
     ast.h
     desugarer.h
@@ -66,9 +66,9 @@ function(add_test_executable test_name)
     endif()
     add_executable(${test_name} ${test_name}.${TEST_EXT})
 
-    add_dependencies(${test_name} libjsonnet_static gtest_main)
+    add_dependencies(${test_name} libjsonnet_static GTest::Main)
     target_link_libraries(
-        ${test_name} gtest gtest_main libjsonnet_static)
+        ${test_name} GTest::GTest GTest::Main libjsonnet_static)
 endfunction()
 
 if (BUILD_TESTS)

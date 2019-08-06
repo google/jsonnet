@@ -70,9 +70,13 @@ if (BUILD_TESTS AND NOT USE_SYSTEM_GTEST)
     # Include googletest headers.
     include_directories("${gtest_SOURCE_DIR}/include")
 
+	# Alias the targets to their namespaced versions.
+	add_library(GTest::GTest ALIAS gtest)
+	add_library(GTest::Main ALIAS gtest_main)
+
 elseif (BUILD_TESTS AND USE_SYSTEM_GTEST)
 	enable_testing()
-	add_subdirectory(/usr/src/googletest ${GLOBAL_OUTPUT_PATH}/googletest-build)
+	find_package(GTest REQUIRED)
 endif()
 
 # Compiler flags.

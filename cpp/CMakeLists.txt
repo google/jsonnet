@@ -39,9 +39,9 @@ function(add_test_executablepp test_name)
     endif()
     add_executable(${test_name} ${test_name}.${TEST_EXT})
 
-    add_dependencies(${test_name} libjsonnet++_static jsonnet gtest_main)
+    add_dependencies(${test_name} libjsonnet++_static jsonnet GTest::Main)
     target_link_libraries(
-        ${test_name} gtest gtest_main libjsonnet++_static libjsonnet_static)
+        ${test_name} GTest::GTest GTest::Main libjsonnet++_static libjsonnet_static)
 endfunction()
 
 if (BUILD_TESTS)
