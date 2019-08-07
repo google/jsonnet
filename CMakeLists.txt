@@ -29,8 +29,50 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 
+# Include external RE2 project. This runs a CMake sub-script
+# (RE2CMakeLists.txt.in) that downloads googletest source. It's then built as part
+# of the jsonnet project. The conventional way of handling CMake dependencies is
+# to use a find_package script, which finds and installs the library from
+# known locations on the local machine. Downloading the library ourselves
+# allows us to pin to a specific version and makes things easier for users
+# who don't have package managers.
+
+# Generate and download RE2 project.
+set(RE2_DIR ${GLOBAL_OUTPUT_PATH}/re2-download)
+configure_file(RE2CMakeLists.txt.in ${RE2_DIR}/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${RE2_DIR}
+)
+if(result)
+    message(FATAL_ERROR "RE2 download failed: ${result}")
+endif()
+
+# Build RE2.
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${RE2_DIR})
+if(result)
+    message(FATAL_ERROR "Build step for re2 failed: ${result}")
+endif()
+
+# Add RE2 directly to our build. This defines
+# the re2 target.
+add_subdirectory(${GLOBAL_OUTPUT_PATH}/re2-src
+                 ${GLOBAL_OUTPUT_PATH}/re2-build)
+
+# Include RE2 headers.
+include_directories("${RE2_SOURCE_DIR}/include")
+
+# Allow linking into a shared library.
+set_property(TARGET re2 PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# RE2 requires pthreads
+set_property(TARGET re2 PROPERTY INTERFACE_COMPILE_OPTIONS $<${UNIX}:-pthread>)
+set_property(TARGET re2 PROPERTY INTERFACE_LINK_LIBRARIES $<${UNIX}:-pthread>)
+
 # Include external googletest project. This runs a CMake sub-script
-# (CMakeLists.txt.in) that downloads googletest source. It's then built as part
+# (GoogleTestCMakeLists.txt.in) that downloads googletest source. It's then built as part
 # of the jsonnet project. The conventional way of handling CMake dependencies is
 # to use a find_package script, which finds and installs the library from
 # known locations on the local machine. Downloading the library ourselves
@@ -41,7 +83,7 @@ if (BUILD_TESTS AND NOT USE_SYSTEM_GTEST)
 
     # Generate and download googletest project.
     set(GOOGLETEST_DIR ${GLOBAL_OUTPUT_PATH}/googletest-download)
-    configure_file(CMakeLists.txt.in ${GOOGLETEST_DIR}/CMakeLists.txt)
+    configure_file(GoogleTestCMakeLists.txt.in ${GOOGLETEST_DIR}/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
             RESULT_VARIABLE result
             WORKING_DIRECTORY ${GOOGLETEST_DIR}

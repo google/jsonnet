@@ -34,7 +34,7 @@ struct BuiltinDecl {
     std::vector<UString> params;
 };
 
-static unsigned long max_builtin = 37;
+static unsigned long max_builtin = 42;
 BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
 {
     switch (builtin) {
@@ -76,6 +76,11 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 35: return {U"parseJson", {U"str"}};
         case 36: return {U"encodeUTF8", {U"str"}};
         case 37: return {U"decodeUTF8", {U"arr"}};
+        case 38: return {U"regexFullMatch", {U"pattern", U"str"}};
+        case 39: return {U"regexPartialMatch", {U"pattern", U"str"}};
+        case 40: return {U"regexQuoteMeta", {U"str"}};
+        case 41: return {U"regexReplace", {U"str", U"pattern", U"to"}};
+        case 42: return {U"regexGlobalReplace", {U"str", U"pattern", U"to"}};
         default:
             std::cerr << "INTERNAL ERROR: Unrecognized builtin function: " << builtin << std::endl;
             std::abort();

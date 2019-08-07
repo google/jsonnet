@@ -7,6 +7,7 @@ matrix:
         apt:
           packages:
             - g++-4.9
+            - libre2-dev
           sources: &sources
             - llvm-toolchain-precise-3.8
             - ubuntu-toolchain-r-test
@@ -16,6 +17,7 @@ matrix:
         apt:
           packages:
             - clang-3.8
+            - libre2-dev
           sources: *sources
     - os: osx
       osx_image: xcode8

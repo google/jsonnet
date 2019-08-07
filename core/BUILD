@@ -36,6 +36,7 @@ cc_library(
         "//stdlib:std",
         "//third_party/json",
         "//third_party/md5:libmd5",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
 
