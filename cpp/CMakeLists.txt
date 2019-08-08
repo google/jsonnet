@@ -23,14 +23,16 @@ install(TARGETS libjsonnet++
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-# Static library for jsonnet command-line tool.
-add_library(libjsonnet++_static STATIC ${LIBJSONNETPP_SOURCE})
-add_dependencies(libjsonnet++_static jsonnet)
-target_link_libraries(libjsonnet++_static libjsonnet_static)
-set_target_properties(libjsonnet++_static PROPERTIES OUTPUT_NAME jsonnet++)
-install(TARGETS libjsonnet++_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+if (BUILD_STATIC_LIBS)
+    # Static library for jsonnet command-line tool.
+    add_library(libjsonnet++_static STATIC ${LIBJSONNETPP_SOURCE})
+    add_dependencies(libjsonnet++_static jsonnet)
+    target_link_libraries(libjsonnet++_static libjsonnet_static)
+    set_target_properties(libjsonnet++_static PROPERTIES OUTPUT_NAME jsonnet++)
+    install(TARGETS libjsonnet++_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+endif()
 
-if (BUILD_SHARED_BINARIES)
+if (BUILD_SHARED_BINARIES OR NOT BUILD_STATIC_LIBS)
     add_library(libjsonnet++_for_binaries ALIAS libjsonnet++)
 else()
     add_library(libjsonnet++_for_binaries ALIAS libjsonnet++_static)
