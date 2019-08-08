@@ -1,5 +1,7 @@
 # Travis CI runs CMake 2.8.7 so we are pinned to that verison.
 cmake_minimum_required(VERSION 2.8.7)
+project(jsonnet C CXX)
+
 include(ExternalProject)
 include(GNUInstallDirs)
 
@@ -10,8 +12,6 @@ option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
     "Output artifacts directory.")
-
-project(jsonnet C CXX)
 
 # Discourage in-source builds because they overwrite the hand-written Makefile.
 # Use `cmake . -B<dir>` or the CMake GUI to do an out-of-source build.
