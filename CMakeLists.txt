@@ -9,6 +9,7 @@ include(GNUInstallDirs)
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_JSONNETFMT "Build jsonnetfmt command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
+option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of the static one." OFF)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
