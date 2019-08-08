@@ -10,6 +10,7 @@ option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_JSONNETFMT "Build jsonnetfmt command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
+option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
     "Output artifacts directory.")
 
@@ -79,6 +80,12 @@ elseif (BUILD_TESTS AND USE_SYSTEM_GTEST)
 	find_package(GTest REQUIRED)
 endif()
 
+if(USE_SYSTEM_JSON)
+    find_package(nlohmann_json 3.6.1 REQUIRED)
+else()
+    add_subdirectory(third_party/json)
+endif()
+
 # Compiler flags.
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
         ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -98,7 +105,6 @@ link_directories(${GLOBAL_OUTPUT_PATH})
 include_directories(
     include
     third_party/md5
-    third_party/json
     core
     cpp)
 
