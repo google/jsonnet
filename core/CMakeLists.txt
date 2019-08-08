@@ -56,6 +56,12 @@ target_link_libraries(libjsonnet_static md5 nlohmann_json::nlohmann_json)
 set_target_properties(libjsonnet_static PROPERTIES OUTPUT_NAME jsonnet)
 install(TARGETS libjsonnet_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
+if (BUILD_SHARED_BINARIES)
+    add_library(libjsonnet_for_binaries ALIAS libjsonnet)
+else()
+    add_library(libjsonnet_for_binaries ALIAS libjsonnet_static)
+endif()
+
 # Tests
 
 function(add_test_executable test_name)
@@ -66,9 +72,9 @@ function(add_test_executable test_name)
     endif()
     add_executable(${test_name} ${test_name}.${TEST_EXT})
 
-    add_dependencies(${test_name} libjsonnet_static GTest::Main)
+    add_dependencies(${test_name} libjsonnet_for_binaries GTest::Main)
     target_link_libraries(
-        ${test_name} GTest::GTest GTest::Main libjsonnet_static)
+        ${test_name} GTest::GTest GTest::Main libjsonnet_for_binaries)
 endfunction()
 
 if (BUILD_TESTS)

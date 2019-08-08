@@ -30,6 +30,12 @@ target_link_libraries(libjsonnet++_static libjsonnet_static)
 set_target_properties(libjsonnet++_static PROPERTIES OUTPUT_NAME jsonnet++)
 install(TARGETS libjsonnet++_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
+if (BUILD_SHARED_BINARIES)
+    add_library(libjsonnet++_for_binaries ALIAS libjsonnet++)
+else()
+    add_library(libjsonnet++_for_binaries ALIAS libjsonnet++_static)
+endif()
+
 # Tests
 function(add_test_executablepp test_name)
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/${test_name}.cpp)
@@ -39,9 +45,9 @@ function(add_test_executablepp test_name)
     endif()
     add_executable(${test_name} ${test_name}.${TEST_EXT})
 
-    add_dependencies(${test_name} libjsonnet++_static jsonnet GTest::Main)
+    add_dependencies(${test_name} libjsonnet++_for_binaries libjsonnet_for_binaries GTest::Main)
     target_link_libraries(
-        ${test_name} GTest::GTest GTest::Main libjsonnet++_static libjsonnet_static)
+        ${test_name} GTest::GTest GTest::Main libjsonnet++_for_binaries libjsonnet_for_binaries)
 endfunction()
 
 if (BUILD_TESTS)
