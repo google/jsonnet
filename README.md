@@ -7,6 +7,15 @@ For an introduction to Jsonnet and documentation,
 
 Visit our [discussion forum](https://groups.google.com/forum/#!forum/jsonnet).
 
+## Quick Start
+
+**Using Homebrew**  
+
+```
+brew install jsonnet
+```
+
+
 ## Building Jsonnet
 
 You can use either GCC or Clang to build Jsonnet. Note that on recent versions
