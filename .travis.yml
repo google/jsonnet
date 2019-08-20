@@ -1,4 +1,5 @@
 language: generic
+
 matrix:
   include:
     - os: linux
@@ -9,7 +10,7 @@ matrix:
             - g++-4.9
           sources: &sources
             - llvm-toolchain-precise-3.8
-            - ubuntu-toolchain-r-test
+            - ubuntu-toolchain-r-test    
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
       addons:
@@ -23,22 +24,42 @@ matrix:
     - os: osx
       osx_image: xcode8
       env: CC=clang && CXX=clang++
+
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX --version
-before_script:
+
 script:
-#    - rvm get head  # Workaround 'shell_session_update: command not found'
-    - set -e
-    - make test
-    - python setup.py build
-    - python setup.py test
-    # Test CMake build scripts.
-    - cmake . -Bbuild && cmake --build build --target run_tests
+  #    - rvm get head  # Workaround 'shell_session_update: command not found'
+  - set -e
+  - make test
+  - python setup.py build
+  - python setup.py test
+  # Test CMake build scripts.
+  - cmake . -Bbuild && cmake --build build --target run_tests
+  # make a tarfile for the binaries and rename for os and tag
+  - make dist
+  - mv jsonnet-bin.tar.gz jsonnet-bin-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz
+
+deploy:
+  provider: releases
+  api_key: $JSONNET_GITHUB_TOKEN
+  file: jsonnet-bin-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
+    # no point deploying the images built with both compilers
+    condition: $CC =~ gcc
+
 branches:
   only:
     - master
+    # the branch name is the tag name, so having only master means you can't
+    # trigger a build by just push a tag - so add in a regex to match tags that
+    # should trigger. 
+    - /^v.*$/
+
 notifications:
   recipients:
     - sparkprime@gmail.com
