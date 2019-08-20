@@ -40,6 +40,7 @@ EMCXXFLAGS = $(CXXFLAGS) -g0 -Os --memory-init-file 0 -s DISABLE_EXCEPTION_CATCH
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 LDFLAGS ?=
 
+
 SHARED_LDFLAGS ?= -shared
 
 VERSION := $(shell grep '\#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
@@ -218,8 +219,16 @@ core/%.jsonnet.h: stdlib/%.jsonnet
 		| tr "\n" "," ) && echo "0") > $@
 	echo >> $@
 
+
+RELEASE_FILE = jsonnet-bin.tar.gz
+
+$(RELEASE_FILE): bins
+	tar czf $@ $(BINS)
+
+dist: $(RELEASE_FILE)
+
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.*
+	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* $(RELEASE_FILE)
 
 -include Makefile.depend
 
