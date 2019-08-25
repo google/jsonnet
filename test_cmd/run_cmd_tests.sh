@@ -129,6 +129,18 @@ if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/fmt_out/custom_outp
 fi
 do_fmt_test "fmt_double_dash" 0 -e -- -1
 
+if mkdir -p "out/fmt_inplace" && cp "test.jsonnet" "out/fmt_inplace/test.jsonnet"; then
+    # Test jsonnetfmt in-place modifications
+    do_fmt_test "fmt_inplace" 0 -i "out/fmt_inplace/test.jsonnet"
+    check_file "fmt_inplace" "out/fmt_inplace/test.jsonnet" "fmt_simple_out.golden.custom_output"
+    # Verify that running jsonnetfmt on an already formatted file does not change timesetamps
+    touch -m -t 199108252057.08 "out/fmt_inplace/test.jsonnet"
+    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_before.txt"
+    do_fmt_test "fmt_inplace" 0 -i "out/fmt_inplace/test.jsonnet"
+    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_after.txt"
+    check_file "fmt_inplace" "out/fmt_inplace/stat_mod_time_before.txt" "out/fmt_inplace/stat_mod_time_after.txt"
+fi
+
 fi
 
 
