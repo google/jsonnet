@@ -274,12 +274,15 @@ int main(int argc, const char **argv)
                         return 2;
                     }
                 } else {
-                    // Write output Jsonnet.
-                    bool successful = write_output_file(output, output_file);
-                    jsonnet_realloc(vm, output, 0);
-                    if (!successful) {
-                        jsonnet_destroy(vm);
-                        return EXIT_FAILURE;
+                    // Write output Jsonnet only if there is a difference between input and output
+                    bool different = output != input;
+                    if (different) {
+                        bool successful = write_output_file(output, output_file);
+                        jsonnet_realloc(vm, output, 0);
+                        if (!successful) {
+                            jsonnet_destroy(vm);
+                            return EXIT_FAILURE;
+                        }
                     }
                 }
             }
