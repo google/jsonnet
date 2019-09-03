@@ -13,9 +13,9 @@
 
 ## Is HEAD ready?
 1) Checkout master
-1) `make test
-1) `bazel test ...:all
-1) `mkdir build ; cd build ; cmake .. ; make ; make test
+1) `make test`
+1) `bazel test ...:all`
+1) `mkdir build ; cd build ; cmake .. ; make ; make test`
 1) modify `include/libjsonnet.h` to bump the version number but add `-pre1`
 1)
 ```
@@ -33,9 +33,9 @@ find test_cmd -name '*.cpp' -o -name '*.golang' -o -name '*.stdout' -o -name '*.
 1) `./tests`
 
 ## Do release
-1) Remove -pre from version in include/libjsonnet.h
-1) Update version in CMakeLists.txt
-1) Update test_cmd golden file version numbers
+1) Remove -pre from version in `include/libjsonnet.h`
+1) Update version in `CMakeLists.txt`
+1) Update `test_cmd` golden file version numbers
 1) run test again! 
 1) commit and push
 1) Make release in github, write release notes by checking commits since previous release
