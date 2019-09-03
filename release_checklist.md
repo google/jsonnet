@@ -23,7 +23,7 @@ find test_cmd -name '*.cpp' -o -name '*.golang' -o -name '*.stdout' -o -name '*.
   xargs sed -i 's/ v0[.][0-9.]*/ NEW_VERSION_GOES_HERE/g'
 ```
 1) python setup.py build sdist
-1) twine upload dist/whatever.tar.gz  (sparkprime/B)
+1) twine upload dist/whatever.tar.gz  (Needs credentials on pypi)
 1) ON ANOTHER MACHINE AND CHECK THAT THE VERSION IS CORRECT AND IT ACTUALLY IS BUILDING THINGS IN THE LOG: `sudo pip install jsonnet --pre --upgrade`
 1) `python`
 1) `import _jsonnet`
