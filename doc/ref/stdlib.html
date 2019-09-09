@@ -439,7 +439,7 @@ title: Standard Library
     <div class="panel">
       <p>
         Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-        and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than 
+        and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
         <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
       </p>
     </div>
@@ -461,7 +461,7 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>pat</code> in 
+        Returns an array that contains the indexes of all occurances of <code>pat</code> in
         <code>str</code>.
       </p>
     </div>
@@ -868,7 +868,7 @@ title: Standard Library
       <p>
         Parses a JSON string.
       </p>
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0</em>
       <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
     </div>
     <div style="clear: both"></div>
@@ -879,7 +879,7 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="encodeUTF8">std.encodeUTF8(str)</h4>
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0</em>
       <p>
         Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers representing bytes.
       </p>
@@ -900,7 +900,7 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0</em>
       <p>
         Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns a string.
       </p>
@@ -1123,7 +1123,7 @@ e = {"f1": False, "f2": 42}</pre>
 
       <p>Yields a string containing this YAML:</p>
 
-      <pre>"x": 
+      <pre>"x":
   - 1
   - 2
   - 3
@@ -1133,10 +1133,10 @@ e = {"f1": False, "f2": 42}</pre>
   - |
     string
     string
-"y": 
+"y":
   "a": 1
   "b": 2
-  "c": 
+  "c":
     - 1
     - 2</pre>
 
@@ -1230,8 +1230,8 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <svg height="100" width="100">
         <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
-        Sorry, your browser does not support inline SVG.  
-      </svg> 
+        Sorry, your browser does not support inline SVG.
+      </svg>
       <p>
         JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next
         to elements).  This includes the whitespace needed to avoid having all the XML on one line,
@@ -1324,7 +1324,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>value</code> in 
+        Returns an array that contains the indexes of all occurances of <code>value</code> in
         <code>arr</code>.
       </p>
     </div>
@@ -1550,6 +1550,9 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Concatenate an array of arrays into a single array.</p>
+      <p>
+        Example: <code>std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])</code> yields <code>[1, 2, 3, 4, [5, 6], [7, 8]]</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1559,7 +1562,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="sort">std.reverse(arr)</h4>
-      
+
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1569,7 +1572,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Reverses an array.</p>
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0</em>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1932,4 +1935,3 @@ e = {"f1": False, "f2": 42}</pre>
     <div style="clear: both"></div>
   </div>
 </div>
-
