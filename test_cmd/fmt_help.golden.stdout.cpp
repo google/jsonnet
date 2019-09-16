@@ -1,4 +1,4 @@
-Jsonnet reformatter v0.13.0
+Jsonnet reformatter v0.14.0
 
 jsonnetfmt {<option>} { <filename> }
 Note: Some options do not support multiple filenames
