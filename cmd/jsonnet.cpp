@@ -295,15 +295,15 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             }
             jsonnet_max_trace(vm, l);
         } else if (arg == "--gc-growth-trigger") {
-            const char *arg = next_arg(i, args).c_str();
+            std::string num = next_arg(i, args);
             char *ep;
-            double v = std::strtod(arg, &ep);
-            if (*ep != '\0' || *arg == '\0') {
-                std::cerr << "ERROR: invalid number \"" << arg << "\"" << std::endl;
+            double v = std::strtod(num.c_str(), &ep);
+            if (*ep != '\0' || num.length() == 0) {
+                std::cerr << "ERROR: invalid number \"" << num << "\"" << std::endl;
                 return ARG_FAILURE;
             }
             if (v < 0) {
-                std::cerr << "ERROR: invalid --gc-growth-trigger \"" << arg << "\""
+                std::cerr << "ERROR: invalid --gc-growth-trigger \"" << num << "\""
                             << std::endl;
                 return ARG_FAILURE;
             }
