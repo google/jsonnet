@@ -23,6 +23,7 @@ limitations under the License.
 #include <memory>
 #include <set>
 #include <sstream>
+#include <locale>
 #include <string>
 
 #include "ast.h"
@@ -36,6 +37,9 @@ namespace jsonnet::internal {
 std::string jsonnet_unparse_number(double v)
 {
     std::stringstream ss;
+    // Make sure we output the same thing, even if the user
+    // of the library changed the global locale
+    ss.imbue(std::locale::classic());
     if (v == floor(v)) {
         ss << std::fixed << std::setprecision(0) << v;
     } else {
