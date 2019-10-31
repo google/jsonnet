@@ -687,7 +687,7 @@ limitations under the License.
             if j2 < std.length(arr) then
               arr[j2]
             else
-              error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + j2);
+              error ('Not enough values to format: ' + std.length(arr) + ', expected more than ' + j2);
           local s =
             if code.ctype == '%' then
               '%'
