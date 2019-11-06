@@ -43,7 +43,6 @@ void usage(std::ostream &o)
     version(o);
     o << "\n";
     o << "jsonnetfmt {<option>} { <filename> }\n";
-    o << "Note: Some options do not support multiple filenames\n";
     o << "\n";
     o << "Available options:\n";
     o << "  -h / --help             This message\n";
