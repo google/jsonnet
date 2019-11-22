@@ -1,0 +1,22 @@
+RUNTIME ERROR: Not enough values to format: 1, expected more than 1
+	std.jsonnet:690:15-103	thunk <val>
+	std.jsonnet:695:27-30	thunk <val>
+	std.jsonnet:567:21-24	
+	std.jsonnet:567:12-25	thunk <a>
+	std.jsonnet:567:12-37	function <anonymous>
+	std.jsonnet:567:12-37	function <format_code>
+	std.jsonnet:695:15-60	thunk <s>
+	std.jsonnet:700:24	thunk <str>
+	std.jsonnet:475:30-33	
+	std.jsonnet:475:19-34	thunk <w>
+	...
+	std.jsonnet:467:12	function <aux>
+	std.jsonnet:471:7-17	function <padding>
+	std.jsonnet:475:7-38	function <pad_left>
+	std.jsonnet:700:15-39	thunk <s_padded>
+	std.jsonnet:706:55-63	thunk <v>
+	std.jsonnet:706:11-64	function <format_codes_arr>
+	std.jsonnet:706:11-64	function <format_codes_arr>
+	std.jsonnet:750:7-46	function <anonymous>
+	std.jsonnet:227:7-23	function <anonymous>
+	error.format.too_few_values.jsonnet:1:1-18	
