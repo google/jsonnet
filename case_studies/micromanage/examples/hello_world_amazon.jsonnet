@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-local service_amazon = import "mmlib/v0.1.1/service/amazon.libsonnet";
-local service_google = import "mmlib/v0.1.1/service/google.libsonnet";
-local web = import "mmlib/v0.1.1/web/web.libsonnet";
-local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
-local debian_amis = import "mmlib/v0.1.1/amis/debian.libsonnet";
-local cmd = import "mmlib/v0.1.1/cmd/cmd.libsonnet";
+local service_amazon = import "mmlib/v0.1.2/service/amazon.libsonnet";
+local service_google = import "mmlib/v0.1.2/service/google.libsonnet";
+local web = import "mmlib/v0.1.2/web/web.libsonnet";
+local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
+local debian_amis = import "mmlib/v0.1.2/amis/debian.libsonnet";
+local cmd = import "mmlib/v0.1.2/cmd/cmd.libsonnet";
 
 
 {
@@ -38,7 +38,7 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.libsonnet";
 
     // Simple case -- one machine serving this Python script.
     /*
-    helloworld: service_amazon.SingleInstance + web.HttpSingleInstance
+    helloworld: service_amazon.SingleInstance(null, 'helloworld') + web.HttpSingleInstance
                 + web_solutions.DebianFlaskHttpService {
         zone: "us-west-1c",
         keyName: "kp",
@@ -55,7 +55,7 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.libsonnet";
     */
 
     // For production -- allows canarying changes, also use a dns zone
-    helloworld2: service_amazon.Cluster3 + web.HttpService3
+    helloworld2: service_amazon.Cluster3(null, 'helloworld2') + web.HttpService3
                  + web_solutions.DebianFlaskHttpService {
         local service = self,
         httpPort: 8080,
@@ -98,14 +98,14 @@ local cmd = import "mmlib/v0.1.1/cmd/cmd.libsonnet";
     },
 
     /*
-    dns: service_amazon.DnsZone {
+    dns: service_amazon.DnsZone(null, 'dns') {
         local service = self,
         dnsName: "hw.example.com.",
     },
 
     // If you own a domain, enable this and the zone service below, then create an NS record to
     // the allocated nameserver.
-    www: service_google.DnsRecordWww {
+    www: service_google.DnsRecordWww(null, 'dns') {
         zone: $.dns,
         zoneName: "dns",
         target: "helloworld2",

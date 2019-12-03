@@ -47,14 +47,14 @@ local amis_debian = import "../amis/debian.libsonnet";
     },
 
 
-    Service:: base.Service {
+    Service(parent, name):: base.Service(parent, name) {
         infrastructure+: if self.dnsZone == null then {
         } else {
             /*
             local instances = if std.objectHas(self, "aws_instance") then self.google_compute_instance else { },
             local addresses = { }, //if std.objectHas(self, "google_compute_address") then self.google_compute_address else { },
             local DnsRecord = {
-                managed_zone: service.dnsZone.refName(service.dnsZoneName),
+                managed_zone: service.dnsZone.nameRef(),
                 type: "A",
                 ttl: 300,
             },
@@ -77,11 +77,11 @@ local amis_debian = import "../amis/debian.libsonnet";
     },
 
 
-    Network:: $.Service {
+    Network(parent, name):: $.Service(parent, name) {
         local service = self,
-        refId(name):: "${aws_vpc.%s.id}" % name,
-        refName(name):: "${aws_vpc.%s.name}" % name,
-        refSubnetId(name, zone):: "${aws_subnet.%s-%s.id}" % [name, zone],
+        idRef:: "${aws_vpc.%s.id}" % service.fullName,
+        nameRef:: "${aws_vpc.%s.name}" % service.fullName,
+        subnetIdRef(zone):: "${aws_subnet.%s-%s.id}" % [service.fullName, zone],
         ipv4Range:: "10.0.0.0/16",
         infrastructure: {
             aws_vpc: {
@@ -124,7 +124,7 @@ local amis_debian = import "../amis/debian.libsonnet";
     },
 
 
-    InstanceBasedService: $.Service {
+    InstanceBasedService(parent, name): $.Service(parent, name) {
         local service = self,
         fwTcpPorts:: [22],
         fwUdpPorts:: [],
@@ -134,7 +134,7 @@ local amis_debian = import "../amis/debian.libsonnet";
         Mixin:: (
             if service.networkName != null then {
                 vpc_security_group_ids: ["${aws_security_group.${-}.id}"],
-                subnet_id: $.Network.refSubnetId(service.networkName, self.availability_zone),
+                subnet_id: $.Network.subnetIdRef(self.availability_zone),
             } else {
                 security_groups: ["${aws_security_group.${-}.name}"],
             }
@@ -158,7 +158,7 @@ local amis_debian = import "../amis/debian.libsonnet";
                     ingress: [IngressRule(p, "tcp") for p in service.fwTcpPorts]
                              + [IngressRule(p, "udp") for p in service.fwUdpPorts],
 
-                    [if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
+                    [if service.networkName != null then "vpc_id"]: $.Network.idRef,
                 },
             },
             aws_instance: error "InstanceBasedService should define some instances.",
@@ -166,7 +166,7 @@ local amis_debian = import "../amis/debian.libsonnet";
     },
 
 
-    Cluster3: $.InstanceBasedService {
+    Cluster3(parent, name): $.InstanceBasedService(parent, name) {
         local service = self,
         lbTcpPorts:: [],
         lbUdpPorts:: [],
@@ -207,7 +207,7 @@ local amis_debian = import "../amis/debian.libsonnet";
             for vname in std.objectFields(service.deployment)
         ]),
 
-        refAddress(name):: "${aws_elb.%s.dns_name}" % name,
+        addressRef:: "${aws_elb.%s.dns_name}" % service.fullName,
 
         infrastructure+: {
             aws_instance: instances,
@@ -253,18 +253,18 @@ local amis_debian = import "../amis/debian.libsonnet";
                     ingress: [IngressRule(p, "tcp") for p in service.lbTcpPorts]
                              + [IngressRule(p, "udp") for p in service.lbUdpPorts],
 
-                    //[if service.networkName != null then "vpc_id"]: $.Network.refId(service.networkName),
+                    //[if service.networkName != null then "vpc_id"]: $.Network.idRef,
                 },
             },
         },
     },
 
 
-    SingleInstance: $.InstanceBasedService {
+    SingleInstance(parent, name): $.InstanceBasedService(parent, name) {
         local service = self,
         zone:: error "SingleInstance needs a zone.",
 
-        refAddress(name):: "${aws_instance.%s.public_ip}" % name,
+        addressRef:: "${aws_instance.%s.public_ip}" % service.fullName,
 
         infrastructure+: {
             aws_instance: {
@@ -275,10 +275,10 @@ local amis_debian = import "../amis/debian.libsonnet";
         },
     },
 
-    DnsZone:: self.Service {
+    DnsZone(parent, name):: self.Service(parent, name) {
         local service = self,
         dnsName:: error "DnsZone must have dnsName, e.g. example.com",
-        refName(name):: "${aws_route53_zone.%s.zone_id}" % name,
+        nameRef:: "${aws_route53_zone.%s.zone_id}" % self.fullName
         description:: "Zone for " + self.dnsName,
         infrastructure+: {
             aws_route53_zone: {
@@ -297,16 +297,15 @@ local amis_debian = import "../amis/debian.libsonnet";
 
 
     /*
-    DnsRecordWww:: self.Service {
+    DnsRecordWww(parent, name):: self.Service(parent, name) {
         local service = self,
         dnsName:: service.zone.dnsName,
         zone:: error "DnsRecordWww requires zone.",
-        zoneName:: error "DnsRecordWww requires zoneName.",
         target:: error "DnsRecordWww requires target.",
         infrastructure+: {
             google_dns_record_set: {
                 "${-}": {
-                    managed_zone: service.zone.refName(service.zoneName),
+                    managed_zone: service.zone.nameRef,
                     name: "www." + service.dnsName,
                     type: "CNAME",
                     ttl: 300,

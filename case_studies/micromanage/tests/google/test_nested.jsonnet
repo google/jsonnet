@@ -1,7 +1,7 @@
 {
     environments: import "../testenv.libsonnet",
 
-    local SingleInstance = {
+    local SingleInstance(name) = {
         local service = self,
 
         environment: "google",
@@ -13,13 +13,15 @@
         externalIp:: false,
         infrastructure: {
             google_compute_instance: {
-                "${-}": {
-                    name: "${-}",
+                name: {
+                    name: name,
                     machine_type: service.machineType,
                     zone: service.zone,
-                    disk: [{
-                        image: service.image,
-                    }],
+                    boot_disk: {
+                        initialize_params: {
+                            image: service.image,
+                        },
+                    },
                     network_interface: {
                         network: "default",
                         access_config:
@@ -34,23 +36,23 @@
         },
         outputs: {
             [if service.externalIp then "address"]:
-                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}",
+                "${google_compute_instance.%s.network_interface[0].access_config.0.nat_ip}" % name,
         },
     },
 
     instances: {
         environment: "google",
         infrastructure: {},
-        wheezy: SingleInstance {
-            image: "debian-7-wheezy-v20140814",
+        wheezy: SingleInstance('wheezy') {
+            image: "debian-9-stretch-v20191121",
             zone: "us-central1-b",
         },
-        ubuntu: SingleInstance {
-            image: "ubuntu-1504-vivid-v20150911",
+        ubuntu: SingleInstance('ubuntu') {
+            image: "ubuntu-1804-bionic-v20191113",
             zone: "us-central1-c",
         },
-        "core-os": SingleInstance {
-            image: "coreos-stable-717-3-0-v20150710",
+        "core-os": SingleInstance('core-os') {
+            image: "coreos-stable-2303-3-0-v20191203",
             zone: "us-central1-f",
             externalIp: true,
         },

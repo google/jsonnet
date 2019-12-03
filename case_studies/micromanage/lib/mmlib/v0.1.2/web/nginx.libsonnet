@@ -55,7 +55,7 @@ local cmd = import "../cmd/cmd.libsonnet";
         },
 
 
-        // Filse that must exist on top before any handling daemons are started.
+        // Files that must exist on top before any handling daemons are started.
         httpContentCmds:: [
             cmd.EnsureDir { dir: "/var/www", owner: "www-data" },
         ],

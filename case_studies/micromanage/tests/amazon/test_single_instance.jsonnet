@@ -5,7 +5,7 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
 {
     environments: import "../testenv.libsonnet",
 
-    local SingleAmazonInstance = {
+    local SingleAmazonInstance(name) = {
         local service = self,
 
         // Cut off the last letter
@@ -23,7 +23,7 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
         externalIp:: false,
         infrastructure: {
             aws_instance: {
-                "${-}": {
+                name: {
                     [if service.keyName != null then "key_name"]: service.keyName,
                     instance_type: service.machineType,
                     availability_zone: service.zone,
@@ -34,12 +34,12 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
             },
         },
         outputs: {
-            "${-}-address": "${aws_instance.${-}.public_ip}",
-            "${-}-id": "${aws_instance.${-}.id}",
+            name + "-address": "${aws_instance.%s.public_ip}" % name,
+            name + "-id": "${aws_instance.%s.id}" % name,
         },
     },
 
-    ubuntu_aws: SingleAmazonInstance {
+    ubuntu_aws: SingleAmazonInstance('ubuntu_aws') {
         externalIp: true,
         keyName: "kp",
         amiMap: amis_ubuntu.trusty.amd64["20151117"],
@@ -57,7 +57,7 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
     },
 
 
-    ubuntu_aws_ami: SingleAmazonInstance {
+    ubuntu_aws_ami: SingleAmazonInstance('ubuntu_aws_ami') {
         externalIp: true,
         keyName: "kp",
         ami: {
@@ -79,7 +79,7 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
     },
 
 
-    debian_aws: SingleAmazonInstance {
+    debian_aws: SingleAmazonInstance('debian_aws') {
         externalIp: true,
         keyName: "kp",
         amiMap: amis_debian.wheezy.amd64["20150128"],
@@ -97,7 +97,7 @@ local amis_debian = import "mmlib/v0.1.2/amis/debian.libsonnet";
     },
 
 
-    debian_aws_ami: SingleAmazonInstance {
+    debian_aws_ami: SingleAmazonInstance('debian_aws_ami') {
         externalIp: true,
         keyName: "kp",
         ami: {

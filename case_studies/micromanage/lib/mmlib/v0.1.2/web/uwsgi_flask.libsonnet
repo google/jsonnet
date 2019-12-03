@@ -67,25 +67,43 @@ local cmd = import "../cmd/cmd.libsonnet";
     NginxUwsgiGlue: {
         local version = self,
 
-        nginxUwsgiConf:: |||
-            server {
-                listen %(port)d;
-                server_name ~^.*$;
-                charset     utf-8;
-                client_max_body_size 75M;
-                location / { try_files $uri @yourapplication; }
-                location @yourapplication {
-                    include uwsgi_params;
-                    uwsgi_pass unix:%(socket)s;
-                }
-            }
-        ||| % { port: version.httpPort, socket: version.uwsgiSocket },
+        local base_conf = [
+            'server_name ~^.*$;',
+            'charset     utf-8;',
+            'client_max_body_size 75M;',
+            'location / { try_files $uri @yourapplication; }',
+            'location @yourapplication {',
+            '    include uwsgi_params;',
+            '    uwsgi_pass unix:%s;' % version.uwsgiSocket,
+            '}',
+        ],
+        local http_part = [
+            'listen %d;' % version.httpPort,
+        ],
+        local https_part = [
+            'listen %d ssl;' % version.httpsPort,
+            'ssl_certificate /etc/ssl/cert.pem;',
+            'ssl_certificate_key /etc/ssl/key.pem;',
+        ],
+        local all_parts = base_conf
+                         + (if version.httpPort != null then http_part else [])
+                         + (if version.httpsPort != null then https_part else []),
+        local whole_conf = std.lines(['server {'] + ['    ' + line for line in all_parts] + ['}']),
 
         nginxAdditionalCmds+: [
             cmd.LiteralFile {
                 to: "/etc/nginx/conf.d/frontend_nginx.conf",
-                content: version.nginxUwsgiConf,
+                content: whole_conf,
             },
-        ],
+        ] + (if version.httpsPort != null then [
+            cmd.LiteralFile {
+                to: "/etc/ssl/cert.pem",
+                content: version.sslCertificate,
+            },
+            cmd.LiteralFile {
+                to: "/etc/ssl/key.pem",
+                content: version.sslCertificateKey,
+            },
+        ] else []),
     },
 }

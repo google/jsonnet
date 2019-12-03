@@ -94,7 +94,7 @@ class PackerBuildArtefact(build_artefact.BuildArtefact):
         provs = [
             {
                 'type': 'shell',
-                'execute_command': "{{ .Vars }} sudo -E /bin/bash '{{ .Path }}'",
+                'execute_command': "{{ .Vars }} sudo -HE /bin/bash '{{ .Path }}'",
                 'inline': cmds.compile_command_to_bash(cmd),
             }
             for cmd in self.cmds

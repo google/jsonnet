@@ -112,7 +112,7 @@ local service_amazon = import "../service/amazon.libsonnet";
         StandardRootImage+: {
             aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
             aptRepoLines+: {
-                cassandra: "deb http://www.apache.org/dist/cassandra/debian 21x main",
+                cassandra: "deb http://www.apache.org/dist/cassandra/debian 311x main",
             },
             aptPackages+: ["cassandra"],
 
@@ -159,6 +159,13 @@ local service_amazon = import "../service/amazon.libsonnet";
                                     % self.initAuthReplication),
                self.rootPassword],
 
+            // Change the cluster name
+            "echo %s | cqlsh -u cassandra -p %s localhost"
+            % [std.escapeStringBash(
+                "UPDATE system.local SET cluster_name = '%s' where key='local';"
+                                    % self.conf.cluster_name),
+               self.rootPassword],
+
             // Drop in the correct configuration.
             "echo %s > %s"
             % [std.escapeStringBash("" + self.conf), "/etc/cassandra/cassandra.yaml"],
@@ -168,6 +175,10 @@ local service_amazon = import "../service/amazon.libsonnet";
 
             // Wait for the properly configured cassandra to start up and reach quorum.
             wait_for_cqlsh("cassandra", self.rootPassword, "$HOSTNAME"),
+
+            // See https://issues.apache.org/jira/browse/CASSANDRA-11942
+            // This was added because otherwise self.initCql cannot set up users.
+            "sleep 10",
 
             // Set up users, empty tables, etc.
             "echo %s | cqlsh -u cassandra -p %s $HOSTNAME"
@@ -197,26 +208,28 @@ local service_amazon = import "../service/amazon.libsonnet";
         ],
     },
 
-    GcpDebianCassandra: service_google.Service {
+    GcpDebianCassandra(parent, name): service_google.Service(parent, name) {
 
         local service = self,
 
         networkName:: "default",
 
         gossipPorts:: ["7000", "7001", "7199"],  // Only between this pool.
-        otherPorts:: ["9042", "9160"],
+        otherPorts:: ["9042", "9160", "22"],
 
         rootPassword:: error "Cassandra Service must have field: rootPassword",
         clusterName:: error "Cassandra Service must have field: clusterName",
 
         tcpFirewallPorts:: self.gossipPorts + self.otherPorts,
 
+        perServiceFirewalls:: true,
+
         cassandraConf:: $.DefaultConf {
             authenticator: "PasswordAuthenticator",
             cluster_name: service.clusterName,
         },
 
-        StandardGcpInstance:: service_google.StandardInstance {
+        StandardGcpInstance:: service_google.StandardInstance(service) {
             machine_type: "n1-standard-1",
         },
 
@@ -331,30 +344,29 @@ local service_amazon = import "../service/amazon.libsonnet";
 
         infrastructure+: {
             google_compute_disk: {
-                ["${-}-" + n]: {
-                    name: "${-}-" + n,
+                [service.prefixName(n)]: {
+                    name: service.prefixName(n),
                     image: service.nodes[n].StandardRootImage,
                     zone: service.nodes[n].zone,
                 }
                 for n in std.objectFields(service.nodes)
             },
             google_compute_instance: {
-                ["${-}-" + n]: service.nodes[n] {
-                    name: "${-}-" + n,
+                [service.prefixName(n)]: service.nodes[n] {
+                    local instance = self,
+                    name: service.prefixName(n),
                     networkName: service.networkName,
                     tags+: [service.clusterName],
-                    disk: [
-                        {
-                            disk: "${google_compute_disk.${-}-%s.name}" % n,
-                            auto_delete: false,
-                        },
-                    ],
+                    boot_disk: {
+                        source: "${google_compute_disk.%s.name}" % instance.name,
+                        auto_delete: false,
+                    },
                 }
                 for n in std.objectFields(service.nodes)
             },
             google_compute_firewall: {
-                "${-}-fw": {
-                    name: "${-}-fw",
+                [if service.perServiceFirewalls then service.prefixName('fw')]: {
+                    name: service.prefixName('fw'),
                     source_ranges: ["0.0.0.0/0"],
                     network: "default",
                     allow: [

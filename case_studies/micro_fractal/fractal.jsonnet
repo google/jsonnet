@@ -4,7 +4,7 @@ local cassandra = import "mmlib/v0.1.2/db/cassandra.libsonnet";
 local web = import "mmlib/v0.1.2/web/web.libsonnet";
 local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
 
-{
+function (parent, name) service_google.Service(parent, name) {
     local app = self,
 
     cassandraUser:: "fractal",
@@ -12,8 +12,7 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
     cassandraUserPass:: error "Must override cassandraUserPass",
     cassandraRootPass:: error "Must override cassandraRootPass",
     cassandraKeyspace:: "fractal",
-    cassandraNodes:: ["fractal-db-n1", "fractal-db-n2", "fractal-db-n3", "fractal-db-n4", "fractal-db-n5"],
-    tilegenPort:: 8080,
+    cassandraNodes:: [self.prefixName(n) for n in ["db-n1", "db-n2", "db-n3", "db-n4", "db-n5"]],
 
     // Configuration shared by the application server and tile generation nodes.
     ApplicationConf:: {
@@ -23,7 +22,7 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
         thumb_height: 64,
     },
 
-    BaseInstanceMixin:: {
+    DebugPackagesMixin:: {
         StandardRootImage+: {
             local network_debug = ["traceroute", "lsof", "iptraf", "tcpdump", "host", "dnsutils"],
             aptPackages+: ["vim", "git", "psmisc", "screen", "strace"] + network_debug,
@@ -31,29 +30,28 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
     },
 
 
-    zone: service_google.DnsZone {
+    zone: service_google.DnsZone(app, 'zone') {
         dnsName: app.dnsSuffix,
     },
 
-    www: service_google.DnsRecordWww {
+    www: service_google.DnsRecordWww(app, 'www') {
         zone: app.zone,
-        zoneName: "fractal-zone",
-        target: "fractal-appserv",
+        target: app.appserv.fullName,
     },
 
-    network: service_google.Network {
-        ipv4Range: "10.10.0.0/16",
-    },
+    network: service_google.Network(app, 'network'),
 
-    appserv: service_google.Cluster3 + web.HttpService3 + web_solutions.DebianFlaskHttpService {
+    appserv: service_google.Cluster3(app, 'appserv') + web.HttpService3 + web_solutions.DebianFlaskHttpService {
 
         local service = self,
         dnsZone: app.zone,
-        dnsZoneName: "fractal-zone",
 
-        networkName: $.network.refName("fractal-network"),
+        networkName: app.network.nameRef,
 
-        Instance+: $.BaseInstanceMixin {
+        httpsPort: 443,
+
+        Instance+: app.DebugPackagesMixin {
+            machine_type: "n1-standard-1",
             StandardRootImage+: {
                 pipPackages+: ["httplib2", "cassandra-driver", "blist"],
             },
@@ -64,28 +62,29 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
                 database_name: app.cassandraKeyspace,
                 database_user: app.cassandraUser,
                 database_pass: app.cassandraUserPass,
-                tilegen_port: app.tilegenPort,
+                tilegen_endpoint: app.tilegen.endpoint,
             },
             module: "main",  // Entrypoint in the Python code.
             uwsgiConf+: { lazy: "true" },  // cassandra-driver does not survive fork()
             // Copy website content and code.
             httpContentCmds+: [
-                "echo '%s tilegen' >> /etc/hosts" % app.tilegen.refAddress("fractal-tilegen"),
+                "echo '%s tilegen' >> /etc/hosts" % app.tilegen.addressRef,
                 cmd.CopyFile { from: std.resolvePath(std.thisFile, "appserv/*"), to: "/var/www" },
                 cmd.LiteralFile { content: std.toString(version.conf), to: "/var/www/conf.json" },
             ],
         },
     },
 
-    tilegen: service_google.Cluster3 + web.HttpService3 + web_solutions.DebianFlaskHttpService {
+    tilegen: service_google.Cluster3(app, 'tilegen') + web.HttpService3 + web_solutions.DebianFlaskHttpService {
         local service = self,
         dnsZone: app.zone,
-        dnsZoneName: "fractal-zone",
+        endpoint:: self.httpsEndpoint,
 
-        networkName: $.network.refName("fractal-network"),
+        networkName: app.network.nameRef,
 
-        httpPort: app.tilegenPort,
-        Instance+: $.BaseInstanceMixin {
+        httpsPort: 443,
+        Instance+: app.DebugPackagesMixin {
+            machine_type: "n1-standard-1",
             StandardRootImage+: {
                 aptPackages+: ["g++", "libpng-dev"],
             },
@@ -103,14 +102,13 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
         },
     },
 
-    db: cassandra.GcpDebianCassandra {
+    db: cassandra.GcpDebianCassandra(app, 'db') {
         local db = self,
         dnsZone: app.zone,
-        dnsZoneName: "fractal-zone",
 
-        networkName: $.network.refName("fractal-network"),
+        networkName: app.network.nameRef,
 
-        clusterName: "fractal-cluster",
+        clusterName: self.fullName,
         rootPassword: app.cassandraRootPass,
 
         cassandraConf+: {
@@ -153,8 +151,12 @@ local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
             ],
         },
 
-        StarterNode+: $.BaseInstanceMixin + self.FractalStarterMixin,
-        TopUpNode+: $.BaseInstanceMixin,
+        StandardGcpInstance+: {
+            machine_type: "n1-standard-4",
+        },
+
+        StarterNode+: app.DebugPackagesMixin + self.FractalStarterMixin,
+        TopUpNode+: app.DebugPackagesMixin,
 
         nodes: {
             n1: db.StarterNode {
