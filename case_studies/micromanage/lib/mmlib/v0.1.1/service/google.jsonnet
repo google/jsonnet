@@ -42,11 +42,11 @@ local apt = import "../cmd/apt.jsonnet";
                 scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
             },
         ],
-        disk: [
-            {
+        boot_disk: {
+            initialize_params: {
                 image: instance.StandardRootImage,
-            },
-        ],
+            }
+        },
 
         supportsLogging:: true,
         supportsMonitoring:: true,
@@ -167,7 +167,7 @@ local apt = import "../cmd/apt.jsonnet";
             } + {
                 [name]: DnsRecord {
                     name: "${google_compute_instance." + name + ".name}." + service.dnsZone.dnsName,
-                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.assigned_nat_ip}"],
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
                 } for name in std.objectFields(instances)
             },
         },

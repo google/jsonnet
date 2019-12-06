@@ -128,7 +128,7 @@ class AmazonService(service.Service):
 
     def compileProvider(self, environment_name, environment):
         return {
-            'environment.%s.tf' % environment_name: {
+            'environment.%s.tf.json' % environment_name: {
                 'provider': {
                     'aws': {
                         'alias': environment_name,
@@ -184,7 +184,7 @@ class AmazonService(service.Service):
             inst.pop('bootCmds', None)
 
         return {
-            'service.%s.tf' % self.fullName(ctx, service_name): {
+            'service.%s.tf.json' % self.fullName(ctx, service_name): {
                 'resource': infra,
                 'output': {
                     k: { 'value': v }

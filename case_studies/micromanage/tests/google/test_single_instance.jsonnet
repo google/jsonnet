@@ -1,9 +1,9 @@
-local cmd = import "mmlib/v0.1.0/cmd/cmd.libsonnet";
+local cmd = import "mmlib/v0.1.2/cmd/cmd.libsonnet";
 
 {
     environments: import "../testenv.libsonnet",
 
-    local SingleGoogleInstance = {
+    local SingleGoogleInstance(name) = {
         local service = self,
 
         environment: "google",
@@ -16,13 +16,15 @@ local cmd = import "mmlib/v0.1.0/cmd/cmd.libsonnet";
         externalIp:: false,
         infrastructure: {
             google_compute_instance: {
-                "${-}": {
-                    name: "${-}",
+                name: {
+                    name: name,
                     machine_type: service.machineType,
                     zone: service.zone,
-                    disk: [{
-                        image: service.image,
-                    }],
+                    boot_disk: {
+                        initialize_params: {
+                            image: service.image,
+                        },
+                    },
                     network_interface: {
                         network: "default",
                         access_config:
@@ -36,21 +38,21 @@ local cmd = import "mmlib/v0.1.0/cmd/cmd.libsonnet";
             },
         },
         outputs: {
-            [if service.externalIp then "${-}-address"]:
-                "${google_compute_instance.${-}.network_interface.access_config.0.nat_ip}",
+            [if service.externalIp then name + "-address"]:
+                "${google_compute_instance.%s.network_interface[0].access_config.0.nat_ip}" % name,
         },
     },
 
-    wheezy: SingleGoogleInstance {
-        image: "debian-7-wheezy-v20140814",
+    wheezy: SingleGoogleInstance('wheezy') {
+        image: "debian-9-stretch-v20191121",
         zone: "us-central1-b",
     },
-    ubuntu: SingleGoogleInstance {
-        image: "ubuntu-1504-vivid-v20150911",
+    ubuntu: SingleGoogleInstance('ubuntu') {
+        image: "ubuntu-1804-bionic-v20191113",
         zone: "us-central1-c",
     },
-    "core-os": SingleGoogleInstance {
-        image: "coreos-stable-717-3-0-v20150710",
+    "core-os": SingleGoogleInstance('core-os') {
+        image: "coreos-stable-2303-3-0-v20191203",
         zone: "us-central1-f",
         externalIp: true,
         cmds: [
@@ -64,9 +66,9 @@ local cmd = import "mmlib/v0.1.0/cmd/cmd.libsonnet";
             },
         ],
     },
-    custom: SingleGoogleInstance {
+    custom: SingleGoogleInstance('custom') {
         image: {
-            source: "ubuntu-1504-vivid-v20150911",
+            source: "ubuntu-1804-bionic-v20191113",
             zone: "us-central1-f",
             cmds: [
                 "echo hi > /hi.txt",

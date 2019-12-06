@@ -48,8 +48,6 @@ if CONF == None:
     sys.stderr.write('ERROR: Could not open conf.json.')
     sys.exit(1)
 
-TILEGEN_ADDR = socket.gethostbyname('tilegen')
-
 
 class DbError(Exception):
     def __init__(self, msg):
@@ -97,7 +95,6 @@ def db_execute(s, t=()):
 
 def my_render_template(filename, **context):
     context.update(CONF)
-    context['tilegen_addr'] = TILEGEN_ADDR
     return flask.render_template(filename, **context)
 
 def db_clear():

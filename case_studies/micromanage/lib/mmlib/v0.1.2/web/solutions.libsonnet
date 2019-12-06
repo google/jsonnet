@@ -13,7 +13,10 @@ local uwsgi_flask = import "uwsgi_flask.libsonnet";
                 return 'No content is configured for this web service.'
         |||,
         Instance+: nginx.DebianNginxMixin + uwsgi_flask.DebianUwsgiFlask + uwsgi_flask.NginxUwsgiGlue {
-            httpPort: service.httpPort,
+            httpPort:: service.httpPort,
+            httpsPort:: service.httpsPort,
+            sslCertificate:: service.sslCertificate,
+            sslCertificateKey:: service.sslCertificateKey,
             uwsgiModuleContent: service.uwsgiModuleContent,
         },
     },

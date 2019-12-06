@@ -343,12 +343,10 @@ local service_amazon = import "../service/amazon.jsonnet";
                     name: "${-}-" + n,
                     networkName: service.networkName,
                     tags+: [service.clusterName],
-                    disk: [
-                        {
-                            disk: "${google_compute_disk.${-}-%s.name}" % n,
-                            auto_delete: false,
-                        },
-                    ],
+                    boot_disk: {
+                        source: "${google_compute_disk.${-}-%s.name}" % n,
+                        auto_delete: false,
+                    },
                 }
                 for n in std.objectFields(service.nodes)
             },

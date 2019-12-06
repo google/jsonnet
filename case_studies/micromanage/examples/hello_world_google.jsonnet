@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-local service_amazon = import "mmlib/v0.1.1/service/amazon.libsonnet";
-local service_google = import "mmlib/v0.1.1/service/google.libsonnet";
-local web = import "mmlib/v0.1.1/web/web.libsonnet";
-local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
+local service_amazon = import "mmlib/v0.1.2/service/amazon.libsonnet";
+local service_google = import "mmlib/v0.1.2/service/google.libsonnet";
+local web = import "mmlib/v0.1.2/web/web.libsonnet";
+local web_solutions = import "mmlib/v0.1.2/web/solutions.libsonnet";
 
 {
     environments: {
@@ -29,9 +29,15 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
         },
     },
 
+    // The following examples support HTTPs, thus require DNS names and
+    // SSL certificates. Removing the httpsPort will disable that.
+
     // Simple case -- one machine serving this Python script.
-    helloworld: service_google.SingleInstance + web.HttpSingleInstance
+    helloworld: service_google.SingleInstance(null, 'helloworld') + web.HttpSingleInstance
                 + web_solutions.DebianFlaskHttpService {
+        httpsPort: 443,
+        sslCertificate: importstr 'cert.pem',  // You will need to provision this.
+        sslCertificateKey: importstr 'key.pem',  // You will need to provision this.
         zone: "us-central1-f",
         uwsgiModuleContent: |||
             import flask
@@ -41,13 +47,17 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
             def hello_world():
                 return 'Hello from %s!' % socket.gethostname()
         |||,
+        dnsZone: $.dns,
     },
 
     // For production -- allows canarying changes, also use a dns zone
-    helloworld2: service_google.Cluster3 + web.HttpService3
+    helloworld2: service_google.Cluster3(null, 'helloworld2') + web.HttpService3
                  + web_solutions.DebianFlaskHttpService {
         local service = self,
-        httpPort: 8080,
+        httpPort: null,
+        httpsPort: 443,
+        sslCertificate: importstr 'cert.pem',  // You will need to provision this.
+        sslCertificateKey: importstr 'key.pem',  // You will need to provision this.
         zones: ["us-central1-b", "us-central1-c", "us-central1-f"],
         versions: {
             v1: service.Instance {
@@ -82,23 +92,19 @@ local web_solutions = import "mmlib/v0.1.1/web/solutions.libsonnet";
             },
         },
 
-        // dnsZone: $.dns,
-        // dnsZoneName: "dns",
+        dnsZone: $.dns,
     },
 
-    /*
-    dns: service_google.DnsZone {
+    dns: service_google.DnsZone(null, 'dns') {
         local service = self,
         dnsName: "hw.example.com.",
     },
 
     // If you own a domain, enable this and the zone service below, then create an NS record to
     // the allocated nameserver.
-    www: service_google.DnsRecordWww {
+    www: service_google.DnsRecordWww(null, 'www') {
         zone: $.dns,
-        zoneName: "dns",
         target: "helloworld2",
     },
-    */
 
 }

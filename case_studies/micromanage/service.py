@@ -67,23 +67,11 @@ class Service(object):
     def fullName(self, ctx, service_name):
         return '-'.join(ctx + [service_name])
 
-    def preprocess(self, ctx, service_name, service):
-        def recursive_update(c):
-            if isinstance(c, dict):
-                return {
-                    recursive_update(k): recursive_update(v)
-                    for k, v in c.iteritems()
-                }
-            elif isinstance(c, list):
-                return [recursive_update(v) for v in c]
-            elif isinstance(c, basestring):
-                return self.translateSelfName(self.fullName(ctx, service_name), c)
-            else:
-                return c
+    def preprocess(self, service):
         return {
             'environment': service.get('environment', 'default'),
-            'infrastructure': recursive_update(service.get('infrastructure',{})),
-            'outputs': recursive_update(service.get('outputs', {})),
+            'infrastructure': service.get('infrastructure',{}),
+            'outputs': service.get('outputs', {}),
         }
 
     def compileStartupScript(self, cmds, bootCmds):
@@ -97,10 +85,4 @@ class Service(object):
         for cmd in bootCmds:
             lines += compile_command_to_bash(cmd)
         return '\n'.join(lines)
-
-    _selfNameRegex = re.compile(r'\$\{-\}')
-
-    # Convert ${-} to the name of the service
-    def translateSelfName(self, full_name, v):
-        return self._selfNameRegex.sub(full_name, v)
     

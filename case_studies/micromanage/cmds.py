@@ -45,13 +45,13 @@ def compile_command_to_bash(cmd):
         files = file_glob(cmd['from'], cmd['to'], os.path.dirname(cmd['from']))
         dirs = set([os.path.dirname(f[1]) for f in files]) - {cmd['to']}
         lines = []
-        for d in dirs:
+        for d in sorted(dirs):
             lines += [
                 'mkdir -v -p %s' % escape(d),
                 'chmod -v %s %s' % (cmd['dirPermissions'], escape(d)),
                 'chown -v %s.%s %s' % (cmd['owner'], cmd['group'], escape(d)),
             ]
-        for f in files:
+        for f in sorted(files):
             with open (f[0], "r") as stream:
                 content = stream.read()
             lines += [

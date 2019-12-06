@@ -152,12 +152,11 @@ def config_load(filename, ext_vars):
 def preprocess(config):
     """Return a copy of the config with ${-} handled."""
 
-    def aux(ctx, service_name, service):
+    def aux(service):
         compiler, _ = get_compiler(config, service)
-        r2 = compiler.preprocess(ctx, service_name, service)
-        ctx = ctx + [service_name]
+        r2 = compiler.preprocess(service)
         for child_name, child in compiler.children(service):
-            r2[child_name] = aux(ctx, child_name, child)
+            r2[child_name] = aux(child)
         return r2
 
     r = {
@@ -165,7 +164,7 @@ def preprocess(config):
     }
 
     for service_name, service in services(config):
-        r[service_name] = aux([], service_name, service)
+        r[service_name] = aux(service)
 
     return r
 
@@ -215,21 +214,29 @@ def compile(config, barts):
 
     # Avoid a warning from Terraform that there are no tf files
     if not len(tfs):
-        tfs['empty.tf'] = {}
+        tfs['empty.tf.json'] = {}
 
+    # Clean up the output JSON files because Terraform is quite picky.
     for tfname, tf in tfs.iteritems():
         if 'resource' in tf:
             new_resources = {}
-            for rtype_name, rtype_dict in tf['resource'].iteritems():
-                if rtype_dict:
-                    new_resources[rtype_name] = rtype_dict
-                    for r_name, r_dict in rtype_dict.iteritems():
-                        # depends_on changed to always be a list.
-                        if 'depends_on' in r_dict and isinstance(r_dict['depends_on'], basestring):
-                            r_dict['depends_on'] = [r_dict['depends_on']]
-            # Remove empty resource dicts, workaround for
-            # https://github.com/hashicorp/terraform/issues/6368
-            tf['resource'] = new_resources
+            for rtype_name, rtype_dict in list(tf['resource'].iteritems()):
+                for r_name, r_dict in rtype_dict.iteritems():
+                    # Ensure depends_on is always a list.
+                    # TODO: Doesn't seem too hard to make sure all configs just provide it as a
+                    # list.
+                    if 'depends_on' in r_dict and isinstance(r_dict['depends_on'], basestring):
+                        r_dict['depends_on'] = [r_dict['depends_on']]
+
+                # Remove types that have no resources.
+                if not rtype_dict:
+                    del tf['resource'][rtype_name]
+
+        # Remove empty dicts at the top level.
+        if 'resource' in tf and not tf['resource']:
+            del tf['resource']
+        if 'output' in tf and not tf['output']:
+            del tf['output']
     return tfs
 
 
@@ -293,8 +300,25 @@ def generate(dirpath, config, do_build):
         with open(dirfilename, 'w') as f:
             f.write(util.jsonstr(tf))
 
+    # Copy terraform plugins into the output dir.
+    config_dir = '%s/.terraform' % os.getcwd()
+    if os.path.exists(config_dir):
+        shutil.copytree(config_dir, dirpath + '/.terraform')
+
     return files
 
+class SubprocessException(Exception):
+    pass
+
+def sync_popen(dirpath, command, successful_exit_codes=(0,), stdout=None):
+    try:
+        process = subprocess.Popen(command, cwd=dirpath, stdout=stdout)
+        exit_code = process.wait()
+        if successful_exit_codes is not None and exit_code not in successful_exit_codes:
+            raise SubprocessException('Error from subprocess, ran in %s:  %s' % (dirpath, command))
+        return exit_code
+    except OSError as e:
+        raise SubprocessException('Error starting subprocess, ran in %s:  %s: (%s)' % (dirpath, command, e))
 
 def action_generate_to_editor(config_file, config, args):
     if args:
@@ -302,11 +326,22 @@ def action_generate_to_editor(config_file, config, args):
         sys.exit(1)
     dirpath = tempfile.mkdtemp()
     files = generate(dirpath, config, False)
-    command = [os.getenv('EDITOR')] + files
-    process = subprocess.Popen(command)
-    process.wait()
+    sync_popen(os.getcwd(), [os.getenv('EDITOR')] + files, None)
     output_delete(dirpath)
 
+def action_diff(config_file, config, args):
+    if args:
+        sys.stderr.write('Action "diff" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.exit(1)
+
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, True)
+
+    command = ['terraform', 'plan',
+               '-state', '%s/%s' % (os.getcwd(), config_file + '.tfstate')]
+    sync_popen(dirpath, command, (0, 2))
+
+    output_delete(dirpath)
 
 def action_apply(config_file, config, args):
     if args:
@@ -322,8 +357,7 @@ def action_apply(config_file, config, args):
                '-state', '%s/%s' % (os.getcwd(), state_file),
                '-detailed-exitcode',
                '-out', 'tf.plan']
-    tf_process = subprocess.Popen(command, cwd=dirpath)
-    plan_exitcode = tf_process.wait()
+    plan_exitcode = sync_popen(dirpath, command, (0, 2))
     if plan_exitcode == 0:
         pass  # Empty plan, nothing to do
     elif plan_exitcode == 2:
@@ -331,98 +365,74 @@ def action_apply(config_file, config, args):
 
         if choice == 'y':
             command = ['terraform', 'apply', '-state', '%s/%s' % (os.getcwd(), state_file), 'tf.plan']
-            tf_process = subprocess.Popen(command, cwd=dirpath)
-            exitcode = tf_process.wait()
-            if exitcode != 0:
-                sys.stderr.write('Error from terraform apply, aborting.\n')
-                sys.exit(1)
+            sync_popen(dirpath, command)
         else:
             print 'Not applying the changes.'
-    else:
-        sys.stderr.write('Error from terraform plan, aborting.\n')
-        sys.exit(1)
 
     output_delete(dirpath)
 
 
 def action_destroy(config_file, config, args):
     if args:
-        sys.stderr.write('Action "apply" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
     dirpath = tempfile.mkdtemp()
     generate(dirpath, config, False)
     command = ['terraform', 'destroy', '-force', '-state', '%s/%s.tfstate' % (os.getcwd(), config_file)]
-    tf_process = subprocess.Popen(command, cwd=dirpath)
-    exitcode = tf_process.wait()
-    if exitcode != 0:
-        sys.stderr.write('Error from terraform, aborting.\n')
-        sys.exit(1)
+    exitcode = sync_popen(dirpath, command)
     output_delete(dirpath)
 
 
 def action_graph(config_file, config, args):
     if args:
+        sys.stderr.write('Action "graph" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.exit(1)
+
+    dirpath = tempfile.mkdtemp()
+    generate(dirpath, config, False)
+    exitcode = sync_popen(dirpath, ['terraform', 'init'])
+    output_delete(dirpath)
+
+
+def action_init(config_file, config, args):
+    if args:
         sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
     dirpath = tempfile.mkdtemp()
     generate(dirpath, config, False)
-    dotfilename = '%s/graph.dot' % dirpath
-    with open(dotfilename, 'w') as dotfile:
-        tf_process = subprocess.Popen(['terraform', 'graph'], stdout=dotfile, cwd=dirpath)
-        exitcode = tf_process.wait()
-        if exitcode != 0:
-            sys.stderr.write('Error from terraform, aborting.\n')
-            sys.exit(1)
-    pngfilename = '%s/graph.png' % dirpath
-    with open(pngfilename, 'w') as pngfile:
-        dot_process = subprocess.Popen(['dot', '-Tpng', dotfilename], stdout=pngfile, cwd=dirpath)
-        exitcode = dot_process.wait()
-        if exitcode != 0:
-            sys.stderr.write('Error from dot, aborting.\n')
-            sys.exit(1)
-    geeqie_process = subprocess.Popen(['geeqie', pngfilename], cwd=dirpath)
-    exitcode = geeqie_process.wait()
-    if exitcode != 0:
-        sys.stderr.write('Error from geeqie, aborting.\n')
-        sys.exit(1)
-    output_delete(dirpath)
+    sync_popen(dirpath, ['terraform', 'init'])
+    # Copy terraform plugins into the output dir.
+    shutil.copytree('%s/.terraform' % dirpath, os.getcwd() + '/.terraform')
 
+    output_delete(dirpath)
 
 
 def action_show(config_file, config, args):
     if args:
-        sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.stderr.write('Action "show" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
+    # terraform show assumes that the current directory contains a filename called terraform.tfstate
+    # so create such a directory to make it happy.
     dirpath = tempfile.mkdtemp()
     generate(dirpath, config, False)
     shutil.copyfile('%s/%s.tfstate' % (os.getcwd(), config_file), dirpath + '/terraform.tfstate')
-    tf_process = subprocess.Popen(['terraform', 'show'], cwd=dirpath)
-    exitcode = tf_process.wait()
-    if exitcode != 0:
-        sys.stderr.write('Error from terraform, aborting.\n')
-        sys.exit(1)
+    sync_popen(dirpath, ['terraform', 'show'])
     output_delete(dirpath)
-
 
 
 def action_output(config_file, config, args):
     if args:
-        sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.stderr.write('Action "output" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
     dirpath = tempfile.mkdtemp()
     generate(dirpath, config, False)
     tfstate = '%s/%s.tfstate' % (os.getcwd(), config_file)
-    tf_process = subprocess.Popen(['terraform', 'output', '-state=' + tfstate], cwd=dirpath)
-    exitcode = tf_process.wait()
-    if exitcode != 0:
-        sys.stderr.write('Error from terraform, aborting.\n')
-        sys.exit(1)
+    exitcode = sync_popen(dirpath, ['terraform', 'output', '-state=' + tfstate])
     output_delete(dirpath)
-
 
 
 def action_image_gc(config_file, config, args):
@@ -490,7 +500,9 @@ actions = {
     'generate-to-editor': action_generate_to_editor,
     'apply': action_apply,
     'destroy': action_destroy,
+    'diff': action_diff,
     'graph': action_graph,
+    'init': action_init,
     'show': action_show,
     'output': action_output,
     'image-gc': action_image_gc,
@@ -553,4 +565,8 @@ if action not in actions:
     sys.exit(1)
 
 config = config_load(config_file, ext_vars)
-actions[action](config_file, config, args)
+try:
+    actions[action](config_file, config, args)
+except SubprocessException as e:
+    sys.stderr.write('%s\n' % e)
+    sys.exit(1)

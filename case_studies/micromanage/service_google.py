@@ -122,13 +122,13 @@ class GoogleService(service.Service):
         for inst_name, inst in instances.iteritems():
             self.validateCmds(root, inst_path + [inst_name, 'cmds'])
             self.validateCmds(root, inst_path + [inst_name, 'bootCmds'])
-            # Assume instances have a root disk.
-            validate.path_val(root, inst_path + [inst_name, 'disk'], 'array')
-            inst_disk_path = inst_path + [inst_name, 'disk', 0]
-            disk = validate.path_val(root, inst_disk_path, 'object')
-            image = disk.get('image')
+            # Assume instances have a boot disk.
+            validate.path_val(root, inst_path + [inst_name, 'boot_disk'], 'object')
+            boot_disk_path = inst_path + [inst_name, 'boot_disk']
+            boot_disk = validate.path_val(root, boot_disk_path, 'object')
+            image = boot_disk.get('initialize_params', {}).get('image')
             if isinstance(image, dict):
-                self.validateImage(root, inst_disk_path + ['image'])
+                self.validateImage(root, boot_disk_path + ['initialize_params', 'image'])
         for disk_name, disk in disks.iteritems():
             image = disk.get('image')
             if isinstance(image, dict):
@@ -143,10 +143,10 @@ class GoogleService(service.Service):
 
     def compileProvider(self, environment_name, environment):
         return {
-            'environment.%s.tf' % environment_name: {
+            'environment.%s.tf.json' % environment_name: {
                 'provider': {
                     'google': {
-                        'alias': environment_name,
+                        # 'alias': environment_name,
                         'credentials': json.dumps(environment['serviceAccount']),
                         'project': environment['project'],
                         'region' : environment['region'],
@@ -164,11 +164,11 @@ class GoogleService(service.Service):
 
         # Process image configs
         for inst_name, inst in instances.iteritems():
-            image = inst['disk'][0].get('image')
+            image = inst['boot_disk'].get('initialize_params', {}).get('image')
             if isinstance(image, dict):
                 bart = GooglePackerBuildArtefact(image, environment)
                 barts[bart.name()] = bart
-                inst['disk'][0]['image'] = bart.name()
+                inst['boot_disk']['initialize_params']['image'] = bart.name()
         for disk_name, disk in disks.iteritems():
             image = disk.get('image')
             if isinstance(image, dict):
@@ -185,7 +185,8 @@ class GoogleService(service.Service):
         # Add provider attributes
         for res_kind_name, res_kind_obj in infra.iteritems():
             for res_name, res in res_kind_obj.iteritems():
-                res['provider'] = 'google.%s' % service['environment']
+                # res['provider'] = 'google.%s' % service['environment']
+                pass
             
         # Process instance commands
         instances = infra.get('google_compute_instance', {})
@@ -207,7 +208,7 @@ class GoogleService(service.Service):
             inst.pop('bootCmds', None)
 
         return {
-            'service.%s.tf' % self.fullName(ctx, service_name): {
+            'service.%s.tf.json' % self.fullName(ctx, service_name): {
                 'resource': infra,
                 'output': {
                     k: { 'value': v }

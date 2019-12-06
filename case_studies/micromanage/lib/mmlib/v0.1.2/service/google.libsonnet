@@ -21,14 +21,14 @@ local apt = import "../cmd/apt.libsonnet";
 
 
     DebianImage:: $.Image + apt.Mixin + apt.PipMixin {
-        source: "backports-debian-7-wheezy-v20150603",
+        source: "debian-9-stretch-v20191121",
     },
 
 
-    StandardInstance:: {
+    StandardInstance(service):: {
         local instance = self,
         machine_type: "f1-micro",
-        scopes:: ["devstorage.read_only", "logging.write"],
+        scopes:: ["cloud-platform"],
         networkName:: "default",
         cmds: [],
         bootCmds: [],
@@ -42,11 +42,11 @@ local apt = import "../cmd/apt.libsonnet";
                 scopes: ["https://www.googleapis.com/auth/" + s for s in instance.scopes],
             },
         ],
-        disk: [
-            {
+        boot_disk: {
+            initialize_params: {
                 image: instance.StandardRootImage,
-            },
-        ],
+            }
+        },
 
         supportsLogging:: true,
         supportsMonitoring:: true,
@@ -117,7 +117,7 @@ local apt = import "../cmd/apt.libsonnet";
         MonitoringLoggingImageMixin:: {
             local monitoring =
                 if instance.enableMonitoring then [
-                    "curl -s https://repo.stackdriver.com/stack-install.sh | bash",
+                    "curl -s https://dl.google.com/cloudagents/install-monitoring-agent.sh | bash",
                 ] else [],
             local jmx =
                 if instance.enableJmxMonitoring then [
@@ -142,19 +142,21 @@ local apt = import "../cmd/apt.libsonnet";
 
         StandardRootImage:: $.DebianImage + instance.MonitoringLoggingImageMixin,
 
-        tags: ["${-}"],
+        allow_stopping_for_update: true,
+
+        tags: [service.fullName],
         metadata: {},
     },
 
 
-    Service: base.Service {
+    Service(parent, name): base.Service(parent, name) {
         local service = self,
         infrastructure+: if self.dnsZone == null then {
         } else {
             local instances = if std.objectHas(self, "google_compute_instance") then self.google_compute_instance else {},
             local addresses = if std.objectHas(self, "google_compute_address") then self.google_compute_address else {},
             local DnsRecord = {
-                managed_zone: service.dnsZone.refName(service.dnsZoneName),
+                managed_zone: service.dnsZone.nameRef,
                 type: "A",
                 ttl: 300,
             },
@@ -167,55 +169,54 @@ local apt = import "../cmd/apt.libsonnet";
             } + {
                 [name]: DnsRecord {
                     name: "${google_compute_instance." + name + ".name}." + service.dnsZone.dnsName,
-                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.assigned_nat_ip}"],
+                    rrdatas: ["${google_compute_instance." + name + ".network_interface.0.access_config.0.nat_ip}"],
+                    ttl: 5,
                 } for name in std.objectFields(instances)
             },
         },
         dnsZone:: null,
-        dnsZoneName:: error "Must set dnsZoneName if dnsZone is set.",
     },
 
 
-    Network:: $.Service {
+    Network(parent, name):: $.Service(parent, name) {
         local service = self,
-        refName(name):: "${google_compute_network.%s.name}" % name,
-        ipv4Range:: "10.0.0.0/16",
+        nameRef::  "${google_compute_network.%s.name}" % service.fullName,
         infrastructure: {
             google_compute_network: {
-                "${-}": {
-                    name: "${-}",
-                    ipv4_range: service.ipv4Range,
+                [service.fullName]: {
+                    name: service.fullName,
                 },
             },
         },
     },
 
 
-    InstanceBasedService: $.Service {
+    InstanceBasedService(parent, name): $.Service(parent, name) {
         local service = self,
         fwTcpPorts:: [22],
         fwUdpPorts:: [],
         networkName:: "default",
+        perServiceFirewalls:: true,
 
         Mixin:: {
             networkName: service.networkName,
         },
 
-        Instance:: $.StandardInstance + service.Mixin,
+        Instance:: $.StandardInstance(service) + service.Mixin,
 
-        refAddress(name):: "${google_compute_address.%s.address}" % name,
+        addressRef:: "${google_compute_address.%s.address}" % service.fullName,
 
         infrastructure+: {
             google_compute_address: {
-                "${-}": { name: "${-}" },
+                [service.fullName]: { name: service.fullName },
             },
-            google_compute_firewall: {
-                "${-}": {
-                    name: "${-}",
+            google_compute_firewall: if !service.perServiceFirewalls then {} else {
+                [service.fullName]: {
+                    name: service.fullName,
                     source_ranges: ["0.0.0.0/0"],
                     network: service.networkName,
                     allow: [{ protocol: "tcp", ports: [std.toString(p) for p in service.fwTcpPorts] }],
-                    target_tags: ["${-}"],
+                    target_tags: [self.fullName],
                 },
             },
             google_compute_instance: error "InstanceBasedService should define some instances.",
@@ -223,7 +224,7 @@ local apt = import "../cmd/apt.libsonnet";
     },
 
 
-    Cluster3: self.InstanceBasedService {
+    Cluster3(parent, name): self.InstanceBasedService(parent, name) {
         local service = self,
         lbTcpPorts:: [],
         lbUdpPorts:: [],
@@ -238,10 +239,10 @@ local apt = import "../cmd/apt.libsonnet";
         deployment:: {},
         local instances = std.foldl(function(a, b) a + b, [
             {
-                ["${-}-%s-%d" % [vname, i]]:
+                [service.prefixName("%s-%d" % [vname, i])]:
                     if std.objectHas(service.versions, vname) then
                         service.versions[vname] {
-                            name: "${-}-%s-%d" % [vname, i],
+                            name: service.prefixName("%s-%d" % [vname, i]),
                             zone: self.zones[i % std.length(self.zones)],
                             tags+: [vname, "index-%d" % i],
                         }
@@ -255,31 +256,31 @@ local apt = import "../cmd/apt.libsonnet";
             [], [
                 local attached = std.set(service.deployment[vname].attached);
                 local deployed = std.set(service.deployment[vname].deployed);
-                ["${-}-%s-%d" % [vname, i] for i in std.setInter(attached, deployed)]
+                [service.prefixName("%s-%d" % [vname, i]) for i in std.setInter(attached, deployed)]
                 for vname in std.objectFields(service.deployment)
             ]),
 
         infrastructure+: {
             google_compute_http_health_check: {
-                "${-}": {
-                    name: "${-}",
+                [service.fullName]: {
+                    name: service.fullName,
                     port: service.httpHealthCheckPort,
                 },
             },
             google_compute_target_pool: {
-                "${-}": {
-                    name: "${-}",
-                    depends_on: ["google_compute_http_health_check.${-}"],
-                    health_checks: ["${-}"],
+                [service.fullName]: {
+                    name: service.fullName,
+                    depends_on: ["google_compute_http_health_check." + service.fullName],
+                    health_checks: [service.fullName],
                     instances: ["%s/%s" % [instances[iname].zone, iname]
                                 for iname in attached_instances],
                 },
             },
             google_compute_forwarding_rule: {
-                ["${-}-%s" % port]: {
-                    name: "${-}-%s" % port,
-                    ip_address: "${google_compute_address.${-}.address}",
-                    target: "${google_compute_target_pool.${-}.self_link}",
+                [service.prefixName(port)]: {
+                    name: service.prefixName(port),
+                    ip_address: "${google_compute_address.%s.address}" % service.fullName,
+                    target: "${google_compute_target_pool.%s.self_link}" % service.fullName,
                     port_range: port,
                 }
                 for port in [std.toString(p) for p in service.lbTcpPorts]
@@ -289,18 +290,18 @@ local apt = import "../cmd/apt.libsonnet";
     },
 
 
-    SingleInstance: self.InstanceBasedService {
+    SingleInstance(parent, name): self.InstanceBasedService(parent, name) {
         local service = self,
         zone:: error "SingleInstance needs a zone.",
 
         infrastructure+: {
             google_compute_instance: {
-                "${-}": service.Instance {
-                    name: "${-}",
+                [service.fullName]: service.Instance {
+                    name: service.fullName,
                     zone: service.zone,
                     network_interface+: {
                         access_config: {
-                            nat_ip: "${google_compute_address.${-}.address}",
+                            nat_ip: "${google_compute_address.%s.address}" % service.fullName,
                         },
                     },
                 },
@@ -309,15 +310,15 @@ local apt = import "../cmd/apt.libsonnet";
     },
 
 
-    DnsZone:: self.Service {
+    DnsZone(parent, name):: self.Service(parent, name) {
         local service = self,
         dnsName:: error "DnsZone must have dnsName, e.g. example.com",
-        refName(name):: "${google_dns_managed_zone.%s.name}" % name,
+        nameRef:: "${google_dns_managed_zone.%s.name}" % self.fullName,
         description:: "Zone for " + self.dnsName,
         infrastructure+: {
             google_dns_managed_zone: {
-                "${-}": {
-                    name: "${-}",
+                [service.fullName]: {
+                    name: service.fullName,
                     dns_name: service.dnsName,
                     description: service.description,
                 },
@@ -326,21 +327,20 @@ local apt = import "../cmd/apt.libsonnet";
             },
         },
         outputs+: {
-            "${-}-name_servers": "${google_dns_managed_zone.${-}.name_servers.0}",
+            [service.prefixName('name_servers')]: "${google_dns_managed_zone.%s.name_servers.0}" % service.fullName,
         },
     },
 
 
-    DnsRecordWww:: self.Service {
+    DnsRecordWww(parent, name):: self.Service(parent, name) {
         local service = self,
         dnsName:: service.zone.dnsName,
         zone:: error "DnsRecordWww requires zone.",
-        zoneName:: error "DnsRecordWww requires zoneName.",
         target:: error "DnsRecordWww requires target.",
         infrastructure+: {
             google_dns_record_set: {
-                "${-}": {
-                    managed_zone: service.zone.refName(service.zoneName),
+                [service.fullName]: {
+                    managed_zone: service.zone.nameRef,
                     name: "www." + service.dnsName,
                     type: "CNAME",
                     ttl: 300,
