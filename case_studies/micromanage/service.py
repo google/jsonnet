@@ -55,17 +55,27 @@ class Service(object):
         self.validateCmds(root, path + ['cmds'])
 
     def children(self, service):
-        for child_name, child in service.iteritems():
+        for child_name in sorted(service.keys()):
             if child_name in {'environment', 'infrastructure', 'outputs'}:
                 continue
-            yield child_name, child
+            yield child_name, service[child_name]
+
+    def validateInfrastructure(self, root, service_name, path):
+        infrastructure = validate.path_val(root, path, 'object', {})
+        for rtype in sorted(infrastructure.keys()):
+            resources = validate.path_val(root, path + [rtype], 'object', {})
+            for resource_name in sorted(resources.keys()):
+                if not resource_name.startswith(service_name):
+                    validate.err(path,
+                                 'Expected "%s" to be prefixed by "%s"' % (resource_name, service_name),
+                                 'Resource names must be prefixed by the name of the service defining them')
 
     def validateService(self, root, path):
         validate.path_val(root, path + ['outputs'], validate.is_string_map, {})
-        validate.path_val(root, path + ['infrastructure'], 'object', {})
+        self.validateInfrastructure(root, self.fullName(path), path + ['infrastructure'])
 
-    def fullName(self, ctx, service_name):
-        return '-'.join(ctx + [service_name])
+    def fullName(self, path):
+        return '-'.join(path)
 
     def preprocess(self, service):
         return {
@@ -83,6 +93,6 @@ class Service(object):
         lines.append('touch /micromanage_instance_initialized')
         lines.append('fi')
         for cmd in bootCmds:
-            lines += compile_command_to_bash(cmd)
+            lines += cmds_lib.compile_command_to_bash(cmd)
         return '\n'.join(lines)
     

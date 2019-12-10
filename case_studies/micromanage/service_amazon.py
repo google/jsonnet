@@ -184,7 +184,7 @@ class AmazonService(service.Service):
             inst.pop('bootCmds', None)
 
         return {
-            'service.%s.tf.json' % self.fullName(ctx, service_name): {
+            'service.%s.tf.json' % self.fullName(ctx + [service_name]): {
                 'resource': infra,
                 'output': {
                     k: { 'value': v }

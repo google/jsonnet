@@ -28,6 +28,12 @@ import service_amazon
 import util
 import validate
 
+# TODO: Simple constraint language for expressing constraints on the generated
+# infrastructure of production servces that if broken during an apply, will
+# cause the apply to be rejected. Examples:
+#   - resource x must exist (e.g. data integrity)
+#   - at least x things of this type must exist
+
 service_compilers = {
     'Google': service_google.GoogleService(),
     'Amazon': service_amazon.AmazonService(),
@@ -377,6 +383,12 @@ def action_destroy(config_file, config, args):
         sys.stderr.write('Action "destroy" accepts no arguments, but got:  %s\n' % ' '.join(args))
         sys.exit(1)
 
+    choice = confirmation_dialog('Destroy all infrastructure?')
+
+    if choice != 'y':
+        print 'Phew, that was a close one.'
+        return
+
     dirpath = tempfile.mkdtemp()
     generate(dirpath, config, False)
     command = ['terraform', 'destroy', '-force', '-state', '%s/%s.tfstate' % (os.getcwd(), config_file)]
@@ -408,6 +420,28 @@ def action_init(config_file, config, args):
 
     output_delete(dirpath)
 
+
+def action_list_services(config_file, config, args):
+    if args:
+        sys.stderr.write('Action "list-services" accepts no arguments, but got:  %s\n' % ' '.join(args))
+        sys.exit(1)
+
+    def services_in_subtree(ctx, service_name, service):
+        compiler, environment = get_compiler(config, service)
+        services = ['-'.join(ctx + [service_name])]
+        for child_name, child in compiler.children(service):
+            services += services_in_subtree(ctx + [service_name], child_name, child)
+        return services
+    
+    services = []
+    for key in sorted(config.keys()):
+        if key == 'environments':
+            continue
+        services += services_in_subtree([], key, config[key])
+
+    for service in services:
+        print(service)
+        
 
 def action_show(config_file, config, args):
     if args:
@@ -503,6 +537,7 @@ actions = {
     'diff': action_diff,
     'graph': action_graph,
     'init': action_init,
+    'list-services': action_list_services,
     'show': action_show,
     'output': action_output,
     'image-gc': action_image_gc,
