@@ -34,6 +34,9 @@ def file_glob(given_glob, to, prefix):
 
 def compile_command_to_bash(cmd):
     if isinstance(cmd, basestring):
+        if len(cmd) > 1 and cmd[0] == '#':
+            comment = cmd[1:].strip()
+            return ['echo %s' % escape(comment)]
         return [cmd]
     elif cmd['kind'] == 'LiteralFile':
         return [

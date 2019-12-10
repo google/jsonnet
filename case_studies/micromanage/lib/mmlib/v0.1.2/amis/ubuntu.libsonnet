@@ -16,18 +16,21 @@ local dates(amis) = std.set([a[5] for a in amis]);
 local date_amis(amis, v) = [a for a in amis if a[5] == v];
 
 local strip_from_url(url) =
-    local suffix = std.split(url, ">")[1];
-    std.substr(suffix, 0, std.length(suffix) - 3);
+  local suffix = std.split(url, '>')[1];
+  std.substr(suffix, 0, std.length(suffix) - 3);
 
-local all_amis = (import "ubuntu_raw.json").aaData;
+local all_amis = (import 'ubuntu_raw.json').aaData;
 
 {
-    [os]: local this_os_amis = os_amis(all_amis, os); {
-        [arch]: local this_arch_amis = arch_amis(this_os_amis, arch); {
-            [date]: local this_date_amis = date_amis(this_arch_amis, date); {
-                [r]: strip_from_url(region_amis(this_date_amis, r)[0][6])
-                for r in regions(this_date_amis)
-            } for date in dates(this_arch_amis)
-        } for arch in archs(this_os_amis)
-    } for os in oses(all_amis)
+  [os]: local this_os_amis = os_amis(all_amis, os); {
+    [arch]: local this_arch_amis = arch_amis(this_os_amis, arch); {
+      [date]: local this_date_amis = date_amis(this_arch_amis, date); {
+        [r]: strip_from_url(region_amis(this_date_amis, r)[0][6])
+        for r in regions(this_date_amis)
+      }
+      for date in dates(this_arch_amis)
+    }
+    for arch in archs(this_os_amis)
+  }
+  for os in oses(all_amis)
 }

@@ -17,7 +17,9 @@ import re
 
 
 class ConfigError (Exception):
-    note = None
+    def __init__(self, msg, note):
+        super(ConfigError, self).__init__(msg)
+        self.note = note
 
 
 def render_path(path):
@@ -32,8 +34,8 @@ def render_path(path):
 
 # Utilities
 
-def err(path, msg):
-    raise ConfigError('%s: %s' % (render_path(path), msg))
+def err(path, msg, note=None):
+    raise ConfigError('%s: %s' % (render_path(path), msg), note)
 
 _KEYWORDS = {
     'import', 'importstr', 'function', 'self', 'super', 'assert', 'if', 'then',
