@@ -7,26 +7,36 @@ For an introduction to Jsonnet and documentation,
 
 Visit our [discussion forum](https://groups.google.com/forum/#!forum/jsonnet).
 
-## Quick Start
+## Packages
 
-**Using Homebrew**  
+Jsonnet is available on Homebrew:
 
 ```
 brew install jsonnet
 ```
 
+The Python binding is on pypi:
+
+```
+pip install jsonnet
+```
+
+You can also download and install Jsonnet using the [vcpkg](https://github.com/Microsoft/vcpkg/)
+dependency manager:
+
+```
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+vcpkg install jsonnet
+```
+
+The Jsonnet port in vcpkg is kept up to date by Microsoft team members and community contributors.
+If the version is out of date, please [create an issue or pull
+request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 ## Building Jsonnet
-
-You can download and install Jsonnet using the [vcpkg](https://github.com/Microsoft/vcpkg/) dependency manager:
-
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    ./bootstrap-vcpkg.sh
-    ./vcpkg integrate install
-    vcpkg install jsonnet
-
-The Jsonnet port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 You can use either GCC or Clang to build Jsonnet. Note that on recent versions
 of macOS, `/usr/bin/gcc` and `/usr/bin/g++` are actually Clang, so there is no
