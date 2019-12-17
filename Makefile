@@ -126,12 +126,12 @@ endif
 default: jsonnet jsonnetfmt
 
 install: bins libs
-	mkdir -p $(PREFIX)/bin
-	cp $(BINS) $(PREFIX)/bin/
-	mkdir -p $(PREFIX)/lib
-	cp $(LIBS) $(PREFIX)/lib/
-	mkdir -p $(PREFIX)/include
-	cp $(INCS) $(PREFIX)/include/
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp $(BINS) $(DESTDIR)$(PREFIX)/bin/
+	mkdir -p $(DESTDIR)$(PREFIX)/lib
+	cp $(LIBS) $(DESTDIR)$(PREFIX)/lib/
+	mkdir -p $(DESTDIR)$(PREFIX)/include
+	cp $(INCS) $(DESTDIR)$(PREFIX)/include/
 
 all: $(ALL)
 
