@@ -180,6 +180,13 @@ limitations under the License.
   range(from, to)::
     std.makeArray(to - from + 1, function(i) i + from),
 
+  repeat(what, count)::
+    local joiner =
+      if std.isString(what) then ""
+      else if std.isArray(what) then []
+      else error "std.repeat first argument must be an array or a string";
+    std.join(joiner, std.makeArray(count, function(i) what)),
+
   slice(indexable, index, end, step)::
     local invar =
       // loop invariant with defaults applied

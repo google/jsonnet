@@ -214,6 +214,16 @@ std.assertEqual(std.range(2, 6), [2, 3, 4, 5, 6]) &&
 std.assertEqual(std.range(2, 2), [2]) &&
 std.assertEqual(std.range(2, 1), []) &&
 
+std.assertEqual(std.repeat([], 0), []) &&
+std.assertEqual(std.repeat([1], 1), [1]) &&
+std.assertEqual(std.repeat([1, 2], 1), [1, 2]) &&
+std.assertEqual(std.repeat([1], 2), [1, 1]) &&
+std.assertEqual(std.repeat([1, 2], 2), [1, 2, 1, 2]) &&
+std.assertEqual(std.repeat('a', 1), 'a') &&
+std.assertEqual(std.repeat('a', 4), 'aaaa') &&
+std.assertEqual(std.repeat('ab', 4), 'abababab') &&
+std.assertEqual(std.repeat('a', 0), '') &&
+
 std.assertEqual(std.join([], [[1, 2], [3, 4, 5], [6]]), [1, 2, 3, 4, 5, 6]) &&
 std.assertEqual(std.join(['a', 'b'], [[]]), []) &&
 std.assertEqual(std.join(['a', 'b'], []), []) &&
@@ -257,13 +267,7 @@ std.assertEqual(
     sections: {
       s2: { p: ['yes', ''] },
     },
-  }), |||
-    a = 1
-    a = 2
-    [s2]
-    p = yes
-    p = 
-  |||
+  }), 'a = 1\na = 2\n[s2]\np = yes\np = \n'
 ) &&
 
 
