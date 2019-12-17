@@ -49,7 +49,7 @@ for FILE in "$@" ; do
     JSONNET_CMD="$JSONNET_BIN $PARAMS $EXT_PARAMS $TLA_PARAMS"
 
     # Avoid set -e terminating us if the run fails.
-    eval "$JSONNET_CMD" "$FILE" > "${FILE}.golden" 2>&1 || true
+    eval "$JSONNET_CMD" "$FILE" 2>&1 | postprocess_output > "${FILE}.golden"  || true
 
 done
 
