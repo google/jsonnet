@@ -1,3 +1,3 @@
 RUNTIME ERROR: Assertion failed. 1 != 2
-	std.jsonnet:787:7-50	function <anonymous>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
 	error.sanity.jsonnet:17:1-22	

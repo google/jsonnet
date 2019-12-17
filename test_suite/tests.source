@@ -53,6 +53,12 @@ deinit() {
     remove_temp_dir
 }
 
+postprocess_output() {
+    # Redact stdlib line numbers - otherwise many error tests need to change with every stdlib change
+    # TODO(sbarzowski) Consider moving noise-reducing functionality to Jsonnet interpreter
+    sed 's/	std\.jsonnet:[0-9]*:[0-9-]*/	std.jsonnet:<stdlib_position_redacted>/'
+}
+
 test_eval() {
     JSONNET_CMD="$1"
     JSONNET_FILE="$2"
@@ -66,6 +72,7 @@ test_eval() {
     TEST_CMD="$JSONNET_CMD $JSONNET_FILE"
     TEST_OUTPUT="$(eval $TEST_CMD 2>&1)"
     TEST_EXIT_CODE="$?"
+    TEST_OUTPUT="$(echo "$TEST_OUTPUT" | postprocess_output)"
     EXECUTED=$((EXECUTED + 1))
 
     if [ "$TEST_EXIT_CODE" -ne "$EXPECTED_EXIT_CODE" ] ; then
