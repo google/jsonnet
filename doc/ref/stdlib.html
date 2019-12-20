@@ -536,6 +536,93 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="stripChars">std.stripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Removes characters <code>chars</code> from the beginning and from the end of <code>str</code>.</p>
+    </div>
+    <p>
+      Example: <code>std.stripChars(" test test test     ", " ")</code> yields <code>"test test test"</code>.
+    </p>
+    <p>
+      Example: <code>std.stripChars("aaabbbbcccc", "ac")</code> yields <code>"bbbb"</code>.
+    </p>
+    <p>
+      Example: <code>std.stripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbb"</code>.
+    </p>
+    <em>Available in upcoming version.</em>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="lstripChars">std.lstripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Removes characters <code>chars</code> from the beginning of <code>str</code>.</p>
+    </div>
+    <p>
+      Example: <code>std.lstripChars(" test test test     ", " ")</code> yields <code>"test test test     "</code>.
+    </p>
+    <p>
+      Example: <code>std.lstripChars("aaabbbbcccc", "ac")</code> yields <code>"bbbbcccc"</code>.
+    </p>
+    <p>
+      Example: <code>std.lstripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbbaacc"</code>.
+    </p>
+    <em>Available in upcoming version.</em>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="rstripChars">std.rstripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Removes characters <code>chars</code> from the beginning and from the end of <code>str</code>.</p>
+    </div>
+    <p>
+      Example: <code>std.rstripChars(" test test test     ", " ")</code> yields <code>" test test test"</code>.
+    </p>
+    <p>
+      Example: <code>std.rstripChars("aaabbbbcccc", "ac")</code> yields <code>"aaabbbb"</code>.
+    </p>
+    <p>
+      Example: <code>std.rstripChars("cacabbbbaacc", "ac")</code> yields <code>"cacabbbb"</code>.
+    </p>
+    <em>Available in upcoming version.</em>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="split">std.split(str, c)</h4>
     </div>
     <div style="clear: both"></div>
@@ -1313,6 +1400,29 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.
       </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="member">std.member(arr, x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+      Returns whether <code>x</code> occurs in <code>arr</code>.
+      Argument <code>arr</code> may be an array or a string.
+      </p>
+      <em>Available in upcoming version.</em>
     </div>
     <div style="clear: both"></div>
   </div>

@@ -54,6 +54,22 @@ limitations under the License.
     else
       std.substr(a, std.length(a) - std.length(b), std.length(b)) == b,
 
+  lstripChars(str, chars)::
+    if std.length(str) > 0 && std.member(chars, str[0]) then
+      std.lstripChars(str[1:], chars)
+    else
+      str,
+
+  rstripChars(str, chars)::
+    local len = std.length(str);
+    if len > 0 && std.member(chars, str[len - 1]) then
+      std.rstripChars(str[:len - 1], chars)
+    else
+      str,
+
+  stripChars(str, chars)::
+    std.lstripChars(std.rstripChars(str, chars), chars),
+
   stringChars(str)::
     std.makeArray(std.length(str), function(i) str[i]),
 
@@ -162,7 +178,6 @@ limitations under the License.
       c;
     std.join('', std.map(down_letter, std.stringChars(str))),
 
-
   range(from, to)::
     std.makeArray(to - from + 1, function(i) i + from),
 
@@ -205,6 +220,13 @@ limitations under the License.
           cur + invar.step
         ) tailstrict;
     build(if invar.type == 'string' then '' else [], invar.index),
+
+  member(arr, x)::
+    if std.isArray(arr) then
+      std.count(arr, x) > 0
+    else if std.isString(arr) then
+      std.length(std.findSubstr(x, arr)) > 0
+    else error "std.member first argument must be an array or a string",
 
   count(arr, x):: std.length(std.filter(function(v) v == x, arr)),
 
