@@ -323,6 +323,30 @@ title: Standard Library
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="clamp">std.clamp(x, minVal, maxVal)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Clamp a value to fit within the range [<code>minVal</code>, <code>maxVal</code>].
+        Equivalent to <code>std.min(minVal, std.max(x, maxVal))</code>.
+      </p>
+     <p>Example: <code>std.clamp(-3, 0, 5)</code> yields <code>0</code>.</p>
+     <p>Example 2: <code>std.clamp(4, 0, 5)</code> yields <code>4</code>.</p>
+     <p>Example 3: <code>std.clamp(7, 0, 5)</code> yields <code>5</code>.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
 
 <div class="hgroup">
   <div class="hgroup-inline">

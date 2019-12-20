@@ -825,6 +825,11 @@ limitations under the License.
     else
       if a < b then a else b,
 
+  clamp(x, minVal, maxVal)::
+    if x  < minVal then minVal
+    else if x > maxVal then maxVal
+    else x,
+
   flattenArrays(arrs)::
     std.foldl(function(a, b) a + b, arrs, []),
 
