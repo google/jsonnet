@@ -113,6 +113,15 @@ std.assertEqual(std.isObject(null), false) &&
 std.assertEqual(std.isArray(null), false) &&
 std.assertEqual(std.isFunction(null), false) &&
 
+std.assertEqual(std.member('foo', 'o'), true) &&
+std.assertEqual(std.member('foo', 'f'), true) &&
+std.assertEqual(std.member('foo', 'x'), false) &&
+std.assertEqual(std.member([], 'o'), false) &&
+std.assertEqual(std.member(['f'], 'o'), false) &&
+std.assertEqual(std.member(['f', 'o', 'o'], 'o'), true) &&
+std.assertEqual(std.member(['f', 'o', 'o'], 'f'), true) &&
+std.assertEqual(std.member(['f', 'o', 'o'], 'g'), false) &&
+
 std.assertEqual(std.count([true, false, false, true, true, true, false], true), 4) &&
 std.assertEqual(std.count([true, false, false, true, true, true, false], false), 3) &&
 
@@ -181,6 +190,21 @@ std.assertEqual(std.endsWith('food', 'ood'), true) &&
 std.assertEqual(std.endsWith('food', 'food'), true) &&
 std.assertEqual(std.endsWith('food', 'omgfood'), false) &&
 std.assertEqual(std.endsWith('food', 'wat'), false) &&
+
+std.assertEqual(std.stripChars(' test test test     ', ' '), 'test test test') &&
+std.assertEqual(std.stripChars('aaabbbbcccc', 'ac'), 'bbbb') &&
+std.assertEqual(std.stripChars('cacabbbbaacc', 'ac'), 'bbbb') &&
+std.assertEqual(std.stripChars('', 'ac'), '') &&
+
+std.assertEqual(std.lstripChars(' test test test     ', ' '), 'test test test     ') &&
+std.assertEqual(std.lstripChars('aaabbbbcccc', 'ac'), 'bbbbcccc') &&
+std.assertEqual(std.lstripChars('cacabbbbaacc', 'ac'), 'bbbbaacc') &&
+std.assertEqual(std.lstripChars('', 'ac'), '') &&
+
+std.assertEqual(std.rstripChars(' test test test     ', ' '), ' test test test') &&
+std.assertEqual(std.rstripChars('aaabbbbcccc', 'ac'), 'aaabbbb') &&
+std.assertEqual(std.rstripChars('cacabbbbaacc', 'ac'), 'cacabbbb') &&
+std.assertEqual(std.rstripChars('', 'ac'), '') &&
 
 std.assertEqual(std.codepoint('a'), 97) &&
 std.assertEqual(std.char(97), 'a') &&
