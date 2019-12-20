@@ -82,6 +82,10 @@ assertClose(std.exponent(1), 1) &&
 assertClose(std.mantissa(128), 0.5) &&
 assertClose(std.exponent(128), 8) &&
 
+std.assertEqual(std.clamp(-3, 0, 5), 0) &&
+std.assertEqual(std.clamp(4, 0, 5), 4) &&
+std.assertEqual(std.clamp(7, 0, 5), 5) &&
+
 std.assertEqual(std.type(null), 'null') &&
 std.assertEqual(std.type(true), 'boolean') &&
 std.assertEqual(std.type(false), 'boolean') &&
