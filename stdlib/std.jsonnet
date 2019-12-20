@@ -259,6 +259,15 @@ limitations under the License.
     else
       { [k]: func(k, obj[k]) for k in std.objectFields(obj) },
 
+  flatMap(func, arr)::
+    if std.type(func) != 'function' then
+      error ('std.flatMap first param must be function, got ' + std.type(func))
+    else if std.isArray(arr) then
+      std.flattenArrays(std.makeArray(std.length(arr), function(i) func(arr[i])))
+    else if std.isString(arr) then
+      std.join('', std.makeArray(std.length(arr), function(i) func(arr[i])))
+    else error ('std.flatMap second param must be array / string, got ' + std.type(arr)),
+
   join(sep, arr)::
     local aux(arr, i, first, running) =
       if i >= std.length(arr) then

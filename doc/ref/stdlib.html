@@ -1399,6 +1399,34 @@ e = {"f1": False, "f2": 42}</pre>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="flatMap">std.flatMap(func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Apply the given function to every element of the array to form a new array then flatten the result.
+        It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[1, 1, 2, 2, 3, 3])</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3])</code> yields <code>[1, 3])</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])</code> yields <code>[3, 2, 9, 6])</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
 
 <div class="hgroup">
   <div class="hgroup-inline">

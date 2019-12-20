@@ -202,6 +202,10 @@ std.assertEqual(std.mapWithIndex(function(i, x) x * i, std.filter(function(x) x 
 std.assertEqual(std.mapWithKey(function(k, o) k + o, {}), {}) &&
 std.assertEqual(std.mapWithKey(function(k, o) k + o, { a: 1, b: 2 }), { a: 'a1', b: 'b2' }) &&
 
+std.assertEqual(std.flatMap(function(x) [x, x], [1, 2, 3]), [1, 1, 2, 2, 3, 3]) &&
+std.assertEqual(std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3]), [1, 3]) &&
+std.assertEqual(std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3]), [3, 2, 9, 6]) &&
+
 std.assertEqual(std.filterMap(function(x) x >= 0, function(x) x * x, [-3, -2, -1, 0, 1, 2, 3]), [0, 1, 4, 9]) &&
 
 std.assertEqual(std.foldl(function(x, y) [x, y], [], 'foo'), 'foo') &&
