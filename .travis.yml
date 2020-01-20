@@ -3,7 +3,7 @@ language: generic
 matrix:
   include:
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-4.9 CC=gcc-4.9
+      env: COMPILER_NAME=gcc CXX=g++-4.9 CC=gcc-4.9 COMMON_OS_NAME=${TRAVIS_OS_NAME}
       addons:
         apt:
           packages:
@@ -12,7 +12,7 @@ matrix:
             - llvm-toolchain-precise-3.8
             - ubuntu-toolchain-r-test    
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
+      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8 COMMON_OS_NAME=${TRAVIS_OS_NAME}
       addons:
         apt:
           packages:
@@ -20,10 +20,10 @@ matrix:
           sources: *sources
     - os: osx
       osx_image: xcode8
-      env: CC=gcc-4.9 && CXX=g++-4.9
+      env: CC=gcc-4.9 && CXX=g++-4.9 COMMON_OS_NAME=darwin
     - os: osx
       osx_image: xcode8
-      env: CC=clang && CXX=clang++
+      env: CC=clang && CXX=clang++ COMMON_OS_NAME=darwin
 
 before_install:
   - echo $LANG
@@ -40,7 +40,7 @@ script:
   - cmake . -Bbuild && cmake --build build --target run_tests
   # make a tarfile for the binaries and rename for os and tag
   - make dist
-  - mv jsonnet-bin.tar.gz jsonnet-bin-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz
+  - mv jsonnet-bin.tar.gz jsonnet-bin-${TRAVIS_TAG}-${COMMON_OS_NAME}.tar.gz
 
 deploy:
   provider: releases
