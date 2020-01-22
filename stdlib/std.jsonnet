@@ -36,16 +36,11 @@ limitations under the License.
     if std.type(a) == 'string' then a else '' + a,
 
   substr(str, from, len)::
-    if std.type(str) != 'string' then
-      error 'substr first parameter should be a string, got ' + std.type(str)
-    else if std.type(from) != 'number' then
-      error 'substr second parameter should be a number, got ' + std.type(from)
-    else if std.type(len) != 'number' then
-      error 'substr third parameter should be a number, got ' + std.type(len)
-    else if len < 0 then
-      error 'substr third parameter should be greater than zero, got ' + len
-    else
-      std.join('', std.makeArray(std.max(0, std.min(len, std.length(str) - from)), function(i) str[i + from])),
+    assert std.isString(str) : 'substr first parameter should be a string, got ' + std.type(str);
+    assert std.isNumber(from) : 'substr second parameter should be a string, got ' + std.type(from);
+    assert std.isNumber(len) : 'substr third parameter should be a string, got ' + std.type(len);
+    assert len >=0 : 'substr third parameter should be greater than zero, got ' + len;
+    std.join('', std.makeArray(std.max(0, std.min(len, std.length(str) - from)), function(i) str[i + from])),
 
   startsWith(a, b)::
     if std.length(a) < std.length(b) then
@@ -99,40 +94,31 @@ limitations under the License.
     parse_nat(str, 16),
 
   split(str, c)::
-    if std.type(str) != 'string' then
-      error 'std.split first parameter should be a string, got ' + std.type(str)
-    else if std.type(c) != 'string' then
-      error 'std.split second parameter should be a string, got ' + std.type(c)
-    else if std.length(c) != 1 then
-      error 'std.split second parameter should have length 1, got ' + std.length(c)
-    else
-      std.splitLimit(str, c, -1),
+    assert std.isString(str) : 'std.split first parameter should be a string, got ' + std.type(str);
+    assert std.isString(c) : 'std.split second parameter should be a string, got ' + std.type(c);
+    assert std.length(c) == 1 :  'std.split second parameter should be a string, got ' + std.type(c);
+    std.splitLimit(str, c, -1),
 
   splitLimit(str, c, maxsplits)::
-    if std.type(str) != 'string' then
-      error 'std.splitLimit first parameter should be a string, got ' + std.type(str)
-    else if std.type(c) != 'string' then
-      error 'std.splitLimit second parameter should be a string, got ' + std.type(c)
-    else if std.length(c) != 1 then
-      error 'std.splitLimit second parameter should have length 1, got ' + std.length(c)
-    else if std.type(maxsplits) != 'number' then
-      error 'std.splitLimit third parameter should be a number, got ' + std.type(maxsplits)
-    else
-      local aux(str, delim, i, arr, v) =
-        local c = str[i];
-        local i2 = i + 1;
-        if i >= std.length(str) then
-          arr + [v]
-        else if c == delim && (maxsplits == -1 || std.length(arr) < maxsplits) then
-          aux(str, delim, i2, arr + [v], '') tailstrict
-        else
-          aux(str, delim, i2, arr, v + c) tailstrict;
-      aux(str, c, 0, [], ''),
+    assert std.isString(str) : 'std.splitLimit first parameter should be a string, got ' + std.type(str);
+    assert std.isString(c) : 'std.splitLimit second parameter should be a string, got ' + std.type(c);
+    assert std.length(c) == 1 :  'std.splitLimit second parameter should have length 1, got ' + std.length(c);
+    assert std.isNumber(maxsplits) : 'std.splitLimit third parameter should be a number, got ' + std.type(maxsplits);
+    local aux(str, delim, i, arr, v) =
+      local c = str[i];
+      local i2 = i + 1;
+      if i >= std.length(str) then
+        arr + [v]
+      else if c == delim && (maxsplits == -1 || std.length(arr) < maxsplits) then
+        aux(str, delim, i2, arr + [v], '') tailstrict
+      else
+        aux(str, delim, i2, arr, v + c) tailstrict;
+    aux(str, c, 0, [], ''),
 
   strReplace(str, from, to)::
-    assert std.type(str) == 'string';
-    assert std.type(from) == 'string';
-    assert std.type(to) == 'string';
+    assert std.isString(str);
+    assert std.isString(from);
+    assert std.isString(to);
     assert from != '' : "'from' string must not be zero length.";
 
     // Cache for performance.
@@ -204,63 +190,58 @@ limitations under the License.
         length: std.length(indexable),
         type: std.type(indexable),
       };
-    if invar.index < 0 || invar.end < 0 || invar.step < 0 then
-      error ('got [%s:%s:%s] but negative index, end, and steps are not supported'
-             % [invar.index, invar.end, invar.step])
-    else if step == 0 then
-      error ('got %s but step must be greater than 0' % step)
-    else if std.type(indexable) != 'string' && std.type(indexable) != 'array' then
-      error ('std.slice accepts a string or an array, but got: %s' % std.type(indexable))
-    else
-      local build(slice, cur) =
-        if cur >= invar.end || cur >= invar.length then
-          slice
-        else
-          build(
-            if invar.type == 'string' then
-              slice + invar.indexable[cur]
-            else
-              slice + [invar.indexable[cur]],
-            cur + invar.step
-          ) tailstrict;
-      build(if invar.type == 'string' then '' else [], invar.index),
+    assert invar.index >= 0 && invar.end >= 0 && invar.step >= 0 : 'got [%s:%s:%s] but negative index, end, and steps are not supported' % [invar.index, invar.end, invar.step];
+    assert step != 0 : 'got %s but step must be greater than 0' % step;
+    assert std.isString(indexable) || std.isArray(indexable) : 'std.slice accepts a string or an array, but got: %s' % std.type(indexable);
+    local build(slice, cur) =
+      if cur >= invar.end || cur >= invar.length then
+        slice
+      else
+        build(
+          if invar.type == 'string' then
+            slice + invar.indexable[cur]
+          else
+            slice + [invar.indexable[cur]],
+          cur + invar.step
+        ) tailstrict;
+    build(if invar.type == 'string' then '' else [], invar.index),
 
   count(arr, x):: std.length(std.filter(function(v) v == x, arr)),
 
   mod(a, b)::
-    if std.type(a) == 'number' && std.type(b) == 'number' then
+    if std.isNumber(a) && std.isNumber(b) then
       std.modulo(a, b)
-    else if std.type(a) == 'string' then
+    else if std.isString(a) then
       std.format(a, b)
     else
       error 'Operator % cannot be used on types ' + std.type(a) + ' and ' + std.type(b) + '.',
 
   map(func, arr)::
-    if std.type(func) != 'function' then
+    if !std.isFunction(func) then
       error ('std.map first param must be function, got ' + std.type(func))
-    else if std.type(arr) != 'array' && std.type(arr) != 'string' then
+    else if !std.isArray(arr) && !std.isString(arr) then
       error ('std.map second param must be array / string, got ' + std.type(arr))
     else
       std.makeArray(std.length(arr), function(i) func(arr[i])),
 
   mapWithIndex(func, arr)::
-    if std.type(func) != 'function' then
+    if !std.isFunction(func) then
       error ('std.mapWithIndex first param must be function, got ' + std.type(func))
-    else if std.type(arr) != 'array' && std.type(arr) != 'string' then
+    else if !std.isArray(arr) && !std.isString(arr) then
       error ('std.mapWithIndex second param must be array, got ' + std.type(arr))
     else
       std.makeArray(std.length(arr), function(i) func(i, arr[i])),
 
   mapWithKey(func, obj)::
-    if std.type(func) != 'function' then
+    if !std.isFunction(func) then
       error ('std.mapWithKey first param must be function, got ' + std.type(func))
-    else if std.type(obj) != 'object' then
+    else if !std.isObject(obj) then
       error ('std.mapWithKey second param must be object, got ' + std.type(obj))
     else
       { [k]: func(k, obj[k]) for k in std.objectFields(obj) },
 
   flatMap(func, arr)::
-    if std.type(func) != 'function' then
+    if !std.isFunction(func) then
       error ('std.flatMap first param must be function, got ' + std.type(func))
     else if std.isArray(arr) then
       std.flattenArrays(std.makeArray(std.length(arr), function(i) func(arr[i])))
@@ -280,11 +261,11 @@ limitations under the License.
         aux(arr, i + 1, false, running + arr[i]) tailstrict
       else
         aux(arr, i + 1, false, running + sep + arr[i]) tailstrict;
-    if std.type(arr) != 'array' then
+    if !std.isArray(arr) then
       error 'join second parameter should be array, got ' + std.type(arr)
-    else if std.type(sep) == 'string' then
+    else if std.isString(sep) then
       aux(arr, 0, true, '')
-    else if std.type(sep) == 'array' then
+    else if std.isArray(sep) then
       aux(arr, 0, true, [])
     else
       error 'join first parameter should be string or array, got ' + std.type(sep),
@@ -308,42 +289,38 @@ limitations under the License.
     /////////////////////////////
 
     local try_parse_mapping_key(str, i) =
-      if i >= std.length(str) then
-        error 'Truncated format code.'
-      else
-        local c = str[i];
-        if c == '(' then
-          local consume(str, j, v) =
-            if j >= std.length(str) then
-              error 'Truncated format code.'
+      assert i < std.length(str) : 'Truncated format code.';
+      local c = str[i];
+      if c == '(' then
+        local consume(str, j, v) =
+          if j >= std.length(str) then
+            error 'Truncated format code.'
+          else
+            local c = str[j];
+            if c != ')' then
+              consume(str, j + 1, v + c)
             else
-              local c = str[j];
-              if c != ')' then
-                consume(str, j + 1, v + c)
-              else
-                { i: j + 1, v: v };
-          consume(str, i + 1, '')
-        else
-          { i: i, v: null };
+              { i: j + 1, v: v };
+        consume(str, i + 1, '')
+      else
+        { i: i, v: null };
 
     local try_parse_cflags(str, i) =
       local consume(str, j, v) =
-        if j >= std.length(str) then
-          error 'Truncated format code.'
+        assert j < std.length(str) : 'Truncated format code.';
+        local c = str[j];
+        if c == '#' then
+          consume(str, j + 1, v { alt: true })
+        else if c == '0' then
+          consume(str, j + 1, v { zero: true })
+        else if c == '-' then
+          consume(str, j + 1, v { left: true })
+        else if c == ' ' then
+          consume(str, j + 1, v { blank: true })
+        else if c == '+' then
+          consume(str, j + 1, v { sign: true })
         else
-          local c = str[j];
-          if c == '#' then
-            consume(str, j + 1, v { alt: true })
-          else if c == '0' then
-            consume(str, j + 1, v { zero: true })
-          else if c == '-' then
-            consume(str, j + 1, v { left: true })
-          else if c == ' ' then
-            consume(str, j + 1, v { blank: true })
-          else if c == '+' then
-            consume(str, j + 1, v { sign: true })
-          else
-            { i: j, v: v };
+          { i: j, v: v };
       consume(str, i, { alt: false, zero: false, left: false, blank: false, sign: false });
 
     local try_parse_field_width(str, i) =
@@ -351,112 +328,102 @@ limitations under the License.
         { i: i + 1, v: '*' }
       else
         local consume(str, j, v) =
-          if j >= std.length(str) then
-            error 'Truncated format code.'
+          assert j < std.length(str) : 'Truncated format code.';
+          local c = str[j];
+          if c == '0' then
+            consume(str, j + 1, v * 10 + 0)
+          else if c == '1' then
+            consume(str, j + 1, v * 10 + 1)
+          else if c == '2' then
+            consume(str, j + 1, v * 10 + 2)
+          else if c == '3' then
+            consume(str, j + 1, v * 10 + 3)
+          else if c == '4' then
+            consume(str, j + 1, v * 10 + 4)
+          else if c == '5' then
+            consume(str, j + 1, v * 10 + 5)
+          else if c == '6' then
+            consume(str, j + 1, v * 10 + 6)
+          else if c == '7' then
+            consume(str, j + 1, v * 10 + 7)
+          else if c == '8' then
+            consume(str, j + 1, v * 10 + 8)
+          else if c == '9' then
+            consume(str, j + 1, v * 10 + 9)
           else
-            local c = str[j];
-            if c == '0' then
-              consume(str, j + 1, v * 10 + 0)
-            else if c == '1' then
-              consume(str, j + 1, v * 10 + 1)
-            else if c == '2' then
-              consume(str, j + 1, v * 10 + 2)
-            else if c == '3' then
-              consume(str, j + 1, v * 10 + 3)
-            else if c == '4' then
-              consume(str, j + 1, v * 10 + 4)
-            else if c == '5' then
-              consume(str, j + 1, v * 10 + 5)
-            else if c == '6' then
-              consume(str, j + 1, v * 10 + 6)
-            else if c == '7' then
-              consume(str, j + 1, v * 10 + 7)
-            else if c == '8' then
-              consume(str, j + 1, v * 10 + 8)
-            else if c == '9' then
-              consume(str, j + 1, v * 10 + 9)
-            else
-              { i: j, v: v };
+            { i: j, v: v };
         consume(str, i, 0);
 
     local try_parse_precision(str, i) =
-      if i >= std.length(str) then
-        error 'Truncated format code.'
+      assert i < std.length(str) : 'Truncated format code.';
+      local c = str[i];
+      if c == '.' then
+        try_parse_field_width(str, i + 1)
       else
-        local c = str[i];
-        if c == '.' then
-          try_parse_field_width(str, i + 1)
-        else
-          { i: i, v: null };
+        { i: i, v: null };
 
     // Ignored, if it exists.
     local try_parse_length_modifier(str, i) =
-      if i >= std.length(str) then
-        error 'Truncated format code.'
+      assert i < std.length(str) : 'Truncated format code.';
+      local c = str[i];
+      if c == 'h' || c == 'l' || c == 'L' then
+        i + 1
       else
-        local c = str[i];
-        if c == 'h' || c == 'l' || c == 'L' then
-          i + 1
-        else
-          i;
+        i;
 
     local parse_conv_type(str, i) =
-      if i >= std.length(str) then
-        error 'Truncated format code.'
+      assert i < std.length(str) : 'Truncated format code.';
+      local c = str[i];
+      if c == 'd' || c == 'i' || c == 'u' then
+        { i: i + 1, v: 'd', caps: false }
+      else if c == 'o' then
+        { i: i + 1, v: 'o', caps: false }
+      else if c == 'x' then
+        { i: i + 1, v: 'x', caps: false }
+      else if c == 'X' then
+        { i: i + 1, v: 'x', caps: true }
+      else if c == 'e' then
+        { i: i + 1, v: 'e', caps: false }
+      else if c == 'E' then
+        { i: i + 1, v: 'e', caps: true }
+      else if c == 'f' then
+        { i: i + 1, v: 'f', caps: false }
+      else if c == 'F' then
+        { i: i + 1, v: 'f', caps: true }
+      else if c == 'g' then
+        { i: i + 1, v: 'g', caps: false }
+      else if c == 'G' then
+        { i: i + 1, v: 'g', caps: true }
+      else if c == 'c' then
+        { i: i + 1, v: 'c', caps: false }
+      else if c == 's' then
+        { i: i + 1, v: 's', caps: false }
+      else if c == '%' then
+        { i: i + 1, v: '%', caps: false }
       else
-        local c = str[i];
-        if c == 'd' || c == 'i' || c == 'u' then
-          { i: i + 1, v: 'd', caps: false }
-        else if c == 'o' then
-          { i: i + 1, v: 'o', caps: false }
-        else if c == 'x' then
-          { i: i + 1, v: 'x', caps: false }
-        else if c == 'X' then
-          { i: i + 1, v: 'x', caps: true }
-        else if c == 'e' then
-          { i: i + 1, v: 'e', caps: false }
-        else if c == 'E' then
-          { i: i + 1, v: 'e', caps: true }
-        else if c == 'f' then
-          { i: i + 1, v: 'f', caps: false }
-        else if c == 'F' then
-          { i: i + 1, v: 'f', caps: true }
-        else if c == 'g' then
-          { i: i + 1, v: 'g', caps: false }
-        else if c == 'G' then
-          { i: i + 1, v: 'g', caps: true }
-        else if c == 'c' then
-          { i: i + 1, v: 'c', caps: false }
-        else if c == 's' then
-          { i: i + 1, v: 's', caps: false }
-        else if c == '%' then
-          { i: i + 1, v: '%', caps: false }
-        else
-          error 'Unrecognised conversion type: ' + c;
+        error 'Unrecognised conversion type: ' + c;
 
 
     // Parsed initial %, now the rest.
     local parse_code(str, i) =
-      if i >= std.length(str) then
-        error 'Truncated format code.'
-      else
-        local mkey = try_parse_mapping_key(str, i);
-        local cflags = try_parse_cflags(str, mkey.i);
-        local fw = try_parse_field_width(str, cflags.i);
-        local prec = try_parse_precision(str, fw.i);
-        local len_mod = try_parse_length_modifier(str, prec.i);
-        local ctype = parse_conv_type(str, len_mod);
-        {
-          i: ctype.i,
-          code: {
-            mkey: mkey.v,
-            cflags: cflags.v,
-            fw: fw.v,
-            prec: prec.v,
-            ctype: ctype.v,
-            caps: ctype.caps,
-          },
-        };
+      assert i < std.length(str) : 'Truncated format code.';
+      local mkey = try_parse_mapping_key(str, i);
+      local cflags = try_parse_cflags(str, mkey.i);
+      local fw = try_parse_field_width(str, cflags.i);
+      local prec = try_parse_precision(str, fw.i);
+      local len_mod = try_parse_length_modifier(str, prec.i);
+      local ctype = parse_conv_type(str, len_mod);
+      {
+        i: ctype.i,
+        code: {
+          mkey: mkey.v,
+          cflags: cflags.v,
+          fw: fw.v,
+          prec: prec.v,
+          ctype: ctype.v,
+          caps: ctype.caps,
+        },
+      };
 
     // Parse a format string (containing none or more % format tags).
     local parse_codes(str, i, out, cur) =
@@ -762,9 +729,9 @@ limitations under the License.
               pad_left(s, fw, ' ');
           format_codes_obj(codes, obj, i + 1, v + s_padded) tailstrict;
 
-    if std.type(vals) == 'array' then
+    if std.isArray(vals) then
       format_codes_arr(codes, vals, 0, 0, '')
-    else if std.type(vals) == 'object' then
+    else if std.isObject(vals) then
       format_codes_obj(codes, vals, 0, '')
     else
       format_codes_arr(codes, [vals], 0, 0, ''),
@@ -787,11 +754,11 @@ limitations under the License.
 
 
   filterMap(filter_func, map_func, arr)::
-    if std.type(filter_func) != 'function' then
+    if !std.isFunction(filter_func) then
       error ('std.filterMap first param must be function, got ' + std.type(filter_func))
-    else if std.type(map_func) != 'function' then
+    else if !std.isFunction(map_func) then
       error ('std.filterMap second param must be function, got ' + std.type(map_func))
-    else if std.type(arr) != 'array' then
+    else if !std.isArray(arr) then
       error ('std.filterMap third param must be array, got ' + std.type(arr))
     else
       std.map(map_func, std.filter(filter_func, arr)),
@@ -803,13 +770,13 @@ limitations under the License.
       error 'Assertion failed. ' + a + ' != ' + b,
 
   abs(n)::
-    if std.type(n) != 'number' then
+    if !std.isNumber(n) then
       error 'std.abs expected number, got ' + std.type(n)
     else
       if n > 0 then n else -n,
 
   sign(n)::
-    if std.type(n) != 'number' then
+    if !std.isNumber(n) then
       error 'std.sign expected number, got ' + std.type(n)
     else
       if n > 0 then
@@ -819,17 +786,17 @@ limitations under the License.
       else 0,
 
   max(a, b)::
-    if std.type(a) != 'number' then
+    if !std.isNumber(a) then
       error 'std.max first param expected number, got ' + std.type(a)
-    else if std.type(b) != 'number' then
+    else if !std.isNumber(b) then
       error 'std.max second param expected number, got ' + std.type(b)
     else
       if a > b then a else b,
 
   min(a, b)::
-    if std.type(a) != 'number' then
+    if !std.isNumber(a) then
       error 'std.max first param expected number, got ' + std.type(a)
-    else if std.type(b) != 'number' then
+    else if !std.isNumber(b) then
       error 'std.max second param expected number, got ' + std.type(b)
     else
       if a < b then a else b,
@@ -841,7 +808,7 @@ limitations under the License.
     local body_lines(body) =
       std.join([], [
         local value_or_values = body[k];
-        if std.type(value_or_values) == 'array' then
+        if std.isArray(value_or_values) then
           ['%s = %s' % [k, value] for value in value_or_values]
         else
           ['%s = %s' % [k, value_or_values]]
@@ -913,13 +880,13 @@ limitations under the License.
         'false'
       else if v == null then
         'null'
-      else if std.type(v) == 'number' then
+      else if std.isNumber(v) then
         '' + v
-      else if std.type(v) == 'string' then
+      else if std.isString(v) then
         std.escapeStringJson(v)
-      else if std.type(v) == 'function' then
+      else if std.isFunction(v) then
         error 'Tried to manifest function at ' + path
-      else if std.type(v) == 'array' then
+      else if std.isArray(v) then
         local range = std.range(0, std.length(v) - 1);
         local new_indent = cindent + indent;
         local lines = ['[\n']
@@ -930,7 +897,7 @@ limitations under the License.
                                  ])
                       + ['\n' + cindent + ']'];
         std.join('', lines)
-      else if std.type(v) == 'object' then
+      else if std.isObject(v) then
         local lines = ['{\n']
                       + std.join([',\n'],
                                  [
@@ -950,9 +917,9 @@ limitations under the License.
         'false'
       else if v == null then
         'null'
-      else if std.type(v) == 'number' then
+      else if std.isNumber(v) then
         '' + v
-      else if std.type(v) == 'string' then
+      else if std.isString(v) then
         local len = std.length(v);
         if len == 0 then
           '""'
@@ -961,9 +928,9 @@ limitations under the License.
           std.join('\n' + cindent + '  ', ['|'] + split[0:std.length(split) - 1])
         else
           std.escapeStringJson(v)
-      else if std.type(v) == 'function' then
+      else if std.isFunction(v) then
         error 'Tried to manifest function at ' + path
-      else if std.type(v) == 'array' then
+      else if std.isArray(v) then
         if std.length(v) == 0 then
           '[]'
         else
@@ -995,7 +962,7 @@ limitations under the License.
             for param in [params(v[i])]
           ];
           std.join('\n' + cindent, parts)
-      else if std.type(v) == 'object' then
+      else if std.isObject(v) then
         if std.length(v) == 0 then
           '{}'
         else
@@ -1026,7 +993,7 @@ limitations under the License.
     aux(value, [], ''),
 
   manifestYamlStream(value, indent_array_in_object=false, c_document_end=true)::
-    if std.type(value) != 'array' then
+    if !std.isArray(value) then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
       '---\n' + std.join(
@@ -1035,19 +1002,19 @@ limitations under the License.
 
 
   manifestPython(v)::
-    if std.type(v) == 'object' then
+    if std.isObject(v) then
       local fields = [
         '%s: %s' % [std.escapeStringPython(k), std.manifestPython(v[k])]
         for k in std.objectFields(v)
       ];
       '{%s}' % [std.join(', ', fields)]
-    else if std.type(v) == 'array' then
+    else if std.isArray(v) then
       '[%s]' % [std.join(', ', [std.manifestPython(v2) for v2 in v])]
-    else if std.type(v) == 'string' then
+    else if std.isString(v) then
       '%s' % [std.escapeStringPython(v)]
-    else if std.type(v) == 'function' then
+    else if std.isFunction(v) then
       error 'cannot manifest function'
-    else if std.type(v) == 'number' then
+    else if std.isNumber(v) then
       std.toString(v)
     else if v == true then
       'True'
@@ -1069,7 +1036,7 @@ limitations under the License.
           v
         else
           local tag = v[0];
-          local has_attrs = std.length(v) > 1 && std.type(v[1]) == 'object';
+          local has_attrs = std.length(v) > 1 && std.isObject(v[1]);
           local attrs = if has_attrs then v[1] else {};
           local children = if has_attrs then v[2:] else v[1:];
           local attrs_str =
@@ -1083,7 +1050,7 @@ limitations under the License.
 
   base64(input)::
     local bytes =
-      if std.type(input) == 'string' then
+      if std.isString(input) then
         std.map(function(c) std.codepoint(c), input)
       else
         input;
@@ -1257,12 +1224,12 @@ limitations under the License.
     aux(a, b, 0, 0, []) tailstrict,
 
   mergePatch(target, patch)::
-    if std.type(patch) == 'object' then
+    if std.isObject(patch) then
       local target_object =
-        if std.type(target) == 'object' then target else {};
+        if std.isObject(target) then target else {};
 
       local target_fields =
-        if std.type(target_object) == 'object' then std.objectFields(target_object) else [];
+        if std.isObject(target_object) then std.objectFields(target_object) else [];
 
       local null_fields = [k for k in std.objectFields(patch) if patch[k] == null];
       local both_fields = std.setUnion(target_fields, std.objectFields(patch));
@@ -1335,19 +1302,17 @@ limitations under the License.
 
   prune(a)::
     local isContent(b) =
-      local t = std.type(b);
       if b == null then
         false
-      else if t == 'array' then
+      else if std.isArray(b) then
         std.length(b) > 0
-      else if t == 'object' then
+      else if std.isObject(b) then
         std.length(b) > 0
       else
         true;
-    local t = std.type(a);
-    if t == 'array' then
+    if std.isArray(a) then
       [std.prune(x) for x in a if isContent($.prune(x))]
-    else if t == 'object' then {
+    else if std.isObject(a) then {
       [x]: $.prune(a[x])
       for x in std.objectFields(a)
       if isContent(std.prune(a[x]))
@@ -1355,9 +1320,9 @@ limitations under the License.
       a,
 
   findSubstr(pat, str)::
-    if std.type(pat) != 'string' then
+    if !std.isString(pat) then
       error 'findSubstr first parameter should be a string, got ' + std.type(pat)
-    else if std.type(str) != 'string' then
+    else if !std.isString(str) then
       error 'findSubstr second parameter should be a string, got ' + std.type(str)
     else
       local pat_len = std.length(pat);
@@ -1368,7 +1333,7 @@ limitations under the License.
         std.filter(function(i) str[i:i + pat_len] == pat, std.range(0, str_len - pat_len)),
 
   find(value, arr)::
-    if std.type(arr) != 'array' then
+    if !std.isArray(arr) then
       error 'find second parameter should be an array, got ' + std.type(arr)
     else
       std.filter(function(i) arr[i] == value, std.range(0, std.length(arr) - 1)),
