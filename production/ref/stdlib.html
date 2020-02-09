@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-    <title>Jsonnet - The Data Templating Language</title>
+    <title>Jsonnet - Standard Library</title>
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
     <meta name="keywords" content="Jsonnet, JSON, YAML, language, configuration, configuration language, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
     <meta name="description" content="A powerful DSL for elegant description of JSON data." />
@@ -124,15 +124,15 @@
       <p>
         This page describes the functions available in Jsonnet's standard library, i.e. the object
         implicitly bound to the <code>std</code> variable. Some of the standard library functions
-        can be implemented in Jsonnet.  Their code can be found in the <tt>std.jsonnet</tt> file.
+        can be implemented in Jsonnet. Their code can be found in the <tt>std.jsonnet</tt> file.
         The behavior of some of the other functions, i.e. the ones that expose extra functionality
         not otherwise available to programmers, is described formally in the <a
-        href="/language/spec.html">specification</a>.
+          href="/language/spec.html">specification</a>.
       </p>
       <p>
         The standard library is implicitly added to all Jsonnet programs by enclosing them in a
-        local construct.  For example, if the program given by the user is <code>{x: "foo"}</code>,
-        then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>.  The
+        local construct. For example, if the program given by the user is <code>{x: "foo"}</code>,
+        then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>. The
         functions in the standard library are all hidden fields of the <code>std</code> object.
       </p>
     </div>
@@ -196,7 +196,7 @@
       <p>
         Note that this is a field. It contains the current Jsonnet filename as a string.
       </p>
-    <div style="clear: both"></div>
+      <div style="clear: both"></div>
     </div>
   </div>
 </div>
@@ -215,7 +215,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Return a string that indicates the type of the value.  The possible return values are:
+        Return a string that indicates the type of the value. The possible return values are:
         "array", "boolean", "function", "null", "number", "object", and "string".
       </p>
       <p>
@@ -245,7 +245,7 @@
       <p>
         Depending on the type of the value given, either returns the number of elements in the
         array, the number of codepoints in the string, the number of parameters in the function, or
-        the number of fields in the object.  Raises an error if given a primitive value, i.e.
+        the number of fields in the object. Raises an error if given a primitive value, i.e.
         <code>null</code>, <code>true</code> or <code>false</code>.
       </p>
     </div>
@@ -268,8 +268,8 @@
     <div class="panel">
       <p>
         Returns <code>true</code> if the given object has the field (given as a string), otherwise
-        <code>false</code>.  Raises an error if the arguments are not object and string
-        respectively.  Returns false if the field is hidden.
+        <code>false</code>. Raises an error if the arguments are not object and string
+        respectively. Returns false if the field is hidden.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -290,8 +290,8 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array of strings, each element being a field from the given object.  Does not include
-      hidden fields.
+        Returns an array of strings, each element being a field from the given object. Does not include
+        hidden fields.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -340,7 +340,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="prune">std.prune(x)</h4>
+      <h4 id="prune">std.prune(a)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -350,8 +350,9 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Recursively remove all "empty" members of `x`.  "Empty" is defined as zero
-      length `arrays`, zero length `objects`, or `null` values.
+        Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
+        length `arrays`, zero length `objects`, or `null` values.
+        The argument <code>a</code> may have any type.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -419,10 +420,35 @@
         <ul><code>std.atan(x)</code></ul>
       </ul>
       <p>
-        The function <code>std.mod(a, b)</code> is what the % operator is desugared to.  It performs
+        The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
         modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
         it does Python-style string formatting with <code>std.format()</code>.
       </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="clamp">std.clamp(x, minVal, maxVal)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>
+        Clamp a value to fit within the range [<code>minVal</code>, <code>maxVal</code>].
+        Equivalent to <code>std.min(minVal, std.max(x, maxVal))</code>.
+      </p>
+     <p>Example: <code>std.clamp(-3, 0, 5)</code> yields <code>0</code>.</p>
+     <p>Example 2: <code>std.clamp(4, 0, 5)</code> yields <code>4</code>.</p>
+     <p>Example 3: <code>std.clamp(7, 0, 5)</code> yields <code>5</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -451,7 +477,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Ensure that <code>a == b</code>.  Returns <code>true</code> or throws an error message.
+        Ensure that <code>a == b</code>. Returns <code>true</code> or throws an error message.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -501,7 +527,7 @@
     <div class="panel">
       <p>
         Returns the positive integer representing the unicode codepoint of the character in the
-        given single-character string.  This function is the inverse of <code>std.char(n)</code>.
+        given single-character string. This function is the inverse of <code>std.char(n)</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -534,7 +560,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="substr">std.substr(s, from, len)</h4>
+      <h4 id="substr">std.substr(str, from, len)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -545,7 +571,8 @@
     <div class="panel">
       <p>
         Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-        and is <code>len</code> codepoints long.
+        and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
+        <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -566,7 +593,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>pat</code> in 
+        Returns an array that contains the indexes of all occurances of <code>pat</code> in
         <code>str</code>.
       </p>
     </div>
@@ -616,6 +643,94 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="stripChars">std.stripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>Removes characters <code>chars</code> from the beginning and from the end of <code>str</code>.</p>
+      <p>
+        Example: <code>std.stripChars(" test test test     ", " ")</code> yields <code>"test test test"</code>.
+      </p>
+      <p>
+        Example: <code>std.stripChars("aaabbbbcccc", "ac")</code> yields <code>"bbbb"</code>.
+      </p>
+      <p>
+        Example: <code>std.stripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbb"</code>.
+      </p>
+   </div>
+
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="lstripChars">std.lstripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>Removes characters <code>chars</code> from the beginning of <code>str</code>.</p>
+      <p>
+        Example: <code>std.lstripChars(" test test test     ", " ")</code> yields <code>"test test test     "</code>.
+      </p>
+      <p>
+        Example: <code>std.lstripChars("aaabbbbcccc", "ac")</code> yields <code>"bbbbcccc"</code>.
+      </p>
+      <p>
+        Example: <code>std.lstripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbbaacc"</code>.
+      </p>
+`  </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="rstripChars">std.rstripChars(str, chars)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>Removes characters <code>chars</code> from the beginning and from the end of <code>str</code>.</p>
+      <p>
+        Example: <code>std.rstripChars(" test test test     ", " ")</code> yields <code>" test test test"</code>.
+      </p>
+      <p>
+        Example: <code>std.rstripChars("aaabbbbcccc", "ac")</code> yields <code>"aaabbbb"</code>.
+      </p>
+      <p>
+        Example: <code>std.rstripChars("cacabbbbaacc", "ac")</code> yields <code>"cacabbbb"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="split">std.split(str, c)</h4>
     </div>
     <div style="clear: both"></div>
@@ -655,7 +770,7 @@
     <div class="panel">
       <p>
         As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
-        array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
+        array it will return has length <code>maxsplits + 1</code>. A limit of -1 means unlimited.
       </p>
       <p>
         Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>["foo", "bar"]</code>.
@@ -773,11 +888,11 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Format the string <code>str</code> using the values in <code>vals</code>.  The values can be
+        Format the string <code>str</code> using the values in <code>vals</code>. The values can be
         an array, an object, or in other cases are treated as if they were provided in a singleton
-        array.  The string formatting follows the <a
-        href="https://docs.python.org/2/library/stdtypes.html#string-formatting">same rules</a> as
-        Python.  The <code>%</code> operator can be used as a shorthand for this function.
+        array. The string formatting follows the <a
+          href="https://docs.python.org/2/library/stdtypes.html#string-formatting">same rules</a> as
+        Python. The <code>%</code> operator can be used as a shorthand for this function.
       </p>
       <p>
         Example: <code>std.format("Hello %03d", 12)</code> yields <code>"Hello 012"</code>.
@@ -813,7 +928,7 @@
     <div class="panel">
       <p>
         Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code>
-        by changing them to a sequence <tt>'"'"'</tt>.  This allows injection of arbitrary strings
+        by changing them to a sequence <tt>'"'"'</tt>. This allows injection of arbitrary strings
         as arguments of commands in bash scripts.
       </p>
     </div>
@@ -835,7 +950,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert $ to $$ in <code>str</code>.  This allows injection of arbitrary strings into
+        Convert $ to $$ in <code>str</code>. This allows injection of arbitrary strings into
         systems that use $ for string interpolation (like Terraform).
       </p>
     </div>
@@ -858,7 +973,7 @@
     <div class="panel">
       <p>
         Convert <code>str</code> to allow it to be embedded in a JSON representation, within a
-        string.  This adds quotes, escapes backslashes, and escapes unprintable characters.
+        string. This adds quotes, escapes backslashes, and escapes unprintable characters.
       </p>
       <p>
         Example:<br />
@@ -887,7 +1002,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert <code>str</code> to allow it to be embedded in Python.  This is an alias for
+        Convert <code>str</code> to allow it to be embedded in Python. This is an alias for
         std.escapeStringJson.
       </p>
     </div>
@@ -958,7 +1073,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Parses an unsigned hexadecimal integer, from the input string.  Case insensitive.
+        Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
       </p>
       <p>Example: <code>std.parseHex("ff")</code> yields <code>255</code>.</p>
     </div>
@@ -970,10 +1085,10 @@
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="parseJson">std.parseJson(str)</h4>
+      <em>Available since version 0.13.0.</em>
       <p>
         Parses a JSON string.
       </p>
-      <em>Available in upcoming release.</em>
       <p>Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{"foo": "bar"}</code>.</p>
     </div>
     <div style="clear: both"></div>
@@ -984,9 +1099,10 @@
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="encodeUTF8">std.encodeUTF8(str)</h4>
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0.</em>
       <p>
-        Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers representing bytes.
+        Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers
+        representing bytes.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1005,9 +1121,10 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <em>Available in upcoming release.</em>
+      <em>Available since version 0.13.0.</em>
       <p>
-        Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns a string.
+        Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>.
+        Returns a string.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1026,7 +1143,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="manifestIni">std.manifestIni(v)</h4>
+      <h4 id="manifestIni">std.manifestIni(ini)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1036,10 +1153,10 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert the given structure to a string in <a
-        href="http://en.wikipedia.org/wiki/INI_file">INI format</a>.  This allows using Jsonnet's
+        Convert the given structure to a string in <a href="http://en.wikipedia.org/wiki/INI_file">INI format</a>. This
+        allows using Jsonnet's
         object model to build a configuration to be consumed by an application expecting an INI
-        file.  The data is in the form of a set of sections, each containing a key/value mapping.
+        file. The data is in the form of a set of sections, each containing a key/value mapping.
         These examples should make it clear:
       </p>
 
@@ -1086,7 +1203,7 @@ q = </pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert the given value to a JSON-like form that is compatible with Python.  The chief
+        Convert the given value to a JSON-like form that is compatible with Python. The chief
         differences are True / False / None instead of true / false / null.
       </p>
 
@@ -1116,7 +1233,7 @@ q = </pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="manifestPythonVars">std.manifestPythonVars(v)</h4>
+      <h4 id="manifestPythonVars">std.manifestPythonVars(conf)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1126,7 +1243,7 @@ q = </pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert the given object to a JSON-like form that is compatible with Python.  The key
+        Convert the given object to a JSON-like form that is compatible with Python. The key
         difference to <code>std.manifestPython</code> is that the top level is represented as a list
         of Python global variables.
       </p>
@@ -1166,7 +1283,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Convert the given object to a JSON form. <code>indent</code> is a string containing
-      one or more whitespaces that are used for indentation:
+        one or more whitespaces that are used for indentation:
       </p>
       <pre>std.manifestJsonEx(
 {
@@ -1213,21 +1330,22 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert the given value to a YAML form.  Note that <code>std.manifestJson</code> could also
-        be used for this purpose, because any JSON is also valid YAML.  But this function will
+        Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
+        be used for this purpose, because any JSON is also valid YAML. But this function will
         produce more canonical-looking YAML.
       </p>
 
       <pre>std.manifestYamlDoc(
-{
+  {
     x: [1, 2, 3, true, false, null,
         "string\nstring\n"],
     y: { a: 1, b: 2, c: [1, 2] },
-})</pre>
+  },
+  indent_array_in_object=false)</pre>
 
       <p>Yields a string containing this YAML:</p>
 
-      <pre>"x": 
+      <pre>"x":
   - 1
   - 2
   - 3
@@ -1237,12 +1355,16 @@ e = {"f1": False, "f2": 42}</pre>
   - |
     string
     string
-"y": 
+"y":
   "a": 1
   "b": 2
-  "c": 
+  "c":
     - 1
     - 2</pre>
+
+      <p>The <code>indent_array_in_object</code> param adds additional indentation which some people
+        may find easier to read.</p>
+
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1263,10 +1385,13 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Given an array of values, emit a YAML "stream", which is a sequence of documents separated
-        by <code>---</code>.
+        by <code>---</code> and ending with <code>...</code>.
       </p>
 
-      <code>std.manifestYamlStream(['a', 1, []])</code>
+      <pre>std.manifestYamlStream(
+  ['a', 1, []],
+  indent_array_in_object=false,
+  c_document_end=true)</pre>
 
       <p>Yields this string:</p>
 
@@ -1277,6 +1402,9 @@ e = {"f1": False, "f2": 42}</pre>
 ---
 []
 ...</pre>
+
+      <p>The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.</p>
+      <p>The <code>c_document_end</code> param adds the optional terminating <code>...</code>.</p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1324,12 +1452,12 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <svg height="100" width="100">
         <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
-        Sorry, your browser does not support inline SVG.  
-      </svg> 
+        Sorry, your browser does not support inline SVG.
+      </svg>
       <p>
         JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next
-        to elements).  This includes the whitespace needed to avoid having all the XML on one line,
-        which is meaningful in XML.  In order to have whitespace in the XML output, it must be
+        to elements). This includes the whitespace needed to avoid having all the XML on one line,
+        which is meaningful in XML. In order to have whitespace in the XML output, it must be
         present in the JsonML input:
       </p>
       <pre>std.manifestXmlJsonml([
@@ -1374,11 +1502,34 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize
-        each element.  Func is expected to be a function that takes a single parameter, the index of
+        each element. Func is expected to be a function that takes a single parameter, the index of
         the element it should initialize.
       </p>
       <p>
         Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[0, 1, 4]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="member">std.member(arr, x)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>
+      Returns whether <code>x</code> occurs in <code>arr</code>.
+      Argument <code>arr</code> may be an array or a string.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1418,7 +1569,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>value</code> in 
+        Returns an array that contains the indexes of all occurances of <code>value</code> in
         <code>arr</code>.
       </p>
     </div>
@@ -1482,7 +1633,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        This is primarily used to desugar array comprehension syntax.  It first filters, then maps
+        This is primarily used to desugar array comprehension syntax. It first filters, then maps
         the given array, using the two functions provided.
       </p>
     </div>
@@ -1490,6 +1641,34 @@ e = {"f1": False, "f2": 42}</pre>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="flatMap">std.flatMap(func, arr)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>Apply the given function to every element of the array to form a new array then flatten the result.
+        It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[1, 1, 2, 2, 3, 3])</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3])</code> yields <code>[1, 3])</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])</code> yields <code>[3, 2, 9, 6])</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -1526,8 +1705,8 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Classic foldl function.  Calls the function on the result of the previous function call and
-        each array element, or <code>init</code> in the case of the initial element.  Traverses the
+        Classic foldl function. Calls the function on the result of the previous function call and
+        each array element, or <code>init</code> in the case of the initial element. Traverses the
         array from left to right.
       </p>
     </div>
@@ -1549,8 +1728,8 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Classic foldl function.  Calls the function on each array element and the result of the
-        previous function call, or <code>init</code> in the case of the initial element.  Traverses
+        Classic foldl function. Calls the function on each array element and the result of the
+        previous function call, or <code>init</code> in the case of the initial element. Traverses
         the array from right to left.
       </p>
     </div>
@@ -1577,6 +1756,30 @@ e = {"f1": False, "f2": 42}</pre>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="repeat">std.repeat(what, count)</h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.15.0.</em>
+      <p>Repeats an array or a string <code>what</code> a number of times specified by an integer <code>count</code>.</p>
+      <p>
+        Example: <code>std.repeat([1, 2, 3], 3)</code> yields <code>[1, 2, 3, 1, 2, 3, 1, 2, 3]</code>.
+      </p>
+      <p>
+        Example 2: <code>std.repeat("blah", 2)</code> yields <code>"blahblah"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -1592,7 +1795,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         If <code>sep</code> is a string, then <code>arr</code> must be an array of strings, in which
-        case they are concatenated with <code>sep</code> used as a delimiter.  If <code>sep</code>
+        case they are concatenated with <code>sep</code> used as a delimiter. If <code>sep</code>
         is an array, then <code>arr</code> must be an array of arrays, in which case the arrays are
         concatenated in the same way, to produce a single array.
       </p>
@@ -1644,11 +1847,34 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Concatenate an array of arrays into a single array.</p>
+      <p>
+        Example: <code>std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])</code> yields
+        <code>[1, 2, 3, 4, [5, 6], [7, 8]]</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sort">std.reverse(arr)</h4>
+
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <em>Available since version 0.13.0.</em>
+      <p>Reverses an array.</p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -1663,8 +1889,9 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>Sorts the array using the <= operator.</p>
-      <p>Optional argument <code>keyF</code> is a single argument function used to extract comparison
-         key from each list element. Default value is identity function <code>keyF=function(x) x</code>.
+      <p>
+        Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
+        Default value is identity function <code>keyF=function(x) x</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1675,7 +1902,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="uniq">std.uniq(arr)</h4>
+      <h4 id="uniq">std.uniq(arr, keyF=id)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1684,7 +1911,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <p>Removes successive duplicates.  When given a sorted array, removes all duplicates.</p>
+      <p>Removes successive duplicates. When given a sorted array, removes all duplicates.</p>
+      <p>
+        Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
+        Default value is identity function <code>keyF=function(x) x</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1706,7 +1937,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>Sets are represented as ordered arrays without duplicates.</p>
       <p>
         Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
-        on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)<code>.
+        on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)</code>.
         If that is not the case, the functions will quietly return non-meaningful results.
       </p>
       <p>
@@ -1771,7 +2002,8 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Set union operation (values in any of <code>a</code> or <code>b</code>).  Note that + on sets will simply concatenate
+        Set union operation (values in any of <code>a</code> or <code>b</code>). Note that + on sets will simply
+        concatenate
         the arrays, possibly forming an array that is not a set (due to not being ordered without
         duplicates).
       </p>
@@ -1780,7 +2012,8 @@ e = {"f1": False, "f2": 42}</pre>
         <code>[1, 2, 3]</code>.
       </p>
       <p>
-        Example2: <code>std.setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}],keyF=function(x) x.n)</code> yields
+        Example2: <code>std.setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}],keyF=function(x) x.n)</code>
+        yields
         <code>[{n: "A", v:1}, {n: "B"}, {n: "C"}]</code>.
       </p>
     </div>
@@ -1839,7 +2072,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="base64">std.base64(v)</h4>
+      <h4 id="base64">std.base64(input)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1849,9 +2082,10 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Encodes the given value into a base64 string.  The encoding sequence is <code>A-Za-z0-9+/</code> with <code>=</code>
-        to pad the output to a multiple of 4 characters.  The value can be a string or an array of
-        numbers, but the codepoints / numbers must be in the 0 to 255 range.  The resulting string
+        Encodes the given value into a base64 string. The encoding sequence is <code>A-Za-z0-9+/</code> with
+        <code>=</code>
+        to pad the output to a multiple of 4 characters. The value can be a string or an array of
+        numbers, but the codepoints / numbers must be in the 0 to 255 range. The resulting string
         has no line breaks.
       </p>
     </div>
@@ -1863,7 +2097,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="base64DecodeBytes">std.base64DecodeBytes(s)</h4>
+      <h4 id="base64DecodeBytes">std.base64DecodeBytes(str)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1873,7 +2107,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Decodes the given base64 string into an array of bytes (number values).  Currently assumes
+        Decodes the given base64 string into an array of bytes (number values). Currently assumes
         the input string has no linebreaks and is padded to a multiple of 4 (with the = character).
         In other words, it consumes the output of std.base64().
       </p>
@@ -1886,7 +2120,7 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="base64Decode">std.base64Decode(s)</h4>
+      <h4 id="base64Decode">std.base64Decode(str)</h4>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1895,8 +2129,9 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <em>Deprecated, use <code>std.base64DecodeBytes and decode the string explicitly (e.g. with <code>std.decodeUTF8</code>) instead.</code></em>
       <p>
-        Behaves like std.base64DecodeBytes() except returns a string instead of an array of bytes.
+        Behaves like std.base64DecodeBytes() except returns a naively encoded string instead of an array of bytes.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1946,7 +2181,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Applies <code>patch</code> to <code>target</code> according to <a
-        href="https://tools.ietf.org/html/rfc7396">RFC7396</a>
+          href="https://tools.ietf.org/html/rfc7396">RFC7396</a>
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1974,14 +2209,14 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <em>Available since version 0.11.0.</em>
       <p>
         Outputs the given string <code>str</code> to stderr and
         returns <code>rest</code> as the result.
       </p>
-      <em>Available since version 0.11.0</em>
       <p>Example:</p>
       <p>
-      <pre>local conditionalReturn(cond, in1, in2) =
+        <pre>local conditionalReturn(cond, in1, in2) =
     if (cond) then
         std.trace('cond is true returning '
                   + std.toString(in1), in1)
@@ -1996,7 +2231,7 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>Prints:</p>
       <p>
-      <pre>TRACE: test.jsonnet:3 cond is true returning {"b": true}
+        <pre>TRACE: test.jsonnet:3 cond is true returning {"b": true}
 {
    "a": {
       "b": true
@@ -2007,7 +2242,6 @@ e = {"f1": False, "f2": 42}</pre>
     <div style="clear: both"></div>
   </div>
 </div>
-
 
 
 
