@@ -32,7 +32,7 @@ add_library(libjsonnet SHARED ${LIBJSONNET_HEADERS} ${LIBJSONNET_SOURCE})
 add_dependencies(libjsonnet md5 stdlib)
 target_link_libraries(libjsonnet md5 nlohmann_json::nlohmann_json)
 
-file(STRINGS ${CMAKE_SOURCE_DIR}/include/libjsonnet.h JSONNET_VERSION_DEF
+file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../include/libjsonnet.h JSONNET_VERSION_DEF
      REGEX "[#]define[ \t]+LIB_JSONNET_VERSION[ \t]+")
 string(REGEX REPLACE ".*\"v([^\"]+)\".*" "\\1" JSONNET_VERSION ${JSONNET_VERSION_DEF})
 message("Extracted Jsonnet version: " ${JSONNET_VERSION})
@@ -92,7 +92,7 @@ if (BUILD_TESTS)
     add_test_executable(libjsonnet_test_file)
     add_test(libjsonnet_test_file
         ${GLOBAL_OUTPUT_PATH}/libjsonnet_test_file
-        ${CMAKE_SOURCE_DIR}/test_suite/object.jsonnet)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_suite/object.jsonnet)
 
     set(TEST_SNIPPET "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)")
     add_test_executable(libjsonnet_test_snippet)
