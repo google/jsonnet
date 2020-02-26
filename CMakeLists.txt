@@ -32,6 +32,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 
+# Compiler flags.
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
+        ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    set(OPT "-O3")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 -O3 ${OPT}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++11 -fPIC ${OPT}")
+else()
+    # TODO: Windows support.
+    message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
+endif()
+
+set(CMAKE_CXX_STANDARD 11)
+
+
 # Include external googletest project. This runs a CMake sub-script
 # (CMakeLists.txt.in) that downloads googletest source. It's then built as part
 # of the jsonnet project. The conventional way of handling CMake dependencies is
@@ -86,17 +100,6 @@ if(USE_SYSTEM_JSON)
     find_package(nlohmann_json 3.6.1 REQUIRED)
 else()
     add_subdirectory(third_party/json)
-endif()
-
-# Compiler flags.
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
-        ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    set(OPT "-O3")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 -O3 ${OPT}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC ${OPT}")
-else()
-    # TODO: Windows support.
-    message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
 endif()
 
 # Look for libraries in global output path.
