@@ -19,10 +19,10 @@ matrix:
             - clang-3.8
           sources: *sources
     - os: osx
-      osx_image: xcode8
-      env: CC=gcc-4.9 && CXX=g++-4.9 COMMON_OS_NAME=darwin
+      osx_image: xcode11.3
+      env: CC=gcc-9 && CXX=g++-9 COMMON_OS_NAME=darwin
     - os: osx
-      osx_image: xcode8
+      osx_image: xcode11.3
       env: CC=clang && CXX=clang++ COMMON_OS_NAME=darwin
 
 before_install:
