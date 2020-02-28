@@ -21,9 +21,9 @@ let jsonnet_destroy = Module.cwrap(
     'jsonnet_destroy', 'number', ['number'])
 
 function string_to_jsonnet(vm, str) {
-  let size = Module.lengthBytesUTF8(str);
+  let size = lengthBytesUTF8(str);
   let result_buf = jsonnet_realloc(vm, 0, size + 1);
-  Module.stringToUTF8(str, result_buf, size + 1);
+  stringToUTF8(str, result_buf, size + 1);
   return result_buf;
 }
 
@@ -35,8 +35,8 @@ let ctx_counter = 1;
 let import_callback = addFunction(function (ctx_, base_, rel_, found_here_, success_) {
   let vm = ctx_mapping[ctx_].vm
   let files = ctx_mapping[ctx_].files
-  let base = Module.UTF8ToString(base_);
-  let rel = Module.UTF8ToString(rel_);
+  let base = UTF8ToString(base_);
+  let rel = UTF8ToString(rel_);
   let abs_path;
   // It is possible that rel is actually absolute.
   if (rel[0] == '/') {
@@ -45,11 +45,11 @@ let import_callback = addFunction(function (ctx_, base_, rel_, found_here_, succ
       abs_path = base + rel;
   }
   if (abs_path in files) {
-    Module.setValue(success_, 1, 'i32*');
-    Module.setValue(found_here_, string_to_jsonnet(vm, abs_path), 'i8*');
+    setValue(success_, 1, 'i32*');
+    setValue(found_here_, string_to_jsonnet(vm, abs_path), 'i8*');
     return string_to_jsonnet(vm, files[abs_path]);
   } else {
-    Module.setValue(success_, 0, 'i32*');
+    setValue(success_, 0, 'i32*');
     return string_to_jsonnet(vm, 'file not found');
   }
 });
@@ -73,11 +73,11 @@ function jsonnet_evaluate_snippet_wrapped(
   for (let key in tla_code) {
     jsonnet_tla_code(vm, key, tla_code[key]);
   }
-  let error_ptr = Module._malloc(4);
+  let error_ptr = _malloc(4);
   let output_ptr = jsonnet_evaluate_snippet(vm, filename, code, error_ptr);
-  let error = Module.getValue(error_ptr, 'i32*');
-  Module._free(error_ptr);
-  let result = Module.UTF8ToString(output_ptr);
+  let error = getValue(error_ptr, 'i32*');
+  _free(error_ptr);
+  let result = UTF8ToString(output_ptr);
   jsonnet_realloc(vm, output_ptr, 0);
   jsonnet_destroy(vm);
   delete ctx_mapping[ctx_ptr];
@@ -90,11 +90,11 @@ function jsonnet_evaluate_snippet_wrapped(
 /** Wrap the raw C-level function in something Javascript-friendly. */
 function jsonnet_fmt_snippet_wrapped(filename, code) {
   let vm = jsonnet_make();
-  let error_ptr = Module._malloc(4);
+  let error_ptr = _malloc(4);
   let output_ptr = jsonnet_fmt_snippet(vm, filename, code, error_ptr);
-  let error = Module.getValue(error_ptr, 'i32*');
-  Module._free(error_ptr);
-  let result = Module.UTF8ToString(output_ptr);
+  let error = getValue(error_ptr, 'i32*');
+  _free(error_ptr);
+  let result = UTF8ToString(output_ptr);
   jsonnet_realloc(vm, output_ptr, 0);
   jsonnet_destroy(vm);
   if (error) {
