@@ -126,8 +126,14 @@ make test
 
 ### Locally serving the website
 
-First, you need to build the JavaScript version of Jsonnet (which requires
-[_emscripten_](https://emscripten.org/)):
+You need a `doc/js/libjsonnet.js` which can either be downloaded from the
+production website:
+
+```
+wget https://jsonnet.org/js/libjsonnet.js -O doc/js/libjsonnet.js
+```
+
+Or you can build it yourself, which requires [_emscripten_](https://emscripten.org/)):
 
 ```
 make doc/js/libjsonnet.js
@@ -140,5 +146,5 @@ Then, from the root of the repository you can generate and serve the website usi
 tools/scripts/serve_docs.sh
 ```
 
-This should the website on localhost:8080, automatically rebuild when you change any underlying
+This should the website on localhost:8200, automatically rebuild when you change any underlying
 files, and automatically refresh your browser when that happens.
