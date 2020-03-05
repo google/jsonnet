@@ -19,7 +19,6 @@ Available options:
   --[no-]pad-arrays       [ 1, 2, 3 ] instead of [1, 2, 3]
   --[no-]pad-objects      { x: 1, y: 2 } instead of {x: 1, y: 2} (on by default)
   --[no-]sort-imports     Sorting of imports (on by default)
-  --debug-desugaring      Unparse the desugared AST without executing it
   --version               Print version
 
 In all cases:
