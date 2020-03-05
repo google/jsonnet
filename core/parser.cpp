@@ -150,14 +150,13 @@ class Parser {
      * \param element_kind Used in error messages when a comma was not found.
      * \returns The last token (the one that matched parameter end).
      */
-    Token parseArgs(ArgParams &args, Token::Kind end, const std::string &element_kind,
-                    bool &got_comma)
+    Token parseArgs(ArgParams &args, const std::string &element_kind, bool &got_comma)
     {
         got_comma = false;
         bool first = true;
         do {
             Token next = peek();
-            if (next.kind == end) {
+            if (next.kind == Token::PAREN_R) {
                 // got_comma can be true or false here.
                 return pop();
             }
@@ -197,7 +196,7 @@ class Parser {
     ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder)
     {
         ArgParams params;
-        Token paren_r = parseArgs(params, Token::PAREN_R, element_kind, got_comma);
+        Token paren_r = parseArgs(params, element_kind, got_comma);
 
         // Check they're all identifiers
         // parseArgs returns f(x) with x as an expression.  Convert it here.
@@ -1020,7 +1019,17 @@ class Parser {
                 case Token::PAREN_L: {
                     ArgParams args;
                     bool got_comma;
-                    Token end = parseArgs(args, Token::PAREN_R, "function argument", got_comma);
+                    Token end = parseArgs(args, "function argument", got_comma);
+                    bool got_named = false;
+                    for (const auto& arg : args) {
+                        if (arg.id != nullptr) {
+                            got_named = true;
+                        } else {
+                            if (got_named) {
+                                throw StaticError(arg.expr->location, "Positional argument after a named argument is not allowed");
+                            }
+                        }
+                    }
                     bool tailstrict = false;
                     Fodder tailstrict_fodder;
                     if (peek().kind == Token::TAILSTRICT) {
