@@ -48,6 +48,8 @@ install(TARGETS libjsonnet
 	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+target_include_directories(libjsonnet INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 
 if (BUILD_STATIC_LIBS)
     # Static library for jsonnet command-line tool.
@@ -56,6 +58,8 @@ if (BUILD_STATIC_LIBS)
     target_link_libraries(libjsonnet_static md5 nlohmann_json::nlohmann_json)
     set_target_properties(libjsonnet_static PROPERTIES OUTPUT_NAME jsonnet)
     install(TARGETS libjsonnet_static DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+    target_include_directories(libjsonnet_static INTERFACE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 endif()
 
 if (BUILD_SHARED_BINARIES OR NOT BUILD_STATIC_LIBS)
