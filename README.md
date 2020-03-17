@@ -99,10 +99,48 @@ bazel-bin/cmd/jsonnetfmt
 
 ### Cmake
 
+Linux/OSX:
 
 ```
 cmake . -Bbuild
 ```
+
+```
+cmake --build build --target run_tests
+```
+
+Windows:
+
+In order to build under Windows using cmake, you need to install:
+
+- chocolatey
+- llvm
+
+Only `Unix Makefiles` generator is currently supported, so we also need `make`:
+
+```
+choco install make
+```
+
+Finally, we can build Jsonnet:
+
+```
+cmake . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G "Unix MakeFiles"
+```
+
+`jsonnet.exe`:
+
+```
+cmake --build build --target jsonnet
+```
+
+`jsonnetfmt.exe`:
+
+```
+cmake --build build --target jsonnetfmt
+```
+
+Tests:
 
 ```
 cmake --build build --target run_tests
