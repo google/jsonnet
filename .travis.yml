@@ -10,7 +10,7 @@ matrix:
             - g++-4.9
           sources: &sources
             - llvm-toolchain-precise-3.8
-            - ubuntu-toolchain-r-test    
+            - ubuntu-toolchain-r-test
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8 COMMON_OS_NAME=${TRAVIS_OS_NAME}
       addons:
@@ -24,6 +24,11 @@ matrix:
     - os: osx
       osx_image: xcode11.3
       env: CC=clang && CXX=clang++ COMMON_OS_NAME=darwin
+    - os: windows
+      language: cpp
+      env: CC=clang CXX=clang++ COMMON_OS_NAME=${TRAVIS_OS_NAME} GENERATOR="Unix Makefiles"
+      install: choco install make -y
+      script: ./travis/build-windows.bat
 
 before_install:
   - echo $LANG
@@ -40,24 +45,26 @@ script:
   - cmake . -Bbuild && cmake --build build --target run_tests
   # make a tarfile for the binaries and rename for os and tag
   - make dist
-  - mv jsonnet-bin.tar.gz jsonnet-bin-${TRAVIS_TAG}-${COMMON_OS_NAME}.tar.gz
+  - mkdir upload
+  - mv jsonnet-bin.tar.gz upload/jsonnet-bin-${TRAVIS_TAG}-${COMMON_OS_NAME}.tar.gz
 
 deploy:
   provider: releases
   api_key: $JSONNET_GITHUB_TOKEN
-  file: jsonnet-bin-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz
+  file_glob: true
+  file: upload/*
   skip_cleanup: true
   on:
     tags: true
     # no point deploying the images built with both compilers
-    condition: $CC =~ gcc
+    condition: $CC =~ gcc && $COMMON_OS_NAME =~ ^(linux|darwin)$
 
 branches:
   only:
     - master
     # the branch name is the tag name, so having only master means you can't
     # trigger a build by just push a tag - so add in a regex to match tags that
-    # should trigger. 
+    # should trigger.
     - /^v.*$/
 
 notifications:
