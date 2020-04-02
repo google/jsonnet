@@ -974,7 +974,7 @@ class Allocator {
             delete x;
         }
         allocated.clear();
-        for (auto x : internedIdentifiers) {
+        for (const auto &x : internedIdentifiers) {
             delete x.second;
         }
         internedIdentifiers.clear();
