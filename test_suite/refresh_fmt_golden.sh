@@ -34,7 +34,7 @@ for FILE in "$@" ; do
         echo "Could not read: \"$FILE\"" 2>&1
         exit 1
     fi
-    "$JSONNET_BIN" fmt "$FILE" > "${FILE}.fmt.golden" 2>&1
+    "$JSONNETFMT_BIN" "$FILE" > "${FILE}.fmt.golden" 2>&1
 done
 
 
