@@ -448,11 +448,12 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
 static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename;
-    const char *jpathdir = NULL;
-    char *out;
+    char *out, *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
+    Py_ssize_t num_jpathdir, i;
+    PyObject *jpathdir = NULL;
     PyObject *ext_vars = NULL, *ext_codes = NULL;
     PyObject *tla_vars = NULL, *tla_codes = NULL;
     PyObject *import_callback = NULL;
@@ -469,7 +470,7 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "s|sIIdOOOOIOO", kwlist,
+        args, keywds, "s|OIIdOOOOIOO", kwlist,
         &filename, &jpathdir,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
         &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
@@ -482,8 +483,34 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    if (jpathdir != NULL)
-      jsonnet_jpath_add(vm, jpathdir);
+
+    if (jpathdir != NULL) {
+        // Support string for backward compatibility with <= 0.15.0
+#if PY_MAJOR_VERSION >= 3
+        if (PyUnicode_Check(jpathdir)) {
+            jpath_str = PyUnicode_AsUTF8(jpathdir);
+#else
+        if (PyString_Check(jpathdir)) {
+            jpath_str = PyString_AsString(jpathdir);
+#endif
+            jsonnet_jpath_add(vm, jpath_str);
+        } else if (PyList_Check(jpathdir)) {
+            num_jpathdir = PyList_Size(jpathdir);
+            for (i = 0; i < num_jpathdir ; ++i) {
+                PyObject *jpath = PyList_GetItem(jpathdir, i);
+#if PY_MAJOR_VERSION >= 3
+                if (PyUnicode_Check(jpath)) {
+                    jpath_str = PyUnicode_AsUTF8(jpath);
+#else
+                if (PyString_Check(jpath)) {
+                    jpath_str = PyString_AsString(jpath);
+#endif
+                    jsonnet_jpath_add(vm, jpath_str);
+                }
+            }
+        }
+    }
+
     if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
     if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
     if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
@@ -505,11 +532,12 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename, *src;
-    const char *jpathdir = NULL;
-    char *out;
+    char *out, *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
+    Py_ssize_t num_jpathdir, i;
+    PyObject *jpathdir = NULL;
     PyObject *ext_vars = NULL, *ext_codes = NULL;
     PyObject *tla_vars = NULL, *tla_codes = NULL;
     PyObject *import_callback = NULL;
@@ -526,7 +554,7 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     (void) self;
 
     if (!PyArg_ParseTupleAndKeywords(
-        args, keywds, "ss|sIIdOOOOIOO", kwlist,
+        args, keywds, "ss|OIIdOOOOIOO", kwlist,
         &filename, &src, &jpathdir,
         &max_stack, &gc_min_objects, &gc_growth_trigger, &ext_vars,
         &ext_codes, &tla_vars, &tla_codes, &max_trace, &import_callback,
@@ -539,8 +567,34 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     jsonnet_gc_min_objects(vm, gc_min_objects);
     jsonnet_max_trace(vm, max_trace);
     jsonnet_gc_growth_trigger(vm, gc_growth_trigger);
-    if (jpathdir != NULL)
-      jsonnet_jpath_add(vm, jpathdir);
+
+    if (jpathdir != NULL) {
+        // Support string for backward compatibility with <= 0.15.0
+#if PY_MAJOR_VERSION >= 3
+        if (PyUnicode_Check(jpathdir)) {
+            jpath_str = PyUnicode_AsUTF8(jpathdir);
+#else
+        if (PyString_Check(jpathdir)) {
+            jpath_str = PyString_AsString(jpathdir);
+#endif
+            jsonnet_jpath_add(vm, jpath_str);
+        } else if (PyList_Check(jpathdir)) {
+            num_jpathdir = PyList_Size(jpathdir);
+            for (i = 0; i < num_jpathdir ; ++i) {
+                PyObject *jpath = PyList_GetItem(jpathdir, i);
+#if PY_MAJOR_VERSION >= 3
+                if (PyUnicode_Check(jpath)) {
+                    jpath_str = PyUnicode_AsUTF8(jpath);
+#else
+                if (PyString_Check(jpath)) {
+                    jpath_str = PyString_AsString(jpath);
+#endif
+                    jsonnet_jpath_add(vm, jpath_str);
+                }
+            }
+        }
+    }
+
     if (!handle_vars(vm, ext_vars, 0, 0)) return NULL;
     if (!handle_vars(vm, ext_codes, 1, 0)) return NULL;
     if (!handle_vars(vm, tla_vars, 0, 1)) return NULL;
