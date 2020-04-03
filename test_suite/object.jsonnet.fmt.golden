@@ -63,6 +63,9 @@ std.assertEqual({ ['' + (k + 1)]: (k + 1) for k in [0, 1, 2] }, { ['' + k]: k fo
 std.assertEqual({ ['' + k]: k for k in [1, 2, 3] }, { '1': 1, '2': 2, '3': 3 }) &&
 std.assertEqual({ [x + '']: x + foo, local foo = 3 for x in [1, 2, 3] }, { '1': 4, '2': 5, '3': 6 }) &&
 
+// Test for #791
+std.assertEqual({ [x]: true for x in ['\\k'] }, { '\\k': true }) &&
+
 
 local obj = {
   f14true: { x: 1, y: 4, z: true },

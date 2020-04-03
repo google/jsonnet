@@ -624,9 +624,6 @@ class Desugarer {
 
         SuperVars svs = desugarFields(ast, ast->fields, obj_level);
 
-        for (ComprehensionSpec &spec : ast->specs)
-            desugar(spec.expr, obj_level);
-
         AST *field = ast->fields.front().expr1;
         AST *value = ast->fields.front().expr2;
 
