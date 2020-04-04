@@ -101,7 +101,9 @@ std.assertEqual(4.5 / 3, 1.5) &&
 std.assertEqual(4.5 % 2, 0.5) &&
 
 std.assertEqual(4.5 << 2, 16) &&
+std.assertEqual(4.5 << 66, 16) &&
 std.assertEqual(4.5 >> 2, 1) &&
+std.assertEqual(4.5 >> 66, 1) &&
 std.assertEqual(4.5 ^ 3.6, 7) &&
 std.assertEqual(5.5 & 3.3, 1) &&
 std.assertEqual(4.5 | 1.9, 5) &&

@@ -1,0 +1,2 @@
+RUNTIME ERROR: shift by negative exponent.
+	error.negative_shfit.jsonnet:1:1-13	
