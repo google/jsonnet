@@ -2334,14 +2334,20 @@ class Interpreter {
                                     // No need to check doubles made from longs
 
                                 case BOP_SHIFT_L: {
+                                    if (rhs.v.d < 0)
+                                        throw makeError(ast.location, "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
+                                    long_r = long_r % 64;
                                     scratch = makeNumber(long_l << long_r);
                                 } break;
 
                                 case BOP_SHIFT_R: {
+                                    if (rhs.v.d < 0)
+                                        throw makeError(ast.location, "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
+                                    long_r = long_r % 64;
                                     scratch = makeNumber(long_l >> long_r);
                                 } break;
 

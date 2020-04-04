@@ -2592,8 +2592,10 @@ div.rules {
           <code>^</code>,
           <code>|</code> and
           <code>~</code>
-          first convert their operands to signed 64 bit integers, then perform the operations
-          in a standard way, then convert back to IEEE double precision floating point.
+          first convert their operands to signed 64 bit integers, then perform the operations in a
+          standard way, then convert back to IEEE double precision floating point. In shift
+          operations <code>&lt;&lt;</code>, <code>&gt;&gt;</code>, the right hand value modulo 64 is
+          interpreted as the shift count. Shifting with a negative shift count raises an error.
         </li>
         <li>
           <b>Standard functions</b>: The following functions have standard mathematical behavior
