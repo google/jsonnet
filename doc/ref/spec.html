@@ -851,7 +851,7 @@ div.rules {
         are represented as syntax sugar.  Below is defined the core syntax and the desugaring
         function from the abstract syntax to the core syntax.  Both the static checking rules and
         the operational semantics are defined at the level of the core language, so it is possible
-        to implement the desugaring in the parser.
+        to desugar immediately after parsing.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -882,9 +882,10 @@ div.rules {
           The following binary operators are removed: <code>!=</code> <code>==</code> <code>%</code>
           <code>in</code>
         </li>
-        <li>All function parameters have default expressionss. If no default expression was given
-        for a parameter in the abstract syntax, then an error is used to force the caller to specify
-        the value.</li>
+        <li>
+          All function parameters must now have default arguments.  To simulate a parameter that
+          must be bound at the call site, use a default argument that evaluates to an error.
+        </li>
         <li>Array slices <code>[::]</code> are removed.</li>
         <li>
           Array and object comprehensions are replaced with a simple object comprehension construct.
