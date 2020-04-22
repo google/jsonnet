@@ -158,7 +158,7 @@ div.rules {
     \newcommand{\binary}[3]{ #1\texttt{ }#2\texttt{ }#3}
     \newcommand{\error}[1]{\texttt{error }#1}
     \newcommand{\false}{\texttt{false}}
-    \newcommand{\function}[2]{\texttt{function(}#1\texttt{)} #2}
+    \newcommand{\function}[2]{\texttt{function}\texttt{(} #1\texttt{)}{\ #2}}
     \newcommand{\if}[3]{\texttt{if }#1\texttt{ then }#2\texttt{ else }#3}
     \newcommand{\ifnoelse}[2]{\texttt{if }#1\texttt{ then }#2}
     \newcommand{\import}[1]{\texttt{import }#1}
@@ -826,16 +826,19 @@ div.rules {
           <td><i>params</i></td>
           <td>::=</td>
           <td>
-            <i>id</i> { <code>,</code> <i>id</i> } { <code>,</code> <i>id</i> <code>=</code>
-            <i>expr</i> } [ <code>,</code> ]
+            <i>param</i> { <code>,</code> <i>param</i> } [ <code>,</code> ]
           </td>
         </tr>
+      </table>
+
+
+      <!-- param -->
+      <table>
         <tr>
-          <td></td>
-          <td>|</td>
+          <td><i>param</i></td>
+          <td>::=</td>
           <td>
-            <i>id</i> <code>=</code> <i>expr</i> { <code>,</code> <i>id</i> <code>=</code>
-            <i>expr</i> } [ <code>,</code> ]
+            <i>id</i> [ <code>=</code> <i>expr</i> ]
           </td>
         </tr>
       </table>
@@ -954,7 +957,7 @@ div.rules {
         are represented as syntax sugar.  Below is defined the core syntax and the desugaring
         function from the abstract syntax to the core syntax.  Both the static checking rules and
         the operational semantics are defined at the level of the core language, so it is possible
-        to implement the desugaring in the parser.
+        to desugar immediately after parsing.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -984,6 +987,10 @@ div.rules {
         <li>
           The following binary operators are removed: <code>!=</code> <code>==</code> <code>%</code>
           <code>in</code>
+        </li>
+        <li>
+          All function parameters must now have default arguments.  To simulate a parameter that
+          must be bound at the call site, use a default argument that evaluates to an error.
         </li>
         <li>Array slices <code>[::]</code> are removed.</li>
         <li>
@@ -1168,7 +1175,6 @@ div.rules {
           <td>
             <code>function</code>
             <code>(</code>
-            { <i>e</i> }
             { <i>id</i> <code>=</code> <i>e</i> }
             <code>)</code>
             <i>e</i>
@@ -1302,6 +1308,11 @@ div.rules {
         <div class="desugar-rule">
           \[
             desugar_{expr}(e \{ objinside \}, b) = desugar_{expr}(e + \{ objinside \}, b)
+          \]
+        </div>
+        <div class="desugar-rule">
+          \[
+            desugar_{expr}(\function{p_1 \ldots p_n}e, b) = \function{desugar_{param}(p_1, b)\ldots desugar_{param}(p_n, b)} desugar_{expr}(e, b)
           \]
         </div>
         <div class="desugar-rule">
@@ -1546,6 +1557,23 @@ div.rules {
       </div>
       <div class="desugar-rule-group">
         <p>
+          <i>desugar<sub>param</sub></i>: (Param × Boolean) → Param.  This desugars function parameters.
+        </p>
+        <div class="desugar-rule">
+          \[
+            desugar_{param}(id, b) =
+                id \texttt{=} \error{\texttt{"Parameter not bound"}}
+          \]
+        </div>
+        <div class="desugar-rule">
+          \[
+            desugar_{param}(id \texttt{=} e, b) =
+                id \texttt{=} desugar_{expr}(e, b)
+          \]
+        </div>
+      </div>
+      <div class="desugar-rule-group">
+        <p>
           <i>desugar<sub>arrcomp</sub></i>: (Expr × CompSpec × Boolean) → Field.  This desugars
           array comprehensions.
         </p>
@@ -1714,9 +1742,9 @@ div.rules {
               \\
               ∀ i∈\{1\ldots n\}: Γ ⊢ e_i
               \\
-              ∀ i,j∈\{m+1\ldots n\}: x_i = x_j ⇒ i = j
+              ∀ i,j∈\{1\ldots n\}: x_i = x_j ⇒ i = j
             } {
-            Γ ⊢ e(e_1\ldots e_m, x_{m+1} = e_{m+1} \ldots x_n = e_n)
+            Γ ⊢ e(x_1 = e_1 \ldots x_n = e_n)
             }
           \]
         </div>
@@ -1914,7 +1942,7 @@ div.rules {
           <td><em>Function</em></td>
           <td>::=</td>
           <td>
-            <code>function (</code> { <i>id</i> } { <i>id</i>=<i>e</i> } <code>)</code> <i>e</i>
+            <code>function (</code> { <i>id</i>=<i>e</i> } <code>)</code> <i>e</i>
           </td>
         </tr>
         <tr>
@@ -1988,7 +2016,7 @@ div.rules {
 <div class="inverse hgroup">
   <div class="hgroup-inline">
     <div class="panel wide">
-      <p>Let y ≠ x and z ≠ x.</p>
+      <p>Let y ≠ x.</p>
       <table>
         <tr>
           <td>
@@ -2002,7 +2030,7 @@ div.rules {
         </tr>
         <tr>
           <td>
-            <i>x</i>[<i>e</i>/<i>x</i>] = <i>e'</i>
+            <i>x</i>[<i>e</i>/<i>x</i>] = <i>e</i>
           </td>
         </tr>
         <tr>
@@ -2074,10 +2102,10 @@ div.rules {
         <tr>
           <td>
             (<code>function</code> <code>(</code>
-                ... <i>y</i> ... <i>z</i>=<i>e'</i> ...
+                ... <i>y</i>=<i>e'</i> ...
             <code>)</code> <i>e''</i>)[<i>e</i>/<i>x</i>] =
             <code>function</code> <code>(</code>
-                ... <i>y</i> ... <i>z</i>=<i>e'</i> ...
+                ... <i>y</i>=<i>e'</i> ...
             <code>)</code><i>e''</i>
           </td>
           <td>(If any param matches.)</td>
@@ -2085,10 +2113,10 @@ div.rules {
         <tr>
           <td>
             (<code>function</code> <code>(</code>
-                ... <i>y</i> ... <i>z</i>=<i>e'</i> ...
+                ... <i>y</i>=<i>e'</i> ...
             <code>)</code> <i>e''</i>)[<i>e</i>/<i>x</i>] =
             <code>function</code> <code>(</code>
-                ... <i>y</i> ... <i>z</i>=<i>e'</i>[<i>e</i>/<i>x</i>] ...
+                ... <i>y</i>=<i>e'</i>[<i>e</i>/<i>x</i>] ...
             <code>)</code> <i>e''</i>[<i>e</i>/<i>x</i>]
           </td>
           <td>(If no param matches.)</td>
@@ -2179,7 +2207,7 @@ div.rules {
         <tr>
           <td>
             Otherwise, <i>e'</i>⟦<i>e'</i>/<i>kw</i>⟧ proceeds via syntax-directed recursion into
-            subterms of <i>e'</i>.
+            the subterms of <i>e'</i>.
           </td>
         </tr>
       </table>
@@ -2300,17 +2328,17 @@ div.rules {
 <div class="sequent-rule">
   \[
     \rule{apply} {
-      e_0 ↓ \function{y_1\ldots y_p, y_{p+1}=e'_{p+1} \ldots y_q=e'_q}{e_b}
+      e_0 ↓ \function{y_1=e'_1 \ldots y_p=e'_p}{e_b}
       \\
-      ∀i∈\{m+1 \ldots n\}: x_i ∈ \{y_{m+1} \ldots y_q\}
+      ∀i∈\{m+1 \ldots n\}: x_i ∈ \{y_1 \ldots y_p\}
       \\
-      ∀i∈\{1 \ldots q\}: e''_i = \left\{\begin{array}{ll}
+      ∀i∈\{1 \ldots p\}: e''_i = \left\{\begin{array}{ll}
           e_i   &amp;   \textrm{if } i &le; m \\
           e_j   &amp;   \textrm{if } y_i=x_j \textrm{ for some } j \\
           e'_i  &amp;   \textrm{otherwise}\\
       \end{array}\right.
       \\
-      (\local{y_1=e''_1 \ldots y_q=e''_q}{e_b}) ↓ v
+      (\local{y_1=e''_1 \ldots y_p=e''_p}{e_b}) ↓ v
     } {
       e_0(e_1 \ldots e_m, x_{m+1}=e_{m+1} \ldots x_n = e_n) ↓ v
     }
