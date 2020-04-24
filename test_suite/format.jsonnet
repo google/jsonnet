@@ -53,6 +53,27 @@ std.assertEqual(std.format('thing-%-5.3d', [10.3]), 'thing-010  ') &&
 std.assertEqual(std.format('thing-%#-5.3d', [10.3]), 'thing-010  ') &&
 std.assertEqual(std.format('thing-%#-5.3i', [10.3]), 'thing-010  ') &&
 std.assertEqual(std.format('thing-%#-5.3u', [10.3]), 'thing-010  ') &&
+std.assertEqual(std.format('thing-%5.3d', [-10.3]), 'thing- -010') &&
+std.assertEqual(std.format('thing-%+5.3d', [-10.3]), 'thing- -010') &&
+std.assertEqual(std.format('thing-%+-5.3d', [-10.3]), 'thing--010 ') &&
+std.assertEqual(std.format('thing-%-5.3d', [-10.3]), 'thing--010 ') &&
+std.assertEqual(std.format('thing-%#-5.3d', [-10.3]), 'thing--010 ') &&
+std.assertEqual(std.format('thing-%#-5.3i', [-10.3]), 'thing--010 ') &&
+std.assertEqual(std.format('thing-%#-5.3u', [-10.3]), 'thing--010 ') &&
+std.assertEqual(std.format('thing-%5.3d', [0.3]), 'thing-  000') &&
+std.assertEqual(std.format('thing-%+5.3d', [0.3]), 'thing- +000') &&
+std.assertEqual(std.format('thing-%+-5.3d', [0.3]), 'thing-+000 ') &&
+std.assertEqual(std.format('thing-%-5.3d', [0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3d', [0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3i', [0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3u', [0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%5.3d', [-0.3]), 'thing-  000') &&
+std.assertEqual(std.format('thing-%+5.3d', [-0.3]), 'thing- +000') &&
+std.assertEqual(std.format('thing-%+-5.3d', [-0.3]), 'thing-+000 ') &&
+std.assertEqual(std.format('thing-%-5.3d', [-0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3d', [-0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3i', [-0.3]), 'thing-000  ') &&
+std.assertEqual(std.format('thing-%#-5.3u', [-0.3]), 'thing-000  ') &&
 
 // o
 std.assertEqual(std.format('thing-%o', [10]), 'thing-12') &&
