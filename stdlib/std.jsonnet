@@ -489,9 +489,11 @@ limitations under the License.
     // min_chars must be a whole number >= 0
     //   It is the field width, i.e. std.length() of the result should be >= min_chars
     // min_digits must be a whole number >= 0. It's the number of zeroes to pad with.
-    // blank must be a boolean, if true a postive number has a ' ' in place of the '-'.
-    // plus must be a boolean, if true a '+' is used in place of the '-'.
-    //   This takes precedence of blank, if both are true.
+    // blank must be a boolean, if true adds an additional ' ' in front of a positive number, so
+    // that it is aligned with negative numbers with the same number of digits.
+    // plus must be a boolean, if true adds a '+' in front of a postive number, so that it is
+    // aligned with negative numbers with the same number of digits.  This takes precedence over
+    // blank, if both are true.
     // radix must be a whole number >1 and <= 10.  It is the base of the system of numerals.
     // zero_prefix is a string prefixed before the sign to all numbers that are not 0.
     local render_int(neg, mag, min_chars, min_digits, blank, plus, radix, zero_prefix) =
