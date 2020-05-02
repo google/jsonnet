@@ -340,10 +340,10 @@ limitations under the License.
         else if c == ' ' then
           consume(str, j + 1, v { blank: true })
         else if c == '+' then
-          consume(str, j + 1, v { sign: true })
+          consume(str, j + 1, v { plus: true })
         else
           { i: j, v: v };
-      consume(str, i, { alt: false, zero: false, left: false, blank: false, sign: false });
+      consume(str, i, { alt: false, zero: false, left: false, blank: false, plus: false });
 
     local try_parse_field_width(str, i) =
       if i < std.length(str) && str[i] == '*' then
@@ -483,23 +483,38 @@ limitations under the License.
     local pad_right(str, w, s) =
       str + padding(w - std.length(str), s);
 
-    // Render an integer (e.g., decimal or octal).
-    local render_int(n__, min_chars, min_digits, blank, sign, radix, zero_prefix) =
-      local n_ = std.abs(n__);
-      local aux(n) =
-        if n == 0 then
-          zero_prefix
+    // Render a sign & magnitude integer (radix ranges from decimal to binary).
+    // neg should be a boolean, and when true indicates that we should render a negative number.
+    // mag must always be a whole number >= 0, it's the magnitude of the integer to render
+    // min_chars must be a whole number >= 0
+    //   It is the field width, i.e. std.length() of the result should be >= min_chars
+    // min_digits must be a whole number >= 0. It's the number of zeroes to pad with.
+    // blank must be a boolean, if true adds an additional ' ' in front of a positive number, so
+    // that it is aligned with negative numbers with the same number of digits.
+    // plus must be a boolean, if true adds a '+' in front of a postive number, so that it is
+    // aligned with negative numbers with the same number of digits.  This takes precedence over
+    // blank, if both are true.
+    // radix must be a whole number >1 and <= 10.  It is the base of the system of numerals.
+    // zero_prefix is a string prefixed before the sign to all numbers that are not 0.
+    local render_int(neg, mag, min_chars, min_digits, blank, plus, radix, zero_prefix) =
+      // dec is the minimal string needed to represent the number as text.
+      local dec =
+        if mag == 0 then
+          '0'
         else
-          aux(std.floor(n / radix)) + (n % radix);
-      local dec = if std.floor(n_) == 0 then '0' else aux(std.floor(n_));
-      local neg = n__ < 0;
-      local zp = min_chars - (if neg || blank || sign then 1 else 0);
+          local aux(n) =
+            if n == 0 then
+              zero_prefix
+            else
+              aux(std.floor(n / radix)) + (n % radix);
+          aux(mag);
+      local zp = min_chars - (if neg || blank || plus then 1 else 0);
       local zp2 = std.max(zp, min_digits);
       local dec2 = pad_left(dec, zp2, '0');
-      (if neg then '-' else if sign then '+' else if blank then ' ' else '') + dec2;
+      (if neg then '-' else if plus then '+' else if blank then ' ' else '') + dec2;
 
     // Render an integer in hexadecimal.
-    local render_hex(n__, min_chars, min_digits, blank, sign, add_zerox, capitals) =
+    local render_hex(n__, min_chars, min_digits, blank, plus, add_zerox, capitals) =
       local numerals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                        + if capitals then ['A', 'B', 'C', 'D', 'E', 'F']
                        else ['a', 'b', 'c', 'd', 'e', 'f'];
@@ -511,12 +526,12 @@ limitations under the License.
           aux(std.floor(n / 16)) + numerals[n % 16];
       local hex = if std.floor(n_) == 0 then '0' else aux(std.floor(n_));
       local neg = n__ < 0;
-      local zp = min_chars - (if neg || blank || sign then 1 else 0)
+      local zp = min_chars - (if neg || blank || plus then 1 else 0)
                  - (if add_zerox then 2 else 0);
       local zp2 = std.max(zp, min_digits);
       local hex2 = (if add_zerox then (if capitals then '0X' else '0x') else '')
                    + pad_left(hex, zp2, '0');
-      (if neg then '-' else if sign then '+' else if blank then ' ' else '') + hex2;
+      (if neg then '-' else if plus then '+' else if blank then ' ' else '') + hex2;
 
     local strip_trailing_zero(str) =
       local aux(str, i) =
@@ -530,27 +545,27 @@ limitations under the License.
       aux(str, std.length(str) - 1);
 
     // Render floating point in decimal form
-    local render_float_dec(n__, zero_pad, blank, sign, ensure_pt, trailing, prec) =
+    local render_float_dec(n__, zero_pad, blank, plus, ensure_pt, trailing, prec) =
       local n_ = std.abs(n__);
       local whole = std.floor(n_);
       local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
       local zp = zero_pad - prec - dot_size;
-      local str = render_int(std.sign(n__) * whole, zp, 0, blank, sign, 10, '');
+      local str = render_int(n__ < 0, whole, zp, 0, blank, plus, 10, '');
       if prec == 0 then
         str + if ensure_pt then '.' else ''
       else
         local frac = std.floor((n_ - whole) * std.pow(10, prec) + 0.5);
         if trailing || frac > 0 then
-          local frac_str = render_int(frac, prec, 0, false, false, 10, '');
+          local frac_str = render_int(false, frac, prec, 0, false, false, 10, '');
           str + '.' + if !trailing then strip_trailing_zero(frac_str) else frac_str
         else
           str;
 
     // Render floating point in scientific form
-    local render_float_sci(n__, zero_pad, blank, sign, ensure_pt, trailing, caps, prec) =
+    local render_float_sci(n__, zero_pad, blank, plus, ensure_pt, trailing, caps, prec) =
       local exponent = if n__ == 0 then 0 else std.floor(std.log(std.abs(n__)) / std.log(10));
       local suff = (if caps then 'E' else 'e')
-                   + render_int(exponent, 3, 0, false, true, 10, '');
+                   + render_int(exponent < 0, std.abs(exponent), 3, 0, false, true, 10, '');
       local mantissa = if exponent == -324 then
         // Avoid a rounding error where std.pow(10, -324) is 0
         // -324 is the smallest exponent possible.
@@ -558,7 +573,7 @@ limitations under the License.
       else
         n__ / std.pow(10, exponent);
       local zp2 = zero_pad - std.length(suff);
-      render_float_dec(mantissa, zp2, blank, sign, ensure_pt, trailing, prec) + suff;
+      render_float_dec(mantissa, zp2, blank, plus, ensure_pt, trailing, prec) + suff;
 
     // Render a value with an arbitrary format code.
     local format_code(val, code, fw, prec_or_null, i) =
@@ -573,24 +588,24 @@ limitations under the License.
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
-          render_int(val, zp, iprec, cflags.blank, cflags.sign, 10, '')
+          render_int(val <= -1, std.floor(std.abs(val)), zp, iprec, cflags.blank, cflags.plus, 10, '')
       else if code.ctype == 'o' then
         if std.type(val) != 'number' then
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
           local zero_prefix = if cflags.alt then '0' else '';
-          render_int(val, zp, iprec, cflags.blank, cflags.sign, 8, zero_prefix)
+          render_int(val <= -1, std.floor(std.abs(val)), zp, iprec, cflags.blank, cflags.plus, 8, zero_prefix)
       else if code.ctype == 'x' then
         if std.type(val) != 'number' then
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
-          render_hex(val,
+          render_hex(std.floor(val),
                      zp,
                      iprec,
                      cflags.blank,
-                     cflags.sign,
+                     cflags.plus,
                      cflags.alt,
                      code.caps)
       else if code.ctype == 'f' then
@@ -601,7 +616,7 @@ limitations under the License.
           render_float_dec(val,
                            zp,
                            cflags.blank,
-                           cflags.sign,
+                           cflags.plus,
                            cflags.alt,
                            true,
                            fpprec)
@@ -613,7 +628,7 @@ limitations under the License.
           render_float_sci(val,
                            zp,
                            cflags.blank,
-                           cflags.sign,
+                           cflags.plus,
                            cflags.alt,
                            true,
                            code.caps,
@@ -628,7 +643,7 @@ limitations under the License.
             render_float_sci(val,
                              zp,
                              cflags.blank,
-                             cflags.sign,
+                             cflags.plus,
                              cflags.alt,
                              cflags.alt,
                              code.caps,
@@ -638,7 +653,7 @@ limitations under the License.
             render_float_dec(val,
                              zp,
                              cflags.blank,
-                             cflags.sign,
+                             cflags.plus,
                              cflags.alt,
                              cflags.alt,
                              fpprec - digits_before_pt)
