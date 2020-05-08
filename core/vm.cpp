@@ -734,7 +734,7 @@ class Interpreter {
      */
     HeapThunk *import(const LocationRange &loc, const LiteralString *file)
     {
-        ImportCacheValue *input = importString(loc, file);
+        ImportCacheValue *input = importLiteralString(loc, file);
         if (input->thunk == nullptr) {
             Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
             AST *expr = jsonnet_parse(alloc, tokens);
@@ -756,11 +756,14 @@ class Interpreter {
      * \param file Path to the filename.
      * \param found_here If non-null, used to store the actual path of the file
      */
-    ImportCacheValue *importString(const LocationRange &loc, const LiteralString *file)
+    ImportCacheValue *importLiteralString(const LocationRange &loc, const LiteralString *file)
+    {
+        return importString(loc, file->value);
+    }
+
+    ImportCacheValue *importString(const LocationRange &loc, const UString &path)
     {
         std::string dir = dir_name(loc.file);
-
-        const UString &path = file->value;
 
         std::pair<std::string, UString> key(dir, path);
         ImportCacheValue *cached_value = cachedImports[key];
@@ -881,6 +884,7 @@ class Interpreter {
         builtins["parseJson"] = &Interpreter::builtinParseJson;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
+        builtins["importstrDyn"] = &Interpreter::builtinImportstrDyn;
     }
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
@@ -1188,6 +1192,15 @@ class Interpreter {
     {
         validateBuiltinArgs(loc, "log", args, {Value::NUMBER});
         scratch = makeNumberCheck(loc, std::log(args[0].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinImportstrDyn(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "importstrDyn", args, {Value::STRING});
+        const auto *str = static_cast<const HeapString *>(args[0].v.h);
+        const ImportCacheValue *importedValue = importString(loc, str->value);
+        scratch = makeString(decode_utf8(importedValue->content));
         return nullptr;
     }
 
@@ -1921,7 +1934,7 @@ class Interpreter {
 
             case AST_IMPORTSTR: {
                 const auto &ast = *static_cast<const Importstr *>(ast_);
-                const ImportCacheValue *value = importString(ast.location, ast.file);
+                const ImportCacheValue *value = importLiteralString(ast.location, ast.file);
                 scratch = makeString(decode_utf8(value->content));
             } break;
 
