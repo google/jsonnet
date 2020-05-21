@@ -128,7 +128,7 @@ div.rules {
       <ul>
         <li>
           <p>
-            <i>id</i>: Matched by <tt>[_a-zA-Z][_a-zA-Z0-9]*</tt>
+            <i>id</i>: Matched by <tt>[_a-zA-Z][_a-zA-Z0-9]*</tt>.
           </p>
           <p>
             Some identifiers are reserved as keywords, thus are not in the set <i>id</i>:
@@ -136,7 +136,7 @@ div.rules {
             <code>for</code> <code>function</code> <code>if</code> <code>import</code>
             <code>importstr</code> <code>in</code> <code>local</code> <code>null</code>
             <code>tailstrict</code> <code>then</code> <code>self</code> <code>super</code>
-            <code>true</code>
+            <code>true</code>.
           </p>
         </li>
         <li>
@@ -205,25 +205,25 @@ div.rules {
         <li>
           <p>
             <i>operator</i>: A sequence of at least one of the following single-character symbols:
-            <code>!$:~+-&amp;|^=&lt;&gt;*/%</code>
+            <code>!$:~+-&amp;|^=&lt;&gt;*/%</code>.
           </p>
           <p>
-            Subject to the following rules, which will cause the lexing to terminate with a shorter
+            Additionally it is subject to the following rules, which may cause the lexing to terminate with a shorter
             token:
           </p>
           <ul>
             <li>
-              The sequence <code>//</code> is not allowed in an operator
+              The sequence <code>//</code> is not allowed in an operator.
             </li>
             <li>
-              The sequence <code>/*</code> is not allowed in an operator
+              The sequence <code>/*</code> is not allowed in an operator.
             </li>
             <li>
-              The sequence <code>|||</code> is not allowed in an operator
+              The sequence <code>|||</code> is not allowed in an operator.
             </li>
             <li>
               If the sequence has more than one character, it is not allowed to end in any of
-              <code>+-~!$</code>
+              <code>+</code>, <code>-</code>, <code>~</code>, <code>!</code>, <code>$</code>.
             </li>
           </ul>
         </li>
@@ -299,7 +299,7 @@ div.rules {
             [ <i>expr</i> { <code>,</code> <i>expr</i> } [ <code>,</code> ] ]
             <code>]</code>
           </td>
-        </tr> 
+        </tr>
 
         <!-- array comprehension -->
         <tr>
@@ -332,21 +332,8 @@ div.rules {
           <td>
             <i>expr</i>
             <code>[</code>
-            <i>expr</i>
-            [ <code>:</code> [ <i>expr</i>
-            [ <code>:</code> [ <i>expr</i> ] ] ] ]
-            <code>]</code>
-          </td>
-        </tr>
-
-        <!-- object index (general2) -->
-        <tr>
-          <td></td>
-          <td> | </td>
-          <td>
-            <i>expr</i>
-            <code>[</code>
-            <code>:</code> [ <i>expr</i>
+            [ <i>expr</i> ]
+            [ <code>:</code> [ <i> expr</i> ]
             [ <code>:</code> [ <i>expr</i> ] ] ]
             <code>]</code>
           </td>
@@ -549,7 +536,7 @@ div.rules {
             <code>]</code>
             <code>:</code>
             <i>expr</i>
-            [ { <code>,</code> <i>objlocal</i> } ] [ <code>,</code> ] 
+            [ { <code>,</code> <i>objlocal</i> } ] [ <code>,</code> ]
             <i>forspec</i> <i>compspec</i>
           </td>
         </tr>
@@ -882,10 +869,6 @@ div.rules {
           The following binary operators are removed: <code>!=</code> <code>==</code> <code>%</code>
           <code>in</code>
         </li>
-        <li>
-          All function parameters must now have default arguments.  To simulate a parameter that
-          must be bound at the call site, use a default argument that evaluates to an error.
-        </li>
         <li>Array slices <code>[::]</code> are removed.</li>
         <li>
           Array and object comprehensions are replaced with a simple object comprehension construct.
@@ -1177,9 +1160,9 @@ div.rules {
             \textrm{ be the sequence of variables defined in }forspec\ compspec \\
 
             \hspace{10mm} \object{ \\
-            \hspace{20mm} [desugar_{expr}(\local{x_1=arr[1] \ldots x_n=arr[n]}{e_f}, b)]: \\
+            \hspace{20mm} [desugar_{expr}(\local{x_1=arr[0] \ldots x_n=arr[n-1]}{e_f}, b)]: \\
             \hspace{30mm} desugar_{expr}(
-                \local{x_1=arr[1] \ldots x_n=arr[n]}{
+                \local{x_1=arr[0] \ldots x_n=arr[n-1]}{
                     \local{bind_1 \ldots bind_n}{e_{body}}
                 }, true) \\
             \hspace{20mm} \textrm{ for } arr \textrm{ in }
@@ -1349,74 +1332,74 @@ div.rules {
       </div>
       <div class="desugar-rule-group">
         <p>
-          <i>desugar<sub>assert</sub></i>: (Field × Boolean) → Field.  This desugars object
+          <i>desugar<sub>assert</sub></i>: (Field × [Bind]) → Field.  This desugars object
           assertions.
         </p>
         <div class="desugar-rule">
           \[
-            desugar_{assert}(\assert e), binds) =
+            desugar_{assert}(\assert e, binds) =
                 desugar_{assert}(\assert e : \texttt{"Assertion failed"}, binds)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{assert}(\assert e : e'), binds) =
+            desugar_{assert}(\assert e : e', binds) =
                 \assert{desugar_{expr}(\local{binds}{\if{e}{\null}{\error{e'}}}, \true)}
           \]
         </div>
       </div>
       <div class="desugar-rule-group">
         <p>
-          <i>desugar<sub>field</sub></i>: (Field × Boolean) → Field.  This desugars object fields.
+          <i>desugar<sub>field</sub></i>: (Field × [Bind] × Boolean) → Field.  This desugars object fields.
           Recall that <i>h</i> ranges over <code>:</code>, <code>::</code>, <code>:::</code>.  The
           boolean records whether the object containing this field is itself in another object.  The
           notation <i>string(id)</i> means converting the identifier token to a string literal.
         </p>
         <div class="desugar-rule">
           \[
-            desugar_{field}(id \mathrel{h} e), binds, b) =
+            desugar_{field}(id \mathrel{h} e, binds, b) =
                 desugar_{field}([string(id)] \mathrel{h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}(id \mathrel{+h} e), binds, b) =
+            desugar_{field}(id \mathrel{+h} e, binds, b) =
                 desugar_{field}([string(id)] \mathrel{+h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}(id(params) \mathrel{h} e), binds, b) =
+            desugar_{field}(id(params) \mathrel{h} e, binds, b) =
                 desugar_{field}([string(id)](params) \mathrel{h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}(string \mathrel{h} e), binds, b) =
+            desugar_{field}(string \mathrel{h} e, binds, b) =
                 desugar_{field}([string] \mathrel{h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}(string \mathrel{+h} e), binds, b) =
+            desugar_{field}(string \mathrel{+h} e, binds, b) =
                 desugar_{field}([string] \mathrel{+h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}(string(params) \mathrel{h} e), binds, b) =
+            desugar_{field}(string(params) \mathrel{h} e, binds, b) =
                 desugar_{field}([string](params) \mathrel{h} e), binds, b)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}([e] \mathrel{h} e'), binds, b) =
+            desugar_{field}([e] \mathrel{h} e', binds, b) =
                 [desugar_{expr}(e, b)] \mathrel{h} desugar_{expr}(\local{binds}{e}, \true)
           \]
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}([e] \mathrel{+h} e'), binds, b) = \\
+            desugar_{field}([e] \mathrel{+h} e', binds, b) = \\
             \hspace{10mm}
             \textrm{let } e'' = e[\texttt{\$outerself} / \self, \texttt{\$outersuper} / \super] \\
             \hspace{10mm}
@@ -1427,14 +1410,14 @@ div.rules {
         </div>
         <div class="desugar-rule">
           \[
-            desugar_{field}([e](params) \mathrel{h} e'), binds, b) =
+            desugar_{field}([e](params) \mathrel{h} e', binds, b) =
                 desugar_{field}([e] \mathrel{h} \function{params}{e'}, binds, b)
           \]
         </div>
       </div>
       <div class="desugar-rule-group">
         <p>
-          <i>desugar<sub>bind</sub></i>: (Field × Boolean) → Field.  This desugars local bindings.
+          <i>desugar<sub>bind</sub></i>: (Bind × Boolean) → Field.  This desugars local bindings.
         </p>
         <div class="desugar-rule">
           \[
@@ -1474,7 +1457,7 @@ div.rules {
         <div class="desugar-rule">
           \[
             desugar_{arrcomp}(e, \textrm{if }e'\ compspec, b) =
-                desugar_{expr}(\if{e'}{[desugar_{arrcomp}(e, compspec, b)]}{[\ ]}, b)
+                desugar_{expr}(\if{e'}{desugar_{arrcomp}(e, compspec, b)}{[\ ]}, b)
           \]
         </div>
         <div class="desugar-rule">
@@ -1491,7 +1474,7 @@ div.rules {
                 \local{arr = e'}{
                     \texttt{std.join}(\\\hspace{20mm}[\ ], \texttt{std.makeArray}(
                         \texttt{std.length}(arr),
-                        \function{i}{\local{x = arr[i]}{[desugar_{arrcomp}(e, compspec, b)]}}
+                        \function{i}{\local{x = arr[i]}{desugar_{arrcomp}(e, compspec, b)}}
                     ))
                 },
                 b
@@ -1506,7 +1489,7 @@ div.rules {
                 \local{arr = e'}{
                     \texttt{std.join}(\\\hspace{20mm}[\ ], \texttt{std.makeArray}(
                         \texttt{std.length}(arr),
-                        \function{i}{\local{x = arr[i]}{[base]}}
+                        \function{i}{\local{x = arr[i]}{[e]}}
                     ))
                 },
                 b
