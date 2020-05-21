@@ -35,6 +35,7 @@ bazel-*
 /external/
 /dist/
 /jsonnet.egg-info/
+/doc/.jekyll-cache/
 
 # Cmake
 **/CMakeCache.txt
