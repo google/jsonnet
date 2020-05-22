@@ -444,7 +444,7 @@
       <em>Available since version 0.15.0.</em>
       <p>
         Clamp a value to fit within the range [<code>minVal</code>, <code>maxVal</code>].
-        Equivalent to <code>std.min(minVal, std.max(x, maxVal))</code>.
+        Equivalent to <code>std.max(minVal, std.min(x, maxVal))</code>.
       </p>
      <p>Example: <code>std.clamp(-3, 0, 5)</code> yields <code>0</code>.</p>
      <p>Example 2: <code>std.clamp(4, 0, 5)</code> yields <code>4</code>.</p>
