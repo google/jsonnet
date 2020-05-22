@@ -1,6 +1,6 @@
 ERROR: must give filename
 
-Jsonnet commandline interpreter v0.15.0
+Jsonnet commandline interpreter v0.16.0
 
 jsonnet {<option>} <filename>
 
