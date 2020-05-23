@@ -148,3 +148,10 @@ tools/scripts/serve_docs.sh
 
 This should the website on localhost:8200, automatically rebuild when you change any underlying
 files, and automatically refresh your browser when that happens.
+
+The standard library is documented in a structured format in `doc/_stdlib_gen/stdlib-content.jsonnet`.
+The HTML (input for Jekyll) is regenerated using the following command:
+
+```
+tools/scripts/update_web_content.sh
+```
