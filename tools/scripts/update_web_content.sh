@@ -101,3 +101,5 @@ redirect docs/stdlib.html ref/stdlib.html
 redirect case_studies/casestudy_fractal.1.html articles/fractal.1.html
 redirect language/spec.html ref/spec.html
 redirect contributing.html learning/community.html
+
+./jsonnet -S "$WEB_DIR/_stdlib_gen/stdlib.jsonnet" > "$WEB_DIR/ref/stdlib.html"
