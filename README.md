@@ -5,6 +5,8 @@
 For an introduction to Jsonnet and documentation,
 [visit our website](http://jsonnet.org).
 
+This respositiory contains the original implementation. You can also try [go-jsonnet](https://github.com/google/go-jsonnet), a newer implementation which in some cases is orders of magnitude faster.
+
 Visit our [discussion forum](https://groups.google.com/forum/#!forum/jsonnet).
 
 ## Packages
