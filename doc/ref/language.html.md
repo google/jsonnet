@@ -1,3 +1,8 @@
+---
+layout: markdown
+title: Language Reference
+---
+
 # Language Reference
 
 This page explains Jsonnet in detail. We assume basic familiarity with the language, so if you are just starting out, please go through [the tutorial](/learning/tutorial.html) first. On the other hand, we do not try to cover 100% of the language here. If you need a more complete and precise description, please refer to [the specification](/ref/spec.html) and [the standard library documentation](/ref/stdlib.html).
@@ -8,7 +13,7 @@ Jsonnet is designed primarily for configuring complex systems. The standard use 
 
 If you are an application author, Jsonnet may free you from having to design your custom configuration format. The applications can simply consume JSON or other structured format and the users can specify their configuration in Jsonnet – a generic configuration language.
 
-Jsonnet is a full programming language, so it can be used to implement arbitrary logic. However, it does not allow unrestricted IO (see [Independence from the Environment](#independence_from_the_environment)), so it is practical for cases where precise control over input and output is a good thing. There are a couple of potential applications, other than configuration:
+Jsonnet is a full programming language, so it can be used to implement arbitrary logic. However, it does not allow unrestricted IO (see [Independence from the Environment](#independence-from-the-environment-hermeticity)), so it is practical for cases where precise control over input and output is a good thing. There are a couple of potential applications, other than configuration:
 * Static site generation
 * Embedded expression language
 * Ad hoc JSON transformations – it makes sense to use Jsonnet for that if you already know it. Otherwise [jq](https://stedolan.github.io/jq/) is arguably a better option (Jsonnet prioritizes clarity over terseness and convenience, which can be a disadvantage for one-off usage).
@@ -31,16 +36,17 @@ map(function(i) i * 2, [1, 2, 3, 4, 5])
 ```
 
 If you try to read it out loud, you get something like:
+
 > The result of mapping function `func` over array `arr` is either
->   1) an empty array, if array `arr` is empty
->   2) the result of applying function `func` to the first element of `arr` followed by the mapping of the remaining elements, if `arr` is not empty.
+>   1. an empty array, if array `arr` is empty
+>   2. the result of applying function `func` to the first element of `arr` followed by the mapping of the remaining elements, if `arr` is not empty.
 
 Compare it to a traditional, imperative implementation which would read more like:
 > In order to map a function `func` over array `arr`:
-> 1) Create a copy of an array `arr`, called `newArr`.
-> 2) For each index `i` in array  `newArr`
->   2a) Replace `newArr[i]` with `func` applied to `newArr[i]`.
-> 3) Return `newArr` as the result.
+> 1. Create a copy of an array `arr`, called `newArr`.
+> 2. For each index `i` in array  `newArr`
+>    * Replace `newArr[i]` with `func` applied to `newArr[i]`.
+> 3. Return `newArr` as the result.
 
 Jsonnet definitions are similar to definitions in mathematics. A great advantage of such style is that it frees you from constantly thinking about the state and the order of operations.
 
@@ -109,7 +115,7 @@ In particular arrays can have null elements and objects can have null fields. Th
 
 ### Boolean
 
-Boolean has two values `true` and `false`. They are the only values which can be used in `if` conditions.
+Boolean has two values: `true` and `false`. They are the only values which can be used in `if` conditions.
 
 ### String
 
@@ -194,12 +200,12 @@ It is recommended to always pass optional arguments as named (for readability). 
 Arrays in Jsonnet are finite-length sequences of arbitrary values.
 Values of different types can be mixed in an array. Individual array elements are lazy, meaning that evaluating an array does not cause evaluation of all arguments.
 
-...
-local arr = [1+1, 2+2, foo(x)];
+```
+local arr = [error "a", 2+2, error "b"];
 arr[1]
 ```
 
-In the example above `2+2` is evaluated, but the expressions for the other array elements are not. See [Rationale for Lazy Semantics](/articles/design.html#lazy).
+In the example above `2+2` is evaluated, but the expressions for the other array elements are not. See: [Rationale for Lazy Semantics](/articles/design.html#lazy).
 
 There is no separate tuple type in Jsonnet. Arrays are used in contexts where tuples would be natural in other languages, for example for returning multiple values from a function.
 
@@ -321,7 +327,7 @@ local obj = {
 ]
 ```
 
-### Inheritance
+#### Inheritance
 
 Jsonnet objects allow inheritance in the OOP sense, even though there are no classes or declarations. The inheritance is realized as an operation `+` which can be applied to any two objects. This might be surprising, because in mainstream languages the inheritance hierarchy is static.
 
@@ -396,7 +402,7 @@ Let `D`, `E`, `F` range over arbitrary objects. Let ≡ mean equivalence.
   D + E   ≡   E + D
   ```
 
-### Self-Referencing Objects
+#### Self-Referencing Objects
 
 Objects can be self-referencing even without OOP features, simply because variable definitions can be recursive:
 
@@ -427,7 +433,7 @@ Going back to the [stack of layers analogy](#inheritance), `self` does not know 
 
 Both kinds of behavior are useful. You need to make a decision whether to refer to the fields of the objects as they are currently defined or to allow overriding.
 
-### Visibilities
+#### Visibilities
 
 Jsonnet objects have a concept of visibility which affects manifestation (printing out objects) and equality checks. This concept has nothing to do with the notion of private/public fields from other languages.
 
@@ -460,7 +466,7 @@ The value of a field is irrelevant for determining its visibility.
 
 It is possible to check field's visibility using `std.objectHas` and `std.objectHasAll` standard library functions. The first checks if an object has a visible field with a specified name and the second checks if an object has a field regardless of its visibility.
 
-### Objects Equality
+#### Object Equality
 
 Two objects are equal when their respective *visible* fields are equal. Hidden fields are ignored, which allows ignoring the "helper" parts of the object when evaluating equality.
 
@@ -476,7 +482,7 @@ Checking equality of some objects is not allowed when the objects contain visibl
 
 Usually, fields which cannot be checked for equality (e.g. functions) should be hidden, because they cannot be manifested, unless a custom manifestation method is used.
 
-### Object Locals
+#### Object Locals
 
 It is possible to declare a `local` inside an object, which will be available to all fields.
 
@@ -492,7 +498,7 @@ Object locals end with a comma, instead of semicolon (like fields). They are not
 
 Object locals can access `self` and `super` – they are "inside the object". As a consequence of this, **object locals are not available in Field Name Expressions**, because (in general) they depend on the object being already created, which requires the field names to be already known.
 
-### Field Name Expressions
+#### Field Name Expressions
 
 Field names of Jsonnet objects can be arbitrary strings and can be calculated dynamically *when the object is created*.
 
@@ -593,7 +599,7 @@ TODO: Some parts of this page are still incomplete:
 * Explaining syntax sugar for methods
 * "Plain objects" (equivalent to the mapping).
 * Thunks
-* Producing non-JSON output (custom manifesters, string output)
+* Producing non-JSON output (custom manifestation, string output)
 
 TODO: technical issues
 * Include example output (!!!)
