@@ -1,4 +1,4 @@
 destination: production
-markdown: redcarpet
+markdown: kramdown
 highlighter: pygments
 exclude: ['_stdlib_gen']
