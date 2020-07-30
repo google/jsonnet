@@ -121,7 +121,7 @@ Boolean has two values: `true` and `false`. They are the only values which can b
 
 Strings in Jsonnet are sequences of Unicode codepoints.
 
-In most contexts a string can be treated as an array of one codepoint strings (e.g. `std.length` and the `[]` operator work like that). Comparisons (`<`, `<=`, `>`, `>=`) and equality checks (`==`, `!=`) also follow this pattern – in both cases codepoints will be compared lexicographically.
+In most contexts a string can be treated as an array of one codepoint strings (e.g. `std.length` and the `[]` operator work like that). <!-- Comparisons (`<`, `<=`, `>`, `>=`) and equality checks (`==`, `!=`) also follow this pattern – in both cases codepoints will be compared lexicographically. -->
 
 While similar, strings are **not** actually equivalent to arrays of codepoints. For example `std.type("foo") != std.type(["f", "o", "o"])` and `"foo" != ["f", "o", "o"]`).
 
@@ -213,7 +213,9 @@ The simplest way of creating an array is *an array literal*. It is simply a comm
 
 The most flexible way of creating an array is `std.makeArray(sz, func)`. It takes the size of the array to construct and a function which takes an index `i` and returns the `i`-th element. It is possible to build all other array functionality using this function. In practice, using more specialized functions is usually (but not always) more handy and results in a more efficient program.
 
-Arrays can be concatenated using the operator `+`. Arrays `a` and `b` are equal if they have equal length and for all indexes `i`, `a[i] == b[i]`. The comparison of arrays is "lexicographic", so array `a` is smaller than `b` if `a[i] < b[i]` for some `i` and for all `j < i`, `a[j] == b[j]`.
+Arrays can be concatenated using the operator `+`. Arrays `a` and `b` are equal if they have equal length and for all indexes `i`, `a[i] == b[i]`. 
+
+<!-- The comparison of arrays is "lexicographic", so array `a` is smaller than `b` if `a[i] < b[i]` for some `i` and for all `j < i`, `a[j] == b[j]` or if `a` is a proper prefix of `b`. -->
 
 #### Array Comprehensions
 
