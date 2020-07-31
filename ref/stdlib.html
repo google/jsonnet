@@ -129,12 +129,14 @@
         can be implemented in Jsonnet. Their code can be found in the <tt>std.jsonnet</tt> file.
         The behavior of some of the other functions, i.e. the ones that expose extra functionality
         not otherwise available to programmers, is described formally in the <a href="/language/spec.html">specification</a>.
+        
       </p>
       <p>
         The standard library is implicitly added to all Jsonnet programs by enclosing them in a
         local construct. For example, if the program given by the user is <code>{x: "foo"}</code>,
         then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>. The
         functions in the standard library are all hidden fields of the <code>std</code> object.
+        
       </p>
     </div>
     <div style="clear: both"></div>
@@ -224,12 +226,14 @@
       <p>
         Return a string that indicates the type of the value. The possible return values are:
         "array", "boolean", "function", "null", "number", "object", and "string".
+        
       </p>
       <p>
         The following functions are also available and return a boolean:
         <code>std.isArray(v)</code>, <code>std.isBoolean(v)</code>, <code>std.isFunction(v)</code>,
         <code>std.isNumber(v)</code>, <code>std.isObject(v)</code>, and
         <code>std.isString(v)</code>.
+        
       </p>
       
     </div>
@@ -255,6 +259,7 @@
         array, the number of codepoints in the string, the number of parameters in the function, or
         the number of fields in the object. Raises an error if given a primitive value, i.e.
         <code>null</code>, <code>true</code> or <code>false</code>.
+        
       </p>
       
     </div>
@@ -279,6 +284,7 @@
         Returns <code>true</code> if the given object has the field (given as a string), otherwise
         <code>false</code>. Raises an error if the arguments are not object and string
         respectively. Returns false if the field is hidden.
+        
       </p>
       
     </div>
@@ -302,6 +308,7 @@
       <p>
         Returns an array of strings, each element being a field from the given object. Does not include
         hidden fields.
+        
       </p>
       
     </div>
@@ -324,6 +331,7 @@
     <div class="panel">
       <p>
         As <code>std.objectHas</code> but also includes hidden fields.
+        
       </p>
       
     </div>
@@ -346,6 +354,7 @@
     <div class="panel">
       <p>
         As <code>std.objectFields</code> but also includes hidden fields.
+        
       </p>
       
     </div>
@@ -370,6 +379,7 @@
         Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
         length `arrays`, zero length `objects`, or `null` values.
         The argument <code>a</code> may have any type.
+        
       </p>
       
     </div>
@@ -394,6 +404,7 @@
         Apply the given function to all fields of the given object, also passing
         the field name. The function <code>func</code> is expected to take the
         field name as the first parameter and the field value as the second.
+        
       </p>
       
     </div>
@@ -469,6 +480,7 @@
       <p>
         Clamp a value to fit within the range [<code>minVal</code>, <code>maxVal</code>].
         Equivalent to <code>std.max(minVal, std.min(x, maxVal))</code>.
+        
       </p>
       <p>
         Example: <code>std.clamp(-3, 0, 5)</code> yields <code>0</code>.
@@ -545,6 +557,7 @@
     <div class="panel">
       <p>
         Convert the given argument to a string.
+        
       </p>
       
     </div>
@@ -568,6 +581,7 @@
       <p>
         Returns the positive integer representing the unicode codepoint of the character in the
         given single-character string. This function is the inverse of <code>std.char(n)</code>.
+        
       </p>
       
     </div>
@@ -591,6 +605,7 @@
       <p>
         Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.
         This function is the inverse of <code>std.codepoint(str)</code>.
+        
       </p>
       
     </div>
@@ -615,6 +630,7 @@
         Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
         and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
         <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
+        
       </p>
       
     </div>
@@ -638,6 +654,7 @@
       <p>
         Returns an array that contains the indexes of all occurances of <code>pat</code> in
         <code>str</code>.
+        
       </p>
       
     </div>
@@ -660,6 +677,7 @@
     <div class="panel">
       <p>
         Returns whether the string a is prefixed by the string b.
+        
       </p>
       
     </div>
@@ -682,6 +700,7 @@
     <div class="panel">
       <p>
         Returns whether the string a is suffixed by the string b.
+        
       </p>
       
     </div>
@@ -709,6 +728,7 @@
       </p>
       <p>
         Removes characters <code>chars</code> from the beginning and from the end of <code>str</code>.
+        
       </p>
       <p>
         Example: <code>std.stripChars(" test test test     ", " ")</code> yields <code>"test test test"</code>.
@@ -744,6 +764,7 @@
       </p>
       <p>
         Removes characters <code>chars</code> from the beginning of <code>str</code>.
+        
       </p>
       <p>
         Example: <code>std.lstripChars(" test test test     ", " ")</code> yields <code>"test test test     "</code>.
@@ -779,6 +800,7 @@
       </p>
       <p>
         Removes characters <code>chars</code> from the end of <code>str</code>.
+        
       </p>
       <p>
         Example: <code>std.rstripChars(" test test test     ", " ")</code> yields <code>" test test test"</code>.
@@ -810,6 +832,7 @@
       <p>
         Split the string <code>str</code> into an array of strings, divided by the single character
         <code>c</code>.
+        
       </p>
       <p>
         Example: <code>std.split("foo/bar", "/")</code> yields <code>[ "foo", "bar" ]</code>.
@@ -838,6 +861,7 @@
       <p>
         As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
         array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
+        
       </p>
       <p>
         Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
@@ -866,6 +890,7 @@
       <p>
         Returns a copy of the string in which all occurrences of string <code>from</code> have been
         replaced with string <code>to</code>.
+        
       </p>
       <p>
         Example: <code>std.strReplace('I like to skate with my skateboard', 'skate', 'surf')</code> yields <code>"I like to surf with my surfboard"</code>.
@@ -890,6 +915,7 @@
     <div class="panel">
       <p>
         Returns a copy of the string in which all ASCII letters are capitalized.
+        
       </p>
       <p>
         Example: <code>std.asciiUpper('100 Cats!')</code> yields <code>"100 CATS!"</code>.
@@ -914,6 +940,7 @@
     <div class="panel">
       <p>
         Returns a copy of the string in which all ASCII letters are lower cased.
+        
       </p>
       <p>
         Example: <code>std.asciiLower('100 Cats!')</code> yields <code>"100 cats!"</code>.
@@ -939,6 +966,7 @@
       <p>
         Split the string <code>str</code> into an array of strings, each containing a single
         codepoint.
+        
       </p>
       <p>
         Example: <code>std.stringChars("foo")</code> yields <code>[ "f", "o", "o" ]</code>.
@@ -967,6 +995,7 @@
         array. The string formatting follows the <a
         href="https://docs.python.org/2/library/stdtypes.html#string-formatting">same rules</a> as
         Python. The <code>%</code> operator can be used as a shorthand for this function.
+        
       </p>
       <p>
         Example: <code>std.format("Hello %03d", 12)</code> yields <code>"Hello 012"</code>.
@@ -1002,6 +1031,7 @@
         Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code>
         by changing them to a sequence <tt>'"'"'</tt>. This allows injection of arbitrary strings
         as arguments of commands in bash scripts.
+        
       </p>
       
     </div>
@@ -1025,6 +1055,7 @@
       <p>
         Convert $ to $$ in <code>str</code>. This allows injection of arbitrary strings into
         systems that use $ for string interpolation (like Terraform).
+        
       </p>
       
     </div>
@@ -1048,10 +1079,12 @@
       <p>
         Convert <code>str</code> to allow it to be embedded in a JSON representation, within a
         string. This adds quotes, escapes backslashes, and escapes unprintable characters.
+        
       </p>
       <p>
         Example: <code>local description = "Multiline\nc:\\path";
-        "{name: %s}" % std.escapeStringJson(description)</code> yields <code>"{name: \"Multiline\\nc:\\\\path\"}"</code>.
+        "{name: %s}" % std.escapeStringJson(description)
+        </code> yields <code>"{name: \"Multiline\\nc:\\\\path\"}"</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1074,6 +1107,7 @@
       <p>
         Convert <code>str</code> to allow it to be embedded in Python. This is an alias for
         <code>std.escapeStringJson</code>.
+        
       </p>
       
     </div>
@@ -1108,6 +1142,7 @@
     <div class="panel">
       <p>
         Parses a signed decimal integer from the input string.
+        
       </p>
       <p>
         Example: <code>std.parseInt("123")</code> yields <code>123</code>.
@@ -1135,6 +1170,7 @@
     <div class="panel">
       <p>
         Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
+        
       </p>
       <p>
         Example: <code>std.parseOctal("755")</code> yields <code>493</code>.
@@ -1159,6 +1195,7 @@
     <div class="panel">
       <p>
         Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
+        
       </p>
       <p>
         Example: <code>std.parseHex("ff")</code> yields <code>255</code>.
@@ -1188,6 +1225,7 @@
       </p>
       <p>
         Parses a JSON string.
+        
       </p>
       <p>
         Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{ "foo": "bar" }</code>.
@@ -1218,6 +1256,7 @@
       <p>
         Encode a string using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>. Returns an array of numbers
         representing bytes.
+        
       </p>
       
     </div>
@@ -1246,6 +1285,7 @@
       <p>
         Decode an array of numbers representing bytes using <a href="https://en.wikipedia.org/wiki/UTF-8">UTF8</a>.
         Returns a string.
+        
       </p>
       
     </div>
@@ -1284,6 +1324,7 @@
         object model to build a configuration to be consumed by an application expecting an INI
         file. The data is in the form of a set of sections, each containing a key/value mapping.
         These examples should make it clear:
+        
       </p>
       <pre>{
     main: { a: "1", b: "2" },
@@ -1292,9 +1333,11 @@
         s2: {p: "yes", q: ""},
         empty: {},
     }
-}</pre>
+}
+</pre>
       <p>
         Yields a string containing this INI file:
+        
       </p>
       <pre>a = 1
 b = 2
@@ -1305,7 +1348,8 @@ y = 22
 z = 33
 [s2]
 p = yes
-q =</pre>
+q =
+</pre>
       
     </div>
     <div style="clear: both"></div>
@@ -1328,22 +1372,26 @@ q =</pre>
       <p>
         Convert the given value to a JSON-like form that is compatible with Python. The chief
         differences are True / False / None instead of true / false / null.
+        
       </p>
       <pre>{
     b: ["foo", "bar"],
     c: true,
     d: null,
     e: { f1: false, f2: 42 },
-}</pre>
+}
+</pre>
       <p>
         Yields a string containing Python code like:
+        
       </p>
       <pre>{
     "b": ["foo", "bar"],
     "c": True,
     "d": None,
     "e": {"f1": False, "f2": 42}
-}</pre>
+}
+</pre>
       
     </div>
     <div style="clear: both"></div>
@@ -1367,20 +1415,24 @@ q =</pre>
         Convert the given object to a JSON-like form that is compatible with Python. The key
         difference to <code>std.manifestPython</code> is that the top level is represented as a list
         of Python global variables.
+        
       </p>
       <pre>{
     b: ["foo", "bar"],
     c: true,
     d: null,
     e: { f1: false, f2: 42 },
-}</pre>
+}
+</pre>
       <p>
         Yields a string containing this Python code:
+        
       </p>
       <pre>b = ["foo", "bar"]
 c = True
 d = None
-e = {"f1": False, "f2": 42}</pre>
+e = {"f1": False, "f2": 42}
+</pre>
       
     </div>
     <div style="clear: both"></div>
@@ -1403,15 +1455,18 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Convert the given object to a JSON form. <code>indent</code> is a string containing
         one or more whitespaces that are used for indentation:
+        
       </p>
       <pre>std.manifestJsonEx(
   {
       x: [1, 2, 3, true, false, null,
           "string\nstring"],
       y: { a: 1, b: 2, c: [1, 2] },
-  }, "    ")</pre>
+  }, "    ")
+</pre>
       <p>
         Yields a string containing this JSON object:
+        
       </p>
       <pre>{
     "x": [
@@ -1431,7 +1486,8 @@ e = {"f1": False, "f2": 42}</pre>
             2
         ]
     }
-}</pre>
+}
+</pre>
       
     </div>
     <div style="clear: both"></div>
@@ -1455,6 +1511,7 @@ e = {"f1": False, "f2": 42}</pre>
         Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
         be used for this purpose, because any JSON is also valid YAML. But this function will
         produce more canonical-looking YAML.
+        
       </p>
       <pre>std.manifestYamlDoc(
   {
@@ -1462,9 +1519,11 @@ e = {"f1": False, "f2": 42}</pre>
           "string\nstring\n"],
       y: { a: 1, b: 2, c: [1, 2] },
   },
-  indent_array_in_object=false)</pre>
+  indent_array_in_object=false)
+</pre>
       <p>
         Yields a string containing this YAML:
+        
       </p>
       <pre>"x":
   - 1
@@ -1481,10 +1540,12 @@ e = {"f1": False, "f2": 42}</pre>
   "b": 2
   "c":
       - 1
-      - 2</pre>
+      - 2
+</pre>
       <p>
         The <code>indent_array_in_object</code> param adds additional indentation which some people
         may find easier to read.
+        
       </p>
       
     </div>
@@ -1508,13 +1569,16 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Given an array of values, emit a YAML "stream", which is a sequence of documents separated
         by <code>---</code> and ending with <code>...</code>.
+        
       </p>
       <pre>std.manifestYamlStream(
   ['a', 1, []],
   indent_array_in_object=false,
-  c_document_end=true)</pre>
+  c_document_end=true)
+</pre>
       <p>
         Yields this string:
+        
       </p>
       <pre>---
 "a"
@@ -1522,12 +1586,15 @@ e = {"f1": False, "f2": 42}</pre>
 1
 ---
 []
-...</pre>
+...
+</pre>
       <p>
         The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.
+        
       </p>
       <p>
         The <code>c_document_end</code> param adds the optional terminating <code>...</code>.
+        
       </p>
       
     </div>
@@ -1551,6 +1618,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
         containing the XML.
+        
       </p>
       <pre>std.manifestXmlJsonml([
     'svg', { height: 100, width: 100 },
@@ -1561,16 +1629,20 @@ e = {"f1": False, "f2": 42}</pre>
         fill: 'red',
         }
     ],
-])</pre>
+])
+</pre>
       <p>
         Yields a string containing this XML (all on one line):
+        
       </p>
       <pre>&lt;svg height="100" width="100"&gt;
     &lt;circle cx="50" cy="50" fill="red" r="40"
     stroke="black" stroke-width="3"&gt;&lt;/circle&gt;;
-&lt;/svg&gt;;</pre>
+&lt;/svg&gt;;
+</pre>
       <p>
         Which represents the following image:
+        
       </p>
       <svg height="100" width="100">
           <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
@@ -1581,6 +1653,7 @@ e = {"f1": False, "f2": 42}</pre>
         to elements). This includes the whitespace needed to avoid having all the XML on one line,
         which is meaningful in XML. In order to have whitespace in the XML output, it must be
         present in the JsonML input:
+        
       </p>
       <pre>std.manifestXmlJsonml([
     'svg',
@@ -1594,7 +1667,8 @@ e = {"f1": False, "f2": 42}</pre>
         }
     ],
     '\n',
-])</pre>
+])
+</pre>
       
     </div>
     <div style="clear: both"></div>
@@ -1630,6 +1704,7 @@ e = {"f1": False, "f2": 42}</pre>
         Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize
         each element. Func is expected to be a function that takes a single parameter, the index of
         the element it should initialize.
+        
       </p>
       <p>
         Example: <code>std.makeArray(3,function(x) x * x)</code> yields <code>[ 0, 1, 4 ]</code>.
@@ -1660,6 +1735,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Returns whether <code>x</code> occurs in <code>arr</code>.
         Argument <code>arr</code> may be an array or a string.
+        
       </p>
       
     </div>
@@ -1682,6 +1758,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Return the number of times that <code>x</code> occurs in <code>arr</code>.
+        
       </p>
       
     </div>
@@ -1705,6 +1782,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Returns an array that contains the indexes of all occurances of <code>value</code> in
         <code>arr</code>.
+        
       </p>
       
     </div>
@@ -1727,6 +1805,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Apply the given function to every element of the array to form a new array.
+        
       </p>
       
     </div>
@@ -1751,6 +1830,7 @@ e = {"f1": False, "f2": 42}</pre>
         Similar to <a href="#map">map</a> above, but it also passes to the function the element's
         index in the array. The function <code>func</code> is expected to take the index as the
         first parameter and the element as the second.
+        
       </p>
       
     </div>
@@ -1773,6 +1853,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         It first filters, then maps the given array, using the two functions provided.
+        
       </p>
       
     </div>
@@ -1796,6 +1877,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Apply the given function to every element of the array to form a new array then flatten the result.
         It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
+        
       </p>
       <p>
         Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[ 1, 1, 2, 2, 3, 3 ]</code>.
@@ -1827,6 +1909,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Return a new array containing all the elements of <code>arr</code> for which the
         <code>func</code> function returns true.
+        
       </p>
       
     </div>
@@ -1851,6 +1934,7 @@ e = {"f1": False, "f2": 42}</pre>
         Classic foldl function. Calls the function on the result of the previous function call and
         each array element, or <code>init</code> in the case of the initial element. Traverses the
         array from left to right.
+        
       </p>
       
     </div>
@@ -1875,6 +1959,7 @@ e = {"f1": False, "f2": 42}</pre>
         Classic foldr function. Calls the function on the result of the previous function call and
         each array element, or <code>init</code> in the case of the initial element. Traverses the
         array from right to left.
+        
       </p>
       
     </div>
@@ -1897,6 +1982,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Return an array of ascending numbers between the two limits, inclusively.
+        
       </p>
       
     </div>
@@ -1924,6 +2010,7 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Repeats an array or a string <code>what</code> a number of times specified by an integer <code>count</code>.
+        
       </p>
       <p>
         Example: <code>std.repeat([1, 2, 3], 3)</code> yields <code>[ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]</code>.
@@ -1954,6 +2041,7 @@ e = {"f1": False, "f2": 42}</pre>
         case they are concatenated with <code>sep</code> used as a delimiter. If <code>sep</code>
         is an array, then <code>arr</code> must be an array of arrays, in which case the arrays are
         concatenated in the same way, to produce a single array.
+        
       </p>
       <p>
         Example: <code>std.join(".", ["www", "google", "com"])</code> yields <code>"www.google.com"</code>.
@@ -1982,6 +2070,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Concatenate an array of strings into a text file with newline characters after each string.
         This is suitable for constructing bash scripts and the like.
+        
       </p>
       
     </div>
@@ -2004,6 +2093,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Concatenate an array of arrays into a single array.
+        
       </p>
       <p>
         Example: <code>std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])</code> yields <code>[ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ]</code>.
@@ -2033,6 +2123,7 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Reverses an array.
+        
       </p>
       
     </div>
@@ -2055,10 +2146,12 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Sorts the array using the <= operator.
+        
       </p>
       <p>
         Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
         Default value is identity function <code>keyF=function(x) x</code>.
+        
       </p>
       
     </div>
@@ -2081,10 +2174,12 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Removes successive duplicates. When given a sorted array, removes all duplicates.
+        
       </p>
       <p>
         Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
         Default value is identity function <code>keyF=function(x) x</code>.
+        
       </p>
       
     </div>
@@ -2108,16 +2203,19 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Sets are represented as ordered arrays without duplicates.
+        
       </p>
       <p>
         Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
         on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)</code>.
         If that is not the case, the functions will quietly return non-meaningful results.
+        
       </p>
       <p>
         All <code>set.set*</code> functions accept <code>keyF</code> function of one argument, which can be
         used to extract key to use from each element. All Set operations then use extracted key for the purpose
         of identifying uniqueness. Default value is identity function <code>local id = function(x) x</code>.
+        
       </p>
     </div>
     <div style="clear: both"></div>
@@ -2139,6 +2237,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Shortcut for std.uniq(std.sort(arr)).
+        
       </p>
       
     </div>
@@ -2161,6 +2260,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Set intersection operation (values in both a and b).
+        
       </p>
       
     </div>
@@ -2186,6 +2286,7 @@ e = {"f1": False, "f2": 42}</pre>
         concatenate
         the arrays, possibly forming an array that is not a set (due to not being ordered without
         duplicates).
+        
       </p>
       <p>
         Example: <code>std.setUnion([1, 2], [2, 3])</code> yields <code>[ 1, 2, 3 ]</code>.
@@ -2213,6 +2314,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Set difference operation (values in a but not b).
+        
       </p>
       
     </div>
@@ -2235,6 +2337,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.
+        
       </p>
       
     </div>
@@ -2273,6 +2376,7 @@ e = {"f1": False, "f2": 42}</pre>
         to pad the output to a multiple of 4 characters. The value can be a string or an array of
         numbers, but the codepoints / numbers must be in the 0 to 255 range. The resulting string
         has no line breaks.
+        
       </p>
       
     </div>
@@ -2297,6 +2401,7 @@ e = {"f1": False, "f2": 42}</pre>
         Decodes the given base64 string into an array of bytes (number values). Currently assumes
         the input string has no linebreaks and is padded to a multiple of 4 (with the = character).
         In other words, it consumes the output of std.base64().
+        
       </p>
       
     </div>
@@ -2319,9 +2424,11 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         <em>Deprecated, use <code>std.base64DecodeBytes</code> and decode the string explicitly (e.g. with <code>std.decodeUTF8</code>) instead.</code></em>
+        
       </p>
       <p>
         Behaves like std.base64DecodeBytes() except returns a naively encoded string instead of an array of bytes.
+        
       </p>
       
     </div>
@@ -2344,6 +2451,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Encodes the given value into an MD5 string.
+        
       </p>
       
     </div>
@@ -2379,6 +2487,7 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Applies <code>patch</code> to <code>target</code>
         according to <a href="https://tools.ietf.org/html/rfc7396">RFC7396</a>
+        
       </p>
       
     </div>
@@ -2419,9 +2528,11 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Outputs the given string <code>str</code> to stderr and
         returns <code>rest</code> as the result.
+        
       </p>
       <p>
         Example:
+        
       </p>
       <p>
         <pre>local conditionalReturn(cond, in1, in2) =
@@ -2434,10 +2545,12 @@ e = {"f1": False, "f2": 42}</pre>
 
 {
     a: conditionalReturn(true, { b: true }, { c: false }),
-}</pre>
+}
+</pre>
       </p>
       <p>
         Prints:
+        
       </p>
       <p>
         <pre>TRACE: test.jsonnet:3 cond is true returning {"b": true}
@@ -2445,7 +2558,8 @@ e = {"f1": False, "f2": 42}</pre>
     "a": {
         "b": true
     }
-}</pre>
+}
+</pre>
       </p>
       
     </div>
