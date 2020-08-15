@@ -448,7 +448,8 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
 static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename;
-    char *out, *jpath_str;
+    char *out;
+    const char *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
@@ -532,7 +533,8 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename, *src;
-    char *out, *jpath_str;
+    char *out;
+    const char *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
