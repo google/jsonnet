@@ -48,7 +48,7 @@ class Jsonnet {
     /// Sets the maximum stack depth.
     void setMaxStack(uint32_t depth);
 
-    /// Sets the number of objects required before a carbage collection cycle is
+    /// Sets the number of objects required before a garbage collection cycle is
     /// allowed.
     void setGcMinObjects(uint32_t objects);
 
