@@ -328,10 +328,12 @@ class Parser {
                     AST *expr1 = nullptr;
                     const Identifier *id = nullptr;
                     Fodder fodder1, fodder2;
+                    LocationRange idLocation;
                     if (next.kind == Token::IDENTIFIER) {
                         fodder1 = next.fodder;
                         kind = ObjectField::FIELD_ID;
                         id = alloc->makeIdentifier(next.data32());
+                        idLocation = next.location;
                     } else if (next.kind == Token::STRING_DOUBLE) {
                         kind = ObjectField::FIELD_STR;
                         expr1 = alloc->make<LiteralString>(next.location,
@@ -453,6 +455,7 @@ class Parser {
                                         is_method,
                                         expr1,
                                         id,
+                                        idLocation,
                                         params,
                                         meth_comma,
                                         op.fodder,

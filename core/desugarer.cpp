@@ -305,7 +305,7 @@ class Desugarer {
                     break;
 
                 case ObjectField::FIELD_ID:
-                    field.expr1 = str(field.id->name);
+                    field.expr1 = str(field.idLocation, field.id->name);
                     field.kind = ObjectField::FIELD_EXPR;
                     break;
 
