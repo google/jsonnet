@@ -638,6 +638,7 @@ struct ObjectField {
     bool methodSugar;  // f(x, y, z): ...  (ignore if kind  == ASSERT)
     AST *expr1;        // Not in scope of the object
     const Identifier *id;
+    LocationRange idLocation;
     ArgParams params;    // If methodSugar == true then holds the params.
     bool trailingComma;  // If methodSugar == true then remembers the trailing comma.
     Fodder opFodder;     // Before the : or =
@@ -646,9 +647,9 @@ struct ObjectField {
 
     ObjectField(enum Kind kind, const Fodder &fodder1, const Fodder &fodder2,
                 const Fodder &fodder_l, const Fodder &fodder_r, enum Hide hide, bool super_sugar,
-                bool method_sugar, AST *expr1, const Identifier *id, const ArgParams &params,
-                bool trailing_comma, const Fodder &op_fodder, AST *expr2, AST *expr3,
-                const Fodder &comma_fodder)
+                bool method_sugar, AST *expr1, const Identifier *id, const LocationRange &id_lr, 
+                const ArgParams &params, bool trailing_comma, const Fodder &op_fodder, AST *expr2, 
+                AST *expr3, const Fodder &comma_fodder)
         : kind(kind),
           fodder1(fodder1),
           fodder2(fodder2),
@@ -659,6 +660,7 @@ struct ObjectField {
           methodSugar(method_sugar),
           expr1(expr1),
           id(id),
+          idLocation(id_lr),
           params(params),
           trailingComma(trailing_comma),
           opFodder(op_fodder),
@@ -690,6 +692,7 @@ struct ObjectField {
                            method_sugar,
                            nullptr,
                            id,
+                           LocationRange(),
                            params,
                            trailing_comma,
                            op_fodder,
@@ -710,6 +713,7 @@ struct ObjectField {
                            false,
                            nullptr,
                            id,
+                           LocationRange(),
                            ArgParams{},
                            false,
                            op_fodder,
@@ -733,6 +737,7 @@ struct ObjectField {
                            true,
                            nullptr,
                            id,
+                           LocationRange(),
                            params,
                            trailing_comma,
                            op_fodder,
@@ -753,6 +758,7 @@ struct ObjectField {
                            false,
                            nullptr,
                            nullptr,
+                           LocationRange(),
                            ArgParams{},
                            false,
                            op_fodder,
