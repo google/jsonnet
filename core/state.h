@@ -469,7 +469,7 @@ class Heap {
     /** Allocate a heap entity.
      *
      * If the heap is large enough (\see gcTuneMinObjects) and has grown by enough since the
-     * last collection cycle (\see gcTuneGrowthTrigger), a collection cycle is performed.
+     * last collection cycle (\see gcTuneGrowthTrigger), a collection cycle should be performed.
      */
     template <class T, class... Args>
     T *makeEntity(Args &&... args)

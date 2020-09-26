@@ -31,4 +31,10 @@ limitations under the License.
  */
 void jsonnet_desugar(Allocator *alloc, AST *&ast, std::map<std::string, VmExt> *tla);
 
+/** Return desugared AST of stdlib
+ * \param alloc Allocator for making new identifiers / ASTs.
+ * \param filename to be used as std.thisFile.
+ */
+DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename);
+
 #endif
