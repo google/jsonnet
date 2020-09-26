@@ -55,6 +55,7 @@ enum FrameKind {
     FRAME_APPLY_TARGET,          // e in e(...)
     FRAME_BINARY_LEFT,           // a in a + b
     FRAME_BINARY_RIGHT,          // b in a + b
+    FRAME_BINARY_OP,             // a + b, with a and b already calculated
     FRAME_BUILTIN_FILTER,        // When executing std.filter, used to hold intermediate state.
     FRAME_BUILTIN_FORCE_THUNKS,  // When forcing builtin args, holds intermediate state.
     FRAME_CALL,                  // Used any time we have switched location in user code.
@@ -483,11 +484,20 @@ class Interpreter {
     /** Used to "name" thunks created to execute invariants. */
     const Identifier *idInvariant;
 
+    /** Placehodler name for internal AST. */
+    const Identifier *idInternal;
+
     /** Used to "name" thunks created to convert JSON to Jsonnet objects. */
     const Identifier *idJsonObjVar;
 
+    const Identifier *idEmpty;
+
     /** Used to refer to idJsonObjVar. */
     const AST *jsonObjVar;
+
+    /* Standard Library AST */
+    const DesugaredObject *stdlibAST;
+    HeapObject *stdObject;
 
     struct ImportCacheValue {
         std::string foundHere;
@@ -518,6 +528,14 @@ class Interpreter {
     typedef std::map<std::string, BuiltinFunc> BuiltinMap;
     BuiltinMap builtins;
 
+    /** Source values by name. Source values are values (usually functions)
+      * implemented as Jsonnet source which we use internally in the interpreter.
+      * In a sense they are the opposite of builtins. */
+    typedef std::map<std::string, HeapThunk *> SourceFuncMap;
+    SourceFuncMap sourceVals;
+    /* Just for memory management. */
+    std::vector<std::unique_ptr<Identifier>> sourceFuncIds;
+
     RuntimeError makeError(const LocationRange &loc, const std::string &msg)
     {
         return stack.makeError(loc, msg);
@@ -546,6 +564,10 @@ class Interpreter {
                 HeapThunk *thunk = pair.second->thunk;
                 if (thunk != nullptr)
                     heap.markFrom(thunk);
+            }
+
+            for (const auto &sourceVal : sourceVals) {
+                heap.markFrom(sourceVal.second);
             }
 
             // Delete unreachable objects.
@@ -820,6 +842,21 @@ class Interpreter {
         }
     }
 
+    void prepareSourceValThunks() {
+        for (const auto &field : stdlibAST->fields) {
+            AST *nameAST = field.name;
+            if (nameAST->type != AST_LITERAL_STRING) {
+                // Skip any fields without a known name.
+                continue;
+            }
+            UString name = dynamic_cast<LiteralString *>(nameAST)->value;
+
+            sourceFuncIds.emplace_back(new Identifier(name));
+            auto *th = makeHeap<HeapThunk>(sourceFuncIds.back().get(), stdObject, 0, field.body);
+            sourceVals[encode_utf8(name)] = th;
+        }
+    }
+
    public:
     /** Create a new interpreter.
      *
@@ -835,7 +872,9 @@ class Interpreter {
           idImport(alloc->makeIdentifier(U"import")),
           idArrayElement(alloc->makeIdentifier(U"array_element")),
           idInvariant(alloc->makeIdentifier(U"object_assert")),
+          idInternal(alloc->makeIdentifier(U"__internal__")),
           idJsonObjVar(alloc->makeIdentifier(U"_")),
+          idEmpty(alloc->makeIdentifier(U"")),
           jsonObjVar(alloc->make<Var>(LocationRange(), Fodder{}, idJsonObjVar)),
           externalVars(ext_vars),
           nativeCallbacks(native_callbacks),
@@ -881,7 +920,17 @@ class Interpreter {
         builtins["parseJson"] = &Interpreter::builtinParseJson;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
+
+        DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
+        jsonnet_static_analysis(stdlib);
+        stdlibAST = stdlib; // stdlibAST is const, so we need to do analysis before this assignment
+        auto stdThunk = makeHeap<HeapThunk>(nullptr, nullptr, 0, static_cast<const AST*>(stdlibAST));
+        stack.newCall(stdThunk->body->location, stdThunk, stdThunk->self, stdThunk->offset, stdThunk->upValues);
+        evaluate(stdThunk->body, 0);
+        stdObject = dynamic_cast<HeapObject*>(scratch.v.h);
+        prepareSourceValThunks();
     }
+
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
     ~Interpreter()
@@ -1823,6 +1872,25 @@ class Interpreter {
         evaluate(thunk->body, initial_stack_size);
     }
 
+    /** Call a sourceVal function with given arguments.
+     *
+     * This function requires all arguments to be positional. It also does not
+     * support default arguments. This is intended to be used internally so,
+     * error checking is also skipped.
+     */
+    const AST *callSourceVal(const AST *ast, HeapThunk *sourceVal, std::vector<HeapThunk*> args) {
+        assert(sourceVal != nullptr);
+        assert(sourceVal->filled);
+        assert(sourceVal->content.t == Value::FUNCTION);
+        auto *func = static_cast<HeapClosure *>(sourceVal->content.v.h);
+        BindingFrame up_values = func->upValues;
+        for (size_t i = 0; i < args.size(); ++i) {
+            up_values.insert({func->params[i].id, args[i]});
+        }
+        stack.newCall(ast->location, func, func->self, func->offset, up_values);
+        return func->body;
+    }
+
     /** Evaluate the given AST to a value.
      *
      * Rather than call itself recursively, this function maintains a separate stack of
@@ -2031,7 +2099,8 @@ class Interpreter {
                 auto *thunk = stack.lookUpVar(ast.id);
                 if (thunk == nullptr) {
                     std::cerr << "INTERNAL ERROR: Could not bind variable: "
-                              << encode_utf8(ast.id->name) << std::endl;
+                              << encode_utf8(ast.id->name) << " at "
+                              << ast.location << std::endl;
                     std::abort();
                 }
                 if (thunk->filled) {
@@ -2218,9 +2287,14 @@ class Interpreter {
                 } break;
 
                 case FRAME_BINARY_RIGHT: {
+                    stack.top().val2 = scratch;
+                    stack.top().kind = FRAME_BINARY_OP;
+                }
+                // Falls through.
+                case FRAME_BINARY_OP: {
                     const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
-                    const Value &rhs = scratch;
+                    const Value &rhs = stack.top().val2;
 
                     // Handle cases where the LHS and RHS are not the same type.
                     if (lhs.t == Value::STRING || rhs.t == Value::STRING) {
@@ -2291,6 +2365,39 @@ class Interpreter {
                                 for (auto *el : arr_r->elements)
                                     elements.push_back(el);
                                 scratch = makeArray(elements);
+                            } else if (ast.op == BOP_LESS || ast.op == BOP_LESS_EQ || ast.op == BOP_GREATER || ast.op == BOP_GREATER_EQ) {
+                                HeapThunk *func;
+                                switch(ast.op) {
+                                case BOP_LESS:
+                                    func = sourceVals["__array_less"];
+                                    break;
+                                case BOP_LESS_EQ:
+                                    func = sourceVals["__array_less_or_equal"];
+                                    break;
+                                case BOP_GREATER:
+                                    func = sourceVals["__array_greater"];
+                                    break;
+                                case BOP_GREATER_EQ:
+                                    func = sourceVals["__array_greater_or_equal"];
+                                    break;
+                                default:
+                                    assert(false && "impossible case");
+                                }
+                                if (!func->filled) {
+                                    stack.newCall(ast.location, func, func->self, func->offset, func->upValues);
+                                    ast_ = func->body;
+                                    goto recurse;
+                                }
+                                auto *lhs_th = makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.left);
+                                lhs_th->fill(lhs);
+                                f.thunks.push_back(lhs_th);
+                                auto *rhs_th = makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.right);
+                                rhs_th->fill(rhs);
+                                f.thunks.push_back(rhs_th);
+                                const AST *orig_ast = ast_;
+                                stack.pop();
+                                ast_ = callSourceVal(orig_ast, func, {lhs_th, rhs_th});
+                                goto recurse;
                             } else {
                                 throw makeError(ast.location,
                                                 "binary operator " + bop_string(ast.op) +

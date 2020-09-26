@@ -901,10 +901,7 @@ class Desugarer {
         }
     }
 
-    void desugarFile(AST *&ast, std::map<std::string, VmExt> *tlas)
-    {
-        desugar(ast, 0);
-
+    DesugaredObject *stdlibAST(std::string filename) {
         // Now, implement the std library by wrapping in a local construct.
         Tokens tokens = jsonnet_lex("std.jsonnet", STD_CODE);
         AST *std_ast = jsonnet_parse(alloc, tokens);
@@ -935,7 +932,15 @@ class Desugarer {
             }
         }
         fields.emplace_back(
-            ObjectField::HIDDEN, str(U"thisFile"), str(decode_utf8(ast->location.file)));
+            ObjectField::HIDDEN, str(U"thisFile"), str(decode_utf8(filename)));
+        return std_obj;
+    }
+
+    void desugarFile(AST *&ast, std::map<std::string, VmExt> *tlas)
+    {
+        desugar(ast, 0);
+
+        DesugaredObject *std_obj = stdlibAST(ast->location.file);
 
         std::vector<std::string> empty;
         auto line_end_blank = Fodder{{FodderElement::LINE_END, 1, 0, empty}};
@@ -952,7 +957,6 @@ class Desugarer {
             for (const auto &pair : *tlas) {
                 AST *expr;
                 if (pair.second.isCode) {
-                    // Now, implement the std library by wrapping in a local construct.
                     Tokens tokens = jsonnet_lex("tla:" + pair.first, pair.second.data.c_str());
                     expr = jsonnet_parse(alloc, tokens);
                     desugar(expr, 0);
@@ -989,6 +993,11 @@ class Desugarer {
         ast = make<Local>(ast->location, EF, singleBind(id(U"std"), std_obj), ast);
     }
 };
+
+DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename) {
+    Desugarer desugarer(alloc);
+    return desugarer.stdlibAST(filename);
+}
 
 void jsonnet_desugar(Allocator *alloc, AST *&ast, std::map<std::string, VmExt> *tlas)
 {
