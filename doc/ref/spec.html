@@ -2330,6 +2330,189 @@ div.rules {
   \]
 </div>
 
+<!-- TODO(sbarzowski) Consider explicitly introducing std.cmp (three way comparison) -->
+<div class="sequent-rule">
+  \[
+    \rule{less-than-true} {
+      \texttt{std.cmp}(e_L, e_R) ↓ -1
+    } {
+      e_L &lt; e_R ↓ \texttt{true}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{less-than-false} {
+      \texttt{std.cmp}(e_L, e_R) ↓ r
+      \\
+      r ∈ \{0, 1\}
+    } {
+      e_L &lt; e_R ↓ \texttt{false}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{greater-than-true} {
+      \texttt{std.cmp}(e_L, e_R) ↓ 1
+    } {
+      e_L &lt; e_R ↓ \texttt{true}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{greater-than-false} {
+      \texttt{std.cmp}(e_L, e_R) ↓ r
+      \\
+      r ∈ \{-1, 0\}
+    } {
+      e_L &lt; e_R ↓ \texttt{false}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{less-or-equal-true} {
+      \texttt{std.cmp}(e_L, e_R) ↓ r
+      \\
+      r ∈ \{-1, 0\}
+    } {
+      e_L &lt;= e_R ↓ \texttt{true}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{less-or-equal-false} {
+      \texttt{std.cmp}(e_L, e_R) ↓ 1
+    } {
+      e_L &lt;= e_R ↓ \texttt{false}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{greater-or-equal-true} {
+      \texttt{std.cmp}(e_L, e_R) ↓ r
+      \\
+      r ∈ \{0, 1\}
+    } {
+      e_L &gt;= e_R ↓ \texttt{true}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{greater-or-equal-false} {
+      \texttt{std.cmp}(e_L, e_R) ↓ -1
+    } {
+      e_L &gt;= e_R ↓ \texttt{false}
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-array-left-empty} {
+      e_L ↓ \array{} \hspace{15pt} e_R ↓ \array{a_0 \ldots a_{n - 1}}
+      \\
+      n &gt 0
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ -1
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-array-right-empty} {
+      e_L ↓ \array{a_0 \ldots a_{n - 1}} \hspace{15pt} e_R ↓ \array{}
+      \\
+      n &gt 0
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ 1
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-array-both-empty} {
+      e_L ↓ \array{} \hspace{15pt} e_R ↓ \array{}
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ 0
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-array-first-different} {
+      e_L ↓ \array{a_0 \ldots a_{n - 1}} \hspace{15pt} e_R ↓ \array{b_0 \ldots b_{m - 1}}
+      \\
+      n > 0 \hspace{15pt} m > 0
+      \\
+      \texttt{std.cmp}(a_0, b_0) ↓ r
+      \\
+      r ≠ 0
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ r
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-array-first-equal} {
+      e_L ↓ \array{a_0 \ldots a_{n - 1}} \hspace{15pt} e_R ↓ \array{b_0 \ldots b_{m - 1}}
+      \\
+      n > 0 \hspace{15pt} m > 0
+      \\
+      \texttt{std.cmp}(a_0, b_0) ↓ 0
+      \\
+      \texttt{std.cmp}(\array{a_1 \ldots a_{n - 1}}, \array{b_1 \ldots b_{m - 1}}) ↓ r'
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ r'
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-string} {
+      e_L ↓ v_L \hspace{15pt} e_R ↓ v_R
+      \\
+      v_L ∈ String
+      \\
+      v_R ∈ String
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ stringcmp(v_L, v_R)
+    }
+  \]
+</div>
+
+<div class="sequent-rule">
+  \[
+    \rule{cmp-number} {
+      e_L ↓ v_L \hspace{15pt} e_R ↓ v_R
+      \\
+      v_L ∈ Number
+      \\
+      v_R ∈ Number
+    } {
+      \texttt{std.cmp}(e_L, e_R) ↓ numbercmp(v_L, v_R)
+    }
+  \]
+</div>
+
 <div class="sequent-rule">
   \[
     \rule{boolean-and-shortcut} {
@@ -2588,12 +2771,13 @@ div.rules {
       <ul>
         <li>
           <b>Arithmetic:</b> Binary <code>*</code>, <code>/</code>, <code>+</code>, <code>-</code>,
-          <code>&lt;</code>, <code>&le;</code>, <code>&gt;</code>, <code>&ge;</code>, and unary
+          <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, and unary
           <code>+</code> and <code>-</code> operate on numbers and have IEEE double precision
           floating point semantics, except that the special states NaN, Infinity raise errors.  Note
           that <code>+</code> is also overloaded on objects, arrays, and when either argument is a
-          string.  Also, <code>&lt;</code>, <code>&le;</code>, <code>&gt;</code>, <code>&ge;</code>
-          are overloaded on strings, and compare lexically by unicode codepoint.
+          string.  Also, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>
+          are overloaded on strings and on arrays. In both cases the comparison is performed
+          lexicographically (in case of strings, by unicode codepoint).
         </li>
         <li>
           <b>Bitwise:</b> Operators
