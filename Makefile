@@ -31,7 +31,7 @@ OPT ?= -O3
 
 PREFIX ?= /usr/local
 
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC -fno-builtin-memset
 CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
 CFLAGS += -Iinclude
