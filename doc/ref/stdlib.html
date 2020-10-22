@@ -1834,6 +1834,33 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="slice">
+        std.slice(indexable, index, end, step)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
+      </p>
+      <p>
+        Example: <code>std.slice([1, 2, 3, 4, 5], 1, 3, 1)</code> yields <code>[ 2, 3 ]</code>.
+      </p>
+      <p>
+        Example: <code>std.slice("jsonnet", 0, 4, 1)</code> yields <code>"json"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="join">
         std.join(sep, arr)
       </h4>
