@@ -1003,13 +1003,22 @@ local html = import 'html.libsonnet';
         {
           name: 'slice',
           params: ['indexable', 'index', 'end', 'step'],
-          description: |||
-            Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
-          |||,
+          description: html.paragraphs([
+            |||
+              Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
+            |||,
+            |||
+              Note that it's recommended to use dedicated slicing syntax both for arrays and strings (e.g. <code>arr[0:4:1]</code> instead of <code>std.slice(arr, 0, 4, 1)</code>).
+            |||,
+          ]),
           examples: [
             {
-              input: 'std.slice([1, 2, 3, 4, 5], 1, 3, 1)',
-              output: std.slice([1, 2, 3, 4, 5], 1, 3, 1),
+              input: 'std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1)',
+              output: std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1),
+            },
+            {
+              input: 'std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2)',
+              output: std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2),
             },
             {
               input: 'std.slice("jsonnet", 0, 4, 1)',
