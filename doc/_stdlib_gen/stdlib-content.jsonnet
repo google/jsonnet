@@ -1001,6 +1001,23 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'slice',
+          params: ['indexable', 'index', 'end', 'step'],
+          description: |||
+            Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
+          |||,
+          examples: [
+            {
+              input: 'std.slice([1, 2, 3, 4, 5], 1, 3, 1)',
+              output: std.slice([1, 2, 3, 4, 5], 1, 3, 1),
+            },
+            {
+              input: 'std.slice("jsonnet", 0, 4, 1)',
+              output: std.slice('jsonnet', 0, 4, 1),
+            },
+          ],
+        },
+        {
           name: 'join',
           params: ['sep', 'arr'],
           description: |||
