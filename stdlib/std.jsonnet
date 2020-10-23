@@ -39,7 +39,7 @@ limitations under the License.
     assert std.isString(str) : 'substr first parameter should be a string, got ' + std.type(str);
     assert std.isNumber(from) : 'substr second parameter should be a string, got ' + std.type(from);
     assert std.isNumber(len) : 'substr third parameter should be a string, got ' + std.type(len);
-    assert len >=0 : 'substr third parameter should be greater than zero, got ' + len;
+    assert len >= 0 : 'substr third parameter should be greater than zero, got ' + len;
     std.join('', std.makeArray(std.max(0, std.min(len, std.length(str) - from)), function(i) str[i + from])),
 
   startsWith(a, b)::
@@ -112,13 +112,13 @@ limitations under the License.
   split(str, c)::
     assert std.isString(str) : 'std.split first parameter should be a string, got ' + std.type(str);
     assert std.isString(c) : 'std.split second parameter should be a string, got ' + std.type(c);
-    assert std.length(c) == 1 :  'std.split second parameter should have length 1, got ' + std.length(c);
+    assert std.length(c) == 1 : 'std.split second parameter should have length 1, got ' + std.length(c);
     std.splitLimit(str, c, -1),
 
   splitLimit(str, c, maxsplits)::
     assert std.isString(str) : 'std.splitLimit first parameter should be a string, got ' + std.type(str);
     assert std.isString(c) : 'std.splitLimit second parameter should be a string, got ' + std.type(c);
-    assert std.length(c) == 1 :  'std.splitLimit second parameter should have length 1, got ' + std.length(c);
+    assert std.length(c) == 1 : 'std.splitLimit second parameter should have length 1, got ' + std.length(c);
     assert std.isNumber(maxsplits) : 'std.splitLimit third parameter should be a number, got ' + std.type(maxsplits);
     local aux(str, delim, i, arr, v) =
       local c = str[i];
@@ -183,9 +183,9 @@ limitations under the License.
 
   repeat(what, count)::
     local joiner =
-      if std.isString(what) then ""
+      if std.isString(what) then ''
       else if std.isArray(what) then []
-      else error "std.repeat first argument must be an array or a string";
+      else error 'std.repeat first argument must be an array or a string';
     std.join(joiner, std.makeArray(count, function(i) what)),
 
   slice(indexable, index, end, step)::
@@ -226,7 +226,7 @@ limitations under the License.
       std.count(arr, x) > 0
     else if std.isString(arr) then
       std.length(std.findSubstr(x, arr)) > 0
-    else error "std.member first argument must be an array or a string",
+    else error 'std.member first argument must be an array or a string',
 
   count(arr, x):: std.length(std.filter(function(v) v == x, arr)),
 
@@ -839,7 +839,7 @@ limitations under the License.
       if a < b then a else b,
 
   clamp(x, minVal, maxVal)::
-    if x  < minVal then minVal
+    if x < minVal then minVal
     else if x > maxVal then maxVal
     else x,
 
@@ -1300,6 +1300,12 @@ limitations under the License.
 
   objectHasAll(o, f)::
     std.objectHasEx(o, f, true),
+
+  objectValues(o)::
+    [o[k] for k in std.objectFields(o)],
+
+  objectValuesAll(o)::
+    [o[k] for k in std.objectFieldsAll(o)],
 
   equals(a, b)::
     local ta = std.type(a);

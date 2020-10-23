@@ -81,6 +81,13 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'objectValues',
+          params: ['o'],
+          description: |||
+            Returns an array of the values in the given object. Does not include hidden fields.
+          |||,
+        },
+        {
           name: 'objectHasAll',
           params: ['o', 'f'],
           description: |||
@@ -92,6 +99,13 @@ local html = import 'html.libsonnet';
           params: ['o'],
           description: |||
             As <code>std.objectFields</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectValuesAll',
+          params: ['o'],
+          description: |||
+            As <code>std.objectValues</code> but also includes hidden fields.
           |||,
         },
         {
