@@ -3088,7 +3088,7 @@ class Interpreter {
         return r;
     }
 
-    std::vector<std::string> manifestStream(void)
+    std::vector<std::string> manifestStream(bool string)
     {
         std::vector<std::string> r;
         LocationRange loc("During manifestation");
@@ -3113,7 +3113,7 @@ class Interpreter {
                 stack.top().val = scratch;
                 evaluate(thunk->body, stack.size());
             }
-            UString element = manifestJson(tloc, true, U"");
+            UString element = string ? manifestString(tloc) : manifestJson(tloc, true, U"");
             scratch = stack.top().val;
             stack.pop();
             r.push_back(encode_utf8(element));
@@ -3169,7 +3169,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                                                    double gc_min_objects, double gc_growth_trigger,
                                                    const VmNativeCallbackMap &natives,
                                                    JsonnetImportCallback *import_callback,
-                                                   void *ctx)
+                                                   void *ctx, bool string_output)
 {
     Interpreter vm(alloc,
                    ext_vars,
@@ -3180,5 +3180,5 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                    import_callback,
                    ctx);
     vm.evaluate(ast, 0);
-    return vm.manifestStream();
+    return vm.manifestStream(string_output);
 }

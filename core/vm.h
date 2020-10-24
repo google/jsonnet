@@ -125,6 +125,6 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
 std::vector<std::string> jsonnet_vm_execute_stream(
     Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx);
+    JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
 
 #endif
