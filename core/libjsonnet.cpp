@@ -565,7 +565,8 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                                               vm->gcGrowthTrigger,
                                               vm->nativeCallbacks,
                                               vm->importCallback,
-                                              vm->importCallbackContext);
+                                              vm->importCallbackContext,
+                                              vm->stringOutput);
                 size_t sz = 1;  // final sentinel
                 for (const auto &doc : documents) {
                     sz += doc.length() + 2;  // Add a '\n' as well as sentinel

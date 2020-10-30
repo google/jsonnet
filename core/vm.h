@@ -71,7 +71,7 @@ struct VmExt {
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
- * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param string_output Whether to expect a string and output it without JSON encoding
  * \throws RuntimeError reports runtime errors in the program.
  * \returns The JSON result in string form.
  */
@@ -95,7 +95,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast,
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
- * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param string_output Whether to expect a string and output it without JSON encoding
  * \throws RuntimeError reports runtime errors in the program.
  * \returns A mapping from filename to the JSON strings for that file.
  */
@@ -118,13 +118,13 @@ std::map<std::string, std::string> jsonnet_vm_execute_multi(
  * \param gc_growth_trigger Growth since last garbage collection cycle to trigger a new cycle.
  * \param import_callback A callback to handle imports
  * \param import_callback_ctx Context param for the import callback.
- * \param output_string Whether to expect a string and output it without JSON encoding
+ * \param string_output Whether to expect a string and output it without JSON encoding
  * \throws RuntimeError reports runtime errors in the program.
  * \returns A mapping from filename to the JSON strings for that file.
  */
 std::vector<std::string> jsonnet_vm_execute_stream(
     Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
-    JsonnetImportCallback *import_callback, void *import_callback_ctx);
+    JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
 
 #endif
