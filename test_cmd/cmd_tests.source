@@ -24,7 +24,10 @@ JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
 JSONNETFMT_BIN="${JSONNETFMT_BIN:-../jsonnetfmt}"
 
 # Used to account for known differences in the two implementations.
+# Deprecated in favor of override dir.
 IMPLEMENTATION="${IMPLEMENTATION:-cpp}"
+
+OVERRIDE_DIR="${OVERRIDE_DIR:-.}"
 
 separator() {
     echo -e "\n-----------------------------\n"
@@ -63,6 +66,13 @@ do_test_aux() {
     STDIN="${TEST}.stdin"
     GOLDEN_STDOUT="${TEST}.golden.stdout"
     GOLDEN_STDERR="${TEST}.golden.stderr"
+
+    if [ -r "${OVERRIDE_DIR}/${GOLDEN_STDOUT}" ] ; then
+        GOLDEN_STDOUT="${OVERRIDE_DIR}/${GOLDEN_STDOUT}"
+    fi
+    if [ -r "${OVERRIDE_DIR}/${GOLDEN_STDERR}" ] ; then
+        GOLDEN_STDERR="${OVERRIDE_DIR}/${GOLDEN_STDERR}"
+    fi
 
     if [ -r "${GOLDEN_STDOUT}.${IMPLEMENTATION}" ] ; then
         GOLDEN_STDOUT="${GOLDEN_STDOUT}.${IMPLEMENTATION}"
