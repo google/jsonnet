@@ -1,4 +1,4 @@
-Jsonnet commandline interpreter v0.16.0
+Jsonnet commandline interpreter v0.17.0
 
 jsonnet {<option>} <filename>
 
