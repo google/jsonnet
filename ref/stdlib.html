@@ -312,6 +312,33 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="objectValues">
+        std.objectValues(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
+      <p>
+        Returns an array of the values in the given object. Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="objectHasAll">
         std.objectHasAll(o, f)
       </h4>
@@ -346,6 +373,33 @@
     <div class="panel">
       <p>
         As <code>std.objectFields</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectValuesAll">
+        std.objectValuesAll(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectValues</code> but also includes hidden fields.
       </p>
       
     </div>
@@ -1794,8 +1848,13 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Apply the given function to every element of the array to form a new array then flatten the result.
-        It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
+        Apply the given function to every element of <code>arr</code> to form a new array then flatten the result.
+        The argument <code>arr</code> must be an array or a string. If <code>arr</code> is an array, function <code>func</code> must return an array.
+        If <code>arr</code> is a string, function <code>func</code> must return an string.
+      </p>
+      <p>
+        The <code>std.flatMap</code> function can be thought of as a generalized <code>std.map</code>,
+        with each element mapped to 0, 1 or more elements.
       </p>
       <p>
         Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[ 1, 1, 2, 2, 3, 3 ]</code>.
@@ -1805,6 +1864,9 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Example: <code>std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])</code> yields <code>[ 3, 2, 9, 6 ]</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) x+x, "foo")</code> yields <code>"ffoooo"</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1930,6 +1992,39 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Example: <code>std.repeat("blah", 2)</code> yields <code>"blahblah"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="slice">
+        std.slice(indexable, index, end, step)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
+      </p>
+      <p>
+        Note that it's recommended to use dedicated slicing syntax both for arrays and strings (e.g. <code>arr[0:4:1]</code> instead of <code>std.slice(arr, 0, 4, 1)</code>).
+      </p>
+      <p>
+        Example: <code>std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1)</code> yields <code>[ 1, 2, 3, 4 ]</code>.
+      </p>
+      <p>
+        Example: <code>std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2)</code> yields <code>[ 2, 4, 6 ]</code>.
+      </p>
+      <p>
+        Example: <code>std.slice("jsonnet", 0, 4, 1)</code> yields <code>"json"</code>.
       </p>
     </div>
     <div style="clear: both"></div>

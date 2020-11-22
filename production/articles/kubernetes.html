@@ -1,0 +1,529 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Jsonnet - Kubernetes</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="keywords" content="Jsonnet, JSON, YAML, language, configuration, configuration language, functional, declarative, lazy, structured, elegant, semantics, clean, mixins, inheritance, template, expansion, expand" />
+    <meta name="description" content="A powerful DSL for elegant description of JSON data." />
+    <meta name="viewport" content="width=576">
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- MathJax (for semantics) -->
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX","output/HTML-CSS"],
+        displayAlign: "left",
+        imageFont: null,
+    });
+    </script>
+    <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-53570216-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,700italic,400,600,700" rel="stylesheet" type="text/css">
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="/third_party/CodeMirror/lib/codemirror.css">
+    <script src="/third_party/js-yaml/dist/js-yaml.min.js"></script>
+    <script src="/third_party/CodeMirror/lib/codemirror.js"></script>
+    <script src="/third_party/CodeMirror/mode/yaml/yaml.js"></script>
+    <script src="/third_party/CodeMirror/addon/edit/matchbrackets.js"></script>
+    <script src="/js/codemirror-mode-jsonnet.js"></script>
+
+    <!-- Executing Jsonnet -->
+    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/demo.js"></script>
+
+    <!-- Navigation menus -->
+    <script src="/js/menu.js"></script>
+
+    <!-- jsonnet.org stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/doc.css" />
+    <link rel="stylesheet" media="print" href="/css/desktop.css">
+    <!-- The extra 16px is to account for the scrollbar, which is not always included. -->
+    <link rel="stylesheet" media="screen and (min-width: 1296px)" href="/css/desktop.css">
+    <link rel="stylesheet" media="screen and (max-width: 1295px) and (min-width: 720px)" href="/css/cellphone.css">
+    <link rel="stylesheet" media="screen and (max-width: 719px)" href="/css/cellphone-small.css">
+</head>
+
+<body>
+
+<div id=header>
+  <div class=header2>
+    <a id=header-logo class=header-element href="/"><img src="/img/isologo.svg"></a>
+    <a id=header-title class=header-element href="/">Jsonnet</a>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Learning
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/learning/tutorial.html">Tutorial</a>
+        <a href="/learning/getting_started.html">Getting Started</a>
+        <a href="/learning/tools.html">Tools</a>
+        <a href="/learning/community.html">Community</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='menu_open_popup(find_enclosing_menu(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Reference
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/ref/language.html">Language Reference</a>
+        <a href="/ref/stdlib.html">Standard Library</a>
+        <a href="/ref/spec.html">Specification</a>
+        <a href="/ref/bindings.html">Bindings</a>
+      </div>
+    </div>
+
+    <div class="header-element menu">
+      <div onclick='find_enclosing_menu(menu_open_popup(this))' onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        Articles
+      </div>
+      <div class=pop-up onmouseover='menu_open_popup(find_enclosing_menu(this))' onmouseout='menu_leave()'>
+        <a href="/articles/fractal.1.html">Terraform & Packer</a>
+        <a href="/articles/kubernetes.html">Kubernetes</a>
+        <a href="/articles/output-formats.html">Output Formats</a>
+        <a href="/articles/design.html">Design Rationale</a>
+        <a href="/articles/comparisons.html">Comparisons</a>
+      </div>
+    </div>
+    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
+    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h1 id="kubernetes">Kubernetes</h1>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <a href="https://kubernetes.io/">Kubernetes</a> is a cluster orchestration system for
+        containerized workloads.  Out of the box, it is configured with YAML files, making it a
+        natural fit for Jsonnet.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="integrating">Using Jsonnet With Kubernetes</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Jsonnet's output JSON can be consumed by <tt>kubecfg</tt> which
+        treats it as if it were YAML.  This approach also works for other configuration formats that
+        extend JSON, such as Javascript or HashiCorp's Configuration Language (<a
+        href="https://github.com/hashicorp/hcl">HCL</a>).
+      </p>
+      <p>
+        If we configure only a single Kubernetes object in each run of Jsonnet, we miss out on the
+        ability to remove duplication not just within an object, but across sets of objects with
+        commonalities.  Fortunately, there are three ways to configure sets of Kubernetes objects:
+        Use YAML <a href="/learning/getting_started.html#stream">stream</a> output, <a
+        href="/learning/getting_started.html#multi">multi-file</a> output, or a single kubectl
+        list object.  This latter option is provided by Kubernetes without requiring any special
+        support from Jsonnet.  It allows us to group several Kubernetes objects into a single
+        object.  This is the most popular option because it does not require intermediate files, and
+        other tools don't always reliably support YAML streams.
+      </p>
+        The Kubernetes community has been very active with Jsonnet, and the following resources may
+        be helpful:
+      </p>
+      <ul>
+        <li>
+          A <a href="https://github.com/google/jsonnet/tree/master/case_studies/kubernetes">simple
+          example</a> from the Jsonnet repo.
+        </li>
+        <li>
+          <a href="https://github.com/bitnami/kubecfg">Kubecfg</a> (whose name may sound familiar to
+          current or ex-Googlers) is an unopiniated tool for evaluating Jsonnet and
+          pushing the results to Kubernetes.  It comes with a <a
+          href="https://github.com/bitnami-labs/kube-libsonnet">useful template library</a>.  See
+          this <a href="https://engineering.bitnami.com/articles/an-example-of-real-kubernetes-bitnami.html">blog post</a>.
+        </li>
+        <li>
+          <a href="https://ksonnet.io">Ksonnet</a>, by <a href="https://heptio.com">Heptio</a> is a
+          fork of kubecfg which uses a Jsonnet library that is automatically generated from
+          Kubernetes API specifications.  This forms a framework in which Kubernetes objects can be
+          built using high-level composable descriptions.
+        </li>
+        <li>
+          <a href="https://github.com/deepmind/kapitan">Kapitan</a> by <a
+          href="https://deepmind.com">Deepmind</a> is another tool for driving Kubernetes with
+          Jsonnet and textual templating.
+        </li>
+        <li>
+          <a href="https://github.com/coreos/kpm">Kpm</a> is a similar deployment tool (now
+          deprecated) by <a href="https://coreos.com">CoreOS</a> that uses a mixture of Jsonnet and
+          Jinja templating.
+        </li>
+        <li>
+          <a href="https://www.box.com">Box</a> have <a
+          href="https://blog.box.com/blog/kubernetes-box-microservices-maximum-velocity/">blogged</a>
+          and <a href="https://youtu.be/QIDrdZlEQdw?t=10m35s">spoken about</a> how their internal
+          Kubernetes-based infrastructure uses Jsonnet.
+        </li>
+        <li>
+          <a href="https://databricks.com">Databricks</a> have <a
+          href="https://databricks.com/blog/2017/06/26/declarative-infrastructure-jsonnet-templating-language.html">written
+          about</a> how they manage infrastructure on Kubernetes using Jsonnet.  They also published
+          a <a href="https://github.com/databricks/jsonnet-style-guide">style guide</a>, which may
+          be informative.
+        </li>
+      </ul>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id="syntax">Conversion Tool</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        As a convenience, the following tool allows you to convert YAML Kubernetes examples into
+        basic Jsonnet files.  It simply converts the YAML to JSON and then runs the Jsonnet
+        formatter on that JSON to make it look a bit cleaner.  Sorry, the original file's comments
+        are lost during the YAML parsing.  This tool just helps you get started.  You will want to
+        further clean up the code to remove duplication.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="kube-convert-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=kube-yaml>
+        kind: ReplicationController
+        apiVersion: v1
+        metadata:
+          name: spark-master-controller
+        spec:
+          replicas: 1
+          selector:
+            component: spark-master
+          template:
+            metadata:
+              labels:
+                component: spark-master
+            spec:
+              containers:
+                - name: spark-master
+                  image: k8s.gcr.io/spark:1.5.2_v1
+                  command: ["/start-master"]
+                  ports:
+                    - containerPort: 7077
+                    - containerPort: 8080
+                  resources:
+                    requests:
+                      cpu: 100m
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="kube-convert-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_click(this, 'kube-convert-output')">output.jsonnet</div>
+      </div>
+      <textarea readonly class="selected code-json" id="kube-convert-output">
+        {
+          kind: 'ReplicationController',
+          apiVersion: 'v1',
+          metadata: {
+            name: 'spark-master-controller',
+          },
+          spec: {
+            replicas: 1,
+            selector: {
+              component: 'spark-master',
+            },
+            template: {
+              metadata: {
+                labels: {
+                  component: 'spark-master',
+                },
+              },
+              spec: {
+                containers: [
+                  {
+                    name: 'spark-master',
+                    image: 'k8s.gcr.io/spark:1.5.2_v1',
+                    command: [
+                      '/start-master',
+                    ],
+                    ports: [
+                      {
+                        containerPort: 7077,
+                      },
+                      {
+                        containerPort: 8080,
+                      },
+                    ],
+                    resources: {
+                      requests: {
+                        cpu: '100m',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }
+      </textarea>
+    </div>
+    <script>
+      yaml_conv_demo(
+        'kube-convert-input',
+        'kube-yaml',
+        'kube.yaml',
+        'kube-convert-output',
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h2 id=collections>Kubernetes Collections</h2>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        In some places, the Kubernetes API objects use lists of named objects or (name, value) pairs
+        rather than using objects to map names to values. This makes those objects hard to reference
+        and extend in Jsonnet.  For example, the containers part of the Pod spec looks like this:
+      </p>
+      <pre>local PodSpec = {
+  containers: [
+    {
+      name: 'foo',
+      env: [
+        { name: 'var1', value: 'somevalue' },
+        { name: 'var2', value: 'somevalue' },
+      ],
+    },
+    {
+      name: 'bar',
+      env: [
+        { name: 'var2', value: 'somevalue' },
+        { name: 'var3', value: 'somevalue' },
+      ],
+    },
+  ],
+};</pre>
+      <p>
+        If we wanted to override this to modify the <code>var3</code> environment variable of
+        <code>bar</code>, we could use array indexes to reference the particular container and
+        environment variable, but the resulting code is brittle and ugly:
+      </p>
+      <pre>PodSpec {
+  containers: [
+    super.containers[0],
+    super.containers[1] {
+      env: [
+        super.env[0],
+        super.env[1] { value: 'othervalue' },
+      ],
+    },
+  ],
+}</pre>
+      <p>
+        A better solution is to use an object to represent the mapping, converting to the Kubernetes
+        representation post-hoc. We can now create a new Pod spec with the same override, specified
+        much more easily and safely:
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="inverse hgroup">
+  <div class=hgroup-inline>
+    <div class="tab-window-input" id="collections-input">
+      <div class="tab-header">
+      </div>
+      <textarea id=pod-spec-jsonnet>
+        local utils = import 'utils.libsonnet';
+
+        local PodSpec = {
+          containersObj:: {
+            foo: {
+              envObj:: {
+                var1: 'somevalue',
+                var2: 'somevalue',
+              },
+              env: utils.pairList(self.envObj),
+            },
+            bar: {
+              envObj:: {
+                var2: 'somevalue',
+                var3: 'somevalue',
+              },
+              env: utils.pairList(self.envObj),
+            },
+          },
+          containers:
+            utils.namedObjectList(self.containersObj),
+        };
+
+        PodSpec {
+          containersObj+: {
+            bar+: { envObj+: { var3: 'othervalue' } }
+          }
+        }
+      </textarea>
+      <textarea id=utils-libsonnet>
+        // utils.libsonnet
+        {
+          pairList(tab, kfield='name',
+                   vfield='value'):: [
+            { [kfield]: k, [vfield]: tab[k] }
+            for k in std.objectFields(tab)
+          ],
+
+          namedObjectList(tab, name_field='name'):: [
+            tab[name] + { [name_field]: name }
+            for name in std.objectFields(tab)
+          ],
+        }
+      </textarea>
+    </div>
+    <div class="bigarrow">➡</div>
+    <div class="tab-window-output" id="collections-output">
+      <div class="tab-header">
+        <div class=selected onclick="tab_output_click(this, 'output-json')">
+          output.json
+        </div>
+      </div>
+      <textarea readonly class="selected code-json" id="output-json">
+        {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "var2",
+                  "value": "somevalue"
+                },
+                {
+                  "name": "var3",
+                  "value": "othervalue"
+                }
+              ],
+              "name": "bar"
+            },
+            {
+              "env": [
+                {
+                  "name": "var1",
+                  "value": "somevalue"
+                },
+                {
+                  "name": "var2",
+                  "value": "somevalue"
+                }
+              ],
+              "name": "foo"
+            }
+          ]
+        }
+      </textarea>
+    </div>
+    <script>
+      demo(
+        'collections-input',
+        {
+          'pod-spec-jsonnet': 'pod-spec.jsonnet',
+          'utils-libsonnet': 'utils.libsonnet',
+        },
+        'pod-spec.jsonnet',
+        'collections-output',
+        false,
+        false
+      );
+    </script>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Such a pattern also makes referencing easier. Now, you can use the following code to access
+        the same environment variable:
+      </p>
+      <pre>PodSpec.containersObj.bar.envObj.var3</pre>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+
+<div class="inverse hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p class=footer>
+        Except as noted, this content is licensed under Creative Commons Attribution 2.5.
+      </p>
+    </div>
+  </div>
+</div>
+
+</body>
+
+</html>
+
