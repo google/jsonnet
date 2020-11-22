@@ -83,6 +83,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectValues',
           params: ['o'],
+          availableSince: '0.17.0',
           description: |||
             Returns an array of the values in the given object. Does not include hidden fields.
           |||,
@@ -104,6 +105,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectValuesAll',
           params: ['o'],
+          availableSince: '0.17.0',
           description: |||
             As <code>std.objectValues</code> but also includes hidden fields.
           |||,
@@ -944,10 +946,17 @@ local html = import 'html.libsonnet';
         {
           name: 'flatMap',
           params: ['func', 'arr'],
-          description: |||
-            Apply the given function to every element of the array to form a new array then flatten the result.
-            It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
-          |||,
+          description: html.paragraphs([
+            |||
+              Apply the given function to every element of <code>arr</code> to form a new array then flatten the result.
+              The argument <code>arr</code> must be an array or a string. If <code>arr</code> is an array, function <code>func</code> must return an array.
+              If <code>arr</code> is a string, function <code>func</code> must return an string.
+            |||,
+            |||
+              The <code>std.flatMap</code> function can be thought of as a generalized <code>std.map</code>,
+              with each element mapped to 0, 1 or more elements.
+            |||
+          ]),
           examples: [
             {
               input: 'std.flatMap(function(x) [x, x], [1, 2, 3])',
@@ -960,6 +969,10 @@ local html = import 'html.libsonnet';
             {
               input: 'std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])',
               output: std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3]),
+            },
+            {
+              input: 'std.flatMap(function(x) x+x, "foo")',
+              output: std.flatMap(function(x) x+x, "foo")
             },
           ],
         },

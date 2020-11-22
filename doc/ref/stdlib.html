@@ -218,6 +218,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
+      <p>
         Returns an array of the values in the given object. Does not include hidden fields.
       </p>
       
@@ -283,6 +288,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
       <p>
         As <code>std.objectValues</code> but also includes hidden fields.
       </p>
@@ -1733,8 +1743,13 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Apply the given function to every element of the array to form a new array then flatten the result.
-        It can be thought of as a generalized map, where each element can get mapped to 0, 1 or more elements.
+        Apply the given function to every element of <code>arr</code> to form a new array then flatten the result.
+        The argument <code>arr</code> must be an array or a string. If <code>arr</code> is an array, function <code>func</code> must return an array.
+        If <code>arr</code> is a string, function <code>func</code> must return an string.
+      </p>
+      <p>
+        The <code>std.flatMap</code> function can be thought of as generalized map,
+        where each element is mapped to 0, 1 or more elements.
       </p>
       <p>
         Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[ 1, 1, 2, 2, 3, 3 ]</code>.
@@ -1744,6 +1759,9 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Example: <code>std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])</code> yields <code>[ 3, 2, 9, 6 ]</code>.
+      </p>
+      <p>
+        Example: <code>std.flatMap(function(x) x+x, "foo")</code> yields <code>"ffoooo"</code>.
       </p>
     </div>
     <div style="clear: both"></div>
