@@ -465,6 +465,92 @@ std.assertEqual(std.split('/foo/', '/'), ['', 'foo', '']) &&
 std.assertEqual(std.splitLimit('foo/bar', '/', 1), ['foo', 'bar']) &&
 std.assertEqual(std.splitLimit('/foo/', '/', 1), ['', 'foo/']) &&
 
+local some_toml = {
+  key: 'value',
+  simple: { t: 5 },
+  section: {
+    a: 1,
+    nested: { b: 2 },
+    'e$caped': { q: 't' },
+    array: [
+      { c: 3 },
+      { d: 4 },
+    ],
+    nestedArray: [{
+      k: 'v',
+      nested: { e: 5 },
+    }],
+  },
+  arraySection: [
+    { q: 1 },
+    { w: 2 },
+  ],
+  'escaped"Section': { z: 'q' },
+  emptySection: {},
+  emptyArraySection: [{}],
+  bool: true,
+  notBool: false,
+  number: 7,
+  array: ['s', 1, [2, 3], { r: 6, a: ['0', 'z'] }],
+  emptyArray: [],
+  '"': 4,
+};
+
+std.assertEqual(
+  std.manifestTomlEx(some_toml, '  ') + '\n',
+  |||
+    "\"" = 4
+    array = [
+      "s",
+      1,
+      [ 2, 3 ],
+      { a = [ "0", "z" ], r = 6 }
+    ]
+    bool = true
+    emptyArray = []
+    key = "value"
+    notBool = false
+    number = 7
+
+    [[arraySection]]
+      q = 1
+
+    [[arraySection]]
+      w = 2
+
+    [[emptyArraySection]]
+
+    [emptySection]
+
+    ["escaped\"Section"]
+      z = "q"
+
+    [section]
+      a = 1
+
+      [[section.array]]
+        c = 3
+
+      [[section.array]]
+        d = 4
+
+      [section."e$caped"]
+        q = "t"
+
+      [section.nested]
+        b = 2
+
+      [[section.nestedArray]]
+        k = "v"
+
+        [section.nestedArray.nested]
+          e = 5
+
+    [simple]
+      t = 5
+  |||
+) &&
+
 local some_json = {
   x: [1, 2, 3, true, false, null, 'string\nstring\n'],
   arr: [[[]]],

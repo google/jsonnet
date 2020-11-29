@@ -1,0 +1,3 @@
+RUNTIME ERROR: TOML body must be an object. Got array
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.manifest_toml_wrong_type.jsonnet:17:1-29	

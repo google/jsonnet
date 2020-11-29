@@ -1,0 +1,14 @@
+RUNTIME ERROR: Tried to manifest "null" at ["a", 0, "b", "c"]
+	std.jsonnet:<stdlib_position_redacted>	function <renderValue>
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	function <renderTableInternal>
+	std.jsonnet:<stdlib_position_redacted>	function <renderTable>
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	function <renderTableInternal>
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	function <renderTableArray>
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	function <renderTableInternal>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.manifest_toml_null_value.jsonnet:17:1-54	

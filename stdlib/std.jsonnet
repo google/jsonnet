@@ -866,6 +866,87 @@ limitations under the License.
     ];
     std.join('\n', main_body + std.flattenArrays(all_sections) + ['']),
 
+  manifestToml(value):: std.manifestTomlEx(value, '  '),
+
+  manifestTomlEx(value, indent)::
+    local 
+      escapeStringToml = std.escapeStringJson,
+      escapeKeyToml(key) =
+        local bare_allowed = std.set(std.stringChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"));
+        if std.setUnion(std.set(std.stringChars(key)), bare_allowed) == bare_allowed then key else escapeStringToml(key),
+      isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.foldl(function(a, b) a && std.isObject(b), v, true),
+      isSection(v) = std.isObject(v) || isTableArray(v),
+      renderValue(v, indexedPath, inline, cindent) =
+        if v == true then
+          'true'
+        else if v == false then
+          'false'
+        else if v == null then
+          error 'Tried to manifest "null" at ' + indexedPath
+        else if std.isNumber(v) then
+          '' + v
+        else if std.isString(v) then
+          escapeStringToml(v)
+        else if std.isFunction(v) then
+          error 'Tried to manifest function at ' + indexedPath
+        else if std.isArray(v) then
+          if std.length(v) == 0 then
+            '[]'
+          else
+            local range = std.range(0, std.length(v) - 1);
+            local new_indent = if inline then '' else cindent + indent;
+            local separator = if inline then ' ' else '\n';
+            local lines = ['[' + separator]
+                          + std.join([',' + separator],
+                                    [
+                                      [new_indent + renderValue(v[i], indexedPath + [i], true, '')]
+                                      for i in range
+                                    ])
+                          + [separator + (if inline then '' else cindent) + ']'];
+            std.join('', lines)
+        else if std.isObject(v) then
+          local lines = ['{ ']
+                        + std.join([', '],
+                                  [
+                                    [escapeKeyToml(k) + ' = ' + renderValue(v[k], indexedPath + [k], true, '')]
+                                    for k in std.objectFields(v)
+                                  ])
+                        + [' }'];
+          std.join('', lines),
+      renderTableInternal(v, path, indexedPath, cindent) = 
+        local kvp = std.flattenArrays([
+          [cindent + escapeKeyToml(k) + ' = ' + renderValue(v[k], indexedPath + [k], false, cindent)]
+          for k in std.objectFields(v)
+          if !isSection(v[k])
+        ]);
+        local sections = [std.join('\n', kvp)] + [
+          (if std.isObject(v[k]) then
+            renderTable(v[k], path + [k], indexedPath + [k], cindent)
+          else
+            renderTableArray(v[k], path + [k], indexedPath + [k], cindent)
+          )
+          for k in std.objectFields(v)
+          if isSection(v[k])
+        ];
+        std.join('\n\n', sections),
+      renderTable(v, path, indexedPath, cindent) =
+        cindent + '[' + std.join('.', std.map(escapeKeyToml, path)) + ']'
+        + (if v == {} then '' else '\n')
+        + renderTableInternal(v, path, indexedPath, cindent + indent),
+      renderTableArray(v, path, indexedPath, cindent) =
+        local range = std.range(0, std.length(v) - 1);
+        local sections = [
+          (cindent + '[[' + std.join('.', std.map(escapeKeyToml, path)) + ']]'
+          + (if v[i] == {} then '' else '\n')
+          + renderTableInternal(v[i], path, indexedPath + [i], cindent + indent))
+          for i in range
+        ];
+        std.join('\n\n', sections);
+    if std.isObject(value) then
+      renderTableInternal(value, [], [], '')
+    else
+      error 'TOML body must be an object. Got ' + std.type(value),
+
   escapeStringJson(str_)::
     local str = std.toString(str_);
     local trans(ch) =
