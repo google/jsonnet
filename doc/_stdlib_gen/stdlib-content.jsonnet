@@ -875,6 +875,57 @@ local html = import 'html.libsonnet';
             |||),
           ],
         },
+        {
+          name: 'manifestTomlEx',
+          params: ['toml', 'indent'],
+          availableSince: 'upcoming',
+          description: |||
+            Convert the given object to a TOML form. <code>indent</code> is a string containing
+            one or more whitespaces that are used for indentation:
+          |||,
+          examples: [
+            {
+              input: |||
+                std.manifestTomlEx({
+                  key1: "value",
+                  key2: 1,
+                  section: {
+                    a: 1,
+                    b: "str",
+                    c: false,
+                    d: [1, "s", [2, 3]],
+                    subsection: {
+                      k: "v",
+                    },
+                  },
+                  sectionArray: [
+                    { k: "v1", v: 123 },
+                    { k: "v2", c: "value2" },
+                  ],
+                }, "  ")
+              |||,
+              output: (
+                std.manifestTomlEx({
+                  key1: "value",
+                  key2: 1,
+                  section: {
+                    a: 1,
+                    b: "str",
+                    c: false,
+                    d: [1, "s", [2, 3]],
+                    subsection: {
+                      k: "v",
+                    },
+                  },
+                  sectionArray: [
+                    { k: "v1", v: 123 },
+                    { k: "v2", c: "value2" },
+                  ],
+                }, "  ")
+              )
+            },
+          ]
+        }
       ],
     },
     {

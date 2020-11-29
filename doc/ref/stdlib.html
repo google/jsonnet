@@ -1550,6 +1550,52 @@ e = {"f1": False, "f2": 42}</pre>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestTomlEx">
+        std.manifestTomlEx(toml, indent)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Convert the given object to a TOML form. <code>indent</code> is a string containing
+        one or more whitespaces that are used for indentation:
+      </p>
+      <p>
+        Example: <code>std.manifestTomlEx({
+          key1: "value",
+          key2: 1,
+          section: {
+            a: 1,
+            b: "str",
+            c: false,
+            d: [1, "s", [2, 3]],
+            subsection: {
+              k: "v",
+            },
+          },
+          sectionArray: [
+            { k: "v1", v: 123 },
+            { k: "v2", c: "value2" },
+          ],
+        }, "  ")</code> yields <code>"key1 = \"value\"\nkey2 = 1\n\n[section]\n  a = 1\n  b = \"str\"\n  c = false\n  d = [\n    1,\n    \"s\",\n    [ 2, 3 ]\n  ]\n\n  [section.subsection]\n    k = \"v\"\n\n[[sectionArray]]\n  k = \"v1\"\n  v = 123\n\n[[sectionArray]]\n  c = \"value2\"\n  k = \"v2\""</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -1748,8 +1794,8 @@ e = {"f1": False, "f2": 42}</pre>
         If <code>arr</code> is a string, function <code>func</code> must return an string.
       </p>
       <p>
-        The <code>std.flatMap</code> function can be thought of as generalized map,
-        where each element is mapped to 0, 1 or more elements.
+        The <code>std.flatMap</code> function can be thought of as a generalized <code>std.map</code>,
+        with each element mapped to 0, 1 or more elements.
       </p>
       <p>
         Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[ 1, 1, 2, 2, 3, 3 ]</code>.
