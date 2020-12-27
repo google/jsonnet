@@ -995,7 +995,7 @@ limitations under the License.
 
   manifestJson(value):: std.manifestJsonEx(value, '    '),
 
-  manifestJsonMinimized(value):: std.manifestJsonEx(value, '', true),
+  manifestJsonMinified(value):: std.manifestJsonEx(value, '', true),
 
   manifestJsonEx(value, indent, minimized=false)::
     local newline = if minimized then '' else '\n';
