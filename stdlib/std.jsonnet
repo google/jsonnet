@@ -995,7 +995,11 @@ limitations under the License.
 
   manifestJson(value):: std.manifestJsonEx(value, '    '),
 
-  manifestJsonEx(value, indent)::
+  manifestJsonMinimized(value):: std.manifestJsonEx(value, '', true),
+
+  manifestJsonEx(value, indent, minimized=false)::
+    local newline = if minimized then '' else ':\n';
+    local colon_space = if minimized then ':' else ': ';
     local aux(v, path, cindent) =
       if v == true then
         'true'
@@ -1012,23 +1016,23 @@ limitations under the License.
       else if std.isArray(v) then
         local range = std.range(0, std.length(v) - 1);
         local new_indent = cindent + indent;
-        local lines = ['[\n']
-                      + std.join([',\n'],
+        local lines = ['[' + newline]
+                      + std.join([',' + newline],
                                  [
                                    [new_indent + aux(v[i], path + [i], new_indent)]
                                    for i in range
                                  ])
-                      + ['\n' + cindent + ']'];
+                      + [newline + cindent + ']'];
         std.join('', lines)
       else if std.isObject(v) then
-        local lines = ['{\n']
-                      + std.join([',\n'],
+        local lines = ['{' + newline]
+                      + std.join([',' + newline],
                                  [
-                                   [cindent + indent + std.escapeStringJson(k) + ': '
+                                   [cindent + indent + std.escapeStringJson(k) + colon_space
                                     + aux(v[k], path + [k], cindent + indent)]
                                    for k in std.objectFields(v)
                                  ])
-                      + ['\n' + cindent + '}'];
+                      + [newline + cindent + '}'];
         std.join('', lines);
     aux(value, [], ''),
 
