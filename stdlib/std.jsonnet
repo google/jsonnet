@@ -998,7 +998,7 @@ limitations under the License.
   manifestJsonMinimized(value):: std.manifestJsonEx(value, '', true),
 
   manifestJsonEx(value, indent, minimized=false)::
-    local newline = if minimized then '' else ':\n';
+    local newline = if minimized then '' else '\n';
     local colon_space = if minimized then ':' else ': ';
     local aux(v, path, cindent) =
       if v == true then
