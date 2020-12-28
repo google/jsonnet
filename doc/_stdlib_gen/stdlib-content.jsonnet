@@ -693,78 +693,68 @@ local html = import 'html.libsonnet';
                 to break long lines. <code>key_val_sep</code> is used to separate the key and value
                 of an object field:
             |||),
-            html.pre({}, |||
-              std.manifestJsonEx(
+          ],
+          examples: [
+            {
+              input: |||
+                std.manifestJsonEx(
                 {
                     x: [1, 2, 3, true, false, null,
                         "string\nstring"],
                     y: { a: 1, b: 2, c: [1, 2] },
                 }, "    ")
-            |||),
-            html.p({}, |||
-              Yields a string containing this JSON object:
-            |||),
-            html.pre({}, |||
-              {
-                  "x": [
-                      1,
-                      2,
-                      3,
-                      true,
-                      false,
-                      null,
-                      "string\nstring"
-                  ],
-                  "y": {
-                      "a": 1,
-                      "b": 2,
-                      "c": [
-                          1,
-                          2
-                      ]
-                  }
-              }
-            |||),
-            html.p({}, |||
-              And here is an example that sets all arguments:
-            |||),
-            html.pre({}, |||
-              std.manifestJsonEx(
+              |||,
+              output:
+                std.manifestJsonEx(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                }, "    "),
+            },
+            {
+              input: |||
+                std.manifestJsonEx(
                 {
                   x: [1, 2, "string\nstring"],
                   y: { a: 1, b: [1, 2] },
                 }, "", " ", " : ")
-            |||),
-            html.p({}, |||
-              Yields a string containing this JSON object:
-            |||),
-            html.pre({}, |||
-              { "x" : [ 1, 2, "string\nstring" ], "y" : { "a" : 1, "b" : [ 1, 2 ] } }
-            |||),
+              |||,
+              output:
+                std.manifestJsonEx(
+                {
+                  x: [1, 2, "string\nstring"],
+                  y: { a: 1, b: [1, 2] },
+                }, "", " ", " : "),
+            },
           ]
         },
         {
           name: 'manifestJsonMinified',
           params: ['value'],
-          description: [
-            html.p({}, |||
+          availableSince: 'upcoming',
+          description: |||
                 Convert the given object to a minified JSON form. Under the covers,
                 it calls <code>std.manifestJsonEx:')</code>:
-            |||),
-            html.pre({}, |||
-              std.manifestJsonMinified(
+            |||,
+          examples: [
+            {
+              input: |||
+                std.manifestJsonMinified(
                 {
                     x: [1, 2, 3, true, false, null,
                         "string\nstring"],
                     y: { a: 1, b: 2, c: [1, 2] },
                 })
-            |||),
-            html.p({}, |||
-              Yields a string containing this JSON object:
-            |||),
-            html.pre({}, |||
-              {"x":[1,2,3,true,false,null,"string\nstring"],"y":{"a":1,"b":2,"c":[1,2]}}
-            |||),
+              |||,
+              output:
+                std.manifestJsonMinified(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                }),
+            }
           ]
         },
         {

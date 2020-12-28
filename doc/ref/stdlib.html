@@ -1356,47 +1356,21 @@ e = {"f1": False, "f2": 42}</pre>
         to break long lines. <code>key_val_sep</code> is used to separate the key and value
         of an object field:
       </p>
-      <pre>std.manifestJsonEx(
-  {
-      x: [1, 2, 3, true, false, null,
-          "string\nstring"],
-      y: { a: 1, b: 2, c: [1, 2] },
-  }, "    ")</pre>
       <p>
-        Yields a string containing this JSON object:
+        Example: <code>std.manifestJsonEx(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        }, "    ")</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
       </p>
-      <pre>{
-    "x": [
-        1,
-        2,
-        3,
-        true,
-        false,
-        null,
-        "string\nstring"
-    ],
-    "y": {
-        "a": 1,
-        "b": 2,
-        "c": [
-            1,
-            2
-        ]
-    }
-}</pre>
       <p>
-        And here is an example that sets all arguments:
+        Example: <code>std.manifestJsonEx(
+        {
+          x: [1, 2, "string\nstring"],
+          y: { a: 1, b: [1, 2] },
+        }, "", " ", " : ")</code> yields <code>"{ \"x\" : [ 1, 2, \"string\\nstring\" ], \"y\" : { \"a\" : 1, \"b\" : [ 1, 2 ] } }"</code>.
       </p>
-      <pre>std.manifestJsonEx(
-  {
-    x: [1, 2, "string\nstring"],
-    y: { a: 1, b: [1, 2] },
-  }, "", " ", " : ")</pre>
-      <p>
-        Yields a string containing this JSON object:
-      </p>
-      <pre>{ "x" : [ 1, 2, "string\nstring" ], "y" : { "a" : 1, "b" : [ 1, 2 ] } }</pre>
-      
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1416,20 +1390,22 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
         Convert the given object to a minified JSON form. Under the covers,
         it calls <code>std.manifestJsonEx:')</code>:
       </p>
-      <pre>std.manifestJsonMinified(
-  {
-      x: [1, 2, 3, true, false, null,
-          "string\nstring"],
-      y: { a: 1, b: 2, c: [1, 2] },
-  })</pre>
       <p>
-        Yields a string containing this JSON object:
+        Example: <code>std.manifestJsonMinified(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        })</code> yields <code>"{\"x\":[1,2,3,true,false,null,\"string\\nstring\"],\"y\":{\"a\":1,\"b\":2,\"c\":[1,2]}}"</code>.
       </p>
-      <pre>{"x":[1,2,3,true,false,null,"string\nstring"],"y":{"a":1,"b":2,"c":[1,2]}}</pre>
-      
     </div>
     <div style="clear: both"></div>
   </div>
