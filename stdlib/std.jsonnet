@@ -995,11 +995,9 @@ limitations under the License.
 
   manifestJson(value):: std.manifestJsonEx(value, '    '),
 
-  manifestJsonMinified(value):: std.manifestJsonEx(value, '', true),
+  manifestJsonMinified(value):: std.manifestJsonEx(value, '', '', ':'),
 
-  manifestJsonEx(value, indent, minimized=false)::
-    local newline = if minimized then '' else '\n';
-    local colon_space = if minimized then ':' else ': ';
+  manifestJsonEx(value, indent, newline='\n', key_val_sep=': ')::
     local aux(v, path, cindent) =
       if v == true then
         'true'
@@ -1028,7 +1026,7 @@ limitations under the License.
         local lines = ['{' + newline]
                       + std.join([',' + newline],
                                  [
-                                   [cindent + indent + std.escapeStringJson(k) + colon_space
+                                   [cindent + indent + std.escapeStringJson(k) + key_val_sep
                                     + aux(v[k], path + [k], cindent + indent)]
                                    for k in std.objectFields(v)
                                  ])
