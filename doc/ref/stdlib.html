@@ -1340,7 +1340,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestJsonEx">
-        std.manifestJsonEx(value, indent)
+        std.manifestJsonEx(value, indent, newline, key_val_sep)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1351,37 +1351,61 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Convert the given object to a JSON form. <code>indent</code> is a string containing
-        one or more whitespaces that are used for indentation:
+        one or more whitespaces that are used for indentation. <code>newline</code> is
+        by default <code>\n</code> and is inserted where a newline would normally be used
+        to break long lines. <code>key_val_sep</code> is used to separate the key and value
+        of an object field:
       </p>
-      <pre>std.manifestJsonEx(
-  {
-      x: [1, 2, 3, true, false, null,
-          "string\nstring"],
-      y: { a: 1, b: 2, c: [1, 2] },
-  }, "    ")</pre>
       <p>
-        Yields a string containing this JSON object:
+        Example: <code>std.manifestJsonEx(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        }, "    ")</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
       </p>
-      <pre>{
-    "x": [
-        1,
-        2,
-        3,
-        true,
-        false,
-        null,
-        "string\nstring"
-    ],
-    "y": {
-        "a": 1,
-        "b": 2,
-        "c": [
-            1,
-            2
-        ]
-    }
-}</pre>
-      
+      <p>
+        Example: <code>std.manifestJsonEx(
+        {
+          x: [1, 2, "string\nstring"],
+          y: { a: 1, b: [1, 2] },
+        }, "", " ", " : ")</code> yields <code>"{ \"x\" : [ 1, 2, \"string\\nstring\" ], \"y\" : { \"a\" : 1, \"b\" : [ 1, 2 ] } }"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestJsonMinified">
+        std.manifestJsonMinified(value)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Convert the given object to a minified JSON form. Under the covers,
+        it calls <code>std.manifestJsonEx:')</code>:
+      </p>
+      <p>
+        Example: <code>std.manifestJsonMinified(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        })</code> yields <code>"{\"x\":[1,2,3,true,false,null,\"string\\nstring\"],\"y\":{\"a\":1,\"b\":2,\"c\":[1,2]}}"</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>

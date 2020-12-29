@@ -684,44 +684,77 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'manifestJsonEx',
-          params: ['value', 'indent'],
+          params: ['value', 'indent', 'newline', 'key_val_sep'],
           description: [
             html.p({}, |||
                 Convert the given object to a JSON form. <code>indent</code> is a string containing
-                one or more whitespaces that are used for indentation:
+                one or more whitespaces that are used for indentation. <code>newline</code> is
+                by default <code>\n</code> and is inserted where a newline would normally be used
+                to break long lines. <code>key_val_sep</code> is used to separate the key and value
+                of an object field:
             |||),
-            html.pre({}, |||
-              std.manifestJsonEx(
+          ],
+          examples: [
+            {
+              input: |||
+                std.manifestJsonEx(
                 {
                     x: [1, 2, 3, true, false, null,
                         "string\nstring"],
                     y: { a: 1, b: 2, c: [1, 2] },
                 }, "    ")
-            |||),
-            html.p({}, |||
-              Yields a string containing this JSON object:
-            |||),
-            html.pre({}, |||
-              {
-                  "x": [
-                      1,
-                      2,
-                      3,
-                      true,
-                      false,
-                      null,
-                      "string\nstring"
-                  ],
-                  "y": {
-                      "a": 1,
-                      "b": 2,
-                      "c": [
-                          1,
-                          2
-                      ]
-                  }
-              }
-            |||),
+              |||,
+              output:
+                std.manifestJsonEx(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                }, "    "),
+            },
+            {
+              input: |||
+                std.manifestJsonEx(
+                {
+                  x: [1, 2, "string\nstring"],
+                  y: { a: 1, b: [1, 2] },
+                }, "", " ", " : ")
+              |||,
+              output:
+                std.manifestJsonEx(
+                {
+                  x: [1, 2, "string\nstring"],
+                  y: { a: 1, b: [1, 2] },
+                }, "", " ", " : "),
+            },
+          ]
+        },
+        {
+          name: 'manifestJsonMinified',
+          params: ['value'],
+          availableSince: 'upcoming',
+          description: |||
+                Convert the given object to a minified JSON form. Under the covers,
+                it calls <code>std.manifestJsonEx:')</code>:
+            |||,
+          examples: [
+            {
+              input: |||
+                std.manifestJsonMinified(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                })
+              |||,
+              output:
+                std.manifestJsonMinified(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                }),
+            }
           ]
         },
         {
