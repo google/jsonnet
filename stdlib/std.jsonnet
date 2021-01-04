@@ -832,9 +832,9 @@ limitations under the License.
 
   min(a, b)::
     if !std.isNumber(a) then
-      error 'std.max first param expected number, got ' + std.type(a)
+      error 'std.min first param expected number, got ' + std.type(a)
     else if !std.isNumber(b) then
-      error 'std.max second param expected number, got ' + std.type(b)
+      error 'std.min second param expected number, got ' + std.type(b)
     else
       if a < b then a else b,
 
