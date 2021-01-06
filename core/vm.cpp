@@ -31,6 +31,18 @@ limitations under the License.
 #include "string_utils.h"
 #include "vm.h"
 
+/** Macro that dumps an error and aborts the program regardless of
+ *  whether NDEBUG is defined. This should be used to mark codepaths
+ *  as unreachable.
+ */
+#define JSONNET_UNREACHABLE()                                      \
+  do {                                                             \
+    std::cerr << __FILE__ << ":" << __LINE__                       \
+              << ": INTERNAL ERROR: reached unreachable code path" \
+              << std::endl;                                        \
+    abort();                                                       \
+  } while (0)
+
 using json = nlohmann::json;
 
 namespace {
@@ -2381,7 +2393,7 @@ class Interpreter {
                                     func = sourceVals["__array_greater_or_equal"];
                                     break;
                                 default:
-                                    assert(false && "impossible case");
+                                    JSONNET_UNREACHABLE();
                                 }
                                 if (!func->filled) {
                                     stack.newCall(ast.location, func, func->self, func->offset, func->upValues);
