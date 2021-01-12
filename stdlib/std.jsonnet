@@ -548,13 +548,20 @@ limitations under the License.
     local render_float_dec(n__, zero_pad, blank, plus, ensure_pt, trailing, prec) =
       local n_ = std.abs(n__);
       local whole = std.floor(n_);
+      // Represent the rounded number as an integer * 1/10**prec.
+      // Note that it can also be equal to 10**prec and we'll need to carry
+      // over to the wholes.  We operate on the absolute numbers, so that we
+      // don't have trouble with the rounding direction.
+      local denominator = std.pow(10, prec);
+      local numerator = std.abs(n_) * denominator + 0.5;
+      local whole = std.sign(n_) * std.floor(numerator / denominator);
+      local frac = std.floor(numerator) % denominator;
       local dot_size = if prec == 0 && !ensure_pt then 0 else 1;
       local zp = zero_pad - prec - dot_size;
       local str = render_int(n__ < 0, whole, zp, 0, blank, plus, 10, '');
       if prec == 0 then
         str + if ensure_pt then '.' else ''
       else
-        local frac = std.floor((n_ - whole) * std.pow(10, prec) + 0.5);
         if trailing || frac > 0 then
           local frac_str = render_int(false, frac, prec, 0, false, false, 10, '');
           str + '.' + if !trailing then strip_trailing_zero(frac_str) else frac_str
@@ -869,7 +876,7 @@ limitations under the License.
   manifestToml(value):: std.manifestTomlEx(value, '  '),
 
   manifestTomlEx(value, indent)::
-    local 
+    local
       escapeStringToml = std.escapeStringJson,
       escapeKeyToml(key) =
         local bare_allowed = std.set(std.stringChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"));
@@ -913,7 +920,7 @@ limitations under the License.
                                   ])
                         + [' }'];
           std.join('', lines),
-      renderTableInternal(v, path, indexedPath, cindent) = 
+      renderTableInternal(v, path, indexedPath, cindent) =
         local kvp = std.flattenArrays([
           [cindent + escapeKeyToml(k) + ' = ' + renderValue(v[k], indexedPath + [k], false, cindent)]
           for k in std.objectFields(v)
