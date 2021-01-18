@@ -1348,7 +1348,7 @@ local html = import 'html.libsonnet';
       fields: [
         {
           name: 'trace',
-          params: ['target', 'patch'],
+          params: ['str', 'rest'],
           availableSince: '0.11.0',
           description: [
             html.p({}, |||
