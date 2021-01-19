@@ -17,6 +17,8 @@ limitations under the License.
 #ifndef JSONNET_UNICODE_H
 #define JSONNET_UNICODE_H
 
+#include <uchar.h>
+
 /** Substituted when a unicode translation format encoding error is encountered. */
 #define JSONNET_CODEPOINT_ERROR 0xfffd
 #define JSONNET_CODEPOINT_MAX 0x110000

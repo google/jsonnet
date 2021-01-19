@@ -17,6 +17,7 @@ limitations under the License.
 #include <algorithm>
 #include <set>
 #include <typeinfo>
+#include <uchar.h>
 
 #include "formatter.h"
 #include "lexer.h"

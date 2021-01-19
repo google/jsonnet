@@ -16,10 +16,10 @@ limitations under the License.
 
 #include <cassert>
 #include <cmath>
-
 #include <memory>
 #include <set>
 #include <string>
+#include <uchar.h>
 
 #include "desugarer.h"
 #include "json.h"
