@@ -3,11 +3,11 @@ language: generic
 matrix:
   include:
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-4.9 CC=gcc-4.9 COMMON_OS_NAME=${TRAVIS_OS_NAME}
+      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5 COMMON_OS_NAME=${TRAVIS_OS_NAME}
       addons:
         apt:
           packages:
-            - g++-4.9
+            - g++-5
           sources: &sources
             - llvm-toolchain-precise-3.8
             - ubuntu-toolchain-r-test    
