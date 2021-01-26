@@ -1,0 +1,225 @@
+language: cpp
+
+dist: bionic
+
+cache:
+  directories:
+    - $HOME/.dep_cache
+
+env:
+  global:
+    - fastfloat_DEPENDENCY_CACHE_DIR=$HOME/.dep_cache
+
+
+# the ppc64le and s390x images use cmake 3.10, but fast_float requires 3.11.
+# so we compile cmake from source in those images.
+# - tried the kitware ppa but that is using 3.10 as well
+# - tried also using snap to get a more recent version but that failed with
+#   udev errors.
+
+matrix:
+  include:
+    - arch: ppc64le
+      os: linux
+      env:
+        - CMAKE_SRC="https://github.com/Kitware/CMake/releases/download/v3.11.4/cmake-3.11.4.tar.gz"
+
+    - arch: s390x
+      os: linux
+      env:
+        - CMAKE_SRC="https://github.com/Kitware/CMake/releases/download/v3.11.4/cmake-3.11.4.tar.gz"
+
+    - arch: amd64
+      os: linux
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - COMPILER="CC=gcc-8 && CXX=g++-8"
+      compiler: gcc-8
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - COMPILER="CC=gcc-9 && CXX=g++-9"
+      compiler: gcc-9
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
+      compiler: gcc-10
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - SANITIZE="on"
+      compiler: gcc-10-sanitize
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - STATIC="on"
+      acompiler: gcc-10-static
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-6.0
+          packages:
+            - clang-6.0
+      env:
+        - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
+      compiler: clang-6
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-7
+          packages:
+            - clang-7
+      env:
+        - COMPILER="CC=clang-7 && CXX=clang++-7"
+      compiler: clang-7
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-8
+          packages:
+            - clang-8
+      env:
+        - COMPILER="CC=clang-8 && CXX=clang++-8"
+      compiler: clang-8
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-9
+          packages:
+            - clang-9
+      env:
+        - COMPILER="CC=clang-9 && CXX=clang++-9"
+      compiler: clang-9
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+      compiler: clang-10
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+        - STATIC="on"
+      compiler: clang-10-static
+
+    - arch: amd64
+      os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+        - SANITIZE="on"
+      compiler: clang-10-sanitize
+
+before_install:
+  - eval "${COMPILER}"
+
+install:
+  - |
+    if [ "$CMAKE_SRC" != "" ] ; then
+      set -x
+      set -e
+      sudo -E apt remove --purge cmake
+      sudo -E apt-get update
+      sudo -E apt-get install -y build-essential libssl-dev
+      mkdir cmake_src
+      pushd cmake_src
+      wget "$CMAKE_SRC"
+      tar xfz $(basename "$CMAKE_SRC")
+      pushd $(basename "$CMAKE_SRC" | sed "s:.tar.gz::")
+      ./bootstrap
+      make -j2
+      sudo make install
+      popd
+      popd
+      set +x
+    fi
+  - echo ${PATH}
+  - which cmake
+  - cmake --version
+  - which ${CC}
+  - ${CC} --version
+  - which ${CXX}
+  - ${CXX} --version
+
+script:
+  - mkdir build
+  - cd build
+  - cmake -DFASTFLOAT_TEST=ON  ..
+  - make -j2
+  - ctest --output-on-failure -R basictest

@@ -1,0 +1,82 @@
+version: '{build}'
+
+image: Visual Studio 2019
+
+environment:
+  matrix:
+
+    - {GEN: Visual Studio 16 2019, ARCH: -A x64, CFG: Debug, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A Win32, CFG: Debug, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A x64, CFG: Release, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A Win32, CFG: Release, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A x64, STD: -D C4_CXX_STANDARD=20, CFG: Debug, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A x64, STD: -D C4_CXX_STANDARD=17, CFG: Debug, compiler: msvc-16-seh}
+    - {GEN: Visual Studio 16 2019, ARCH: -A x64, STD: -D C4_CXX_STANDARD=14, CFG: Debug, compiler: msvc-16-seh}
+
+    - {GEN: Visual Studio 15 2017 Win64, CFG: Debug, APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017, compiler: msvc-15-seh}
+    - {GEN: Visual Studio 15 2017, CFG: Debug, APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017, compiler: msvc-15-seh}
+    - {GEN: Visual Studio 15 2017 Win64, CFG: Release, APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017, compiler: msvc-15-seh}
+    - {GEN: Visual Studio 15 2017, CFG: Release, APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017, compiler: msvc-15-seh}
+
+    #- compiler: gcc-5.3.0-posix
+    #  GEN: "MinGW Makefiles"
+    #  cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #  CFG: Quicktest
+    #  externconfig: Debug
+
+
+matrix:
+  fast_finish: true
+
+install:
+  - git submodule update --init --recursive
+  # git bash conflicts with MinGW makefiles
+  - set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+  - if not "%cxx_path%"=="" (set "PATH=%PATH%;%cxx_path%")
+  - cmake --version
+
+build_script:
+  - echo %GEN%
+  - echo %ARCH%
+  - echo %CFG%
+  - echo %STD%
+  - set NUM_JOBS=3
+  - set PROJ_DIR=%cd%
+  - set BUILD_DIR=%PROJ_DIR%\build
+  - set INSTALL_DIR=%PROJ_DIR%\install
+  - set C4_EXTERN_DIR=%BUILD_DIR%\extern
+  - md %BUILD_DIR%
+  - md %BUILD_DIR%\static %BUILD_DIR%\shared %BUILD_DIR%\extern
+  - cmake -S %PROJ_DIR% -B %BUILD_DIR%\static %STD% -DC4CORE_DEV=ON -G "%GEN%" %ARCH% "-DCMAKE_BUILD_TYPE=%CFG%" "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%\static" -DBUILD_SHARED_LIBS=OFF
+  - cmake -S %PROJ_DIR% -B %BUILD_DIR%\shared %STD% -DC4CORE_DEV=ON -G "%GEN%" %ARCH% "-DCMAKE_BUILD_TYPE=%CFG%" "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%\shared" -DBUILD_SHARED_LIBS=ON
+  - cmake --build %BUILD_DIR%\static --config %configuration% --target test-build --parallel %NUM_JOBS%
+  - cmake --build %BUILD_DIR%\shared --config %configuration% --target test-build --parallel %NUM_JOBS%
+
+test_script:
+  - cmake --build %BUILD_DIR%\static --config %configuration% --target test
+  - cmake --build %BUILD_DIR%\shared --config %configuration% --target test
+
+#artifacts:
+#  - path: '_build/CMakeFiles/*.log'
+#    name: logs
+#  - path: '_build/Testing/**/*.xml'
+#    name: test_results
+
+skip_commits:
+  files:
+    - .gitignore
+    - .travis*
+    - .ci/travis*
+    - .ci/dev_*
+    - .ci/show_*
+    - .ci/vagrant*
+    - .ci/Vagrant*
+    - bm/html/*
+    - doc/*
+    - img/*
+    - CHANGELOG.md
+    - CONTRIBUTING.md
+    - LICENSE.txt
+    - README.*
+    - ROADMAP.*

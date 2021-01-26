@@ -1,0 +1,45 @@
+name: MSYS2-CI
+
+on: [push, pull_request]
+
+jobs:
+  windows-mingw:
+    name: ${{ matrix.msystem }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - msystem: "MINGW64"
+            install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc
+            type: Release
+          - msystem: "MINGW32"
+            install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc
+            type: Release
+          - msystem: "MINGW64"
+            install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc
+            type: Debug
+          - msystem: "MINGW32"
+            install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc
+            type: Debug
+    env:
+      CMAKE_GENERATOR: Ninja
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.install }}
+      - name: Prepare build dir
+        run: mkdir build
+      - name: Configure
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DFASTFLOAT_TEST=ON ..
+      - name: Build
+        run: cmake --build build
+      - name: Run basic tests
+        run: cd build && ctest --output-on-failure -R basictest

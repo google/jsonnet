@@ -1,0 +1,17 @@
+
+prefix: c4core-bm
+
+# TODO https://stackoverflow.com/questions/12360547/tool-for-retrieving-the-list-of-functions-and-methods-in-a-c-code-base
+
+bm:
+  format-cat:
+    desc: compares stringification of a sequence of heterogeneous general types
+    src: bm_format.hpp
+  charconv-atox:
+    desc: read string to arithmetic value
+    src: bm_charconv.cpp
+    template_types: [uint8, int8, uint16, int16, uint32, int32, uint64, int64, float, double]
+  charconv-xtoa:
+    desc: write arithmetic value to string
+    src: bm_charconv.cpp
+    template_types: [uint8, int8, uint16, int16, uint32, int32, uint64, int64, float, double]

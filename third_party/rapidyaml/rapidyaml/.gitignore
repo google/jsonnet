@@ -1,0 +1,36 @@
+# text editor files
+*.bck
+\#*
+*~
+.cquery_cached_index/
+.clangd/
+.ccls-cache/
+.cache/
+
+# gdb files
+.gdbinit
+setup.gdb
+
+# Visual Studio files
+.vs/
+.vscode/
+# QtCreator files
+CMakeLists.txt.user*
+# Eclipse
+.project
+.cproject
+/.settings/
+# KDevelop files
+*.kdev4
+
+# build files
+build/
+install/
+.python-version
+compile_commands.json
+
+# test files
+/Testing/
+
+# continuous integration files
+.ci/.vagrant

@@ -36,6 +36,8 @@ cc_library(
         "//stdlib:std",
         "//third_party/json",
         "//third_party/md5:libmd5",
+        "//third_party/yaml-cpp",
+        "//third_party/rapidyaml:ryml",
     ],
 )
 
