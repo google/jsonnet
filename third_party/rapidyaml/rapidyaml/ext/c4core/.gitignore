@@ -1,0 +1,31 @@
+# text editor files
+*.bck
+\#*
+*~
+.ccls-cache/
+.clangd/
+.cache/
+.cquery_cached_index/
+
+# Visual Studio files
+.vs/
+.vscode/
+# QtCreator files
+CMakeLists.txt.user
+# Eclipse
+.project
+.cproject
+/.settings/
+
+# build files
+build/
+install/
+.python-version
+compile_commands.json
+
+# test files
+/Testing/
+
+# continuous integration files
+.github/vagrant/.vagrant
+.github/vagrant/macos/.vagrant

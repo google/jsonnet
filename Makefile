@@ -32,10 +32,10 @@ OPT ?= -O3
 PREFIX ?= /usr/local
 
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++0x -fPIC
-CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
+CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
 CFLAGS += -Iinclude
-MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
+MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
 EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s INLINING_LIMIT=50 -s RESERVED_FUNCTION_POINTERS=20 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 LDFLAGS ?=
@@ -50,6 +50,10 @@ SOVERSION = 0
 # End of user-servicable parts
 ################################################################################
 
+RAPIDYAML_SRC = \
+	$(wildcard third_party/rapidyaml/rapidyaml/src/c4/yml/*.cpp) \
+	$(wildcard third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/*.cpp)
+
 LIB_SRC = \
 	core/desugarer.cpp \
 	core/formatter.cpp \
@@ -60,7 +64,8 @@ LIB_SRC = \
 	core/static_analysis.cpp \
 	core/string_utils.cpp \
 	core/vm.cpp \
-	third_party/md5/md5.cpp
+	third_party/md5/md5.cpp \
+	$(RAPIDYAML_SRC)
 
 LIB_OBJ = $(LIB_SRC:.cpp=.o)
 
@@ -110,6 +115,7 @@ ALL_HEADERS = \
 	core/std.jsonnet.h \
 	third_party/md5/md5.h \
 	third_party/json/json.hpp \
+	third_party/rapidyaml/rapidyaml/src/ryml_std.hpp \
 	$(INCS)
 
 

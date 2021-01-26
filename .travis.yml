@@ -1,4 +1,5 @@
 language: generic
+dist: bionic
 
 matrix:
   include:
@@ -9,14 +10,16 @@ matrix:
           packages:
             - g++-5
           sources: &sources
-            - llvm-toolchain-precise-3.8
+            - llvm-toolchain-bionic-11
+            - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
             - ubuntu-toolchain-r-test    
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8 COMMON_OS_NAME=${TRAVIS_OS_NAME}
+      env: COMPILER_NAME=clang CXX=clang++-11 CC=clang-11 COMMON_OS_NAME=${TRAVIS_OS_NAME}
       addons:
         apt:
           packages:
-            - clang-3.8
+            - clang-11
           sources: *sources
     - os: osx
       osx_image: xcode11.3
