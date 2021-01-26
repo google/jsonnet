@@ -1,0 +1,33 @@
+name: Ubuntu 20.04 CI (GCC 9, 8)
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {cxx: -DCMAKE_CXX_COMPILER=g++-8, arch:                         }
+          - {cxx:                           , arch:                         } # default=gcc9
+          - {cxx:                           , arch: -DCMAKE_CXX_FLAGS="-m32"} # default=gcc9
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.4
+        with:
+          cmake-version: '3.11.x'
+      - name: install older compilers
+        run: |
+          sudo -E dpkg --add-architecture i386
+          sudo -E apt-get update
+          sudo -E apt-get install -y g++-8 g++-8-multilib g++-multilib linux-libc-dev:i386 libc6:i386 libc6-dev:i386 libc6-dbg:i386
+      - name: Prepare build dir
+        run: mkdir build
+      - name: Configure
+        run: cd build && cmake ${{matrix.cxx}} ${{matrix.arch}} -DFASTFLOAT_TEST=ON ..
+      - name: Build
+        run: cmake --build build
+      - name: Run basic tests
+        run: cd build && ctest --output-on-failure -R basictest

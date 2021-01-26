@@ -26,6 +26,8 @@ limitations under the License.
 #include "json.hpp"
 #include "md5.h"
 #include "parser.h"
+#include "ryml_std.hpp" // include this before any other ryml header
+#include "ryml.hpp"
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"
@@ -930,6 +932,7 @@ class Interpreter {
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
         builtins["join"] = &Interpreter::builtinJoin;
         builtins["parseJson"] = &Interpreter::builtinParseJson;
+        builtins["parseYaml"] = &Interpreter::builtinParseYaml;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
 
@@ -1589,6 +1592,65 @@ class Interpreter {
         otherJsonToHeap(j, filled, scratch);
 
         return nullptr;
+    }
+
+    const AST *builtinParseYaml(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "parseYaml", args, {Value::STRING});
+
+        std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+
+        ryml::Tree tree = treeFromString(value);
+
+        json j;
+        if (tree.is_stream(tree.root_id())) {
+            // Split into individual yaml documents
+            std::stringstream ss;
+            ss << tree;
+            std::vector<std::string> v = split(ss.str(), "---\n");
+
+            // Convert yaml to json and push onto json array
+            ryml::Tree doc;
+            for (int i = 0; i < v.size(); ++i) {
+                if (!v[i].empty()) {
+                    doc = treeFromString(v[i]);
+                    j.push_back(yamlTreeToJson(doc));
+                }
+            }
+        } else {
+            j = yamlTreeToJson(tree);
+        }
+
+        bool filled;
+
+        otherJsonToHeap(j, filled, scratch);
+
+        return nullptr;
+    }
+
+    const ryml::Tree treeFromString(const std::string& s) {
+        return ryml::parse(c4::to_csubstr(s));
+    }
+
+    const std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
+        size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+        std::string token;
+        std::vector<std::string> res;
+
+        while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos) {
+            token = s.substr(pos_start, pos_end - pos_start);
+            pos_start = pos_end + delim_len;
+            res.push_back(token);
+        }
+
+        res.push_back(s.substr(pos_start));
+        return res;
+    }
+
+    const json yamlTreeToJson(const ryml::Tree& tree) {
+        std::ostringstream jsonStream;
+        jsonStream << ryml::as_json(tree);
+        return json::parse(jsonStream.str());
     }
 
     void otherJsonToHeap(const json &v, bool &filled, Value &attach) {

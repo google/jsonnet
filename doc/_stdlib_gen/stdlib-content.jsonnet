@@ -555,6 +555,24 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'parseYaml',
+          availableSince: 'x.y.z',
+          params: ['str'],
+          description: |||
+            Parses a YAML string. This is provided as a "best-effort" mechanism and should not be relied on to provide
+            a fully standards compliant YAML parser. YAML is a superset of JSON, consequently "downcasting" or
+            manifestation of YAML into JSON or Jsonnet values will only succeed when using the subset of YAML that is
+            compatible with JSON. The parser does not support YAML documents with scalar values at the root. The
+            root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
+          |||,
+          examples: [
+            {
+              input: 'std.parseYaml(\'foo: bar\')',
+              output: std.parseYaml('foo: bar'),
+            },
+          ],
+        },
+        {
           name: 'encodeUTF8',
           params: ['str'],
           availableSince: '0.13.0',

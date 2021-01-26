@@ -1,0 +1,90 @@
+version: '{build}'
+
+image: Visual Studio 2017
+
+environment:
+  matrix:
+
+    - compiler: msvc-15-seh
+      generator: "Visual Studio 15 2017"
+      configuration: Debug
+
+    - compiler: msvc-15-seh
+      generator: "Visual Studio 15 2017 Win64"
+      configuration: Debug
+
+    - compiler: msvc-15-seh
+      generator: "Visual Studio 15 2017"
+      configuration: Release
+
+    - compiler: msvc-15-seh
+      generator: "Visual Studio 15 2017 Win64"
+      configuration: Release
+
+      
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015"
+      configuration: Debug
+
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015 Win64"
+      configuration: Debug
+
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015"
+      configuration: Release
+
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015 Win64"
+      configuration: Release
+
+
+
+    #- compiler: gcc-5.3.0-posix
+    #  generator: "MinGW Makefiles"
+    #  cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #  configuration: Quicktest
+    #  externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
+
+matrix:
+  fast_finish: true
+
+install:
+  - git submodule update --init --recursive
+  # git bash conflicts with MinGW makefiles
+  - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
+  - if not "%cxx_path%"=="" (set "PATH=%PATH%;%cxx_path%")
+
+build_script:
+  - md _build -Force
+  - cd _build
+
+test_script:
+  - echo %configuration%
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" -DRYML_DEV=ON ..
+  - dir
+  - dir test
+  - cmake --build . --config %configuration% --target ryml-test
+  #- ctest -c %configuration% --timeout 300 --output-on-failure
+
+artifacts:
+  - path: '_build/CMakeFiles/*.log'
+    name: logs
+  - path: '_build/Testing/**/*.xml'
+    name: test_results
+
+skip_commits:
+  files:
+    - .gitignore
+    - .travis*
+    - .ci/travis*
+    - .ci/dev_*
+    - .ci/show_*
+    - .ci/vagrant*
+    - .ci/Vagrant*
+    - bm/html/*
+    - doc/*
+    - LICENSE.txt
+    - README.*

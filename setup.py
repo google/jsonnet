@@ -29,7 +29,19 @@ LIB_OBJECTS = [
     'core/static_analysis.o',
     'core/string_utils.o',
     'core/vm.o',
-    'third_party/md5/md5.o'
+    'third_party/md5/md5.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/char_traits.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/base64.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/language.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/memory_util.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/format.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/time.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/memory_resource.o',
+    'third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/error.o',
+    'third_party/rapidyaml/rapidyaml/src/c4/yml/parse.o',
+    'third_party/rapidyaml/rapidyaml/src/c4/yml/preprocess.o',
+    'third_party/rapidyaml/rapidyaml/src/c4/yml/common.o',
+    'third_party/rapidyaml/rapidyaml/src/c4/yml/tree.o',
 ]
 
 MODULE_SOURCES = ['python/_jsonnet.c']
