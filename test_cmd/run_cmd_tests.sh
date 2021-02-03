@@ -26,7 +26,7 @@ rm -rf out
 
 # do_test <name> <exit_code> <args...>
 
-# Only check_file additional files if the test otherwise succeded, to avoid double-counting
+# Only check_file additional files if the test otherwise succeeded, to avoid double-counting
 # failures.  All tests must write into out/$NAME/ and nowhere else.
 
 do_test "no_args" 1

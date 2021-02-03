@@ -29,7 +29,7 @@ UString jsonnet_string_unparse(const UString &str, bool single);
 /** Escape special characters. */
 UString jsonnet_string_escape(const UString &str, bool single);
 
-/** Resolve escape chracters in the string. */
+/** Resolve escape characters in the string. */
 UString jsonnet_string_unescape(const LocationRange &loc, const UString &s);
 
 #endif

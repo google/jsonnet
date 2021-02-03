@@ -52,7 +52,7 @@ function(ssh_username) {
         ],
     },
 
-    // Create an initial (empty) database for storing 'discovered' fractal co-ordinates.
+    // Create an initial (empty) database for storing 'discovered' fractal coordinates.
     local cql_insert(uuid, x, y, l, n) =
         "INSERT INTO discoveries (Date, TimeId, X, Y, L, Text) "
         + ("VALUES ('FIXED', %s, %s, %s, %s, '%s');" % [uuid, x, y, l, n]),

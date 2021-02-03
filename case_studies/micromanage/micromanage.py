@@ -29,7 +29,7 @@ import util
 import validate
 
 # TODO: Simple constraint language for expressing constraints on the generated
-# infrastructure of production servces that if broken during an apply, will
+# infrastructure of production services that if broken during an apply, will
 # cause the apply to be rejected. Examples:
 #   - resource x must exist (e.g. data integrity)
 #   - at least x things of this type must exist
@@ -494,7 +494,7 @@ def action_image_gc(config_file, config, args):
                 image_tuples = amazon_get_images(environment['region'], access_key, environment['secretKey'])
                 amazon_amis[access_key] = [image_tuple + (environment,) for image_tuple in image_tuples]
         else:
-            raise RuntimeError('Got invalid enviroment kind: "%s"' % iamge_type)
+            raise RuntimeError('Got invalid environment kind: "%s"' % iamge_type)
 
 
     # Delete all images older than X which are not currently in a version / module

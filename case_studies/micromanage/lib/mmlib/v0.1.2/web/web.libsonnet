@@ -45,7 +45,7 @@
         service.httpsEndpoint,
     },
 
-    // Adding the http-server and https-server tags makes the instances comptible with GCE's
+    // Adding the http-server and https-server tags makes the instances compatible with GCE's
     // default firewall configuration, if that is being used.
     Instance+: {
       tags+:

@@ -491,7 +491,7 @@ limitations under the License.
     // min_digits must be a whole number >= 0. It's the number of zeroes to pad with.
     // blank must be a boolean, if true adds an additional ' ' in front of a positive number, so
     // that it is aligned with negative numbers with the same number of digits.
-    // plus must be a boolean, if true adds a '+' in front of a postive number, so that it is
+    // plus must be a boolean, if true adds a '+' in front of a positive number, so that it is
     // aligned with negative numbers with the same number of digits.  This takes precedence over
     // blank, if both are true.
     // radix must be a whole number >1 and <= 10.  It is the base of the system of numerals.

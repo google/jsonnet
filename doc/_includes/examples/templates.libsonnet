@@ -4,7 +4,7 @@
     local drink = self,
 
     // Hidden fields can be referred to
-    // and overrridden, but do not appear
+    // and overridden, but do not appear
     // in the JSON output.
     citrus:: {
       kind: 'Lemon Juice',

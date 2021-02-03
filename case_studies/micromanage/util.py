@@ -30,7 +30,7 @@ def utc_now():
     now = datetime.datetime.now(UTC())
 
 
-# Merge b into a, prefering b on conflicts
+# Merge b into a, preferring b on conflicts
 def merge_into(a, b):
     for k, v in b.iteritems():
         a[k] = v

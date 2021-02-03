@@ -211,7 +211,7 @@ limitations under the License.
 
     // A template for building Nginx/uwsgi/flask based application servers.  The uwsgi configuration
     // is provided at the top level and is automatically compiler to INI format.  A simple cron line
-    // is used to start the uwsgi emporer at boot.  The given Flask module must exist in /var/www,
+    // is used to start the uwsgi emperor at boot.  The given Flask module must exist in /var/www,
     // so extend this template with additional provisioners to create that content.
     GcpDebianNginxUwsgiFlaskImage:: packer.GcpDebianImage {
         local image = self,

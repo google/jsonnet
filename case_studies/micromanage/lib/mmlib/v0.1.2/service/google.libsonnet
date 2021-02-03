@@ -22,7 +22,7 @@ local base = import 'base.libsonnet';
     // The image from which we derive a new image.
     source: error "Google Image must have 'source'",
 
-    // The kind of instane used to build the new image.
+    // The kind of instance used to build the new image.
     machineType: 'n1-standard-1',
 
     // The zone in which to deploy the instance that builds the image.
@@ -79,14 +79,14 @@ local base = import 'base.libsonnet';
     ],
 
     // By default, the root disk is built at VM creation time from the StandardRootImage
-    // which can be overidden at the top level to e.g. add commands or packages.
+    // which can be overridden at the top level to e.g. add commands or packages.
     boot_disk: {
       initialize_params: {
         image: instance.StandardRootImage,
       },
     },
 
-    // By default the OS is debian and has support for monitoring and loging agents.
+    // By default the OS is debian and has support for monitoring and logging agents.
     StandardRootImage:: $.DebianImage + instance.MonitoringLoggingImageMixin,
 
     supportsLogging:: true,

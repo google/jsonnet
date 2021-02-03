@@ -18,5 +18,5 @@ limitations under the License.
 // The only way to verify that verbatim strings are actually verbatim is to put a \ in them.
 // However, we can't make that work on all platforms.  However by importing a file that does
 // not exist, we get the same behavior everywhere and can check the correct filename was
-// attemted in the error message.
+// attempted in the error message.
 import @'C:\can''t possibly exist~'

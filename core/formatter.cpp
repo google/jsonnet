@@ -1357,7 +1357,7 @@ class FixIndentation {
     /** Calculate the indentation of sub-expressions.
      *
      * If the first sub-expression is on the same line as the current node, then subsequent
-     * ones will be lined up and further indentations in their subexpresssions will be based from
+     * ones will be lined up and further indentations in their subexpressions will be based from
      * this column.  Otherwise, subseqeuent ones will be on the next line with no
      * additional indent.
      */

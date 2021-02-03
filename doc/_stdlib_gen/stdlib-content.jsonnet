@@ -243,7 +243,7 @@ local html = import 'html.libsonnet';
           name: 'findSubstr',
           params: ['pat', 'str'],
           description: |||
-            Returns an array that contains the indexes of all occurances of <code>pat</code> in
+            Returns an array that contains the indexes of all occurrences of <code>pat</code> in
             <code>str</code>.
           |||,
         },
@@ -1000,7 +1000,7 @@ local html = import 'html.libsonnet';
           name: 'find',
           params: ['value', 'arr'],
           description: |||
-            Returns an array that contains the indexes of all occurances of <code>value</code> in
+            Returns an array that contains the indexes of all occurrences of <code>value</code> in
             <code>arr</code>.
           |||,
         },
@@ -1223,7 +1223,7 @@ local html = import 'html.libsonnet';
         |||,
         |||
           Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
-          on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)</code>.
+          on arrays passed to them to work. This can be guaranteed by using <code>std.set(arr)</code>.
           If that is not the case, the functions will quietly return non-meaningful results.
         |||,
         |||
