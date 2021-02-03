@@ -96,7 +96,7 @@ enum FrameKind {
  *
  * The stack frame is a bit like a tagged union, except not as memory
  * efficient.  The set of member variables that are actually used depends on
- * the value of the member varaible kind.
+ * the value of the member variable kind.
  *
  * If the stack frame is of kind FRAME_CALL, then it counts towards the
  * maximum number of stack frames allowed.  Other stack frames are not
@@ -1832,7 +1832,7 @@ class Interpreter {
 
     /** Index an object's field.
      *
-     * \param loc Location where the e.f occured.
+     * \param loc Location where the e.f occurred.
      * \param obj The target
      * \param f The field
      */
@@ -2241,7 +2241,7 @@ class Interpreter {
 
                     if (func->body == nullptr) {
                         // Built-in function.
-                        // Give nullptr for self because noone looking at this frame will
+                        // Give nullptr for self because no one looking at this frame will
                         // attempt to bind to self (it's native code).
                         stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f_ast);
                         stack.top().thunks = thunks_copy;

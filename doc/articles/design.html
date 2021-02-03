@@ -124,7 +124,7 @@ title: Language Design
 
       <p>
         A common case of Jsonnet program is a program that is mostly JSON data, but has a few
-        occurences of Jsonnet constructs.  In this case, someone who knows JSON can maintain the
+        occurrences of Jsonnet constructs.  In this case, someone who knows JSON can maintain the
         file with no additional knowledge.
       </p>
 
@@ -462,7 +462,7 @@ local util2 = import "util2.jsonnet" { square(x):: x*x*x };
         The language is designed to be implementable via desugaring, i.e. there is a simple core
         language and the other constructs are translated down to this core language before
         interpretation.  This technique allows a language to have considerable expressive power,
-        while remaining easy to implement.  </p> <p> The string formating operator <code>%</code> is
+        while remaining easy to implement.  </p> <p> The string formatting operator <code>%</code> is
         defined to behave identically to the Python equivalent, and therefore very similarly to the
         C <tt>printf</tt> micro-language.  We decided it would be better to be compatible with an
         existing popular language wherever possible, and Python is often the language of choice for

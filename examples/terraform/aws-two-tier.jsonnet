@@ -89,7 +89,7 @@ local aws_amis = {
         // we specified
         ami: aws_amis[aws_region],
 
-        // The name of our SSH keypair you've created and downloaded
+        // The name of our SSH key pair you've created and downloaded
         // from the AWS console.
         //
         // https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:

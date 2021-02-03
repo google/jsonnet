@@ -4,7 +4,7 @@ local cmd = import '../cmd/cmd.libsonnet';
   // A Debian instance mixin that manages Flash and Uwsgi for the purposes of handling HTTP
   // requests.  This supports:
   // - Installation of the correct packages
-  // - Configuraton of uwsgi
+  // - Configuration of uwsgi
   // - Management of a python file that receives the request from uwsgi.
   // - Running the uwsgi daemon.
   DebianUwsgiFlask:: {

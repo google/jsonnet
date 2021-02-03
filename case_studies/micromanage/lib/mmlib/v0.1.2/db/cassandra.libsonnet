@@ -143,7 +143,7 @@ local service_google = import '../service/google.libsonnet';
     rootPassword:: error 'Cassandra Service must have field: rootPassword',
 
     // This is the name Cassandra uses to identify peers that form quorum on the same database.
-    // It can be overidden but this default seems reasonable.
+    // It can be overridden but this default seems reasonable.
     clusterName:: self.fullName,
 
     cassandraConf:: default_conf {

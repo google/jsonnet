@@ -24,7 +24,7 @@ std.assertEqual((import 'lib/A_20_func.libsonnet')(), 20) &&
 std.assertEqual((import 'lib/A_20_func.libsonnet')(), 20) &&
 // The block string is hard to test because the filename would include a terminating \n
 
-// Each import has its own environment, can't be overidden.
+// Each import has its own environment, can't be overridden.
 std.assertEqual(local A = 7; local lib = import 'lib/A_20.libsonnet'; lib, 20) &&
 std.assertEqual(local A = 7, lib = import 'lib/A_20.libsonnet'; lib, 20) &&
 

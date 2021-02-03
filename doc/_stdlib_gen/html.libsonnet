@@ -8,7 +8,7 @@
 // * comment – HTML comment
 // * doctype – HTML doctype (e.g. <!DOCTYPE html>)
 // * verbatim – verbatim HTML code,
-// * array – HTML parts seprated by whitespace
+// * array – HTML parts separated by whitespace
 // * spaceless – HTML parts concatenated without any separator.
 //
 // The library predefines functions for common elements, but
