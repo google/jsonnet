@@ -358,7 +358,7 @@ local html = import 'html.libsonnet';
               output: std.splitLimit('foo/bar', '/', 1),
             },
             {
-              input: @'std.splitLimit("/foo/", "/", 1)',
+              input: @'std.splitLimit("/foo/bar", "/", 1)',
               output: std.splitLimit('foo/bar', '/', 1),
             },
           ],
