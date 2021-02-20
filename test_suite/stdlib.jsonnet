@@ -1035,16 +1035,10 @@ std.assertEqual(std.parseJson('12'), 12) &&
 std.assertEqual(std.parseJson('12.123'), 12.123) &&
 std.assertEqual(std.parseJson('{"a": {"b": ["c", 42]}}'), { a: { b: ['c', 42] } }) &&
 
-# yaml-cpp will treat all yaml scalar values as strings (values are double-quoted)
-std.assertEqual(std.parseYaml('a:\n  b:\n  - c\n  - 42\n  - 1.0\n'), { a: { b: ['c', '42', '1.0'] } }) &&
-
-# ryml appears to handle scalar values as JSON scalars
 std.assertEqual(std.parseRapidYaml('a:\n  b:\n  - c\n  - 42\n  - 1.0\n'), { a: { b: ['c', 42, 1.0] } }) &&
 
 # YAML streams are not implemented yet (Multiple documents separated by ---).
-# Both yaml-cpp and Rapid YAML appear to support parsing YAML streams.
 # The individual documents will need to be parsed into JSON objects and added to a JSON array. Not implemented yet.
-# std.assertEqual(std.parseYaml('---\na: 1'), { a: 1}) &&
 # std.assertEqual(std.parseRapidYaml('---\na: 1'), { a: 1}) &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&

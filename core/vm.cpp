@@ -32,7 +32,6 @@ limitations under the License.
 #include "static_analysis.h"
 #include "string_utils.h"
 #include "vm.h"
-#include "yaml-cpp/yaml.h"
 
 /** Macro that dumps an error and aborts the program regardless of
  *  whether NDEBUG is defined. This should be used to mark codepaths
@@ -933,7 +932,6 @@ class Interpreter {
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
         builtins["join"] = &Interpreter::builtinJoin;
         builtins["parseJson"] = &Interpreter::builtinParseJson;
-        builtins["parseYaml"] = &Interpreter::builtinParseYaml;
         builtins["parseRapidYaml"] = &Interpreter::builtinParseRapidYaml;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
@@ -1588,27 +1586,6 @@ class Interpreter {
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         auto j = json::parse(value);
-
-        bool filled;
-
-        otherJsonToHeap(j, filled, scratch);
-
-        return nullptr;
-    }
-
-    const AST *builtinParseYaml(const LocationRange &loc, const std::vector<Value> &args)
-    {
-        validateBuiltinArgs(loc, "parseYaml", args, {Value::STRING});
-
-        std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
-
-        // YAML can be converted to JSON by double-quoting with yaml-cpp.
-        YAML::Node yaml = YAML::Load(value);
-        yaml.SetStyle(YAML::EmitterStyle::Flow);
-        YAML::Emitter emitter;
-        emitter << YAML::DoubleQuoted << yaml;
-
-        auto j = json::parse(emitter.c_str());
 
         bool filled;
 
