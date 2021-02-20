@@ -74,7 +74,7 @@ BuiltinDecl jsonnet_builtin_decl(unsigned long builtin)
         case 33: return {U"asciiUpper", {U"str"}};
         case 34: return {U"join", {U"sep", U"arr"}};
         case 35: return {U"parseJson", {U"str"}};
-        case 36: return {U"parseRapidYaml", {U"str"}};
+        case 36: return {U"parseYaml", {U"str"}};
         case 37: return {U"encodeUTF8", {U"str"}};
         case 38: return {U"decodeUTF8", {U"arr"}};
         default:

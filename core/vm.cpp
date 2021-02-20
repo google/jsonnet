@@ -932,7 +932,7 @@ class Interpreter {
         builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
         builtins["join"] = &Interpreter::builtinJoin;
         builtins["parseJson"] = &Interpreter::builtinParseJson;
-        builtins["parseRapidYaml"] = &Interpreter::builtinParseRapidYaml;
+        builtins["parseYaml"] = &Interpreter::builtinParseYaml;
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
 
@@ -1594,9 +1594,9 @@ class Interpreter {
         return nullptr;
     }
 
-    const AST *builtinParseRapidYaml(const LocationRange &loc, const std::vector<Value> &args)
+    const AST *builtinParseYaml(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "parseRapidYaml", args, {Value::STRING});
+        validateBuiltinArgs(loc, "parseYaml", args, {Value::STRING});
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
