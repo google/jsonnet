@@ -1059,6 +1059,13 @@ std.assertEqual(
      - 42
      - 1.0
   |||), [{ a: { b: ['c', 42, 1.0]}, x: { y: ['z', 42, 1.0]}}]) &&
+std.assertEqual(
+  std.parseYaml(
+  |||
+   - 1
+   - 2
+   - 3
+  |||), [1, 2, 3]) &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
 std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
