@@ -1035,6 +1035,8 @@ std.assertEqual(std.parseJson('12'), 12) &&
 std.assertEqual(std.parseJson('12.123'), 12.123) &&
 std.assertEqual(std.parseJson('{"a": {"b": ["c", 42]}}'), { a: { b: ['c', 42] } }) &&
 
+std.assertEqual(std.parseYaml('{}'), {}) &&
+std.assertEqual(std.parseYaml('[]'), []) &&
 std.assertEqual(
   std.parseYaml(
   |||

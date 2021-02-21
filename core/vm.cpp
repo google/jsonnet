@@ -1643,6 +1643,7 @@ class Interpreter {
 
     const json yamlDocStrToJson(const std::string& s) {
         ryml::Tree tree = ryml::parse(c4::to_csubstr(s));
+        tree.resolve();
         std::ostringstream jsonStream;
         jsonStream << ryml::as_json(tree);
         return json::parse(jsonStream.str());
