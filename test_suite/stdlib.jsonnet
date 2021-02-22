@@ -1040,27 +1040,28 @@ std.assertEqual(std.parseYaml('[]'), []) &&
 std.assertEqual(
   std.parseYaml(
   |||
-   a:
-     b:
-     - c
+   foo:
+     bar:
+     - true
      - 42
      - 1.0
-  |||), { a: { b: ['c', 42, 1.0] } }) &&
+  |||), {"foo": {"bar": [true, 42, 1]}}) &&
 std.assertEqual(
   std.parseYaml(
   |||
    ---
-   a:
-     b:
-     - c
+   foo:
+     bar:
+     - true
      - 42
      - 1.0
-   x:
-     y:
-     - z
+   ---
+   wibble:
+     wobble:
+     - true
      - 42
      - 1.0
-  |||), [{ a: { b: ['c', 42, 1.0]}, x: { y: ['z', 42, 1.0]}}]) &&
+  |||), [{"foo": {"bar": [true, 42, 1]}}, {"wibble": {"wobble": [true, 42, 1]}}]) &&
 std.assertEqual(
   std.parseYaml(
   |||
