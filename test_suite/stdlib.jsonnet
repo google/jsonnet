@@ -1039,36 +1039,42 @@ std.assertEqual(std.parseYaml('{}'), {}) &&
 std.assertEqual(std.parseYaml('[]'), []) &&
 std.assertEqual(
   std.parseYaml(
-  |||
-   foo:
-     bar:
-     - true
-     - 42
-     - 1.0
-  |||), {"foo": {"bar": [true, 42, 1]}}) &&
+    |||
+      foo:
+        bar:
+        - true
+        - 42
+        - 1.0
+    |||
+  ), { foo: { bar: [true, 42, 1] } }
+) &&
 std.assertEqual(
   std.parseYaml(
-  |||
-   ---
-   foo:
-     bar:
-     - true
-     - 42
-     - 1.0
-   ---
-   wibble:
-     wobble:
-     - true
-     - 42
-     - 1.0
-  |||), [{"foo": {"bar": [true, 42, 1]}}, {"wibble": {"wobble": [true, 42, 1]}}]) &&
+    |||
+      ---
+      foo:
+        bar:
+        - true
+        - 42
+        - 1.0
+      ---
+      wibble:
+        wobble:
+        - true
+        - 42
+        - 1.0
+    |||
+  ), [{ foo: { bar: [true, 42, 1] } }, { wibble: { wobble: [true, 42, 1] } }]
+) &&
 std.assertEqual(
   std.parseYaml(
-  |||
-   - 1
-   - 2
-   - 3
-  |||), [1, 2, 3]) &&
+    |||
+      - 1
+      - 2
+      - 3
+    |||
+  ), [1, 2, 3]
+) &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
 std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
