@@ -1600,7 +1600,7 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
-        ryml::Tree tree = ryml::parse(c4::to_csubstr(value));
+        ryml::Tree tree = treeFromString(value);
 
         json j;
         if (tree.is_stream(tree.root_id())) {
@@ -1610,9 +1610,11 @@ class Interpreter {
             std::vector<std::string> v = split(ss.str(), "---\n");
 
             // Convert yaml to json and push onto json array
+            ryml::Tree doc;
             for (int i = 0; i < v.size(); ++i) {
                 if (!v[i].empty()) {
-                    j.push_back(yamlDocStrToJson(v[i]));
+                    doc = treeFromString(v[i]);
+                    j.push_back(yamlTreeToJson(doc));
                 }
             }
         } else {
@@ -1624,6 +1626,10 @@ class Interpreter {
         otherJsonToHeap(j, filled, scratch);
 
         return nullptr;
+    }
+
+    const ryml::Tree treeFromString(const std::string& s) {
+        return ryml::parse(c4::to_csubstr(s));
     }
 
     const std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
@@ -1639,14 +1645,6 @@ class Interpreter {
 
         res.push_back(s.substr(pos_start));
         return res;
-    }
-
-    const json yamlDocStrToJson(const std::string& s) {
-        ryml::Tree tree = ryml::parse(c4::to_csubstr(s));
-        tree.resolve();
-        std::ostringstream jsonStream;
-        jsonStream << ryml::as_json(tree);
-        return json::parse(jsonStream.str());
     }
 
     const json yamlTreeToJson(const ryml::Tree& tree) {
