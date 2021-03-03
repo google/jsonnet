@@ -39,7 +39,7 @@ std::string jsonnet_unparse_number(double v)
     } else {
         // See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
         // Theorem 15
-        // http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
+        // https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
         ss << std::setprecision(17);
         ss << v;
     }

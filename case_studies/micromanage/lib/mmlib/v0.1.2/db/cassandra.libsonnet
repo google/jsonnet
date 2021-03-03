@@ -170,7 +170,7 @@ local service_google = import '../service/google.libsonnet';
       StandardRootImage+: {
         aptKeyUrls+: ['https://www.apache.org/dist/cassandra/KEYS'],
         aptRepoLines+: {
-          cassandra: 'deb http://www.apache.org/dist/cassandra/debian 311x main',
+          cassandra: 'deb https://www.apache.org/dist/cassandra/debian 311x main',
         },
         aptPackages+: ['cassandra'],
 

@@ -1,6 +1,6 @@
 // Connect to machines using the username "ubuntu" and -i yourkey.pem
 
-// Source: http://cloud-images.ubuntu.com/locator/ec2/
+// Source: https://cloud-images.ubuntu.com/locator/ec2/
 // There is a URL to get a JSON dump but I've lost it.
 
 local regions(amis) = std.set([a[0] for a in amis]);

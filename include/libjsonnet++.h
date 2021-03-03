@@ -33,7 +33,7 @@ class Jsonnet {
     ~Jsonnet();
 
     /// Return the version string of the Jsonnet interpreter.  Conforms to
-    /// semantic versioning http://semver.org/. If this does not match
+    /// semantic versioning https://semver.org/. If this does not match
     /// LIB_JSONNET_VERSION then there is a mismatch between header and compiled
     /// library.
     static std::string version();

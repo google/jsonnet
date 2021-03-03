@@ -34,7 +34,7 @@ limitations under the License.
 #define LIB_JSONNET_VERSION "v0.17.0"
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
- * http://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between
+ * https://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between
  * header and compiled library.
  */
 const char *jsonnet_version(void);

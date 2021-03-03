@@ -137,7 +137,7 @@ local packer = import "packer.libsonnet";
 
         aptKeyUrls+: ["https://www.apache.org/dist/cassandra/KEYS"],
         aptRepoLines+: {
-            cassandra: "deb http://www.apache.org/dist/cassandra/debian 21x main",
+            cassandra: "deb https://www.apache.org/dist/cassandra/debian 21x main",
         },
         aptPackages+: ["cassandra"],
 
