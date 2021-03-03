@@ -226,7 +226,7 @@ makefile: https://github.com/google/jsonnet/blob/master/case_studies/fractal/Mak
       <p>
         In Jsonnet we use JSON as the canonical data model and convert to other formats as needed.
         An example of this is the uWSGI configuration, an <a
-        href="http://en.wikipedia.org/wiki/INI_file">INI</a> file, which is specified in Jsonnet
+        href="https://en.wikipedia.org/wiki/INI_file">INI</a> file, which is specified in Jsonnet
         under the <code>uwsgiConf</code> field in <code>GcpDebianNginxUwsgiFlaskImage</code>.  The
         JSON version is converted to INI by the call to <code>std.manifestIni</code> (documented <a
         href="/docs/stdlib.html">here</a>) in the provisioner immediately below it.  Representing
@@ -317,7 +317,7 @@ makefile: https://github.com/google/jsonnet/blob/master/case_studies/fractal/Mak
         href="https://github.com/hashicorp/hcl">HCL</a> (a more concise form of JSON).  This
         provides a data structure that specifies the resources required, but the model also has a
         few computational features:  Firstly, the structure has 'variables' which can be resolved by
-        <a href="http://en.wikipedia.org/wiki/String_interpolation">string interpolation</a> within
+        <a href="https://en.wikipedia.org/wiki/String_interpolation">string interpolation</a> within
         the resources.  Also, all resources are also extended with a <tt>count</tt> parameter for
         creating <i>n</i> replicas of that resource, and finally there is some support for importing
         'modules', i.e., another Terraform configuration of resources (perhaps written by a third

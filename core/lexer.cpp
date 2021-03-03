@@ -211,7 +211,7 @@ Token::Kind lex_get_keyword_kind(const std::string &identifier)
 std::string lex_number(const char *&c, const std::string &filename, const Location &begin)
 {
     // This function should be understood with reference to the linked image:
-    // http://www.json.org/number.gif
+    // https://www.json.org/img/number.png
 
     // Note, we deviate from the json.org documentation as follows:
     // There is no reason to lex negative numbers as atomic tokens, it is better to parse them

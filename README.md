@@ -3,11 +3,11 @@
 [![Build Status](https://travis-ci.org/google/jsonnet.svg?branch=master)](https://travis-ci.org/google/jsonnet)
 
 For an introduction to Jsonnet and documentation,
-[visit our website](http://jsonnet.org).
+[visit our website](https://jsonnet.org).
 
 This respositiory contains the original implementation. You can also try [go-jsonnet](https://github.com/google/go-jsonnet), a newer implementation which in some cases is orders of magnitude faster.
 
-Visit our [discussion forum](https://groups.google.com/forum/#!forum/jsonnet).
+Visit our [discussion forum](https://groups.google.com/g/jsonnet).
 
 ## Packages
 
@@ -112,7 +112,7 @@ cmake --build build --target run_tests
 
 ## Contributing
 
-See the [contributing page](http://jsonnet.org/contributing.html) on our website.
+See the [contributing page](https://jsonnet.org/learning/community.html#license) on our website.
 
 
 ## Developing Jsonnet

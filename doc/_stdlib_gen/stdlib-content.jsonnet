@@ -584,7 +584,7 @@ local html = import 'html.libsonnet';
           params: ['ini'],
           description: [
             html.p({}, |||
-                Convert the given structure to a string in <a href="http://en.wikipedia.org/wiki/INI_file">INI format</a>. This
+                Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
                 allows using Jsonnet's
                 object model to build a configuration to be consumed by an application expecting an INI
                 file. The data is in the form of a set of sections, each containing a key/value mapping.
