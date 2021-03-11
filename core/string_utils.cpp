@@ -60,6 +60,50 @@ UString jsonnet_string_escape(const UString &str, bool single)
     return ss.str();
 }
 
+unsigned long jsonnet_string_parse_unicode(const LocationRange &loc, const char32_t *c)
+{
+    unsigned long codepoint = 0;
+    // Expect 4 hex digits.
+    for (unsigned i = 0; i < 4; ++i) {
+        auto x = (unsigned char)(c[i]);
+        unsigned digit;
+        if (x == '\0') {
+            auto msg = "Truncated unicode escape sequence in string literal.";
+            throw StaticError(loc, msg);
+        } else if (x >= '0' && x <= '9') {
+            digit = x - '0';
+        } else if (x >= 'a' && x <= 'f') {
+            digit = x - 'a' + 10;
+        } else if (x >= 'A' && x <= 'F') {
+            digit = x - 'A' + 10;
+        } else {
+            std::stringstream ss;
+            ss << "Malformed unicode escape character, "
+               << "should be hex: '" << x << "'";
+            throw StaticError(loc, ss.str());
+        }
+        codepoint *= 16;
+        codepoint += digit;
+    }
+    return codepoint;
+}
+
+bool is_bmp_codepoint(const unsigned long codepoint)
+{
+    return codepoint < 0xd800 || (codepoint >= 0xe000 && codepoint < 0x10000);
+}
+
+char32_t decode_utf16_surrogates(const LocationRange &loc, const unsigned long high, const unsigned long low)
+{
+    if (high >= 0xd800 && high < 0xdc00 && low >= 0xdc00 && low < 0xe000) {
+        return 0x10000 + ((high & 0x03ff) << 10) + (low & 0x03ff);
+    } else {
+        std::stringstream ss;
+        ss << "Invalid UTF-16 bytes";
+        throw StaticError(loc, ss.str());
+    }
+}
+
 UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
 {
     UString r;
@@ -87,35 +131,28 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
 
                     case 'u': {
                         ++c;  // Consume the 'u'.
-                        unsigned long codepoint = 0;
-                        // Expect 4 hex digits.
-                        for (unsigned i = 0; i < 4; ++i) {
-                            auto x = (unsigned char)(c[i]);
-                            unsigned digit;
-                            if (x == '\0') {
-                                auto msg = "Truncated unicode escape sequence in string literal.";
-                                throw StaticError(loc, msg);
-                            } else if (x >= '0' && x <= '9') {
-                                digit = x - '0';
-                            } else if (x >= 'a' && x <= 'f') {
-                                digit = x - 'a' + 10;
-                            } else if (x >= 'A' && x <= 'F') {
-                                digit = x - 'A' + 10;
-                            } else {
-                                std::stringstream ss;
-                                ss << "Malformed unicode escape character, "
-                                   << "should be hex: '" << x << "'";
-                                throw StaticError(loc, ss.str());
-                            }
-                            codepoint *= 16;
-                            codepoint += digit;
-                        }
-
-                        r += codepoint;
+                        unsigned long codepoint = jsonnet_string_parse_unicode(loc, c);
 
                         // Leave us on the last char, ready for the ++c at
                         // the outer for loop.
                         c += 3;
+                        if (!is_bmp_codepoint(codepoint)) {
+                           if (*(++c) != '\\') {
+                                std::stringstream ss;
+                                ss << "Invalid non-BMP Unicode escape in string literal";
+                                throw StaticError(loc, ss.str());
+                           }
+                           if (*(++c) != 'u') {
+                                std::stringstream ss;
+                                ss << "Invalid non-BMP Unicode escape in string literal";
+                                throw StaticError(loc, ss.str());
+                           }
+                           ++c;
+                           unsigned long codepoint2 = jsonnet_string_parse_unicode(loc, c);
+                           c += 3;
+                           codepoint = decode_utf16_surrogates(loc, codepoint, codepoint2);
+                       }
+                       r += codepoint;
                     } break;
 
                     case '\0': {
