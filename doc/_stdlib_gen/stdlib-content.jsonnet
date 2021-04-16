@@ -759,7 +759,7 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'manifestYamlDoc',
-          params: ['value', 'indent_array_in_object=false'],
+          params: ['value', 'indent_array_in_object=false', 'quote_keys=true'],
           description: [
               html.p({}, |||
                   Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
@@ -800,11 +800,15 @@ local html = import 'html.libsonnet';
                 The <code>indent_array_in_object</code> param adds additional indentation which some people
                 may find easier to read.
               |||),
+              html.p({}, |||
+                The <code>quote_keys</code> parameter controls whether YAML identifiers are always quoted
+                or only when necessary.
+              |||),
           ],
         },
         {
           name: 'manifestYamlStream',
-          params: ['value', 'indent_array_in_object=false', 'c_document_end=false'],
+          params: ['value', 'indent_array_in_object=false', 'c_document_end=false', 'quote_keys=true'],
           description: [
             html.p({}, |||
                 Given an array of values, emit a YAML "stream", which is a sequence of documents separated
@@ -833,7 +837,8 @@ local html = import 'html.libsonnet';
             |||),
 
             html.p({}, |||
-              The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.
+              The <code>indent_array_in_object</code> and <code>quote_keys</code> params are the
+              same as in <code>manifestYamlDoc</code>.
             |||),
             html.p({}, |||
               The <code>c_document_end</code> param adds the optional terminating <code>...</code>.

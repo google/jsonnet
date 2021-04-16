@@ -1041,7 +1041,69 @@ limitations under the License.
         std.join('', lines);
     aux(value, [], ''),
 
-  manifestYamlDoc(value, indent_array_in_object=false)::
+  manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)::
+    local isReserved(key) =
+      // NOTE: this function returns some false positives according to the
+      // spec, such as 'yEs', 'nuLL', etc.
+      local reserved = [
+        // boolean
+        'true', 'false', 'yes', 'no', 'on', 'off', 'y', 'n',
+        // numerical & invalid
+        '.nan', '-.inf', '+.inf', '.inf', 'null', '-', '---', '',
+      ];
+      local bad = [word for word in reserved if word == std.asciiLower(key)];
+      if std.length(bad) > 0 then
+        true
+      else false;
+    local onlyChars(charSet, strSet) =
+      if std.length(std.setInter(charSet, strSet)) == std.length(strSet) then
+        true
+      else false;
+    local bareSafe(key) =
+      local letters = std.set(std.stringChars('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-/'));
+      local digits = std.set(std.stringChars('0123456789'));
+      // '_' is ignored, 'b' is for binary representation
+      local intChars = std.set(digits + std.stringChars('b_-'));
+      local hexChars = std.set(digits + std.stringChars('abcdefx_-'));
+      local floatChars = std.set(digits + std.stringChars('e._-'));
+      local dateChars = std.set(digits + std.stringChars('-'));
+      local allGood = std.set(letters + floatChars);
+      local keyLc = std.asciiLower(key);
+      local keyChars = std.stringChars(key);
+      local keySet = std.set(keyChars);
+      local keySetLc = std.set(std.stringChars(keyLc));
+      // Is reserved word
+      if isReserved(key) then
+        false
+      // Is a date
+      else if onlyChars(dateChars, keySet) 
+          && std.length(std.findSubstr('-', key)) == 2 then
+        false
+      // Consists of only letters
+      else if onlyChars(letters, keySet) then
+        // Since this isn't a reserved word or a date & is only letters,
+        // it is safe
+        true
+      // Unsafe characters
+      else if ! onlyChars(allGood, keySet) then
+        false
+      // Only intChars (max 1 hyphen for negative numbers)
+      else if onlyChars(intChars, keySetLc) && std.length(std.findSubstr('-', key)) < 2 then
+        false
+      // Float (only intChars and 1 period, max 2 hyphen for negative & negative exponent)
+      else if onlyChars(floatChars, keySetLc)
+          && std.length(std.findSubstr('.', key)) == 1
+          && std.length(std.findSubstr('-', key)) < 3 
+          && std.length(std.findSubstr('e', keyLc)) <= 1 then
+        false
+      // Hex
+      else if onlyChars(hexChars, keySetLc) 
+          && std.length(std.findSubstr('-', key)) <= 1 then
+        false
+      // Passes all above tests
+      else true;
+    local escapeKeyYaml(key) =
+      if bareSafe(key) then key else std.escapeStringJson(key);
     local aux(v, path, cindent) =
       if v == true then
         'true'
@@ -1117,19 +1179,19 @@ limitations under the License.
               space: ' ',
             };
           local lines = [
-            std.escapeStringJson(k) + ':' + param.space + aux(v[k], path + [k], param.new_indent)
+            (if quote_keys then std.escapeStringJson(k) else escapeKeyYaml(k)) + ':' + param.space + aux(v[k], path + [k], param.new_indent)
             for k in std.objectFields(v)
             for param in [params(v[k])]
           ];
           std.join('\n' + cindent, lines);
     aux(value, [], ''),
 
-  manifestYamlStream(value, indent_array_in_object=false, c_document_end=true)::
+  manifestYamlStream(value, indent_array_in_object=false, c_document_end=true, quote_keys=true)::
     if !std.isArray(value) then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
       '---\n' + std.join(
-        '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object) for e in value]
+        '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object, quote_keys) for e in value]
       ) + if c_document_end then '\n...\n' else '\n',
 
 
