@@ -1,6 +1,8 @@
 find_program(BASH bash)
 if (BASH STREQUAL "BASH-NOTFOUND")
     message(WARNING "Bash not found, can't run regression tests.")
+elseif(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
+    message(WARNING "Regression tests for Windows are not supported.")
 else()
     # Note: this test relies on the JSONNET_BIN variable, which
     # is set in the root CMakeLists.txt.

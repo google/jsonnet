@@ -33,17 +33,23 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 
 # Compiler flags.
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
+if ((${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
         ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    AND
+	(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux"
+	    OR ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin"))
     set(OPT "-O3")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 -O3 ${OPT}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 ${OPT}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++11 -fPIC ${OPT}")
+    set(CMAKE_CXX_STANDARD 11)
+elseif(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows" AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -std=c99 ${OPT}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -std=c++14 ${OPT}")
+    set(CMAKE_CXX_STANDARD 14)
 else()
-    # TODO: Windows support.
     message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
 
 
 # Include external googletest project. This runs a CMake sub-script
