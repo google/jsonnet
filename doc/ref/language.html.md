@@ -468,6 +468,43 @@ The value of a field is irrelevant for determining its visibility.
 
 It is possible to check field's visibility using `std.objectHas` and `std.objectHasAll` standard library functions. The first checks if an object has a visible field with a specified name and the second checks if an object has a field regardless of its visibility.
 
+#### Nested fields
+
+Nested fields are overwritten by default, taking the inherited value. But these will be augmented if the inherithed field is specified with `+:`, `+::` or `+:::`, thus allowing to set the visibility and combination strategy.
+This field separator is relevant for objects, with new fields added and existing ones overriden; and arrays, which will be concatenated.
+
+Example:
+```
+{
+  a: ['a'],
+  b: ['c'],
+  c: { a: 'a', c: 'c' },
+} +
+{
+  a: ['a2'],
+  b+: ['c2'],
+  c+: { a: 'a2', b: 'b2' },
+}
+```
+resulting in:
+```
+{
+   "a": [
+      "a2"
+   ],
+   "b": [
+      "c",
+      "c2"
+   ],
+   "c": {
+      "a": "a2",
+      "b": "b2",
+      "c": "c"
+   }
+}
+```
+
+
 #### Object Equality
 
 Two objects are equal when their respective *visible* fields are equal. Hidden fields are ignored, which allows ignoring the "helper" parts of the object when evaluating equality.
