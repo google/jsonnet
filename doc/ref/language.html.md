@@ -470,7 +470,7 @@ It is possible to check field's visibility using `std.objectHas` and `std.object
 
 #### Nested Field Inheritance
 
-By default nested objects are completely replaced. For example:
+By default nested objects are completely replaced when overriden. For example:
 ```
 {
   nested_object: {
