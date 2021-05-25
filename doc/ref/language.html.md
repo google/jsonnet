@@ -468,6 +468,77 @@ The value of a field is irrelevant for determining its visibility.
 
 It is possible to check field's visibility using `std.objectHas` and `std.objectHasAll` standard library functions. The first checks if an object has a visible field with a specified name and the second checks if an object has a field regardless of its visibility.
 
+#### Nested Field Inheritance
+
+By default nested objects are completely replaced when overriden. For example:
+```
+{
+  nested_object: {
+    field_of_the_nested_object: "will dissappear"
+  }
+  not_touched: "still there",
+}
++
+{
+  nested_object: {
+    new_field: "will be there"
+  }
+}
+```
+results in:
+```
+{
+  "nested_object": {
+    "new_field": "will be there"
+  },
+  "not_touched": "still there"
+}
+```
+
+It is possible to explicitly make the new field inherit from the old field instead by using `+:`, `+::` or `+:::` as the field separator in the right-hand side object.
+
+Example:
+```
+{
+  a: ['a'],
+  b: ['c'],
+  c: { a: 'a', c: 'c' },
+} +
+{
+  a: ['a2'],
+  b+: ['c2'],
+  c+: { a: 'a2', b: 'b2' },
+  d+: { d: 'd' },
+}
+```
+resulting in:
+```
+{
+  "a": [
+    "a2"
+  ],
+  "b": [
+    "c",
+    "c2"
+  ],
+  "c": {
+    "a": "a2",
+    "b": "b2",
+    "c": "c"
+  },
+  "d": {
+    "d": "d"
+  }
+}
+```
+
+The field separators `+:`, `+::`, `+:::` are relevant for nested objects (which will be inherited) and arrays (which will be concatenated). The number of colons determines the visibility of the field.
+
+It is not an error to have `+:` without a matching field on the left hand side. In such cases the right hand side field is used directly. E.g. both `{ foo +: { bar: "baz" } }` and `{} + { foo +: { bar: "baz" } }` evaluate to `{ foo: { bar: "baz" } }`.
+
+In all cases, these field separators are just syntax sugar and the same results can be achieved with `super`. More precisely `{ a +: b }` is equivalent to `{ a: if "a" in super then super.a + b else b }` (and similarly `+::` and `+:::`). 
+
+
 #### Object Equality
 
 Two objects are equal when their respective *visible* fields are equal. Hidden fields are ignored, which allows ignoring the "helper" parts of the object when evaluating equality.
