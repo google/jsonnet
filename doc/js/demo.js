@@ -440,7 +440,7 @@ function yaml_conv_demo(input_id, textarea_id, filename, output_id) {
   let process_func = function(
         main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
     let content = input_files_content[main_file];
-    let parsed_yaml = jsyaml.load(content);
+    let parsed_yaml = jsyaml.loadAll(content);
     let yaml_json = JSON.stringify(parsed_yaml, null, 2);
     let jsonnet_str = jsonnet_fmt_snippet_wrapped(filename, yaml_json)
     jsonnet_str = jsonnet_str.replace(/\n$/, '');
