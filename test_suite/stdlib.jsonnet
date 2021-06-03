@@ -614,6 +614,12 @@ local bare_yaml_quoted = {
   '2002-12-14': 'date',
 };
 local bare_yaml_unquoted = {
+  '0X_0a_74_ae': 'BARE_KEY',
+  '__-0X_0a_74_ae': 'BARE_KEY',
+  '-0B1010_0111_0100_1010_1110': 'BARE_KEY',
+  '__-0B1010_0111_0100_1010_1110': 'BARE_KEY',
+  x: 'BARE_KEY',
+  b: 'BARE_KEY',
   just_letters_underscores: 'BARE_KEY',
   'just-letters-dashes': 'BARE_KEY',
   'jsonnet.org/k8s-label-like': 'BARE_KEY',
@@ -1030,6 +1036,7 @@ std.assertEqual(
     "---": "triple dash key"
     "-.inf": "negative infinity"
     "-0.1_0_0": "negative float"
+    -0B1010_0111_0100_1010_1110: "BARE_KEY"
     "-0b1010_0111_0100_1010_1110": "binary"
     "-0x_0A_74_AE": "negative hexadecimal"
     "-190:20:30": "negative sexagesimal"
@@ -1043,6 +1050,7 @@ std.assertEqual(
     ".NaN": "not a number"
     ".inf": "positive infinity"
     "02472256": "octal"
+    0X_0a_74_ae: "BARE_KEY"
     "0b1010_0111_0100_1010_1110": "binary"
     "0x_0A_74_AE": "hexadecimal"
     1-234-567-8901: "BARE_KEY"
@@ -1067,6 +1075,9 @@ std.assertEqual(
     "On": "boolean true"
     "True": "boolean true"
     "Yes": "boolean true"
+    __-0B1010_0111_0100_1010_1110: "BARE_KEY"
+    __-0X_0a_74_ae: "BARE_KEY"
+    b: "BARE_KEY"
     jsonnet.org/k8s-label-like: "BARE_KEY"
     just-letters-dashes: "BARE_KEY"
     just_letters_underscores: "BARE_KEY"
@@ -1075,6 +1086,7 @@ std.assertEqual(
     "off": "boolean false"
     "on": "boolean true"
     "true": "boolean true"
+    x: "BARE_KEY"
     "y": "boolean true"
     "yes": "boolean true"
     "~": "null key"
@@ -1136,11 +1148,17 @@ std.assertEqual(
     "yes": "boolean true"
     "~": "null key"
     ---
+    -0B1010_0111_0100_1010_1110: "BARE_KEY"
+    0X_0a_74_ae: "BARE_KEY"
     1-234-567-8901: "BARE_KEY"
     192.168.0.1: "BARE_KEY"
+    __-0B1010_0111_0100_1010_1110: "BARE_KEY"
+    __-0X_0a_74_ae: "BARE_KEY"
+    b: "BARE_KEY"
     jsonnet.org/k8s-label-like: "BARE_KEY"
     just-letters-dashes: "BARE_KEY"
     just_letters_underscores: "BARE_KEY"
+    x: "BARE_KEY"
     ...
   |||
 ) &&
