@@ -343,7 +343,7 @@ class Stack {
      */
     virtual void dump(void)
     {
-        for (unsigned i = 0; i < stack.size(); ++i) {
+        for (std::size_t i = 0; i < stack.size(); ++i) {
             std::cout << "stack[" << i << "] = " << stack[i].location << " (" << stack[i].kind
                       << ")" << std::endl;
         }
@@ -970,7 +970,7 @@ class Interpreter {
                              const std::vector<Value> &args, const std::vector<Value::Type> params)
     {
         if (args.size() == params.size()) {
-            for (unsigned i = 0; i < args.size(); ++i) {
+            for (std::size_t i = 0; i < args.size(); ++i) {
                 if (args[i].t != params[i])
                     goto bad;
             }
@@ -1611,7 +1611,7 @@ class Interpreter {
 
             // Convert yaml to json and push onto json array
             ryml::Tree doc;
-            for (int i = 0; i < v.size(); ++i) {
+            for (std::size_t i = 0; i < v.size(); ++i) {
                 if (!v[i].empty()) {
                     doc = treeFromString(v[i]);
                     j.push_back(yamlTreeToJson(doc));
@@ -2214,7 +2214,7 @@ class Interpreter {
                     std::vector<HeapThunk *> positional_args;
                     BindingFrame args;
                     bool got_named = false;
-                    for (unsigned i = 0; i < ast.args.size(); ++i) {
+                    for (std::size_t i = 0; i < ast.args.size(); ++i) {
                         const auto &arg = ast.args[i];
 
                         const Identifier *name;
