@@ -792,7 +792,7 @@ title: Standard Library
         Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
       </p>
       <p>
-        Example: <code>std.splitLimit("/foo/", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
+        Example: <code>std.splitLimit("/foo/bar", "/", 1)</code> yields <code>[ "", "foo/bar" ]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1415,7 +1415,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestYamlDoc">
-        std.manifestYamlDoc(value, indent_array_in_object=false)
+        std.manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1459,6 +1459,10 @@ e = {"f1": False, "f2": 42}</pre>
         The <code>indent_array_in_object</code> param adds additional indentation which some people
         may find easier to read.
       </p>
+      <p>
+        The <code>quote_keys</code> parameter controls whether YAML identifiers are always quoted
+        or only when necessary.
+      </p>
       
     </div>
     <div style="clear: both"></div>
@@ -1469,7 +1473,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestYamlStream">
-        std.manifestYamlStream(value, indent_array_in_object=false, c_document_end=false)
+        std.manifestYamlStream(value, indent_array_in_object=false, c_document_end=false, quote_keys=true)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1497,7 +1501,8 @@ e = {"f1": False, "f2": 42}</pre>
 []
 ...</pre>
       <p>
-        The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.
+        The <code>indent_array_in_object</code> and <code>quote_keys</code> params are the
+        same as in <code>manifestYamlDoc</code>.
       </p>
       <p>
         The <code>c_document_end</code> param adds the optional terminating <code>...</code>.

@@ -1041,7 +1041,122 @@ limitations under the License.
         std.join('', lines);
     aux(value, [], ''),
 
-  manifestYamlDoc(value, indent_array_in_object=false)::
+  manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)::
+    local onlyChars(charSet, strSet) =
+      if std.length(std.setInter(charSet, strSet)) == std.length(strSet) then
+        true
+      else false;
+    local isReserved(key) =
+      // NOTE: These values are checked for case insensitively.
+      // While this approach results in some false positives, it eliminates
+      // the risk of missing a permutation.
+      local reserved = [
+        // Boolean types taken from https://yaml.org/type/bool.html
+        'true', 'false', 'yes', 'no', 'on', 'off', 'y', 'n',
+        // Numerical words taken from https://yaml.org/type/float.html
+        '.nan', '-.inf', '+.inf', '.inf', 'null', 
+        // Invalid keys that contain no invalid characters
+        '-', '---', '',
+      ];
+      local bad = [word for word in reserved if word == std.asciiLower(key)];
+      if std.length(bad) > 0 then
+        true
+      else false;
+    local typeMatch(m_key, type) =
+      // Look for positive or negative numerical types (ex: 0x)
+      if std.substr(m_key, 0, 2) == type || std.substr(m_key, 0, 3) == '-' + type then
+        true
+      else false;
+    local bareSafe(key) =
+      /*
+      For a key to be considered safe to emit without quotes, the following must be true
+        - All characters must match [a-zA-Z0-9_/\-]
+        - Not match the integer format defined in https://yaml.org/type/int.html
+        - Not match the float format defined in https://yaml.org/type/float.html
+        - Not match the timestamp format defined in https://yaml.org/type/timestamp.html
+        - Not match the boolean format defined in https://yaml.org/type/bool.html
+        - Not match the null format defined in https://yaml.org/type/null.html
+        - Not match (ignoring case) any reserved words which pass the above tests.
+          Reserved words are defined in isReserved() above.
+
+      Since the remaining YAML types require characters outside the set chosen as valid
+      for the elimination of quotes from the YAML output, the remaining types listed at
+      https://yaml.org/type/ are by default always quoted.
+      */
+      local letters = std.set(std.stringChars('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-/'));
+      local digits = std.set(std.stringChars('0123456789'));
+      local intChars = std.set(digits + std.stringChars('_-'));
+      local binChars = std.set(intChars + std.stringChars('b'));
+      local hexChars = std.set(digits + std.stringChars('abcdefx_-'));
+      local floatChars = std.set(digits + std.stringChars('e._-'));
+      local dateChars = std.set(digits + std.stringChars('-'));
+      local safeChars = std.set(letters + floatChars);
+      local keyLc = std.asciiLower(key);
+      local keyChars = std.stringChars(key);
+      local keySet = std.set(keyChars);
+      local keySetLc = std.set(std.stringChars(keyLc));
+      // Check for unsafe characters
+      if ! onlyChars(safeChars, keySet) then
+        false
+      // Check for reserved words
+      else if isReserved(key) then
+        false
+      /* Check for timestamp values.  Since spaces and colons are already forbidden,
+         all that could potentially pass is the standard date format (ex MM-DD-YYYY, YYYY-DD-MM, etc).
+         This check is even more conservative: Keys that meet all of the following:
+           - all characters match [0-9\-]
+           - has exactly 2 dashes
+         are considered dates.
+      */
+      else if onlyChars(dateChars, keySet) 
+          && std.length(std.findSubstr('-', key)) == 2 then
+        false
+      /* Check for integers.  Keys that meet all of the following:
+           - all characters match [0-9_\-]
+           - has at most 1 dash
+         are considered integers.
+      */
+      else if onlyChars(intChars, keySetLc)
+          && std.length(std.findSubstr('-', key)) < 2 then
+        false
+      /* Check for binary integers.  Keys that meet all of the following:
+           - all characters match [0-9b_\-]
+           - has at least 3 characters
+           - starts with (-)0b
+         are considered binary integers.
+      */
+      else if onlyChars(binChars, keySetLc)
+          && std.length(key) > 2
+          && typeMatch(key, '0b') then
+        false
+      /* Check for floats. Keys that meet all of the following:
+           - all characters match [0-9e._\-]
+           - has at most a single period
+           - has at most two dashes
+           - has at most 1 'e'
+         are considered floats.
+      */
+      else if onlyChars(floatChars, keySetLc)
+          && std.length(std.findSubstr('.', key)) == 1
+          && std.length(std.findSubstr('-', key)) < 3 
+          && std.length(std.findSubstr('e', keyLc)) < 2 then
+        false
+      /* Check for hexadecimals.  Keys that meet all of the following:
+           - all characters match [0-9a-fx_\-]
+           - has at most 1 dash
+           - has at least 3 characters
+           - starts with (-)0x
+         are considered hexadecimals.
+      */
+      else if onlyChars(hexChars, keySetLc) 
+          && std.length(std.findSubstr('-', key)) < 2
+          && std.length(keyChars) > 2
+          && typeMatch(key, '0x') then
+        false
+      // All checks pass. Key is safe for emission without quotes.
+      else true;
+    local escapeKeyYaml(key) =
+      if bareSafe(key) then key else std.escapeStringJson(key);
     local aux(v, path, cindent) =
       if v == true then
         'true'
@@ -1117,19 +1232,19 @@ limitations under the License.
               space: ' ',
             };
           local lines = [
-            std.escapeStringJson(k) + ':' + param.space + aux(v[k], path + [k], param.new_indent)
+            (if quote_keys then std.escapeStringJson(k) else escapeKeyYaml(k)) + ':' + param.space + aux(v[k], path + [k], param.new_indent)
             for k in std.objectFields(v)
             for param in [params(v[k])]
           ];
           std.join('\n' + cindent, lines);
     aux(value, [], ''),
 
-  manifestYamlStream(value, indent_array_in_object=false, c_document_end=true)::
+  manifestYamlStream(value, indent_array_in_object=false, c_document_end=true, quote_keys=true)::
     if !std.isArray(value) then
       error 'manifestYamlStream only takes arrays, got ' + std.type(value)
     else
       '---\n' + std.join(
-        '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object) for e in value]
+        '\n---\n', [std.manifestYamlDoc(e, indent_array_in_object, quote_keys) for e in value]
       ) + if c_document_end then '\n...\n' else '\n',
 
 
