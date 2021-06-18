@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 NUM_TESTS=0
 NUM_FILES=0

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -e
 
 JSONNET_BIN="${JSONNET_BIN:-./jsonnet}"

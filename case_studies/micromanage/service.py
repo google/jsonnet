@@ -86,7 +86,7 @@ class Service(object):
 
     def compileStartupScript(self, cmds, bootCmds):
         lines = []
-        lines.append('#!/bin/bash')
+        lines.append('#!/usr/bin/env bash')
         lines.append('if [ ! -r /micromanage_instance_initialized ] ; then')
         for cmd in cmds:
             lines += cmds_lib.compile_command_to_bash(cmd)
@@ -95,4 +95,4 @@ class Service(object):
         for cmd in bootCmds:
             lines += cmds_lib.compile_command_to_bash(cmd)
         return '\n'.join(lines)
-    
+

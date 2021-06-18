@@ -206,9 +206,9 @@ title: The Data Templating Language
               },
             },
           }),
-         
+
           'init.sh': |||
-            #!/bin/bash
+            #!/usr/bin/env bash
             mkdir -p %(dir)s
             touch %(dir)s/initialized
             chmod %(perm)d %(dir)s/initialized
@@ -241,13 +241,13 @@ title: The Data Templating Language
       </div>
       <textarea readonly class="selected code-json" id="example3-yaml-output">
         "cluster_name": "my-app"
-        "seed_provider": 
+        "seed_provider":
         - "class_name": "SimpleSeedProvider"
-          "parameters": 
+          "parameters":
           - "seeds": "127.0.0.1"
       </textarea>
       <textarea readonly class="unselected code-json" id="example3-sh-output">
-        #!/bin/bash
+        #!/usr/bin/env bash
         mkdir -p /var/www
         touch /var/www/initialized
         chmod 644 /var/www/initialized
@@ -314,5 +314,5 @@ title: The Data Templating Language
       </p class=center>
     </div>
     <div style="clear: both"></div>
-  </div>  
-</div>  
+  </div>
+</div>
