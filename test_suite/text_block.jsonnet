@@ -16,7 +16,7 @@ limitations under the License.
 
 // Golden
 local bash_golden = std.lines([
-  "#!/bin/bash",
+  "#!/usr/bin/env bash",
   "if [ $# -lt 1 ] ; then",
   "    echo \"No arguments!\"",
   "else",
@@ -26,7 +26,7 @@ local bash_golden = std.lines([
 
 // Soft tabs
 local bash_soft = |||
-  #!/bin/bash
+  #!/usr/bin/env bash
   if [ $# -lt 1 ] ; then
       echo "No arguments!"
   else
@@ -37,7 +37,7 @@ std.assertEqual(bash_golden, bash_soft) &&
 
 // Hard tabs
 local bash_hard = |||
-	#!/bin/bash
+	#!/usr/bin/env bash
 	if [ $# -lt 1 ] ; then
 	    echo "No arguments!"
 	else
@@ -48,7 +48,7 @@ std.assertEqual(bash_golden, bash_hard) &&
 
 // Mixed tabs
 local bash_mixed = |||
-  #!/bin/bash
+  #!/usr/bin/env bash
   if [ $# -lt 1 ] ; then
       echo "No arguments!"
   else
