@@ -15,6 +15,10 @@
 import yaml
 import json
 import sys
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.system("jsonnet -m ./ example.jsonnet")
 
 files = [
     'bigquery-controller',
@@ -65,6 +69,6 @@ for filename in files:
         with open(filename + '.new.yaml.out', 'w') as f:
             f.write(jsonstr(jsonnet_doc))
 
-        
+    os.remove(filename + '.new.yaml')
 
 
