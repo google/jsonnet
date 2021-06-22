@@ -11,6 +11,7 @@ option(BUILD_JSONNETFMT "Build jsonnetfmt command-line tool." ON)
 option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(BUILD_STATIC_LIBS "Build a static libjsonnet." ON)
 option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of the static one." OFF)
+option(BUILD_PYTHON3_SUPPORT "Build the python3 jsonnet library." OFF)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 set(GLOBAL_OUTPUT_PATH_SUFFIX "" CACHE STRING
@@ -137,4 +138,20 @@ if (BUILD_TESTS)
 
 endif()
 
+if(BUILD_PYTHON3_SUPPORT)
+    set(Python_FIND_VIRTUALENV FIRST)
+    find_package(PythonInterp 3 REQUIRED)
 
+    # Find Python headers
+    exec_program(${PYTHON_EXECUTABLE}
+        ARGS "-c \"import sysconfig; print(sysconfig.get_paths()['include'])\""
+        OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
+        RETURN_VALUE PYTHON_INCLUDE_DIRS_NOT_FOUND
+        )
+    if(PYTHON_INCLUDE_DIRS_NOT_FOUND)
+        message(FATAL_ERROR "Python headers not found")
+    endif()
+
+    add_subdirectory(python)
+
+endif()
