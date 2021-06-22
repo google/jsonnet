@@ -50,10 +50,10 @@ def canonicalize(doc):
 
 for filename in files:
     with open(filename + '.old.yaml', 'r') as f:
-        yaml_doc = canonicalize(yaml.load(f))
+        yaml_doc = canonicalize(yaml.load(f, Loader=yaml.FullLoader))
 
     with open(filename + '.new.yaml', 'r') as f:
-        jsonnet_doc = yaml.load(f)
+        jsonnet_doc = yaml.load(f, Loader=yaml.FullLoader)
 
     if jsonstr(yaml_doc) == jsonstr(jsonnet_doc):
         print('Identical: %s' % filename)
