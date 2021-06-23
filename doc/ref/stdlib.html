@@ -305,6 +305,60 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="objectGetOrDefault">
+        std.objectGetOrDefault(o, f, default=null)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.18.0.
+        </em>
+      </p>
+      <p>
+        Returns the object's field if it exists or default value otherwise. Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectGetOrDefaultAll">
+        std.objectGetOrDefaultAll(o, f, default=null)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.18.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectGetOrDefaultAll</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="prune">
         std.prune(a)
       </h4>
@@ -401,7 +455,7 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="std.clamp">
-        std.clamp(x, minVal, maxVal)
+        std.std.clamp(x, minVal, maxVal)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1140,6 +1194,39 @@ title: Standard Library
       </p>
       <p>
         Example: <code>std.parseJson('{"foo": "bar"}')</code> yields <code>{ "foo": "bar" }</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="parseYaml">
+        std.parseYaml(str)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version x.y.z.
+        </em>
+      </p>
+      <p>
+        Parses a YAML string. This is provided as a "best-effort" mechanism and should not be relied on to provide
+        a fully standards compliant YAML parser. YAML is a superset of JSON, consequently "downcasting" or
+        manifestation of YAML into JSON or Jsonnet values will only succeed when using the subset of YAML that is
+        compatible with JSON. The parser does not support YAML documents with scalar values at the root. The
+        root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
+      </p>
+      <p>
+        Example: <code>std.parseYaml('foo: bar')</code> yields <code>{ "foo": "bar" }</code>.
       </p>
     </div>
     <div style="clear: both"></div>
