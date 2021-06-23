@@ -5,7 +5,7 @@ This Kubernetes example is based on https://github.com/vasanthbala/hackathon/tre
 Generate the yaml (actually json) files for Kubernetes:
 
 ```sh
-jsonnet -m example.jsonnet
+jsonnet -m ./ example.jsonnet
 ```
 
 Check they are the same as the original handwritten files:
