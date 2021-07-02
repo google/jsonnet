@@ -1500,6 +1500,12 @@ limitations under the License.
   objectFieldsAll(o)::
     std.objectFieldsEx(o, true),
 
+  objectGetOrDefault(o, f, default = null)::
+    if std.objectHas(o, f) then o[f] else default,
+
+  objectGetOrDefaultAll(o, f, default = null)::
+    if std.objectHasAll(o, f) then o[f] else default,
+
   objectHas(o, f)::
     std.objectHasEx(o, f, false),
 
@@ -1511,12 +1517,6 @@ limitations under the License.
 
   objectValuesAll(o)::
     [o[k] for k in std.objectFieldsAll(o)],
-
-  objectGetOrDefault(o, f, default = null)::
-    if std.objectHas(o, f) then o[f] else default,
-
-  objectGetOrDefaultAll(o, f, default = null)::
-    if std.objectHasAll(o, f) then o[f] else default,
 
   equals(a, b)::
     local ta = std.type(a);
