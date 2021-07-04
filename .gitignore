@@ -20,6 +20,7 @@ libjsonnet++.so.*
 libjsonnet.js
 libjsonnet_test_file
 libjsonnet_test_snippet
+libjsonnet_test_locale
 **/core.*
 **/vgcore
 **/vgcore.*
