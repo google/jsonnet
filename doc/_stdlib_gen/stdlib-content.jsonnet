@@ -111,6 +111,22 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'objectGetOrDefault',
+          params: ['o', 'f', 'default=null'],
+          availableSince: '0.18.0',
+          description: |||
+            Returns the object's field if it exists or default value otherwise. Does not include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectGetOrDefaultAll',
+          params: ['o', 'f', 'default=null'],
+          availableSince: '0.18.0',
+          description: |||
+            As <code>std.objectGetOrDefaultAll</code> but also includes hidden fields.
+          |||,
+        },
+        {
           name: 'prune',
           params: ['a'],
           description: |||

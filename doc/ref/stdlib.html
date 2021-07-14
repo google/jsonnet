@@ -305,6 +305,60 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="objectGetOrDefault">
+        std.objectGetOrDefault(o, f, default=null)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.18.0.
+        </em>
+      </p>
+      <p>
+        Returns the object's field if it exists or default value otherwise. Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectGetOrDefaultAll">
+        std.objectGetOrDefaultAll(o, f, default=null)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.18.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectGetOrDefaultAll</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="prune">
         std.prune(a)
       </h4>
@@ -401,7 +455,7 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="std.clamp">
-        std.clamp(x, minVal, maxVal)
+        std.std.clamp(x, minVal, maxVal)
       </h4>
     </div>
     <div style="clear: both"></div>
