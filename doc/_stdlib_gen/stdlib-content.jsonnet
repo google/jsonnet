@@ -167,7 +167,7 @@ local html = import 'html.libsonnet';
       ],
       fields: [
         {
-          name: 'clamp',
+          name: 'std.clamp',
           params: ['x', 'minVal', 'maxVal'],
           availableSince: '0.15.0',
           description: |||
