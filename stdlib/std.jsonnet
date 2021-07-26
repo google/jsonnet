@@ -1494,17 +1494,14 @@ limitations under the License.
     else
       patch,
 
+  get(o, f, default = null, inc_hidden = true)::
+    if std.objectHasEx(o, f, inc_hidden) then o[f] else default,
+
   objectFields(o)::
     std.objectFieldsEx(o, false),
 
   objectFieldsAll(o)::
     std.objectFieldsEx(o, true),
-
-  objectGetOrDefault(o, f, default = null)::
-    if std.objectHas(o, f) then o[f] else default,
-
-  objectGetOrDefaultAll(o, f, default = null)::
-    if std.objectHasAll(o, f) then o[f] else default,
 
   objectHas(o, f)::
     std.objectHasEx(o, f, false),

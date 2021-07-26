@@ -64,6 +64,15 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'get',
+          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns the object's field if it exists or default value otherwise.
+            <code>inc_hidden</code> controls whether to include hidden fields.
+          |||,
+        },
+        {
           name: 'objectHas',
           params: ['o', 'f'],
           description: |||
@@ -108,22 +117,6 @@ local html = import 'html.libsonnet';
           availableSince: '0.17.0',
           description: |||
             As <code>std.objectValues</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectGetOrDefault',
-          params: ['o', 'f', 'default=null'],
-          availableSince: '0.18.0',
-          description: |||
-            Returns the object's field if it exists or default value otherwise. Does not include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectGetOrDefaultAll',
-          params: ['o', 'f', 'default=null'],
-          availableSince: '0.18.0',
-          description: |||
-            As <code>std.objectGetOrDefaultAll</code> but also includes hidden fields.
           |||,
         },
         {

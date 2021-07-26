@@ -160,6 +160,34 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="get">
+        std.get(o, f, default=null, inc_hidden=true)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns the object's field if it exists or default value otherwise.
+        <code>inc_hidden</code> controls whether to include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="objectHas">
         std.objectHas(o, f)
       </h4>
@@ -295,60 +323,6 @@ title: Standard Library
       </p>
       <p>
         As <code>std.objectValues</code> but also includes hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectGetOrDefault">
-        std.objectGetOrDefault(o, f, default=null)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.18.0.
-        </em>
-      </p>
-      <p>
-        Returns the object's field if it exists or default value otherwise. Does not include hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectGetOrDefaultAll">
-        std.objectGetOrDefaultAll(o, f, default=null)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.18.0.
-        </em>
-      </p>
-      <p>
-        As <code>std.objectGetOrDefaultAll</code> but also includes hidden fields.
       </p>
       
     </div>
