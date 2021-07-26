@@ -168,6 +168,25 @@ std.assertEqual(std.objectValues({ x::: 1 } { x: 1 }), [1]) &&
 std.assertEqual(std.objectValues({ x::: 1 } { x:: 1 }), []) &&
 std.assertEqual(std.objectValues({ x::: 1 } { x::: 1 }), [1]) &&
 
+std.assertEqual(std.get({ x: 1, y: 2 }, 'x', 5), 1) &&
+std.assertEqual(std.get({ x: 1, y: 2 }, 'z', 5), 5) &&
+std.assertEqual(std.get({ x: 1, y: 2 }, 'z'), null) &&
+std.assertEqual(std.get({ x::: 1, y::: 2 }, 'x', 5), 1) &&
+std.assertEqual(std.get({ x::: 1, y::: 2 }, 'z', 5), 5) &&
+std.assertEqual(std.get({ x::: 1, y::: 2 }, 'z'), null) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'x', 5), 1) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'x'), 1) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'z', 5), 5) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'z'), null) &&
+std.assertEqual(std.get({}, 'z', 5), 5) &&
+std.assertEqual(std.get({}, 'z'), null) &&
+std.assertEqual(std.get({ x: 1, y: 2 }, 'x', 5, false), 1) &&
+std.assertEqual(std.get({ x: 1, y: 2 }, 'z', 5, false), 5) &&
+std.assertEqual(std.get({ x::: 1, y::: 2 }, 'x', 5, false), 1) &&
+std.assertEqual(std.get({ x::: 1, y::: 2 }, 'z', 5, false), 5) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'x', 5, false), 5) &&
+std.assertEqual(std.get({ x:: 1, y:: 2 }, 'z', 5, false), 5) &&
+std.assertEqual(std.get({}, 'z', 5, false), 5) &&
 
 std.assertEqual(std.toString({ a: 1, b: 2 }), '{"a": 1, "b": 2}') &&
 std.assertEqual(std.toString({}), '{ }') &&

@@ -64,6 +64,15 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'get',
+          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns the object's field if it exists or default value otherwise.
+            <code>inc_hidden</code> controls whether to include hidden fields.
+          |||,
+        },
+        {
           name: 'objectHas',
           params: ['o', 'f'],
           description: |||
