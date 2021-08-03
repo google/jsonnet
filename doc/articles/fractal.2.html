@@ -6,7 +6,8 @@ service_jsonnet: https://github.com/google/jsonnet/blob/master/case_studies/frac
 packer_jsonnet: https://github.com/google/jsonnet/blob/master/case_studies/fractal/lib/packer.libsonnet
 terraform_jsonnet: https://github.com/google/jsonnet/blob/master/case_studies/fractal/lib/terraform.libsonnet
 cassandra_jsonnet: https://github.com/google/jsonnet/blob/master/case_studies/fractal/lib/cassandra.libsonnet
-makefile: https://github.com/google/jsonnet/blob/master/case_studies/fractal/Makefile
+template_jsonnet: https://github.com/google/jsonnet/blob/master/case_studies/fractal/credentials.libsonnet.TEMPLATE
+makefile: https://github.com/google/jsonnet/blob/master/case_studies/fractal/Makefile 
 ---
 
 <div class="hgroup">
@@ -104,7 +105,7 @@ makefile: https://github.com/google/jsonnet/blob/master/case_studies/fractal/Mak
         <li>
           <tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud
           Platform project name.  You must create this file yourself, based on this <a href="{{
-          page.srcroot }}/fractal/credentials.jsonnet.TEMPLATE">sample file</a>.
+          page.template_jsonnet }}">sample file</a>.
         </li>
         <li>
           <a href="{{ page.packer_jsonnet }}"><code>lib/packer.jsonnet</code></a>: Some templates to
