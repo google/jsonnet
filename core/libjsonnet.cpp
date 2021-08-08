@@ -427,8 +427,6 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
         std::map<std::string, std::string> files;
         Tokens tokens = jsonnet_lex(filename, snippet);
 
-        // std::cout << jsonnet_unlex(tokens);
-
         expr = jsonnet_parse(&alloc, tokens);
         Fodder final_fodder = tokens.front().fodder;
 
@@ -436,8 +434,6 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
             jsonnet_desugar(&alloc, expr, &vm->tla);
 
         json_str = jsonnet_fmt(expr, final_fodder, vm->fmtOpts);
-
-        json_str += "\n";
 
         *error = false;
         return from_string(vm, json_str);
