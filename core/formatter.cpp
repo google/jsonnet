@@ -67,18 +67,23 @@ static AST *left_recursive_deep(AST *ast_)
  * \param fodder The fodder to print
  * \param space_before Whether a space should be printed before any other output.
  * \param separate_token If the last fodder was an interstitial, whether a space should follow it.
+ * \param final Whether fodder is the last one in 
  */
-void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token)
+void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token, bool final)
 {
     unsigned last_indent = 0;
+    size_t index = 0;
     for (const auto &fod : fodder) {
+        bool skip_trailing = final && (index == (fodder.size() - 1));
         switch (fod.kind) {
             case FodderElement::LINE_END:
                 if (fod.comment.size() > 0)
                     o << "  " << fod.comment[0];
                 o << '\n';
-                o << std::string(fod.blanks, '\n');
-                o << std::string(fod.indent, ' ');
+                if (!skip_trailing) {
+                    o << std::string(fod.blanks, '\n');
+                    o << std::string(fod.indent, ' ');
+                }
                 last_indent = fod.indent;
                 space_before = false;
                 break;
@@ -103,12 +108,15 @@ void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool 
                     o << '\n';
                     first = false;
                 }
-                o << std::string(fod.blanks, '\n');
-                o << std::string(fod.indent, ' ');
+                if (!skip_trailing) {
+                    o << std::string(fod.blanks, '\n');
+                    o << std::string(fod.indent, ' ');
+                }
                 last_indent = fod.indent;
                 space_before = false;
             } break;
         }
+        ++index;
     }
     if (separate_token && space_before)
         o << ' ';
@@ -170,7 +178,12 @@ class Unparser {
 
     void fill(const Fodder &fodder, bool space_before, bool separate_token)
     {
-        fodder_fill(o, fodder, space_before, separate_token);
+        fodder_fill(o, fodder, space_before, separate_token, false);
+    }
+
+    void fill_final(const Fodder &fodder, bool space_before, bool separate_token)
+    {
+        fodder_fill(o, fodder, space_before, separate_token, true);
     }
 
     void unparseParams(const Fodder &fodder_l, const ArgParams &params, bool trailing_comma,
@@ -767,6 +780,12 @@ void remove_initial_newlines(AST *ast)
     Fodder &f = open_fodder(ast);
     while (f.size() > 0 && f[0].kind == FodderElement::LINE_END)
         f.erase(f.begin());
+}
+
+void remove_extra_trailing_newlines(Fodder &final_fodder) {
+    if (!final_fodder.empty()) {
+        final_fodder.back().blanks = 0;
+    }
 }
 
 bool contains_newline(const Fodder &fodder)
@@ -2279,10 +2298,14 @@ std::string jsonnet_fmt(AST *ast, Fodder &final_fodder, const FmtOpts &opts)
         EnforceCommentStyle(alloc, opts).file(ast, final_fodder);
     if (opts.indent > 0)
         FixIndentation(opts).file(ast, final_fodder);
+    remove_extra_trailing_newlines(final_fodder);
 
     std::stringstream ss;
     Unparser unparser(ss, opts);
     unparser.unparse(ast, false);
-    unparser.fill(final_fodder, true, false);
+    unparser.fill_final(final_fodder, true, false);
+    if (final_fodder.empty() || final_fodder.back().kind == FodderElement::INTERSTITIAL) {
+        ss << "\n";
+    }
     return ss.str();
 }

@@ -849,7 +849,7 @@ std::string jsonnet_unlex(const Tokens &tokens)
                     for (const auto &line : f.comment) {
                         ss << "    " << line << '\n';
                     }
-                    ss << ")\n";
+                    ss << ")" << f.blanks << "\n";
                 } break;
             }
         }
