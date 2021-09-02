@@ -77,6 +77,7 @@ jsonnet_ext = Extension(
 setup(name='jsonnet',
       url='https://jsonnet.org',
       description='Python bindings for Jsonnet - The data templating language ',
+      license="Apache License 2.0",
       author='David Cunningham',
       author_email='dcunnin@google.com',
       version=get_version(),
