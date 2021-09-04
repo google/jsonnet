@@ -123,7 +123,7 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
 
   for (let textarea_id in editor_by_textarea_id) {
     let editor = editor_by_textarea_id[textarea_id];
-    editor.on('change', function() {
+    editor.on('change', async function() {
       // Clean out the existing textareas and tabs.
       // There should be only one.
       let tab_header = output.getElementsByClassName('tab-header')[0];
@@ -179,7 +179,7 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
         output_tab.innerHTML = filename;
       }
       try {
-        process_func(
+        await process_func(
             main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab);
       } catch (e) {
         if (typeof e === 'string') {
@@ -264,7 +264,7 @@ function handle_parsed_content(parsed_content, string_out) {
  * multi: True to enable multi-output mode.
  * top_level: A dict to configure top-level parameterization (tla / ext var).
  */
-function demo(input_id, input_files, main_file, output_id, multi, string_out, top_level) {
+async function demo(input_id, input_files, main_file, output_id, multi, string_out, top_level) {
   top_level = top_level || {};
   let ext_str = top_level['ext_str'] || {};
   let ext_code = top_level['ext_code'] || {};
@@ -273,8 +273,8 @@ function demo(input_id, input_files, main_file, output_id, multi, string_out, to
 
   aux_demo(
       input_id, input_files, main_file, output_id,
-      function(main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
-    let json_str = jsonnet_evaluate_snippet_wrapped(
+      async function(main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
+    let json_str = await jsonnet_evaluate_snippet(
         main_file, input_files_content[main_file], input_files_content,
         ext_str, ext_code, tla_str, tla_code);
     let parsed_output = JSON.parse(json_str);
@@ -312,10 +312,10 @@ function demo(input_id, input_files, main_file, output_id, multi, string_out, to
  * output_id: The id of the tab-window-output div.
  */
 function fmt_demo(input_id, textarea_id, filename, output_id) {
-  let process_func = function(
+  let process_func = async function(
         main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
     let content = input_files_content[main_file];
-    let jsonnet_str = jsonnet_fmt_snippet_wrapped(filename, content)
+    let jsonnet_str = await jsonnet_fmt_snippet(filename, content)
     jsonnet_str = jsonnet_str.replace(/\n$/, '');
     add_textarea_and_tab(
         last_selected, last_selected, last_scroll, jsonnet_str, 'code-json');
@@ -332,12 +332,12 @@ function fmt_demo(input_id, textarea_id, filename, output_id) {
  * output_id: The id of the tab-window-output div.
  */
 function yaml_conv_demo(input_id, textarea_id, filename, output_id) {
-  let process_func = function(
+  let process_func = async function(
         main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
     let content = input_files_content[main_file];
     let parsed_yaml = jsyaml.loadAll(content);
     let yaml_json = JSON.stringify(parsed_yaml, null, 2);
-    let jsonnet_str = jsonnet_fmt_snippet_wrapped(filename, yaml_json)
+    let jsonnet_str = await jsonnet_fmt_snippet(filename, yaml_json)
     jsonnet_str = jsonnet_str.replace(/\n$/, '');
     add_textarea_and_tab(
         last_selected, last_selected, last_scroll, jsonnet_str, 'code-json');
