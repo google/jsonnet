@@ -31,5 +31,27 @@ exit 1
 fi
 
 cd doc
-# TODO: use --livereload, but it's not available on Jekyll 3.1.6
-jekyll server --port 8200 --watch
+#jekyll server --port 8200 --watch
+cat << EOF
+Jekyll currently does not support wasm in local serving mode due to an
+erroneous content-type, so as a workaround we are just /building/ the site
+with jekyll.  To serve the built site, please change to the
+doc/production directory and run a Python HTTP server like this:
+
+python3 -c 'import http.server
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+http.server.test(HandlerClass=Handler,port=8200)
+'
+
+The site should then be accessible on localhost:8200 as normal.
+
+Running jekyll build --watch now...
+EOF
+jekyll build --watch
