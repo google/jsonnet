@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -2551,7 +2557,7 @@ local templates = import 'templates.libsonnet';
     local drink = self,
 
     // Hidden fields can be referred to
-    // and overrridden, but do not appear
+    // and overridden, but do not appear
     // in the JSON output.
     citrus:: {
       kind: 'Lemon Juice',
@@ -2711,7 +2717,7 @@ local templates = import 'templates.libsonnet';
         So far, every example has used a literal object on the right hand side of the
         <code>+</code>.  This is consistent with the majority of object-oriented languages. But
         Jsonnet is more general in that is has <a
-        href="http://www.bracha.org/oopsla90.pdf">mixins</a>.  A Mixin allows you to take some
+        href="https://www.bracha.org/oopsla90.pdf">mixins</a>.  A Mixin allows you to take some
         "overrides" and instead of just applying them to an existing object to get a new object, you
         can pass them around as a first class value and apply them to any object you want.  The
         following example shows mixins being used to modify cocktails in a general way:
@@ -2816,7 +2822,7 @@ local templates = import 'templates.libsonnet';
     local drink = self,
 
     // Hidden fields can be referred to
-    // and overrridden, but do not appear
+    // and overridden, but do not appear
     // in the JSON output.
     citrus:: {
       kind: 'Lemon Juice',

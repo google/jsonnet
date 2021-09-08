@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -135,7 +141,7 @@
         <tr>
           <td>
             <p>
-              A simple extension of <a href="http://json.org/">JSON</a><br>
+              A simple extension of <a href="https://json.org/">JSON</a><br>
             </p>
             <ul>
               <li>Open source (Apache 2.0)</li>
@@ -312,9 +318,9 @@
               },
             },
           }),
-         
+
           'init.sh': |||
-            #!/bin/bash
+            #!/usr/bin/env bash
             mkdir -p %(dir)s
             touch %(dir)s/initialized
             chmod %(perm)d %(dir)s/initialized
@@ -347,13 +353,13 @@
       </div>
       <textarea readonly class="selected code-json" id="example3-yaml-output">
         "cluster_name": "my-app"
-        "seed_provider": 
+        "seed_provider":
         - "class_name": "SimpleSeedProvider"
-          "parameters": 
+          "parameters":
           - "seeds": "127.0.0.1"
       </textarea>
       <textarea readonly class="unselected code-json" id="example3-sh-output">
-        #!/bin/bash
+        #!/usr/bin/env bash
         mkdir -p /var/www
         touch /var/www/initialized
         chmod 644 /var/www/initialized
@@ -389,7 +395,7 @@
     <div class=panel>
       <p class=padded>
         The name Jsonnet is a portmanteau of JSON and <a
-        href="http://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>, pronounced "jay sonnet".  It
+        href="https://en.wikipedia.org/wiki/Sonnet"><i>sonnet</i></a>, pronounced "jay sonnet".  It
         began life early 2014 as a 20% project and was launched on Aug 6.  The design is influenced
         by several configuration languages internal to Google, and embodies years of experience
         configuring some of the world's most complex IT systems.  Jsonnet is now used by many
@@ -420,8 +426,8 @@
       </p class=center>
     </div>
     <div style="clear: both"></div>
-  </div>  
-</div>  
+  </div>
+</div>
 
 
 

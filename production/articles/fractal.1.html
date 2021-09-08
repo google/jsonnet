@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -143,8 +149,8 @@
         application (a Mandelbrot viewer).  Jsonnet centralizes configuration files for the various
         application software, database schemas and initial data sets, system configuration files,
         package manifests, software build configurations, image configurations (<a
-        href="http://www.packer.io/">Packer</a>) and cloud resources / connectivity (<a
-        href="http://www.terraform.io/">Terraform</a>).  Although the running example is deployed on
+        href="https://www.packer.io/">Packer</a>) and cloud resources / connectivity (<a
+        href="https://www.terraform.io/">Terraform</a>).  Although the running example is deployed on
         <a href="https://cloud.google.com">Google Cloud Platform</a> and uses specific application
         software, Jsonnet can be used to generate configuration for any application and (via Packer
         &amp; Terraform) a wide range of cloud providers.

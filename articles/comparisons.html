@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -168,7 +174,7 @@
     <div class="panel">
       <p>
         YAML is also an extension of JSON that generates JSON.  Like Jsonnet, YAML is intended to
-        improve the user experience when data is transfered over the human / machine boundary.  Its
+        improve the user experience when data is transferred over the human / machine boundary.  Its
         syntax is very tight; YAML files are much shorter than their JSON equivalents.  However its
         constructs for generating, translating, and refining data are very weak in comparison to
         Jsonnet.  Moreover, the tightness of its syntax makes it hard to extend YAML to add these
@@ -341,7 +347,7 @@
         structure, and importing from other files.  However it is a long way from the expressiveness
         of the object-oriented semantics of Jsonnet, and it also does not have the ability to do
         arithmetic beyond substituting values into strings.  Finally, coil binds variables according
-        to <a href="http://en.wikipedia.org/wiki/Scope_(computer_science)#Dynamic_scoping">dynamic
+        to <a href="https://en.wikipedia.org/wiki/Scope_(computer_science)#Dynamic_scope">dynamic
         scoping rules</a>, which have long been discredited because they quickly make code very
         difficult to understand.  Jsonnet uses static scoping, like almost all mainstream languages.
       </p>
@@ -361,8 +367,8 @@
       </p>
       <p>
         Finally, there are a number of other configuration languages that have grown to be used by a
-        range of applications.  For example <a href="http://en.wikipedia.org/wiki/INI_file">INI
-        files</a> or <a href="http://httpd.apache.org/docs/2.2/configuring.html">Apache config
+        range of applications.  For example <a href="https://en.wikipedia.org/wiki/INI_file">INI
+        files</a> or <a href="https://httpd.apache.org/docs/2.2/configuring.html">Apache config
         files</a>.  Typically these offer few features beyond simple JSON and provide very little
         functionality when compared to Jsonnet.
       </p>

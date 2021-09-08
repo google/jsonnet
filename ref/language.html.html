@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -567,6 +573,72 @@ arr[1]
 <p>The value of a field is irrelevant for determining its visibility.</p>
 
 <p>It is possible to check field’s visibility using <code>std.objectHas</code> and <code>std.objectHasAll</code> standard library functions. The first checks if an object has a visible field with a specified name and the second checks if an object has a field regardless of its visibility.</p>
+
+<h4 id="nested-field-inheritance">Nested Field Inheritance</h4>
+
+<p>By default nested objects are completely replaced when overriden. For example:</p>
+<pre><code>{
+  nested_object: {
+    field_of_the_nested_object: "will dissappear"
+  }
+  not_touched: "still there",
+}
++
+{
+  nested_object: {
+    new_field: "will be there"
+  }
+}
+</code></pre>
+<p>results in:</p>
+<pre><code>{
+  "nested_object": {
+    "new_field": "will be there"
+  },
+  "not_touched": "still there"
+}
+</code></pre>
+
+<p>It is possible to explicitly make the new field inherit from the old field instead by using <code>+:</code>, <code>+::</code> or <code>+:::</code> as the field separator in the right-hand side object.</p>
+
+<p>Example:</p>
+<pre><code>{
+  a: ['a'],
+  b: ['c'],
+  c: { a: 'a', c: 'c' },
+} +
+{
+  a: ['a2'],
+  b+: ['c2'],
+  c+: { a: 'a2', b: 'b2' },
+  d+: { d: 'd' },
+}
+</code></pre>
+<p>resulting in:</p>
+<pre><code>{
+  "a": [
+    "a2"
+  ],
+  "b": [
+    "c",
+    "c2"
+  ],
+  "c": {
+    "a": "a2",
+    "b": "b2",
+    "c": "c"
+  },
+  "d": {
+    "d": "d"
+  }
+}
+</code></pre>
+
+<p>The field separators <code>+:</code>, <code>+::</code>, <code>+:::</code> are relevant for nested objects (which will be inherited) and arrays (which will be concatenated). The number of colons determines the visibility of the field.</p>
+
+<p>It is not an error to have <code>+:</code> without a matching field on the left hand side. In such cases the right hand side field is used directly. E.g. both <code>{ foo +: { bar: "baz" } }</code> and <code>{} + { foo +: { bar: "baz" } }</code> evaluate to <code>{ foo: { bar: "baz" } }</code>.</p>
+
+<p>In all cases, these field separators are just syntax sugar and the same results can be achieved with <code>super</code>. More precisely <code>{ a +: b }</code> is equivalent to <code>{ a: if "a" in super then super.a + b else b }</code> (and similarly <code>+::</code> and <code>+:::</code>).</p>
 
 <h4 id="object-equality">Object Equality</h4>
 

@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -203,7 +209,7 @@
         </li>
         <li>
           <tt>credentials.jsonnet</tt>: User and superuser keys for Cassandra, and Google Cloud
-          Platform project name.  You must create this file yourself, based on this <a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/credentials.jsonnet.TEMPLATE">sample file</a>.
+          Platform project name.  You must create this file yourself, based on this <a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/credentials.libsonnet.TEMPLATE">sample file</a>.
         </li>
         <li>
           <a href="https://github.com/google/jsonnet/blob/master/case_studies/fractal/lib/packer.libsonnet"><code>lib/packer.jsonnet</code></a>: Some templates to
@@ -322,7 +328,7 @@
       <p>
         In Jsonnet we use JSON as the canonical data model and convert to other formats as needed.
         An example of this is the uWSGI configuration, an <a
-        href="http://en.wikipedia.org/wiki/INI_file">INI</a> file, which is specified in Jsonnet
+        href="https://en.wikipedia.org/wiki/INI_file">INI</a> file, which is specified in Jsonnet
         under the <code>uwsgiConf</code> field in <code>GcpDebianNginxUwsgiFlaskImage</code>.  The
         JSON version is converted to INI by the call to <code>std.manifestIni</code> (documented <a
         href="/docs/stdlib.html">here</a>) in the provisioner immediately below it.  Representing
@@ -411,7 +417,7 @@
         href="https://github.com/hashicorp/hcl">HCL</a> (a more concise form of JSON).  This
         provides a data structure that specifies the resources required, but the model also has a
         few computational features:  Firstly, the structure has 'variables' which can be resolved by
-        <a href="http://en.wikipedia.org/wiki/String_interpolation">string interpolation</a> within
+        <a href="https://en.wikipedia.org/wiki/String_interpolation">string interpolation</a> within
         the resources.  Also, all resources are also extended with a <tt>count</tt> parameter for
         creating <i>n</i> replicas of that resource, and finally there is some support for importing
         'modules', i.e., another Terraform configuration of resources (perhaps written by a third

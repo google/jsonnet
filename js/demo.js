@@ -1,108 +1,3 @@
-/** Bind the functions as variables in Javascript. */
-let jsonnet_make = Module.cwrap(
-    'jsonnet_make', 'number', [])
-let jsonnet_import_callback = Module.cwrap(
-    'jsonnet_import_callback', 'number', ['number', 'number', 'number'])
-let jsonnet_ext_var = Module.cwrap(
-    'jsonnet_ext_var', 'number', ['number', 'string', 'string'])
-let jsonnet_ext_code = Module.cwrap(
-    'jsonnet_ext_code', 'number', ['number', 'string', 'string'])
-let jsonnet_tla_var = Module.cwrap(
-    'jsonnet_tla_var', 'number', ['number', 'string', 'string'])
-let jsonnet_tla_code = Module.cwrap(
-    'jsonnet_tla_code', 'number', ['number', 'string', 'string'])
-let jsonnet_realloc = Module.cwrap(
-    'jsonnet_realloc', 'number', ['number', 'number', 'number'])
-let jsonnet_evaluate_snippet = Module.cwrap(
-    'jsonnet_evaluate_snippet', 'number', ['number', 'string', 'string', 'number'])
-let jsonnet_fmt_snippet = Module.cwrap(
-    'jsonnet_fmt_snippet', 'number', ['number', 'string', 'string', 'number'])
-let jsonnet_destroy = Module.cwrap(
-    'jsonnet_destroy', 'number', ['number'])
-
-function string_to_jsonnet(vm, str) {
-  let size = lengthBytesUTF8(str);
-  let result_buf = jsonnet_realloc(vm, 0, size + 1);
-  stringToUTF8(str, result_buf, size + 1);
-  return result_buf;
-}
-
-// Pass an int through C, which is an index into this array.
-let ctx_mapping = { };
-let ctx_counter = 1;
-
-// We don't use ctx, instead just rely on Javascript's cloure environment.
-let import_callback = addFunction(function (ctx_, base_, rel_, found_here_, success_) {
-  let vm = ctx_mapping[ctx_].vm
-  let files = ctx_mapping[ctx_].files
-  let base = UTF8ToString(base_);
-  let rel = UTF8ToString(rel_);
-  let abs_path;
-  // It is possible that rel is actually absolute.
-  if (rel[0] == '/') {
-      abs_path = rel;
-  } else {
-      abs_path = base + rel;
-  }
-  if (abs_path in files) {
-    setValue(success_, 1, 'i32*');
-    setValue(found_here_, string_to_jsonnet(vm, abs_path), 'i8*');
-    return string_to_jsonnet(vm, files[abs_path]);
-  } else {
-    setValue(success_, 0, 'i32*');
-    return string_to_jsonnet(vm, 'file not found');
-  }
-});
-
-/** Wrap the raw C-level function in something Javascript-friendly. */
-function jsonnet_evaluate_snippet_wrapped(
-    filename, code, files, ext_str, ext_code, tla_str, tla_code) {
-  let vm = jsonnet_make();
-  let ctx_ptr = counter++;
-  ctx_mapping[ctx_ptr] = { vm: vm, files: files };
-  jsonnet_import_callback(vm, import_callback, ctx_ptr);
-  for (let key in ext_str) {
-    jsonnet_ext_var(vm, key, ext_str[key]);
-  }
-  for (let key in ext_code) {
-    jsonnet_ext_code(vm, key, ext_code[key]);
-  }
-  for (let key in tla_str) {
-    jsonnet_tla_var(vm, key, tla_str[key]);
-  }
-  for (let key in tla_code) {
-    jsonnet_tla_code(vm, key, tla_code[key]);
-  }
-  let error_ptr = _malloc(4);
-  let output_ptr = jsonnet_evaluate_snippet(vm, filename, code, error_ptr);
-  let error = getValue(error_ptr, 'i32*');
-  _free(error_ptr);
-  let result = UTF8ToString(output_ptr);
-  jsonnet_realloc(vm, output_ptr, 0);
-  jsonnet_destroy(vm);
-  delete ctx_mapping[ctx_ptr];
-  if (error) {
-    throw result;
-  }
-  return result;
-}
-
-/** Wrap the raw C-level function in something Javascript-friendly. */
-function jsonnet_fmt_snippet_wrapped(filename, code) {
-  let vm = jsonnet_make();
-  let error_ptr = _malloc(4);
-  let output_ptr = jsonnet_fmt_snippet(vm, filename, code, error_ptr);
-  let error = getValue(error_ptr, 'i32*');
-  _free(error_ptr);
-  let result = UTF8ToString(output_ptr);
-  jsonnet_realloc(vm, output_ptr, 0);
-  jsonnet_destroy(vm);
-  if (error) {
-    throw result;
-  }
-  return result;
-}
-
 function textarea_content_height(textarea) {
   // This trick only works if display is not 'none'.
   let old_display = textarea.style.display;
@@ -228,7 +123,7 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
 
   for (let textarea_id in editor_by_textarea_id) {
     let editor = editor_by_textarea_id[textarea_id];
-    editor.on('change', function() {
+    editor.on('change', async function() {
       // Clean out the existing textareas and tabs.
       // There should be only one.
       let tab_header = output.getElementsByClassName('tab-header')[0];
@@ -284,7 +179,7 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
         output_tab.innerHTML = filename;
       }
       try {
-        process_func(
+        await process_func(
             main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab);
       } catch (e) {
         if (typeof e === 'string') {
@@ -369,7 +264,7 @@ function handle_parsed_content(parsed_content, string_out) {
  * multi: True to enable multi-output mode.
  * top_level: A dict to configure top-level parameterization (tla / ext var).
  */
-function demo(input_id, input_files, main_file, output_id, multi, string_out, top_level) {
+async function demo(input_id, input_files, main_file, output_id, multi, string_out, top_level) {
   top_level = top_level || {};
   let ext_str = top_level['ext_str'] || {};
   let ext_code = top_level['ext_code'] || {};
@@ -378,8 +273,8 @@ function demo(input_id, input_files, main_file, output_id, multi, string_out, to
 
   aux_demo(
       input_id, input_files, main_file, output_id,
-      function(main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
-    let json_str = jsonnet_evaluate_snippet_wrapped(
+      async function(main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
+    let json_str = await jsonnet_evaluate_snippet(
         main_file, input_files_content[main_file], input_files_content,
         ext_str, ext_code, tla_str, tla_code);
     let parsed_output = JSON.parse(json_str);
@@ -417,10 +312,10 @@ function demo(input_id, input_files, main_file, output_id, multi, string_out, to
  * output_id: The id of the tab-window-output div.
  */
 function fmt_demo(input_id, textarea_id, filename, output_id) {
-  let process_func = function(
+  let process_func = async function(
         main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
     let content = input_files_content[main_file];
-    let jsonnet_str = jsonnet_fmt_snippet_wrapped(filename, content)
+    let jsonnet_str = await jsonnet_fmt_snippet(filename, content)
     jsonnet_str = jsonnet_str.replace(/\n$/, '');
     add_textarea_and_tab(
         last_selected, last_selected, last_scroll, jsonnet_str, 'code-json');
@@ -437,12 +332,12 @@ function fmt_demo(input_id, textarea_id, filename, output_id) {
  * output_id: The id of the tab-window-output div.
  */
 function yaml_conv_demo(input_id, textarea_id, filename, output_id) {
-  let process_func = function(
+  let process_func = async function(
         main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab) {
     let content = input_files_content[main_file];
-    let parsed_yaml = jsyaml.load(content);
+    let parsed_yaml = jsyaml.loadAll(content);
     let yaml_json = JSON.stringify(parsed_yaml, null, 2);
-    let jsonnet_str = jsonnet_fmt_snippet_wrapped(filename, yaml_json)
+    let jsonnet_str = await jsonnet_fmt_snippet(filename, yaml_json)
     jsonnet_str = jsonnet_str.replace(/\n$/, '');
     add_textarea_and_tab(
         last_selected, last_selected, last_scroll, jsonnet_str, 'code-json');

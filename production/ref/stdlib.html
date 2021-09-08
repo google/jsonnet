@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -255,6 +261,34 @@
         array, the number of codepoints in the string, the number of parameters in the function, or
         the number of fields in the object. Raises an error if given a primitive value, i.e.
         <code>null</code>, <code>true</code> or <code>false</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="get">
+        std.get(o, f, default=null, inc_hidden=true)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns the object's field if it exists or default value otherwise.
+        <code>inc_hidden</code> controls whether to include hidden fields.
       </p>
       
     </div>
@@ -690,7 +724,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>pat</code> in
+        Returns an array that contains the indexes of all occurrences of <code>pat</code> in
         <code>str</code>.
       </p>
       
@@ -897,7 +931,7 @@
         Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
       </p>
       <p>
-        Example: <code>std.splitLimit("/foo/", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
+        Example: <code>std.splitLimit("/foo/bar", "/", 1)</code> yields <code>[ "", "foo/bar" ]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1254,6 +1288,39 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="parseYaml">
+        std.parseYaml(str)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version x.y.z.
+        </em>
+      </p>
+      <p>
+        Parses a YAML string. This is provided as a "best-effort" mechanism and should not be relied on to provide
+        a fully standards compliant YAML parser. YAML is a superset of JSON, consequently "downcasting" or
+        manifestation of YAML into JSON or Jsonnet values will only succeed when using the subset of YAML that is
+        compatible with JSON. The parser does not support YAML documents with scalar values at the root. The
+        root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
+      </p>
+      <p>
+        Example: <code>std.parseYaml('foo: bar')</code> yields <code>{ "foo": "bar" }</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="encodeUTF8">
         std.encodeUTF8(str)
       </h4>
@@ -1333,7 +1400,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Convert the given structure to a string in <a href="http://en.wikipedia.org/wiki/INI_file">INI format</a>. This
+        Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
         allows using Jsonnet's
         object model to build a configuration to be consumed by an application expecting an INI
         file. The data is in the form of a set of sections, each containing a key/value mapping.
@@ -1445,7 +1512,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestJsonEx">
-        std.manifestJsonEx(value, indent)
+        std.manifestJsonEx(value, indent, newline, key_val_sep)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1456,37 +1523,61 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Convert the given object to a JSON form. <code>indent</code> is a string containing
-        one or more whitespaces that are used for indentation:
+        one or more whitespaces that are used for indentation. <code>newline</code> is
+        by default <code>\n</code> and is inserted where a newline would normally be used
+        to break long lines. <code>key_val_sep</code> is used to separate the key and value
+        of an object field:
       </p>
-      <pre>std.manifestJsonEx(
-  {
-      x: [1, 2, 3, true, false, null,
-          "string\nstring"],
-      y: { a: 1, b: 2, c: [1, 2] },
-  }, "    ")</pre>
       <p>
-        Yields a string containing this JSON object:
+        Example: <code>std.manifestJsonEx(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        }, "    ")</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
       </p>
-      <pre>{
-    "x": [
-        1,
-        2,
-        3,
-        true,
-        false,
-        null,
-        "string\nstring"
-    ],
-    "y": {
-        "a": 1,
-        "b": 2,
-        "c": [
-            1,
-            2
-        ]
-    }
-}</pre>
-      
+      <p>
+        Example: <code>std.manifestJsonEx(
+        {
+          x: [1, 2, "string\nstring"],
+          y: { a: 1, b: [1, 2] },
+        }, "", " ", " : ")</code> yields <code>"{ \"x\" : [ 1, 2, \"string\\nstring\" ], \"y\" : { \"a\" : 1, \"b\" : [ 1, 2 ] } }"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestJsonMinified">
+        std.manifestJsonMinified(value)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Convert the given object to a minified JSON form. Under the covers,
+        it calls <code>std.manifestJsonEx:')</code>:
+      </p>
+      <p>
+        Example: <code>std.manifestJsonMinified(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        })</code> yields <code>"{\"x\":[1,2,3,true,false,null,\"string\\nstring\"],\"y\":{\"a\":1,\"b\":2,\"c\":[1,2]}}"</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1496,7 +1587,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestYamlDoc">
-        std.manifestYamlDoc(value, indent_array_in_object=false)
+        std.manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1540,6 +1631,10 @@ e = {"f1": False, "f2": 42}</pre>
         The <code>indent_array_in_object</code> param adds additional indentation which some people
         may find easier to read.
       </p>
+      <p>
+        The <code>quote_keys</code> parameter controls whether YAML identifiers are always quoted
+        or only when necessary.
+      </p>
       
     </div>
     <div style="clear: both"></div>
@@ -1550,7 +1645,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="manifestYamlStream">
-        std.manifestYamlStream(value, indent_array_in_object=false, c_document_end=false)
+        std.manifestYamlStream(value, indent_array_in_object=false, c_document_end=false, quote_keys=true)
       </h4>
     </div>
     <div style="clear: both"></div>
@@ -1578,7 +1673,8 @@ e = {"f1": False, "f2": 42}</pre>
 []
 ...</pre>
       <p>
-        The <code>indent_array_in_object</code> param is the same as in <code>manifestYamlDoc</code>.
+        The <code>indent_array_in_object</code> and <code>quote_keys</code> params are the
+        same as in <code>manifestYamlDoc</code>.
       </p>
       <p>
         The <code>c_document_end</code> param adds the optional terminating <code>...</code>.
@@ -1650,6 +1746,52 @@ e = {"f1": False, "f2": 42}</pre>
     '\n',
 ])</pre>
       
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="manifestTomlEx">
+        std.manifestTomlEx(toml, indent)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Convert the given object to a TOML form. <code>indent</code> is a string containing
+        one or more whitespaces that are used for indentation:
+      </p>
+      <p>
+        Example: <code>std.manifestTomlEx({
+          key1: "value",
+          key2: 1,
+          section: {
+            a: 1,
+            b: "str",
+            c: false,
+            d: [1, "s", [2, 3]],
+            subsection: {
+              k: "v",
+            },
+          },
+          sectionArray: [
+            { k: "v1", v: 123 },
+            { k: "v2", c: "value2" },
+          ],
+        }, "  ")</code> yields <code>"key1 = \"value\"\nkey2 = 1\n\n[section]\n  a = 1\n  b = \"str\"\n  c = false\n  d = [\n    1,\n    \"s\",\n    [ 2, 3 ]\n  ]\n\n  [section.subsection]\n    k = \"v\"\n\n[[sectionArray]]\n  k = \"v1\"\n  v = 123\n\n[[sectionArray]]\n  c = \"value2\"\n  k = \"v2\""</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1757,7 +1899,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Returns an array that contains the indexes of all occurances of <code>value</code> in
+        Returns an array that contains the indexes of all occurrences of <code>value</code> in
         <code>arr</code>.
       </p>
       
@@ -1853,8 +1995,8 @@ e = {"f1": False, "f2": 42}</pre>
         If <code>arr</code> is a string, function <code>func</code> must return an string.
       </p>
       <p>
-        The <code>std.flatMap</code> function can be thought of as generalized map,
-        where each element is mapped to 0, 1 or more elements.
+        The <code>std.flatMap</code> function can be thought of as a generalized <code>std.map</code>,
+        with each element mapped to 0, 1 or more elements.
       </p>
       <p>
         Example: <code>std.flatMap(function(x) [x, x], [1, 2, 3])</code> yields <code>[ 1, 1, 2, 2, 3, 3 ]</code>.
@@ -2206,7 +2348,7 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Note that the <code>std.set*</code> functions rely on the uniqueness and ordering
-        on arrays passed to them to work. This can be guarenteed by using <code>std.set(arr)</code>.
+        on arrays passed to them to work. This can be guaranteed by using <code>std.set(arr)</code>.
         If that is not the case, the functions will quietly return non-meaningful results.
       </p>
       <p>
@@ -2497,7 +2639,7 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <h4 id="trace">
-        std.trace(target, patch)
+        std.trace(str, rest)
       </h4>
     </div>
     <div style="clear: both"></div>

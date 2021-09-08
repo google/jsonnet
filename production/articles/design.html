@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -141,7 +147,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        <a href="http://www.json.org">JSON</a> has emerged as the defacto standard for communication
+        <a href="https://www.json.org">JSON</a> has emerged as the defacto standard for communication
         of structured data, both between machines and at the human / machine boundary.  However, in
         large quantities JSON can be unwieldy for humans, especially when duplication needs to be
         kept in sync between different parts of the data structure.  Many people address this by
@@ -173,7 +179,7 @@
         <li>
           <b>Modularity</b>:  As configurations grow, it must be possible to manage the complexity
           using standard techniques for <a
-          href="http://dl.acm.org/citation.cfm?id=808431">programming in the large</a>.
+          href="https://dl.acm.org/doi/10.1145/800027.808431">programming in the large</a>.
           Configurations may span many files and many developers.  Errors should provide stack
           traces that describe the nested context.
         </li>
@@ -230,7 +236,7 @@
 
       <p>
         A common case of Jsonnet program is a program that is mostly JSON data, but has a few
-        occurences of Jsonnet constructs.  In this case, someone who knows JSON can maintain the
+        occurrences of Jsonnet constructs.  In this case, someone who knows JSON can maintain the
         file with no additional knowledge.
       </p>
 
@@ -287,7 +293,7 @@
         Jsonnet is Turing-complete as it is possible to write non-terminating programs.
         Configurations should always terminate, so ideally we would consider non-termination as an
         error.  However, doing so in general is <a
-        href="http://en.wikipedia.org/wiki/Halting_problem">impossible</a> and even when constrained
+        href="https://en.wikipedia.org/wiki/Halting_problem">impossible</a> and even when constrained
         to practical use cases, it remains impractical.  Typical approaches for enforcing
         termination either restrict the language (e.g. to primitive recursion), which makes some
         programs impossible / difficult to write, or, alternatively, require the programmer to
@@ -324,7 +330,7 @@
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Modern <a href="http://en.wikipedia.org/wiki/Type_system">type systems</a> typically either
+        Modern <a href="https://en.wikipedia.org/wiki/Type_system">type systems</a> typically either
         require annotations, use type inference, or are dynamic.  The former two approaches have two
         advantages: Firstly, some errors can be detected before execution (some correct programs are
         also rejected).  Secondly, they can be implemented more efficiently since the additional
@@ -367,7 +373,7 @@
         existing data.  Most modern object-oriented languages distinguish between classes and
         objects.  Classes can be extended, or instantiated into objects, and objects cannot be
         extended.  However some are <a
-        href="http://en.wikipedia.org/wiki/Prototype-based_programming">prototype-based</a>, where
+        href="https://en.wikipedia.org/wiki/Prototype-based_programming">prototype-based</a>, where
         the concept of class and object are essentially fused.  In Jsonnet, we decided to use the
         latter form because JSON does not have classes, and it's simpler to only have one concept
         instead of two.
@@ -413,7 +419,7 @@
       </p>
       <p>
         Furthermore, the property of <a
-        href="http://en.wikipedia.org/wiki/Referential_transparency_(computer_science)">referential
+        href="https://en.wikipedia.org/wiki/Referential_transparency">referential
         transparency</a> essentially extends the hermeticity property into submodules of the Jsonnet
         code itself, which means that different parts of the code cannot interfere with each other
         and everything composes in a very predictable way.  In a language whose purpose is simply to
@@ -568,7 +574,7 @@ local util2 = import "util2.jsonnet" { square(x):: x*x*x };
         The language is designed to be implementable via desugaring, i.e. there is a simple core
         language and the other constructs are translated down to this core language before
         interpretation.  This technique allows a language to have considerable expressive power,
-        while remaining easy to implement.  </p> <p> The string formating operator <code>%</code> is
+        while remaining easy to implement.  </p> <p> The string formatting operator <code>%</code> is
         defined to behave identically to the Python equivalent, and therefore very similarly to the
         C <tt>printf</tt> micro-language.  We decided it would be better to be compatible with an
         existing popular language wherever possible, and Python is often the language of choice for

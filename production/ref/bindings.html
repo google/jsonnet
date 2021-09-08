@@ -45,7 +45,13 @@
     <script src="/js/codemirror-mode-jsonnet.js"></script>
 
     <!-- Executing Jsonnet -->
-    <script src="/js/libjsonnet.js"></script>
+    <script src="/js/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("/js/libjsonnet.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
     <script src="/js/demo.js"></script>
 
     <!-- Navigation menus -->
@@ -103,9 +109,9 @@
         <a href="/articles/comparisons.html">Comparisons</a>
       </div>
     </div>
-    <a id=groupsmark class=header-element href="https://groups.google.com/forum/#!forum/jsonnet"></a>
-    <a id=githubmark class=header-element href="http://github.com/google/jsonnet"></a>
-    <a id=gomark class=header-element href="http://github.com/google/go-jsonnet"></a>
+    <a id=groupsmark class=header-element href="https://groups.google.com/g/jsonnet"></a>
+    <a id=githubmark class=header-element href="https://github.com/google/jsonnet"></a>
+    <a id=gomark class=header-element href="https://github.com/google/go-jsonnet"></a>
   </div>
 </div>
 
@@ -191,7 +197,7 @@
 
       <p>
         The API is documented in <a
-        href="http://github.com/google/jsonnet/blob/master/include/libjsonnet.h">libjsonnet.h</a>.
+        href="https://github.com/google/jsonnet/blob/master/include/libjsonnet.h">libjsonnet.h</a>.
         It is built with 'make libjsonnet.so'.  It is used by the python bindings, the Jsonnet
         commandline tool, as well as a couple of simpler tests.  Search for #include "libjsonnet.h".
       </p>
@@ -325,10 +331,11 @@ for person_id, person in json_obj.iteritems():
           <a href="https://github.com/yugui/ruby-jsonnet">Ruby</a>
         </li>
         <li>
-          <a href="https://github.com/anguslees/rust-jsonnet">Rust</a>
+          <a href="https://github.com/anguslees/rust-jsonnet">Rust</a> but please first consider the
+          <a href="https://github.com/CertainLach/jrsonnet">native port</a>
         </li>
         <li>
-          <a href="https://github.com/yuduanchen/rust-jsonnet">Rust (less comprehensive, older)</a>
+          <a href="https://github.com/moleike/haskell-jsonnet">Haskell native port</a>
         </li>
       </ul>
     <div style="clear: both"></div>
