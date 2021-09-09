@@ -128,18 +128,16 @@ make test
 
 ### Locally serving the website
 
-You need a `doc/js/libjsonnet.js` which can either be downloaded from the
+You need a `doc/js/libjsonnet.wasm` which can either be downloaded from the
 production website:
 
 ```
-wget https://jsonnet.org/js/libjsonnet.js -O doc/js/libjsonnet.js
+wget https://jsonnet.org/js/libjsonnet.wasm -O doc/js/libjsonnet.wasm
 ```
 
-Or you can build it yourself, which requires [_emscripten_](https://emscripten.org/)):
-
-```
-make doc/js/libjsonnet.js
-```
+Or you can build it yourself, which requires checking out
+[go-jsonnet](https://github.com/google/go-jsonnet).  See the README.md in
+that repo for instructions.
 
 Then, from the root of the repository you can generate and serve the website using
 [Jekyll](https://jekyllrb.com/):
