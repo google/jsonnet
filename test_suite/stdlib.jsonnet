@@ -1500,6 +1500,16 @@ std.assertEqual(
     |||
   ), [1, 2, 3]
 ) &&
+std.assertEqual(
+  std.parseYaml(
+    |||
+      f1: |
+        a
+        b
+      f2: "a\nb\n"
+    |||
+  ), { f1: 'a\nb\n', f2: 'a\nb\n' }
+) &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
 std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
