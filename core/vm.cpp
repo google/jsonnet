@@ -3037,7 +3037,6 @@ class Interpreter {
                 case FRAME_STRING_CONCAT: {
                     const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
-                    const Value &rhs = stack.top().val2;
                     UString output;
                     if (lhs.t == Value::STRING) {
                         output.append(static_cast<const HeapString *>(lhs.v.h)->value);
@@ -3045,6 +3044,7 @@ class Interpreter {
                         scratch = lhs;
                         output.append(toString(ast.left->location));
                     }
+                    const Value &rhs = stack.top().val2;
                     if (rhs.t == Value::STRING) {
                         output.append(static_cast<const HeapString *>(rhs.v.h)->value);
                     } else {
