@@ -1585,11 +1585,14 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
-        auto j = json::parse(value);
+        try {
+            auto j = json::parse(value);
 
-        bool filled;
-
-        otherJsonToHeap(j, filled, scratch);
+            bool filled;
+            otherJsonToHeap(j, filled, scratch);
+        } catch (const json::parse_error &e) {
+            throw makeError(loc, e.what());
+        }
 
         return nullptr;
     }
