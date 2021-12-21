@@ -17,6 +17,10 @@ git_repository(
     shallow_since = "1535728917 -0400",
 )
 
-load("//tools/build_defs:python_repo.bzl", "python_interpreter")
+# This allows using py_test and py_library against python3.
+register_toolchains("//platform_defs:default_python3_toolchain")
 
-python_interpreter(name = "default_python")
+# This allows building C++ against python3 headers.
+load("//tools/build_defs:python_repo.bzl", "python_headers")
+python_headers(name = "default_python3_headers")
+

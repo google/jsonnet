@@ -1,12 +1,6 @@
 build_file_contents = """\
 package(default_visibility = ["//visibility:public"])
 
-sh_binary(
-    name = "python",
-    srcs = ["bin/python"],
-    data = [":include"],
-)
-
 filegroup(
     name = "include",
     srcs = glob(["include/**"]),
@@ -19,7 +13,7 @@ cc_library(
 )
 """
 
-def _python_interpreter(repository_ctx):
+def _impl(repository_ctx):
   rctx = repository_ctx
   if "/" in rctx.attr.path or "\\" in rctx.attr.path:
     # Canonicalize the path
@@ -41,12 +35,12 @@ def _python_interpreter(repository_ctx):
   rctx.file("BUILD", build_file_contents)
 
 
-python_interpreter = repository_rule(
-    implementation = _python_interpreter,
+python_headers = repository_rule(
+    implementation = _impl,
     local = True,
     attrs = {
         "path": attr.string(
-            default = "python",
+            default = "python3",
         ),
     },
 )
