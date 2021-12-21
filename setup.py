@@ -19,6 +19,8 @@ from setuptools.command.build_ext import build_ext as BuildExt
 from subprocess import Popen
 
 DIR = os.path.abspath(os.path.dirname(__file__))
+# NOTE: If you are editing the array below then you probably also need
+# to change MANIFEST.in.
 LIB_OBJECTS = [
     'core/desugarer.o',
     'core/formatter.o',
@@ -70,7 +72,7 @@ jsonnet_ext = Extension(
     '_jsonnet',
     sources=MODULE_SOURCES,
     extra_objects=LIB_OBJECTS,
-    include_dirs = ['include', 'third_party/md5', 'third_party/json'],
+    include_dirs = ['include'],
     language='c++'
 )
 

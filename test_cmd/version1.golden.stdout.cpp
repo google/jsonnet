@@ -1,1 +1,1 @@
-Jsonnet commandline interpreter v0.17.0
+Jsonnet commandline interpreter v0.18.0
