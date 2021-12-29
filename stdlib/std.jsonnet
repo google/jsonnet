@@ -1597,16 +1597,16 @@ limitations under the License.
   // Three way comparison.
   // TODO(sbarzowski): consider exposing and documenting it properly
   __compare(v1, v2)::
-      local t1 = std.type(v1), t2 = std.type(v2);
-      if t1 != t2 then
-        error "Comparison requires matching types. Got " + t1 + " and " + t2
-      else if t1 == "array" then
-        std.__compare_array(v1, v2)
-      else if t1 == "function" || t1 == "object" || t1 == "bool" then
-        error "Values of type " + t1 + " are not comparable."
-      else if v1 < v2 then -1
-      else if v1 > v2 then 1
-      else 0,
+    local t1 = std.type(v1), t2 = std.type(v2);
+    if t1 != t2 then
+      error 'Comparison requires matching types. Got ' + t1 + ' and ' + t2
+    else if t1 == 'array' then
+      std.__compare_array(v1, v2)
+    else if t1 == 'function' || t1 == 'object' || t1 == 'boolean' then
+      error 'Values of type ' + t1 + ' are not comparable.'
+    else if v1 < v2 then -1
+    else if v1 > v2 then 1
+    else 0,
 
   __compare_array(arr1, arr2)::
     local len1 = std.length(arr1), len2 = std.length(arr2);
