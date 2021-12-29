@@ -1594,6 +1594,25 @@ limitations under the License.
     else
       std.filter(function(i) arr[i] == value, std.range(0, std.length(arr) - 1)),
 
+  all(arr)::
+    if !std.isArray(arr) then
+      error 'all() parameter should be an array, got ' + std.type(arr)
+    else
+      local and = function(x, y)
+        if !std.isBoolean(y) then
+          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
+        else x && y;
+      std.foldl(and, arr, true),
+  any(arr)::
+    if !std.isArray(arr) then
+      error 'any() parameter should be an array, got ' + std.type(arr)
+    else
+      local or = function(x, y)
+        if !std.isBoolean(y) then
+          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
+        else x || y;
+      std.foldl(or, arr, false),
+
   // Three way comparison.
   // TODO(sbarzowski): consider exposing and documenting it properly
   __compare(v1, v2)::
