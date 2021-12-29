@@ -1298,7 +1298,7 @@ limitations under the License.
   base64(input)::
     local bytes =
       if std.isString(input) then
-        std.map(function(c) std.codepoint(c), input)
+        std.map(std.codepoint, input)
       else
         input;
 
@@ -1365,7 +1365,7 @@ limitations under the License.
 
   base64Decode(str)::
     local bytes = std.base64DecodeBytes(str);
-    std.join('', std.map(function(b) std.char(b), bytes)),
+    std.join('', std.map(std.char, bytes)),
 
   reverse(arr)::
     local l = std.length(arr);
