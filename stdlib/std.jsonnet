@@ -881,7 +881,7 @@ limitations under the License.
       escapeKeyToml(key) =
         local bare_allowed = std.set(std.stringChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"));
         if std.setUnion(std.set(std.stringChars(key)), bare_allowed) == bare_allowed then key else escapeStringToml(key),
-      isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.foldl(function(a, b) a && std.isObject(b), v, true),
+      isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.all(std.map(std.isObject, v)),
       isSection(v) = std.isObject(v) || isTableArray(v),
       renderValue(v, indexedPath, inline, cindent) =
         if v == true then
