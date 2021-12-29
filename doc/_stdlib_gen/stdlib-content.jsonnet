@@ -1249,7 +1249,10 @@ local html = import 'html.libsonnet';
           params: ['arr'],
           description: html.paragraphs([
             |||
-              Return true if all elements of the given array is true, false otherwise. <code>all([])</code> evaluates to true.
+              Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
+            |||,
+            |||
+              It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
             |||,
           ]),
         },
@@ -1258,7 +1261,10 @@ local html = import 'html.libsonnet';
           params: ['arr'],
           description: html.paragraphs([
             |||
-              Return true if any element of the given array is true, false otherwise. <code>any([])</code> evaluates to false.
+              Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
+            |||,
+            |||
+              It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
             |||,
           ]),
         },
