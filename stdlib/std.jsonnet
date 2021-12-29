@@ -1335,7 +1335,7 @@ limitations under the License.
           base64_table[(arr[i + 2] & 63)];
         aux(arr, i + 3, r + str) tailstrict;
 
-    local sanity = std.foldl(function(r, a) r && (a < 256), bytes, true);
+    local sanity = std.all(std.map(function(a) a < 256, bytes));
     if !sanity then
       error 'Can only base64 encode strings / arrays of single bytes.'
     else
