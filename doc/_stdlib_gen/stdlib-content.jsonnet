@@ -1244,6 +1244,24 @@ local html = import 'html.libsonnet';
             |||,
           ]),
         },
+        {
+          name: 'all',
+          params: ['arr'],
+          description: html.paragraphs([
+            |||
+              Return true if all elements of the given array is true, false otherwise. <code>all([])</code> evaluates to true.
+            |||,
+          ]),
+        },
+        {
+          name: 'any',
+          params: ['arr'],
+          description: html.paragraphs([
+            |||
+              Return true if any element of the given array is true, false otherwise. <code>any([])</code> evaluates to false.
+            |||,
+          ]),
+        },
       ],
     },
     {
