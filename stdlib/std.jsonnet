@@ -881,7 +881,7 @@ limitations under the License.
       escapeKeyToml(key) =
         local bare_allowed = std.set(std.stringChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"));
         if std.setUnion(std.set(std.stringChars(key)), bare_allowed) == bare_allowed then key else escapeStringToml(key),
-      isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.foldl(function(a, b) a && std.isObject(b), v, true),
+      isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.all(std.map(std.isObject, v)),
       isSection(v) = std.isObject(v) || isTableArray(v),
       renderValue(v, indexedPath, inline, cindent) =
         if v == true then
@@ -1335,7 +1335,7 @@ limitations under the License.
           base64_table[(arr[i + 2] & 63)];
         aux(arr, i + 3, r + str) tailstrict;
 
-    local sanity = std.foldl(function(r, a) r && (a < 256), bytes, true);
+    local sanity = std.all([a < 256 for a in bytes]);
     if !sanity then
       error 'Can only base64 encode strings / arrays of single bytes.'
     else
@@ -1593,6 +1593,25 @@ limitations under the License.
       error 'find second parameter should be an array, got ' + std.type(arr)
     else
       std.filter(function(i) arr[i] == value, std.range(0, std.length(arr) - 1)),
+
+  all(arr)::
+    if !std.isArray(arr) then
+      error 'all() parameter should be an array, got ' + std.type(arr)
+    else
+      local and = function(x, y)
+        if !std.isBoolean(y) then
+          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
+        else x && y;
+      std.foldl(and, arr, true),
+  any(arr)::
+    if !std.isArray(arr) then
+      error 'any() parameter should be an array, got ' + std.type(arr)
+    else
+      local or = function(x, y)
+        if !std.isBoolean(y) then
+          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
+        else x || y;
+      std.foldl(or, arr, false),
 
   // Three way comparison.
   // TODO(sbarzowski): consider exposing and documenting it properly

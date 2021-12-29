@@ -1505,4 +1505,13 @@ std.assertEqual(std.decodeUTF8([65 + 1 - 1]), 'A') &&
 std.assertEqual(std.decodeUTF8([90, 97, 197, 188, 195, 179, 197, 130, 196, 135, 32, 103, 196, 153, 197, 155, 108, 196, 133, 32, 106, 97, 197, 186, 197, 132]), 'Zażółć gęślą jaźń') &&
 std.assertEqual(std.decodeUTF8([240, 159, 152, 131]), '😃') &&
 
+
+std.assertEqual(std.any([true, false]), true) &&
+std.assertEqual(std.any([false, false]), false) &&
+std.assertEqual(std.any([]), false) &&
+
+std.assertEqual(std.all([true, false]), false) &&
+std.assertEqual(std.all([true, true]), true) &&
+std.assertEqual(std.all([]), true) &&
+
 true
