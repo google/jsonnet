@@ -1466,11 +1466,11 @@ class Interpreter {
         auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
         while (test < str->value.size() && (maxsplits == -1 ||
                                             size_t(maxsplits) > elements.size())) {
-            if (c->value[0] == str->value[test]) {
+            if (c->value == str->value.substr(test, c->value.size())) {
                 auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
                 elements.push_back(th);
                 th->fill(makeString(str->value.substr(start, test - start)));
-                start = test + 1;
+                start = test + c->value.size();
                 test = start;
             } else {
                 ++test;

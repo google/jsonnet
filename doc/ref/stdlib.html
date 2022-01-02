@@ -785,14 +785,17 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        Split the string <code>str</code> into an array of strings, divided by the single character
+        Split the string <code>str</code> into an array of strings, divided by the string
         <code>c</code>.
       </p>
       <p>
-        Example: <code>std.split("foo/bar", "/")</code> yields <code>[ "foo", "bar" ]</code>.
+        Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
       </p>
       <p>
-        Example: <code>std.split("/foo/", "/")</code> yields <code>[ "", "foo", "" ]</code>.
+        Example: <code>std.split("foo/_bar", "/_")</code> yields <code>[ "foo", "bar" ]</code>.
+      </p>
+      <p>
+        Example: <code>std.split("/_foo/_bar", "/_")</code> yields <code>[ "", "foo", "bar" ]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -813,14 +816,17 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
-        array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
+        As <code>std.split(str, c)</code> but will stop after <code>maxsplits</code> splits, thereby the largest
+        array it will return has length <code>maxsplits + 1</code>. A limit of <code>-1</code> means unlimited.
       </p>
       <p>
-        Example: <code>std.splitLimit("foo/bar", "/", 1)</code> yields <code>[ "foo", "bar" ]</code>.
+        Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
       </p>
       <p>
-        Example: <code>std.splitLimit("/foo/bar", "/", 1)</code> yields <code>[ "", "foo/bar" ]</code>.
+        Example: <code>std.splitLimit("foo/_bar", "/_", 1)</code> yields <code>[ "foo", "bar" ]</code>.
+      </p>
+      <p>
+        Example: <code>std.splitLimit("/_foo/_bar", "/_", 1)</code> yields <code>[ "", "foo/_bar" ]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
