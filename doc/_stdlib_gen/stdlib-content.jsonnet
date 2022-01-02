@@ -339,36 +339,46 @@ local html = import 'html.libsonnet';
         {
           name: 'split',
           params: ['str', 'c'],
-          description: |||
-            Split the string <code>str</code> into an array of strings, divided by the single character
-            <code>c</code>.
-          |||,
+          description: [
+            html.p({}, |||
+              Split the string <code>str</code> into an array of strings, divided by the string
+              <code>c</code>.
+            |||),
+            html.p({}, |||
+              Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
+            |||),
+          ],
           examples: [
             {
-              input: @'std.split("foo/bar", "/")',
-              output: std.split('foo/bar', '/'),
+              input: @'std.split("foo/_bar", "/_")',
+              output: std.split('foo/_bar', '/_'),
             },
             {
-              input: @'std.split("/foo/", "/")',
-              output: std.split('/foo/', '/'),
+              input: @'std.split("/_foo/_bar", "/_")',
+              output: std.split('/_foo/_bar', '/_'),
             },
           ],
         },
         {
           name: 'splitLimit',
           params: ['str', 'c', 'maxsplits'],
-          description: |||
-            As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
-            array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
-          |||,
+          description: [
+            html.p({}, |||
+              As <code>std.split(str, c)</code> but will stop after <code>maxsplits</code> splits, thereby the largest
+              array it will return has length <code>maxsplits + 1</code>. A limit of <code>-1</code> means unlimited.
+            |||),
+            html.p({}, |||
+              Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
+            |||),
+          ],
           examples: [
             {
-              input: @'std.splitLimit("foo/bar", "/", 1)',
-              output: std.splitLimit('foo/bar', '/', 1),
+              input: @'std.splitLimit("foo/_bar", "/_", 1)',
+              output: std.splitLimit('foo/_bar', '/_', 1),
             },
             {
-              input: @'std.splitLimit("/foo/bar", "/", 1)',
-              output: std.splitLimit('/foo/bar', '/', 1),
+              input: @'std.splitLimit("/_foo/_bar", "/_", 1)',
+              output: std.splitLimit('/_foo/_bar', '/_', 1),
             },
           ],
         },

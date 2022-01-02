@@ -110,26 +110,27 @@ limitations under the License.
     parse_nat(str, 16),
 
   split(str, c)::
-    assert std.isString(str) : 'std.split first parameter should be a string, got ' + std.type(str);
-    assert std.isString(c) : 'std.split second parameter should be a string, got ' + std.type(c);
-    assert std.length(c) == 1 : 'std.split second parameter should have length 1, got ' + std.length(c);
+    assert std.isString(str) : 'std.split first parameter must be a String, got ' + std.type(str);
+    assert std.isString(c) : 'std.split second parameter must be a String, got ' + std.type(c);
+    assert std.length(c) >= 1 : 'std.split second parameter must have length 1 or greater, got ' + std.length(c);
     std.splitLimit(str, c, -1),
 
   splitLimit(str, c, maxsplits)::
-    assert std.isString(str) : 'std.splitLimit first parameter should be a string, got ' + std.type(str);
-    assert std.isString(c) : 'std.splitLimit second parameter should be a string, got ' + std.type(c);
-    assert std.length(c) == 1 : 'std.splitLimit second parameter should have length 1, got ' + std.length(c);
-    assert std.isNumber(maxsplits) : 'std.splitLimit third parameter should be a number, got ' + std.type(maxsplits);
-    local aux(str, delim, i, arr, v) =
-      local c = str[i];
-      local i2 = i + 1;
-      if i >= std.length(str) then
-        arr + [v]
-      else if c == delim && (maxsplits == -1 || std.length(arr) < maxsplits) then
-        aux(str, delim, i2, arr + [v], '') tailstrict
+    assert std.isString(str) : 'str.splitLimit first parameter must be a String, got ' + std.type(str);
+    assert std.isString(c) : 'str.splitLimit second parameter must be a String, got ' + std.type(c);
+    assert std.length(c) >= 1 : 'std.splitLimit second parameter must have length 1 or greater, got ' + std.length(c);
+    assert std.isNumber(maxsplits) : 'str.splitLimit third parameter must be a Number, got ' + std.type(maxsplits);
+    local strLen = std.length(str);
+    local cLen = std.length(c);
+    local aux(idx, ret, val) =
+      if idx >= strLen then
+        ret + [val]
+      else if str[idx : idx + cLen : 1] == c &&
+              (maxsplits == -1 || std.length(ret) < maxsplits) then
+        aux(idx + cLen, ret + [val], '')
       else
-        aux(str, delim, i2, arr, v + c) tailstrict;
-    aux(str, c, 0, [], ''),
+        aux(idx + 1, ret, val + str[idx]);
+    aux(0, [], ''),
 
   strReplace(str, from, to)::
     assert std.isString(str);

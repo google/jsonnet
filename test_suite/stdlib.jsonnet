@@ -480,9 +480,13 @@ std.assertEqual(std.extVar('var2') { x+: 2 }.x, 3) &&
 
 std.assertEqual(std.split('foo/bar', '/'), ['foo', 'bar']) &&
 std.assertEqual(std.split('/foo/', '/'), ['', 'foo', '']) &&
+std.assertEqual(std.split('foo/_bar', '/_'), ['foo', 'bar']) &&
+std.assertEqual(std.split('/_foo/_', '/_'), ['', 'foo', '']) &&
 
 std.assertEqual(std.splitLimit('foo/bar', '/', 1), ['foo', 'bar']) &&
 std.assertEqual(std.splitLimit('/foo/', '/', 1), ['', 'foo/']) &&
+std.assertEqual(std.splitLimit('foo/_bar', '/_', 1), ['foo', 'bar']) &&
+std.assertEqual(std.splitLimit('/_foo/_', '/_', 1), ['', 'foo/_']) &&
 
 local some_toml = {
   key: 'value',
