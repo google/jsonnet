@@ -428,7 +428,7 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="std.clamp">
+      <h4 id="clamp">
         std.clamp(x, minVal, maxVal)
       </h4>
     </div>
@@ -2211,6 +2211,66 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
         Default value is identity function <code>keyF=function(x) x</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="all">
+        std.all(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
+      </p>
+      <p>
+        It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="any">
+        std.any(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
+      </p>
+      <p>
+        It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
       </p>
       
     </div>
