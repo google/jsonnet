@@ -1247,6 +1247,7 @@ local html = import 'html.libsonnet';
         {
           name: 'all',
           params: ['arr'],
+          availableSince: 'upcoming',
           description: html.paragraphs([
             |||
               Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
@@ -1259,6 +1260,7 @@ local html = import 'html.libsonnet';
         {
           name: 'any',
           params: ['arr'],
+          availableSince: 'upcoming',
           description: html.paragraphs([
             |||
               Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
