@@ -66,7 +66,7 @@ local html = import 'html.libsonnet';
         {
           name: 'get',
           params: ['o', 'f', 'default=null', 'inc_hidden=true'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
             Returns the object's field if it exists or default value otherwise.
             <code>inc_hidden</code> controls whether to include hidden fields.
@@ -759,7 +759,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestJsonMinified',
           params: ['value'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
                 Convert the given object to a minified JSON form. Under the covers,
                 it calls <code>std.manifestJsonEx:')</code>:
@@ -943,7 +943,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestTomlEx',
           params: ['toml', 'indent'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
             Convert the given object to a TOML form. <code>indent</code> is a string containing
             one or more whitespaces that are used for indentation:
