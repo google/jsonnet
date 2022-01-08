@@ -836,6 +836,35 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="splitLimitR">
+        std.splitLimitR(str, c, maxsplits)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        As <code>std.splitLimit(str, c, maxsplits)</code> but will split from right to left.
+      </p>
+      <p>
+        Example: <code>std.splitLimitR("/_foo/_bar", "/_", 1)</code> yields <code>[ "/_foo", "bar" ]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="strReplace">
         std.strReplace(str, from, to)
       </h4>

@@ -383,6 +383,18 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'splitLimitR',
+          params: ['str', 'c', 'maxsplits'],
+          availableSince: 'upcoming',
+          description: 'As <code>std.splitLimit(str, c, maxsplits)</code> but will split from right to left.',
+          examples: [
+            {
+              input: @'std.splitLimitR("/_foo/_bar", "/_", 1)',
+              output: std.splitLimitR('/_foo/_bar', '/_', 1),
+            },
+          ],
+        },
+        {
           name: 'strReplace',
           params: ['str', 'from', 'to'],
           description: |||

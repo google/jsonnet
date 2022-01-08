@@ -132,6 +132,17 @@ limitations under the License.
         aux(idx + 1, ret, val + str[idx]);
     aux(0, [], ''),
 
+  splitLimitR(str, c, maxsplits)::
+    assert std.isString(str) : 'str.splitLimitR first parameter must be a String, got ' + std.type(str);
+    assert std.isString(c) : 'str.splitLimitR second parameter must be a String, got ' + std.type(c);
+    assert std.length(c) >= 1 : 'std.splitLimitR second parameter must have length 1 or greater, got ' + std.length(c);
+    assert std.isNumber(maxsplits) : 'str.splitLimitR third parameter must be a Number, got ' + std.type(maxsplits);
+    if maxsplits == -1 then
+      std.splitLimit(str, c, -1)
+    else
+      local revStr(str) = std.join('', std.reverse(str));
+      std.map(function(e) revStr(e), std.reverse(std.splitLimit(revStr(str), revStr(c), maxsplits))),
+
   strReplace(str, from, to)::
     assert std.isString(str);
     assert std.isString(from);

@@ -488,6 +488,13 @@ std.assertEqual(std.splitLimit('/foo/', '/', 1), ['', 'foo/']) &&
 std.assertEqual(std.splitLimit('foo/_bar', '/_', 1), ['foo', 'bar']) &&
 std.assertEqual(std.splitLimit('/_foo/_', '/_', 1), ['', 'foo/_']) &&
 
+std.assertEqual(std.splitLimitR('foo/bar', '/', 1), ['foo', 'bar']) &&
+std.assertEqual(std.splitLimitR('/foo/', '/', 1), ['/foo', '']) &&
+std.assertEqual(std.splitLimitR('/foo/', '/', -1), ['', 'foo', '']) &&
+std.assertEqual(std.splitLimitR('foo/_bar', '/_', 1), ['foo', 'bar']) &&
+std.assertEqual(std.splitLimitR('/_foo/_', '/_', 1), ['/_foo', '']) &&
+std.assertEqual(std.splitLimitR('/_foo/_', '/_', -1), ['', 'foo', '']) &&
+
 local some_toml = {
   key: 'value',
   simple: { t: 5 },
