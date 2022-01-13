@@ -1608,11 +1608,18 @@ limitations under the License.
     if !std.isArray(arr) then
       error 'any() parameter should be an array, got ' + std.type(arr)
     else
-      local or = function(x, y)
-        if !std.isBoolean(y) then
-          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
-        else x || y;
-      std.foldl(or, arr, false),
+      local arrLen = std.length(arr);
+      local aux(idx) =
+        local e = arr[idx];
+        if idx >= arrLen then
+          false
+        else if !std.isBoolean(e) then
+          error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
+        else if e then
+          true
+        else
+          aux(idx + 1) tailstrict;
+      aux(0),
 
   // Three way comparison.
   // TODO(sbarzowski): consider exposing and documenting it properly
