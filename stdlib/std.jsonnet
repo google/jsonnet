@@ -1599,11 +1599,19 @@ limitations under the License.
     if !std.isArray(arr) then
       error 'all() parameter should be an array, got ' + std.type(arr)
     else
-      local and = function(x, y)
-        if !std.isBoolean(y) then
-          error std.format('element "%s" of type %s is not a boolean', y, std.type(y))
-        else x && y;
-      std.foldl(and, arr, true),
+      local arrLen = std.length(arr);
+      local aux(idx) =
+        local e = arr[idx];
+        if idx >= arrLen then
+          true
+        else if !std.isBoolean(e) then
+          error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
+        else if !e then
+          false
+        else
+          aux(idx + 1) tailstrict;
+      aux(0),
+
   any(arr)::
     if !std.isArray(arr) then
       error 'any() parameter should be an array, got ' + std.type(arr)
