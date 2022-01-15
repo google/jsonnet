@@ -1601,15 +1601,16 @@ limitations under the License.
     else
       local arrLen = std.length(arr);
       local aux(idx) =
-        local e = arr[idx];
         if idx >= arrLen then
           true
-        else if !std.isBoolean(e) then
-          error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
-        else if !e then
-          false
         else
-          aux(idx + 1) tailstrict;
+          local e = arr[idx];
+          if !std.isBoolean(e) then
+            error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
+          else if !e then
+            false
+          else
+            aux(idx + 1) tailstrict;
       aux(0),
 
   any(arr)::
@@ -1618,15 +1619,16 @@ limitations under the License.
     else
       local arrLen = std.length(arr);
       local aux(idx) =
-        local e = arr[idx];
         if idx >= arrLen then
           false
-        else if !std.isBoolean(e) then
-          error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
-        else if e then
-          true
         else
-          aux(idx + 1) tailstrict;
+          local e = arr[idx];
+          if !std.isBoolean(e) then
+            error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
+          else if e then
+            true
+          else
+            aux(idx + 1) tailstrict;
       aux(0),
 
   // Three way comparison.
