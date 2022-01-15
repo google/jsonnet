@@ -1596,40 +1596,34 @@ limitations under the License.
       std.filter(function(i) arr[i] == value, std.range(0, std.length(arr) - 1)),
 
   all(arr)::
-    if !std.isArray(arr) then
-      error 'all() parameter should be an array, got ' + std.type(arr)
-    else
-      local arrLen = std.length(arr);
-      local aux(idx) =
-        if idx >= arrLen then
-          true
-        else
-          local e = arr[idx];
-          if !std.isBoolean(e) then
-            error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
-          else if !e then
-            false
-          else
-            aux(idx + 1) tailstrict;
-      aux(0),
-
-  any(arr)::
-    if !std.isArray(arr) then
-      error 'any() parameter should be an array, got ' + std.type(arr)
-    else
-      local arrLen = std.length(arr);
-      local aux(idx) =
-        if idx >= arrLen then
+    assert std.isArray(arr) : 'all() parameter should be an array, got ' + std.type(arr);
+    local arrLen = std.length(arr);
+    local aux(idx) =
+      if idx >= arrLen then
+        true
+      else
+        local e = arr[idx];
+        assert std.isBoolean(e) : std.format('element "%s" of type %s is not a boolean', e, std.type(e));
+        if !e then
           false
         else
-          local e = arr[idx];
-          if !std.isBoolean(e) then
-            error std.format('element "%s" of type %s is not a boolean', e, std.type(e))
-          else if e then
-            true
-          else
-            aux(idx + 1) tailstrict;
-      aux(0),
+          aux(idx + 1) tailstrict;
+    aux(0),
+
+  any(arr)::
+    assert std.isArray(arr) : 'any() parameter should be an array, got ' + std.type(arr);
+    local arrLen = std.length(arr);
+    local aux(idx) =
+      if idx >= arrLen then
+        false
+      else
+        local e = arr[idx];
+        assert std.isBoolean(e) : std.format('element "%s" of type %s is not a boolean', e, std.type(e));
+        if e then
+          true
+        else
+          aux(idx + 1) tailstrict;
+    aux(0),
 
   // Three way comparison.
   // TODO(sbarzowski): consider exposing and documenting it properly
