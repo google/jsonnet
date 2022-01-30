@@ -23,8 +23,17 @@ limitations under the License.
 
 static char *jsonnet_str(struct JsonnetVm *vm, const char *str)
 {
-    char *out = jsonnet_realloc(vm, NULL, strlen(str) + 1);
-    memcpy(out, str, strlen(str) + 1);
+    size_t size = strlen(str) + 1;
+    char *out = jsonnet_realloc(vm, NULL, size);
+    memcpy(out, str, size);
+    return out;
+}
+
+static char *jsonnet_str_nonull(struct JsonnetVm *vm, const char *str, size_t *buflen)
+{
+    *buflen = strlen(str);
+    char *out = jsonnet_realloc(vm, NULL, *buflen);
+    memcpy(out, str, *buflen);
     return out;
 }
 
@@ -209,12 +218,12 @@ struct ImportCtx {
     PyObject *callback;
 };
 
-static char *cpython_import_callback(void *ctx_, const char *base, const char *rel,
-                                     char **found_here, int *success)
+static int cpython_import_callback(void *ctx_, const char *base, const char *rel,
+                                   char **found_here, char **buf, size_t *buflen)
 {
     const struct ImportCtx *ctx = ctx_;
     PyObject *arglist, *result;
-    char *out;
+    int success;
 
     PyEval_RestoreThread(*ctx->py_thread);
     arglist = Py_BuildValue("(s, s)", base, rel);
@@ -223,47 +232,50 @@ static char *cpython_import_callback(void *ctx_, const char *base, const char *r
 
     if (result == NULL) {
         // Get string from exception
-        char *out = jsonnet_str(ctx->vm, exc_to_str());
-        *success = 0;
+        *buf = jsonnet_str_nonull(ctx->vm, exc_to_str(), buflen);
         PyErr_Clear();
         *ctx->py_thread = PyEval_SaveThread();
-        return out;
+        return 1; // failure
     }
 
     if (!PyTuple_Check(result)) {
-        out = jsonnet_str(ctx->vm, "import_callback did not return a tuple");
-        *success = 0;
+        *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return a tuple", buflen);
+        success = 0;
     } else if (PyTuple_Size(result) != 2) {
-        out = jsonnet_str(ctx->vm, "import_callback did not return a tuple (size 2)");
-        *success = 0;
+        *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return a tuple (size 2)", buflen);
+        success = 0;
     } else {
         PyObject *file_name = PyTuple_GetItem(result, 0);
         PyObject *file_content = PyTuple_GetItem(result, 1);
 #if PY_MAJOR_VERSION >= 3
-        if (!PyUnicode_Check(file_name) || !PyUnicode_Check(file_content)) {
+        if (!PyUnicode_Check(file_name) || !PyBytes_Check(file_content)) {
 #else
         if (!PyString_Check(file_name) || !PyString_Check(file_content)) {
 #endif
-            out = jsonnet_str(ctx->vm, "import_callback did not return a pair of strings");
-            *success = 0;
+            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes)", buflen);
+            success = 0;
         } else {
+            const char *content_buf;
+            const ssize_t content_len;
 #if PY_MAJOR_VERSION >= 3
             const char *found_here_cstr = PyUnicode_AsUTF8(file_name);
-            const char *content_cstr = PyUnicode_AsUTF8(file_content);
+            PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
 #else
             const char *found_here_cstr = PyString_AsString(file_name);
-            const char *content_cstr = PyString_AsString(file_content);
+            PyString_AsStringAndSize(file_content, &content_buf, &content_len);
 #endif
             *found_here = jsonnet_str(ctx->vm, found_here_cstr);
-            out = jsonnet_str(ctx->vm, content_cstr);
-            *success = 1;
+            *buflen = content_len - 1; // Python always adds a trailing null
+            *buf = jsonnet_realloc(ctx->vm, NULL, *buflen);
+            memcpy(*buf, content_buf, *buflen);
+            success = 1;
         }
     }
 
     Py_DECREF(result);
     *ctx->py_thread = PyEval_SaveThread();
 
-    return out;
+    return success ? 0 : 1;
 }
 
 static PyObject *handle_result(struct JsonnetVm *vm, char *out, int error)

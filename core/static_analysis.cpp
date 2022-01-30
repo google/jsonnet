@@ -110,6 +110,10 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         assert(dynamic_cast<Importstr *>(ast_));
         // Nothing to do.
     } break;
+    case AST_IMPORTBIN: {
+        assert(dynamic_cast<Importbin *>(ast_));
+        // Nothing to do.
+    } break;
     case AST_IN_SUPER: {
         assert(dynamic_cast<const InSuper *>(ast_));
         auto* ast = static_cast<const InSuper *>(ast_);

@@ -190,6 +190,7 @@ static const std::map<std::string, Token::Kind> keywords = {
     {"if", Token::IF},
     {"import", Token::IMPORT},
     {"importstr", Token::IMPORTSTR},
+    {"importbin", Token::IMPORTBIN},
     {"in", Token::IN},
     {"local", Token::LOCAL},
     {"null", Token::NULL_LIT},

@@ -118,6 +118,7 @@ TEST(Parser, TestTuple)
 
     testParse("import 'foo.jsonnet'");
     testParse("importstr 'foo.text'");
+    testParse("importbin 'foo.text'");
 
     testParse("{a: b} + {c: d}");
     testParse("{a: b}{c: d}");
@@ -315,6 +316,9 @@ TEST(Parser, TestInvalidImport)
     testParseError("importstr (a b)",
                    R"_(test:1:14: expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("importstr (a+b)", "test:1:11-16: computed imports are not allowed.");
+    testParseError("importbin (a b)",
+                   R"_(test:1:14: expected token ")" but got (IDENTIFIER, "b"))_");
+    testParseError("importbin (a+b)", "test:1:11-16: computed imports are not allowed.");
 }
 
 TEST(Parser, TestInvalidOperator)

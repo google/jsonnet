@@ -309,6 +309,7 @@ TEST(Lexer, TestKeywords)
     testLex("if", "if", {Token(Token::Kind::IF, "if")}, "");
     testLex("import", "import", {Token(Token::Kind::IMPORT, "import")}, "");
     testLex("importstr", "importstr", {Token(Token::Kind::IMPORTSTR, "importstr")}, "");
+    testLex("importbin", "importbin", {Token(Token::Kind::IMPORTBIN, "importbin")}, "");
     testLex("in", "in", {Token(Token::Kind::IN, "in")}, "");
     testLex("local", "local", {Token(Token::Kind::LOCAL, "local")}, "");
     testLex("null", "null", {Token(Token::Kind::NULL_LIT, "null")}, "");

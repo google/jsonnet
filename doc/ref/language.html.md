@@ -536,7 +536,7 @@ The field separators `+:`, `+::`, `+:::` are relevant for nested objects (which 
 
 It is not an error to have `+:` without a matching field on the left hand side. In such cases the right hand side field is used directly. E.g. both `{ foo +: { bar: "baz" } }` and `{} + { foo +: { bar: "baz" } }` evaluate to `{ foo: { bar: "baz" } }`.
 
-In all cases, these field separators are just syntax sugar and the same results can be achieved with `super`. More precisely `{ a +: b }` is equivalent to `{ a: if "a" in super then super.a + b else b }` (and similarly `+::` and `+:::`). 
+In all cases, these field separators are just syntax sugar and the same results can be achieved with `super`. More precisely `{ a +: b }` is equivalent to `{ a: if "a" in super then super.a + b else b }` (and similarly `+::` and `+:::`).
 
 
 #### Object Equality
@@ -604,7 +604,7 @@ It is possible to pass data from the environment, but only explicitly, by using 
 
 Before using any of the methods described below, it is worth considering if a fully self-contained setup is viable.
 
-In this style, the configuration is a set of `.jsonnet` and `.libsonnet` files. Every output file corresponds to a `.jsonnet` file and all shared setup is in `.libsonnet` files. Any raw data can be placed in additional files and imported using `importstr`. Usually, all code and data is committed to a repository.
+In this style, the configuration is a set of `.jsonnet` and `.libsonnet` files. Every output file corresponds to a `.jsonnet` file and all shared setup is in `.libsonnet` files. Any raw data can be placed in additional files and imported using `importstr` or `importbin`. Usually, all code and data is committed to a repository.
 Sometimes the generated configuration is also checked in, which makes it easy to spot unintended changes.
 
 Sometimes it is not practical, though. For example if the produced configuration needs to contain secrets, which you do not want to commit alongside code, it is necessary to pass them from outside.

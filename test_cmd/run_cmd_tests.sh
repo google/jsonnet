@@ -60,6 +60,8 @@ do_test "jpath5" 0 -J "lib2" -J "lib1" -e 'import "lib2_test.jsonnet"'
 do_test "jpath6" 0 -J "lib2" -J "lib1" -e 'importstr "shared.txt"'
 do_test "jpath7" 0 -J "lib1" -J "lib2" -e 'importstr "shared.txt"'
 do_test "jpath8" 1 -J "" -e 'true'
+do_test "jpath9" 0 -J "lib2" -J "lib1" -e 'importbin "shared.txt"'
+do_test "jpath10" 0 -J "lib1" -J "lib2" -e 'importbin "shared.txt"'
 do_test "ext1" 0 --ext-str x=1 -e 'std.extVar("x")'
 do_test "ext2" 0 -V x=1 -e 'std.extVar("x")'
 do_test "ext3" 1 -V y=1 -e 'std.extVar("x")'
@@ -105,9 +107,9 @@ do_test "string1" 0 -S -e '"A long\nparagraph."'
 do_test "string2" 1 -S -e 'null'
 
 export JSONNET_PATH=lib1:lib2
-do_test "jsonnet_path1" 0 -e 'importstr "shared.txt"'
+do_test "jsonnet_path1" 0 -e '[importstr "shared.txt", importbin "shared.txt"]'
 export JSONNET_PATH=lib2:lib1
-do_test "jsonnet_path2" 0 -e 'importstr "shared.txt"'
+do_test "jsonnet_path2" 0 -e '[importstr "shared.txt", importbin "shared.txt"]'
 
 if [ -z "$DISABLE_FMT_TESTS" ]; then
 

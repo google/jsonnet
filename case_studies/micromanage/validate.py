@@ -38,8 +38,8 @@ def err(path, msg, note=None):
     raise ConfigError('%s: %s' % (render_path(path), msg), note)
 
 _KEYWORDS = {
-    'import', 'importstr', 'function', 'self', 'super', 'assert', 'if', 'then',
-    'else', 'for', 'in', 'local', 'tailstrict', 'true', 'false', 'null', 'error',
+    'import', 'importstr', 'importbin', 'function', 'self', 'super', 'assert', 'if',
+    'then', 'else', 'for', 'in', 'local', 'tailstrict', 'true', 'false', 'null', 'error',
 }
 
 def _isidentifier(name):

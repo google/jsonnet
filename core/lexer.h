@@ -263,6 +263,7 @@ struct Token {
         IF,
         IMPORT,
         IMPORTSTR,
+        IMPORTBIN,
         IN,
         LOCAL,
         NULL_LIT,
@@ -346,6 +347,7 @@ struct Token {
             case IF: return "if";
             case IMPORT: return "import";
             case IMPORTSTR: return "importstr";
+            case IMPORTBIN: return "importbin";
             case IN: return "in";
             case LOCAL: return "local";
             case NULL_LIT: return "null";
