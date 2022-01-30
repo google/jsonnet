@@ -45,6 +45,7 @@ enum ASTType {
     AST_FUNCTION,
     AST_IMPORT,
     AST_IMPORTSTR,
+    AST_IMPORTBIN,
     AST_INDEX,
     AST_IN_SUPER,
     AST_LITERAL_BOOLEAN,
@@ -80,6 +81,7 @@ static inline std::string ASTTypeToString(ASTType type)
         case AST_FUNCTION: return "AST_FUNCTION";
         case AST_IMPORT: return "AST_IMPORT";
         case AST_IMPORTSTR: return "AST_IMPORTSTR";
+        case AST_IMPORTBIN: return "AST_IMPORTBIN";
         case AST_INDEX: return "AST_INDEX";
         case AST_IN_SUPER: return "AST_IN_SUPER";
         case AST_LITERAL_BOOLEAN: return "AST_LITERAL_BOOLEAN";
@@ -455,6 +457,15 @@ struct Importstr : public AST {
     }
 };
 
+/** Represents importbin "file". */
+struct Importbin : public AST {
+    LiteralString *file;
+    Importbin(const LocationRange &lr, const Fodder &open_fodder, LiteralString *file)
+        : AST(lr, AST_IMPORTBIN, open_fodder), file(file)
+    {
+    }
+};
+
 /** Represents both e[e] and the syntax sugar e.f.
  *
  * One of index and id will be nullptr before desugaring.  After desugaring id will be nullptr.
@@ -647,8 +658,8 @@ struct ObjectField {
 
     ObjectField(enum Kind kind, const Fodder &fodder1, const Fodder &fodder2,
                 const Fodder &fodder_l, const Fodder &fodder_r, enum Hide hide, bool super_sugar,
-                bool method_sugar, AST *expr1, const Identifier *id, const LocationRange &id_lr, 
-                const ArgParams &params, bool trailing_comma, const Fodder &op_fodder, AST *expr2, 
+                bool method_sugar, AST *expr1, const Identifier *id, const LocationRange &id_lr,
+                const ArgParams &params, bool trailing_comma, const Fodder &op_fodder, AST *expr2,
                 AST *expr3, const Fodder &comma_fodder)
         : kind(kind),
           fodder1(fodder1),

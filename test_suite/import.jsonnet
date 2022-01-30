@@ -31,6 +31,9 @@ std.assertEqual(local A = 7, lib = import 'lib/A_20.libsonnet'; lib, 20) &&
 std.assertEqual(importstr 'lib/some_file.txt', 'Hello World!\n') &&
 std.assertEqual(importstr 'lib/some_file.txt', 'Hello World!\n') &&
 
+std.assertEqual(importbin 'lib/nonutf8.bin', [255, 0, 254]) &&
+std.assertEqual(importbin 'lib/nonutf8.bin', [255, 0, 254]) &&
+
 std.assertEqual(import 'lib/rel_path.libsonnet', 'rel_path') &&
 std.assertEqual(import 'lib/rel_path4.libsonnet', 'rel_path') &&
 

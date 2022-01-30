@@ -57,6 +57,7 @@ div.rules {
     \newcommand{\ifnoelse}[2]{\texttt{if }#1\texttt{ then }#2}
     \newcommand{\import}[1]{\texttt{import }#1}
     \newcommand{\importstr}[1]{\texttt{importstr }#1}
+    \newcommand{\importbin}[1]{\texttt{importbin }#1}
     \newcommand{\index}[2]{#1\texttt{[}#2\texttt{]}}
     \newcommand{\local}[2]{\texttt{local }#1\texttt{ ; }#2}
     \newcommand{\null}{\texttt{null}}
@@ -134,7 +135,7 @@ div.rules {
             Some identifiers are reserved as keywords, thus are not in the set <i>id</i>:
             <code>assert</code> <code>else</code> <code>error</code> <code>false</code>
             <code>for</code> <code>function</code> <code>if</code> <code>import</code>
-            <code>importstr</code> <code>in</code> <code>local</code> <code>null</code>
+            <code>importstr</code> <code>importbin</code> <code>in</code> <code>local</code> <code>null</code>
             <code>tailstrict</code> <code>then</code> <code>self</code> <code>super</code>
             <code>true</code>.
           </p>
@@ -490,6 +491,16 @@ div.rules {
           </td>
         </tr>
 
+        <!-- importbin -->
+        <tr>
+          <td></td>
+          <td> | </td>
+          <td>
+            <code>importbin</code>
+            <i>string</i>
+          </td>
+        </tr>
+
         <!-- error -->
         <tr>
           <td></td>
@@ -789,7 +800,7 @@ div.rules {
 
       <p>
         Everything is left associative.  In the case of <code>assert</code>, <code>error</code>,
-        <code>function</code>, <code>if</code>, <code>import</code>, <code>importstr</code>, and
+        <code>function</code>, <code>if</code>, <code>import</code>, <code>importstr</code>, <code>importbin</code>, and
         <code>local</code>, ambiguity is resolved by consuming as many tokens as possible on the
         right hand side.  For example the parentheses are redundant in <code>local x = 1; (x +
         x)</code>.  All remaining ambiguities are resolved according to the following decreasing
@@ -892,12 +903,12 @@ div.rules {
         notation to make the presentation more clear.
       </p>
       <p>
-        Also removed in the core language are <code>import</code> and <code>importstr</code>.  The
+        Also removed in the core language are <code>import</code>, <code>importstr</code>, and <code>importbin</code>.  The
         semantics of these constructs is that they are replaced with either the contents of the
         file, or an error construct if importing failed (e.g. due to I/O errors).  In the first
         case, the file is parsed, desugared, and subject to static checking before it can be
-        substituted.  In the latter case, the file is substituted in the form of a string, so it
-        merely needs to contain valid UTF-8.
+        substituted.  In the case of <code>importstr</code>, the file is substituted in the form of a string, so it
+        merely needs to contain valid UTF-8.  For <code>importbin</code>, the file is substituted as an array of integer numbers between 0 and 255 inclusive.
       </p>
       <p>
         A given Jsonnet file can be recursively imported via <code>import</code>. Thus, the
@@ -1698,6 +1709,14 @@ div.rules {
             \rule{chk-importstr} {
             } {
               Γ ⊢ \importstr{s}
+            }
+          \]
+        </div>
+        <div class="sequent-rule">
+          \[
+            \rule{chk-importbin} {
+            } {
+              Γ ⊢ \importbin{s}
             }
           \]
         </div>

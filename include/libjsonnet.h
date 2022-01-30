@@ -69,10 +69,12 @@ void jsonnet_string_output(struct JsonnetVm *vm, int v);
  *     process's CWD.  This is necessary so that imports from the content of the imported file can
  *     be resolved correctly.  Allocate memory with jsonnet_realloc.  Only use when *success = 1.
  * \param success Set this byref param to 1 to indicate success and 0 for failure.
- * \returns The content of the imported file, or an error message.
+ * \param buf Set this byref param to the content of the imported file, or an error message.  Allocate memory with jsonnet_realloc.  Do not include a null terminator byte.
+ * \param buflen Set this byref param to the length of the data returned in buf.
+ * \returns 0 to indicate success and 1 for failure.  On success, the content is in *buf.  On failure, an error message is in *buf.
  */
-typedef char *JsonnetImportCallback(void *ctx, const char *base, const char *rel, char **found_here,
-                                    int *success);
+typedef int JsonnetImportCallback(void *ctx, const char *base, const char *rel,
+                                  char **found_here, char **buf, size_t *buflen);
 
 /** An opaque type which can only be utilized via the jsonnet_json_* family of functions.
  */

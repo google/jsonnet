@@ -67,7 +67,7 @@ static AST *left_recursive_deep(AST *ast_)
  * \param fodder The fodder to print
  * \param space_before Whether a space should be printed before any other output.
  * \param separate_token If the last fodder was an interstitial, whether a space should follow it.
- * \param final Whether fodder is the last one in 
+ * \param final Whether fodder is the last one in
  */
 void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token, bool final)
 {
@@ -412,6 +412,10 @@ class Unparser {
 
         } else if (auto *ast = dynamic_cast<const Importstr *>(ast_)) {
             o << "importstr";
+            unparse(ast->file, true);
+
+        } else if (auto *ast = dynamic_cast<const Importbin *>(ast_)) {
+            o << "importbin";
             unparse(ast->file, true);
 
         } else if (auto *ast = dynamic_cast<const InSuper *>(ast_)) {
@@ -1781,6 +1785,11 @@ class FixIndentation {
 
         } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
             column += 9;  // importstr
+            Indent new_indent = newIndent(open_fodder(ast->file), indent, column + 1);
+            expr(ast->file, new_indent, true);
+
+        } else if (auto *ast = dynamic_cast<Importbin *>(ast_)) {
+            column += 9;  // importbin
             Indent new_indent = newIndent(open_fodder(ast->file), indent, column + 1);
             expr(ast->file, new_indent, true);
 

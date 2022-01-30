@@ -45,12 +45,20 @@ static void memory_panic(void)
 static char *from_string(JsonnetVm *vm, const std::string &v)
 {
     char *r = jsonnet_realloc(vm, nullptr, v.length() + 1);
-    std::strcpy(r, v.c_str());
+    std::memcpy(r, v.c_str(), v.length() + 1);
     return r;
 }
 
-static char *default_import_callback(void *ctx, const char *dir, const char *file,
-                                     char **found_here_cptr, int *success);
+static char *from_string_nonull(JsonnetVm *vm, const std::string &v, size_t *buflen)
+{
+    char *r = jsonnet_realloc(vm, nullptr, v.length());
+    std::memcpy(r, v.data(), v.length());
+    *buflen = v.length();
+    return r;
+}
+
+static int default_import_callback(void *ctx, const char *dir, const char *file,
+                                   char **found_here_cptr, char **buf, size_t *buflen);
 
 const char *jsonnet_json_extract_string(JsonnetVm *vm, const struct JsonnetJsonValue *v)
 {
@@ -229,8 +237,8 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
     return IMPORT_STATUS_OK;
 }
 
-static char *default_import_callback(void *ctx, const char *dir, const char *file,
-                                     char **found_here_cptr, int *success)
+static int default_import_callback(void *ctx, const char *dir, const char *file,
+                                   char **found_here_cptr, char **buf, size_t *buflen)
 {
     auto *vm = static_cast<JsonnetVm *>(ctx);
 
@@ -243,25 +251,23 @@ static char *default_import_callback(void *ctx, const char *dir, const char *fil
     // If not found, try library search path.
     while (status == IMPORT_STATUS_FILE_NOT_FOUND) {
         if (jpaths.size() == 0) {
-            *success = 0;
             const char *err = "no match locally or in the Jsonnet library paths.";
-            char *r = jsonnet_realloc(vm, nullptr, std::strlen(err) + 1);
-            std::strcpy(r, err);
-            return r;
+            *buf = from_string_nonull(vm, err, buflen);
+            return 1;  // failure
         }
         status = try_path(jpaths.back(), file, input, found_here, err_msg);
         jpaths.pop_back();
     }
 
     if (status == IMPORT_STATUS_IO_ERROR) {
-        *success = 0;
-        return from_string(vm, err_msg);
-    } else {
-        assert(status == IMPORT_STATUS_OK);
-        *success = 1;
-        *found_here_cptr = from_string(vm, found_here);
-        return from_string(vm, input);
+        *buf = from_string_nonull(vm, err_msg, buflen);
+        return 1;  // failure
     }
+
+    assert(status == IMPORT_STATUS_OK);
+    *found_here_cptr = from_string(vm, found_here);
+    *buf = from_string_nonull(vm, input, buflen);
+    return 0;  // success
 }
 
 #define TRY try {

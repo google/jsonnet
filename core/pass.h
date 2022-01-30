@@ -69,6 +69,8 @@ class CompilerPass {
 
     virtual void visit(Importstr *ast);
 
+    virtual void visit(Importbin *ast);
+
     virtual void visit(InSuper *ast);
 
     virtual void visit(Index *ast);

@@ -516,9 +516,10 @@ class Interpreter {
     struct ImportCacheValue {
         std::string foundHere;
         std::string content;
+
         /** Thunk to store cached result of execution.
          *
-         * Null if this file was only ever successfully imported with importstr.
+         * Null if this file was only ever successfully imported with importstr/importbin.
          */
         HeapThunk *thunk;
     };
@@ -770,7 +771,7 @@ class Interpreter {
      */
     HeapThunk *import(const LocationRange &loc, const LiteralString *file)
     {
-        ImportCacheValue *input = importString(loc, file);
+        ImportCacheValue *input = importData(loc, file);
         if (input->thunk == nullptr) {
             Tokens tokens = jsonnet_lex(input->foundHere, input->content.c_str());
             AST *expr = jsonnet_parse(alloc, tokens);
@@ -783,7 +784,7 @@ class Interpreter {
         return input->thunk;
     }
 
-    /** Import a file as a string.
+    /** Import a file as a string or byte array.
      *
      * If the file has already been imported, then use that version.  This maintains
      * referential transparency in the case of writes to disk during execution.
@@ -792,7 +793,7 @@ class Interpreter {
      * \param file Path to the filename.
      * \param found_here If non-null, used to store the actual path of the file
      */
-    ImportCacheValue *importString(const LocationRange &loc, const LiteralString *file)
+    ImportCacheValue *importData(const LocationRange &loc, const LiteralString *file)
     {
         std::string dir = dir_name(loc.file);
 
@@ -803,18 +804,20 @@ class Interpreter {
         if (cached_value != nullptr)
             return cached_value;
 
-        int success = 0;
         char *found_here_cptr;
-        char *content = importCallback(importCallbackContext,
-                                       dir.c_str(),
-                                       encode_utf8(path).c_str(),
-                                       &found_here_cptr,
-                                       &success);
+        char *buf = NULL;
+        size_t buflen = 0;
+        int result = importCallback(importCallbackContext,
+                                    dir.c_str(),
+                                    encode_utf8(path).c_str(),
+                                    &found_here_cptr,
+                                    &buf,
+                                    &buflen);
 
-        std::string input(content);
-        ::free(content);
+        std::string input(buf, buflen);
+        ::free(buf);
 
-        if (!success) {
+        if (result == 1) {  // failure
             std::string epath = encode_utf8(jsonnet_string_escape(path, false));
             std::string msg = "couldn't open import \"" + epath + "\": ";
             msg += input;
@@ -2066,8 +2069,21 @@ class Interpreter {
 
             case AST_IMPORTSTR: {
                 const auto &ast = *static_cast<const Importstr *>(ast_);
-                const ImportCacheValue *value = importString(ast.location, ast.file);
+                const ImportCacheValue *value = importData(ast.location, ast.file);
                 scratch = makeString(decode_utf8(value->content));
+            } break;
+
+            case AST_IMPORTBIN: {
+                const auto &ast = *static_cast<const Importbin *>(ast_);
+                const ImportCacheValue *value = importData(ast.location, ast.file);
+                scratch = makeArray({});
+                auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
+                elements.reserve(value->content.size());
+                for (const auto c : value->content) {
+                    auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
+                    elements.push_back(th);
+                    th->fill(makeNumber(uint8_t(c)));
+                }
             } break;
 
             case AST_IN_SUPER: {
