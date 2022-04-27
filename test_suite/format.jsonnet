@@ -39,6 +39,7 @@ std.assertEqual(std.format('%c', [std.codepoint('a')]), 'a') &&
 
 // d (also a quick test of i and u)
 std.assertEqual(std.format('thing-%d', [10]), 'thing-10') &&
+std.assertEqual(std.format('thing-%d', [1650391876808854107]), 'thing-1650391876808854107') &&
 std.assertEqual(std.format('thing-%#ld', [10]), 'thing-10') &&
 std.assertEqual(std.format('thing-%d', [-10]), 'thing--10') &&
 std.assertEqual(std.format('thing-%4d', [10]), 'thing-  10') &&
