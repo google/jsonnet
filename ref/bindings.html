@@ -292,11 +292,11 @@ json_str = _jsonnet.evaluate_snippet(
     ext_vars={'OTHER_NAME': 'Bob'})
 
 json_obj = json.loads(json_str)
-for person_id, person in json_obj.iteritems():
-  print '%s is %s, greeted by "%s"' % (
+for person_id, person in json_obj.items():
+  print('%s is %s, greeted by "%s"' % (
       person_id,
       person['name'],
-      person['welcome'])</pre>
+      person['welcome']))</pre>
     <div style="clear: both"></div>
   </div>
 </div>
