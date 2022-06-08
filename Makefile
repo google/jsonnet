@@ -20,10 +20,6 @@
 CXX ?= g++
 CC ?= gcc
 
-# Emscripten -- For Jsonnet in the browser
-EMCXX ?= em++
-EMCC ?= emcc
-
 CP ?= cp
 OD ?= od
 
@@ -36,8 +32,6 @@ CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidya
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
 CFLAGS += -Iinclude
 MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
-EMCXXFLAGS = $(CXXFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s INLINING_LIMIT=50 -s RESERVED_FUNCTION_POINTERS=20 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
-EMCFLAGS = $(CFLAGS) --memory-init-file 0 -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1
 LDFLAGS ?=
 
 
@@ -89,8 +83,6 @@ LIBS = \
 ALL = \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
-	libjsonnet.js \
-	doc/js/libjsonnet.js \
 	$(BINS) \
 	$(LIBS) \
 	$(LIB_OBJ)
@@ -186,19 +178,6 @@ libjsonnet++.so.$(VERSION): $(LIB_CPP_OBJ)
 
 %.so: %.so.$(SOVERSION)
 	ln -sf $< $@
-
-# JavaScript build of C binding
-JS_EXPORTED_FUNCTIONS = 'EXPORTED_FUNCTIONS=["_jsonnet_make", "_jsonnet_evaluate_snippet", "_jsonnet_fmt_snippet", "_jsonnet_ext_var", "_jsonnet_ext_code", "_jsonnet_tla_var", "_jsonnet_tla_code", "_jsonnet_realloc", "_jsonnet_destroy", "_jsonnet_import_callback"]'
-
-JS_RUNTIME_METHODS = 'EXTRA_EXPORTED_RUNTIME_METHODS=["cwrap", "getValue", "lengthBytesUTF8", "UTF8ToString", "setValue", "stringToUTF8", "addFunction"]'
-
-
-libjsonnet.js: $(LIB_SRC) $(ALL_HEADERS)
-	$(EMCXX) -s WASM=0 -s $(JS_EXPORTED_FUNCTIONS) -s $(JS_RUNTIME_METHODS) $(EMCXXFLAGS) $(LDFLAGS) $(LIB_SRC) -o $@
-
-# Copy javascript build to doc directory
-doc/js/libjsonnet.js: libjsonnet.js
-	$(CP) $^ $@
 
 # Tests for C binding.
 LIBJSONNET_TEST_SNIPPET_SRCS = \
