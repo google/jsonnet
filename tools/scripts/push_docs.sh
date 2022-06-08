@@ -45,7 +45,7 @@ if [ ! -r 'doc/_config.yml' ]; then
 fi
 
 if [ ! -r 'doc/js/libjsonnet.wasm' ]; then
-  echo 'Cannot push as docs/js/libjsonnet.wasm has not been built.' >&1
+  echo 'Cannot push as doc/js/libjsonnet.wasm has not been built.' >&1
   exit 1
 fi
 
