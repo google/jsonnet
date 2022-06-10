@@ -587,7 +587,7 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'parseYaml',
-          availableSince: 'x.y.z',
+          availableSince: '0.18.0',
           params: ['str'],
           description: |||
             Parses a YAML string. This is provided as a "best-effort" mechanism and should not be relied on to provide
