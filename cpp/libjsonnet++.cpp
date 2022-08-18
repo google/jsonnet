@@ -94,12 +94,14 @@ bool Jsonnet::evaluateFile(const std::string& filename, std::string* output)
         return false;
     }
     int error = 0;
-    const char* jsonnet_output = ::jsonnet_evaluate_file(vm_, filename.c_str(), &error);
+    char* jsonnet_output = ::jsonnet_evaluate_file(vm_, filename.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
+        jsonnet_realloc(vm_, jsonnet_output, 0);
         return false;
     }
     output->assign(jsonnet_output);
+    jsonnet_realloc(vm_, jsonnet_output, 0);
     return true;
 }
 
@@ -110,13 +112,15 @@ bool Jsonnet::evaluateSnippet(const std::string& filename, const std::string& sn
         return false;
     }
     int error = 0;
-    const char* jsonnet_output =
+    char* jsonnet_output =
         ::jsonnet_evaluate_snippet(vm_, filename.c_str(), snippet.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
+        jsonnet_realloc(vm_, jsonnet_output, 0);
         return false;
     }
     output->assign(jsonnet_output);
+    jsonnet_realloc(vm_, jsonnet_output, 0);
     return true;
 }
 
@@ -146,12 +150,14 @@ bool Jsonnet::evaluateFileMulti(const std::string& filename,
         return false;
     }
     int error = 0;
-    const char* jsonnet_output = ::jsonnet_evaluate_file_multi(vm_, filename.c_str(), &error);
+    char* jsonnet_output = ::jsonnet_evaluate_file_multi(vm_, filename.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
+        jsonnet_realloc(vm_, jsonnet_output, 0);
         return false;
     }
     parseMultiOutput(jsonnet_output, outputs);
+    jsonnet_realloc(vm_, jsonnet_output, 0);
     return true;
 }
 
@@ -162,13 +168,15 @@ bool Jsonnet::evaluateSnippetMulti(const std::string& filename, const std::strin
         return false;
     }
     int error = 0;
-    const char* jsonnet_output =
+    char* jsonnet_output =
         ::jsonnet_evaluate_snippet_multi(vm_, filename.c_str(), snippet.c_str(), &error);
     if (error != 0) {
         last_error_.assign(jsonnet_output);
+        jsonnet_realloc(vm_, jsonnet_output, 0);
         return false;
     }
     parseMultiOutput(jsonnet_output, outputs);
+    jsonnet_realloc(vm_, jsonnet_output, 0);
     return true;
 }
 
