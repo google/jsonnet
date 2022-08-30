@@ -271,7 +271,7 @@ The `if` and `for` components can be freely mixed. It almost always makes sense 
     [x, y]
     for x in std.range(1, 10)
     if x % 3 == 0
-    for y in std.range(1, 10),
+    for y in std.range(1, 10)
     if y % 2 == 0
   ]
 ```
