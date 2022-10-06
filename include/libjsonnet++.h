@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef CPP_JSONNET_H_
 #define CPP_JSONNET_H_
 
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <map>
