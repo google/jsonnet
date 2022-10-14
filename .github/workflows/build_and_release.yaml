@@ -1,6 +1,6 @@
 on:
   push:
-    ankor-main
+    branches: ankor-main
 
 jobs:
   build:
