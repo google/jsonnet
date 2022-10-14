@@ -23,7 +23,7 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g')
-          echo "::set-output name=version::${VERSION}"
+          echo "version=${VERSION}" >> $GITHUB_ENV
 
       - name: Build
         id: build
@@ -36,8 +36,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          release_name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ env.version }}
+          release_name: v${{ env.version }}
           draft: false
           prerelease: false
 
@@ -48,5 +48,5 @@ jobs:
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: jsonnet-bin.tar.gz
-          asset_name: jsonnet-bin-v${{ steps.version.outputs.version }}-linux.tar.gz
+          asset_name: jsonnet-bin-v${{ env.version }}-linux.tar.gz
           asset_content_type: application/octet-stream
