@@ -1711,9 +1711,8 @@ class Interpreter {
                 abort();
             }
 
-            case json::value_t::binary: {
-                abort();
-            }
+            case json::value_t::binary:
+                break;
         }
     }
 
