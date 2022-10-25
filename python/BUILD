@@ -19,7 +19,10 @@ py_library(
 py_test(
     name = "_jsonnet_test",
     srcs = ["_jsonnet_test.py"],
-    data = ["test.jsonnet"],
+    data = [
+        "testdata/basic_check.jsonnet",
+        "testdata/trivial.jsonnet",
+    ],
     python_version = "PY3",
     deps = [":_jsonnet"],
 )
