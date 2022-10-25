@@ -147,7 +147,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
     void *ctx_, const struct JsonnetJsonValue * const *argv, int *succ)
 {
     const struct NativeCtx *ctx = ctx_;
-    Py_ssize_t i;
+    int i;
 
     PyEval_RestoreThread(*ctx->py_thread);
 
@@ -156,7 +156,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
 
     // Populate python function args.
     arglist = PyTuple_New(ctx->argc);
-    for (i = 0; i < (Py_ssize_t) ctx->argc; ++i) {
+    for (i = 0; i < ctx->argc; ++i) {
         double d;
         const char *param_str = jsonnet_json_extract_string(ctx->vm, argv[i]);
         int param_null = jsonnet_json_extract_null(ctx->vm, argv[i]);
