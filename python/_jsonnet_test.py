@@ -32,7 +32,7 @@ def try_path(dir, rel):
     if not os.path.isfile(full_path):
         return full_path, None
     with open(full_path) as f:
-        return full_path, f.read()
+        return full_path, f.read().encode()
 
 
 def import_callback(dir, rel):
@@ -68,11 +68,10 @@ native_callbacks = {
 
 class JsonnetTests(unittest.TestCase):
     def setUp(self):
-        self.input_filename = os.path.join(
-            os.path.dirname(__file__),
-            "test.jsonnet",
-        )
-        self.expected_str = "true\n"
+        base_dir = os.path.join(os.path.dirname(__file__), "testdata")
+        self.input_filename = os.path.join(base_dir, "basic_check.jsonnet")
+        self.trivial_filename = os.path.join(base_dir, "trivial.jsonnet")
+        self.test_filename = os.path.join(base_dir, "test.jsonnet")
         with open(self.input_filename, "r") as infile:
             self.input_snippet = infile.read()
 
@@ -82,16 +81,37 @@ class JsonnetTests(unittest.TestCase):
             import_callback=import_callback,
             native_callbacks=native_callbacks,
         )
-        self.assertEqual(json_str, self.expected_str)
+        self.assertEqual(json_str, "true\n")
 
     def test_evaluate_snippet(self):
         json_str = _jsonnet.evaluate_snippet(
-            "snippet",
+            self.test_filename,
             self.input_snippet,
             import_callback=import_callback,
             native_callbacks=native_callbacks,
         )
-        self.assertEqual(json_str, self.expected_str)
+        self.assertEqual(json_str, "true\n")
+
+    def test_import(self):
+        json_str = _jsonnet.evaluate_snippet(
+            self.test_filename,
+            "import 'trivial.jsonnet'",
+            import_callback=import_callback,
+            native_callbacks=native_callbacks,
+        )
+        self.assertEqual(json_str, "42\n")
+
+    def test_double_import(self):
+        json_str = _jsonnet.evaluate_snippet(
+            self.test_filename,
+            "local x = import 'trivial.jsonnet';\n" +
+            "local y = import 'trivial.jsonnet';\n" +
+            "x + y",
+            import_callback=import_callback,
+            native_callbacks=native_callbacks,
+        )
+        self.assertEqual(json_str, "84\n")
+
 
 if __name__ == '__main__':
     unittest.main()
