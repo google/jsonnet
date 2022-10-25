@@ -140,7 +140,7 @@ limitations under the License.
     if maxsplits == -1 then
       std.splitLimit(str, c, -1)
     else
-      local revStr(str) = std.join('', std.reverse(str));
+      local revStr(str) = std.join('', std.reverse(std.stringChars(str)));
       std.map(function(e) revStr(e), std.reverse(std.splitLimit(revStr(str), revStr(c), maxsplits))),
 
   strReplace(str, from, to)::
