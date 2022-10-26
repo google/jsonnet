@@ -118,28 +118,28 @@
         }
 
         // Imports (including the strings after them).
-        if (stream.match(/import(?:str)?\s*"/)) {
+        if (stream.match(/import(?:str|bin)?\s*"/)) {
           state.importString = true;
           state.stringSingle = false;
           state.stringRaw = false;
           return "meta";
         }
 
-        if (stream.match(/import(?:str)?\s*'/)) {
+        if (stream.match(/import(?:str|bin)?\s*'/)) {
           state.importString = true;
           state.stringSingle = true;
           state.stringRaw = false;
           return "meta";
         }
 
-        if (stream.match(/import(?:str)?\s*@"/)) {
+        if (stream.match(/import(?:str|bin)?\s*@"/)) {
           state.importString = true;
           state.stringSingle = false;
           state.stringRaw = true;
           return "meta";
         }
 
-        if (stream.match(/import(?:str)?\s*@'/)) {
+        if (stream.match(/import(?:str|bin)?\s*@'/)) {
           state.importString = true;
           state.stringSingle = true;
           state.stringRaw = true;

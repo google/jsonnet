@@ -470,7 +470,7 @@ local house_rum = 'Banks Rum';
         <li><code>self</code> refers to the current object.</li>
         <li><code>$</code> refers to the outer-most object.</li>
         <li><code>['foo']</code> looks up a field.</li>
-        <li><code>.f</code> can be used if the field name is an identifier.</li>
+        <li><code>.foo</code> can be used if the field name is an identifier.</li>
         <li><code>[10]</code> looks up an array element.</li>
         <li>Arbitrarily long paths are allowed.</li>
         <li>Array slices like <code>arr[10:20:2]</code> are allowed, like in Python.</li>
@@ -1629,6 +1629,7 @@ local arr = std.range(5, 8);
         <li>Files designed for import by convention end with <tt>.libsonnet</tt></li>
         <li>Raw JSON can be imported this way too.</li>
         <li>The <code>importstr</code> construct is for verbatim UTF-8 text.</li>
+        <li>The <code>importbin</code> construct is for verbatim binary data.</li>
       </ul>
       <p>
         Usually, imported Jsonnet content is stashed in a top-level local variable.  This

@@ -392,7 +392,7 @@ arr[1]
     [x, y]
     for x in std.range(1, 10)
     if x % 3 == 0
-    for y in std.range(1, 10),
+    for y in std.range(1, 10)
     if y % 2 == 0
   ]
 </code></pre>
@@ -711,7 +711,7 @@ The semantics are <a href="/ref/spec.html">defined almost entirely in mathematic
 
 <p>Before using any of the methods described below, it is worth considering if a fully self-contained setup is viable.</p>
 
-<p>In this style, the configuration is a set of <code>.jsonnet</code> and <code>.libsonnet</code> files. Every output file corresponds to a <code>.jsonnet</code> file and all shared setup is in <code>.libsonnet</code> files. Any raw data can be placed in additional files and imported using <code>importstr</code>. Usually, all code and data is committed to a repository.
+<p>In this style, the configuration is a set of <code>.jsonnet</code> and <code>.libsonnet</code> files. Every output file corresponds to a <code>.jsonnet</code> file and all shared setup is in <code>.libsonnet</code> files. Any raw data can be placed in additional files and imported using <code>importstr</code> or <code>importbin</code>. Usually, all code and data is committed to a repository.
 Sometimes the generated configuration is also checked in, which makes it easy to spot unintended changes.</p>
 
 <p>Sometimes it is not practical, though. For example if the produced configuration needs to contain secrets, which you do not want to commit alongside code, it is necessary to pass them from outside.</p>
