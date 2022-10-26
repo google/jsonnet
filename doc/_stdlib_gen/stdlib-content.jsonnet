@@ -385,7 +385,7 @@ local html = import 'html.libsonnet';
         {
           name: 'splitLimitR',
           params: ['str', 'c', 'maxsplits'],
-          availableSince: 'upcoming',
+          availableSince: 'v0.19.0',
           description: 'As <code>std.splitLimit(str, c, maxsplits)</code> but will split from right to left.',
           examples: [
             {
@@ -1269,7 +1269,7 @@ local html = import 'html.libsonnet';
         {
           name: 'all',
           params: ['arr'],
-          availableSince: 'upcoming',
+          availableSince: 'v0.19.0',
           description: html.paragraphs([
             |||
               Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
@@ -1282,7 +1282,7 @@ local html = import 'html.libsonnet';
         {
           name: 'any',
           params: ['arr'],
-          availableSince: 'upcoming',
+          availableSince: 'v0.19.0',
           description: html.paragraphs([
             |||
               Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
