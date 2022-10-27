@@ -667,7 +667,9 @@ PyMODINIT_FUNC PyInit__jsonnet(void)
 {
     PyObject *module = PyModule_Create(&_module);
     PyObject *version_str = PyUnicode_FromString(LIB_JSONNET_VERSION);
-    PyModule_AddObjectRef(module, "version", version_str);
+    if (PyModule_AddObject(module, "version", PyUnicode_FromString(LIB_JSONNET_VERSION)) < 0) {
+      Py_XDECREF(version_str);
+    }
     return module;
 }
 #else
