@@ -147,7 +147,6 @@ static struct JsonnetJsonValue *cpython_native_callback(
     void *ctx_, const struct JsonnetJsonValue * const *argv, int *succ)
 {
     const struct NativeCtx *ctx = ctx_;
-    int i;
 
     PyEval_RestoreThread(*ctx->py_thread);
 
@@ -156,7 +155,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
 
     // Populate python function args.
     arglist = PyTuple_New(ctx->argc);
-    for (i = 0; i < ctx->argc; ++i) {
+    for (size_t i = 0; i < ctx->argc; ++i) {
         double d;
         const char *param_str = jsonnet_json_extract_string(ctx->vm, argv[i]);
         int param_null = jsonnet_json_extract_null(ctx->vm, argv[i]);
@@ -263,7 +262,9 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
             const char *found_here_cstr = PyString_AsString(file_name);
 #endif
             if (PyBytes_Check(file_content)) {
-                PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
+                char *content_buf2;
+                PyBytes_AsStringAndSize(file_content, &content_buf2, &content_len);
+                content_buf = content_buf2;
             } else {
 #if PY_MAJOR_VERSION >= 3
                 content_buf = PyUnicode_AsUTF8(file_content);
