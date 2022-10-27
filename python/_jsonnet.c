@@ -251,7 +251,7 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
 #else
         if (!PyString_Check(file_name) || !PyBytes_Check(file_content)) {
 #endif
-            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes)  Since 0.19.0 imports should be returned as bytes instead of as a string.  You may want to call .encode() on your string.", buflen);
+            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes). Since 0.19.0 imports should be returned as bytes instead of as a string.  You may want to call .encode() on your string.", buflen);
             success = 0;
         } else {
             char *content_buf;
@@ -654,7 +654,7 @@ static PyMethodDef module_methods[] = {
 };
 
 #if PY_MAJOR_VERSION >= 3
-static struct PyModuleDef _jsonnet =
+static struct PyModuleDef _module =
 {
     PyModuleDef_HEAD_INIT,
     "_jsonnet",
@@ -665,7 +665,7 @@ static struct PyModuleDef _jsonnet =
 
 PyMODINIT_FUNC PyInit__jsonnet(void)
 {
-    PyObject *module = PyModule_Create(&_jsonnet);
+    PyObject *module = PyModule_Create(&_module);
     PyObject *version_str = PyUnicode_FromString(LIB_JSONNET_VERSION);
     PyModule_AddObjectRef(module, "version", version_str);
     return module;
