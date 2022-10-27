@@ -19,8 +19,14 @@ import unittest
 import _jsonnet
 
 
-#  Returns content if worked, None if file not found, or throws an exception
-def try_path(dir, rel, do_encode):
+# Returns (full_path, contents) if the file was successfully retrieved,
+# (full_path, None) if file not found, or throws an exception when the path
+# is invalid or an IO error occured.
+# It caches both hits and misses in the `cache` dict. Exceptions
+# do not need to be cached, because they abort the computation anyway.
+# if do_encode is True, then the file is returned as bytes
+# instead of as a string (this does not make a difference in Python2).
+def try_path_cached(cache, dir, rel, do_encode):
     if not rel:
         raise RuntimeError('Got invalid filename (empty string).')
     if rel[0] == '/':
@@ -29,24 +35,27 @@ def try_path(dir, rel, do_encode):
         full_path = dir + rel
     if full_path[-1] == '/':
         raise RuntimeError('Attempted to import a directory')
-
-    if not os.path.isfile(full_path):
-        return full_path, None
-    with open(full_path) as f:
-        if do_encode:
-            return full_path, f.read().encode()
+    if full_path not in cache:
+        if not os.path.isfile(full_path):
+            cache[full_path] = None
         else:
-            return full_path, f.read()
-
+            with open(full_path) as f:
+                if do_encode:
+                    cache[full_path] = f.read().encode()
+                else:
+                    cache[full_path] = f.read()
+    return full_path, cache[full_path]
 
 def import_callback_encode(dir, rel):
-    full_path, content = try_path(dir, rel, do_encode=True)
+    cache = {}
+    full_path, content = try_path_cached(cache, dir, rel, do_encode=True)
     if content:
         return full_path, content
     raise RuntimeError('File not found')
 
 def import_callback_no_encode(dir, rel):
-    full_path, content = try_path(dir, rel, do_encode=False)
+    cache = {}
+    full_path, content = try_path_cached(cache, dir, rel, do_encode=False)
     if content:
         return full_path, content
     raise RuntimeError('File not found')
@@ -267,7 +276,6 @@ class JsonnetTests(unittest.TestCase):
             native_callbacks=native_callbacks,
         )
         self.assertEqual(json_str, "84\n")
-
 
 if __name__ == '__main__':
     unittest.main()
