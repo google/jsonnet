@@ -247,33 +247,21 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
         PyObject *file_name = PyTuple_GetItem(result, 0);
         PyObject *file_content = PyTuple_GetItem(result, 1);
 #if PY_MAJOR_VERSION >= 3
-        if (!PyUnicode_Check(file_name) || !(PyUnicode_Check(file_content) || PyBytes_Check(file_content))) {
+        if (!PyUnicode_Check(file_name) || !PyBytes_Check(file_content)) {
 #else
-        if (!PyString_Check(file_name) || !(PyString_Check(file_content) || PyBytes_Check(file_content))) {
+        if (!PyString_Check(file_name) || !PyBytes_Check(file_content)) {
 #endif
-            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes) or (string, string)", buflen);
+            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes)  Since 0.19.0 imports should be returned as bytes instead of as a string.  You may want to call .encode() on your string.", buflen);
             success = 0;
         } else {
-            const char *content_buf;
+            char *content_buf;
             ssize_t content_len;
 #if PY_MAJOR_VERSION >= 3
             const char *found_here_cstr = PyUnicode_AsUTF8(file_name);
 #else
             const char *found_here_cstr = PyString_AsString(file_name);
 #endif
-            if (PyBytes_Check(file_content)) {
-                char *content_buf2;
-                PyBytes_AsStringAndSize(file_content, &content_buf2, &content_len);
-                content_buf = content_buf2;
-            } else {
-#if PY_MAJOR_VERSION >= 3
-                content_buf = PyUnicode_AsUTF8(file_content);
-                content_len = strlen(content_buf);
-#else
-                content_buf = PyString_AsString(file_content);
-                content_len = strlen(content_buf);
-#endif
-            }
+            PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
             *found_here = jsonnet_str(ctx->vm, found_here_cstr);
             *buflen = content_len;
             *buf = jsonnet_realloc(ctx->vm, NULL, *buflen);
@@ -677,11 +665,18 @@ static struct PyModuleDef _jsonnet =
 
 PyMODINIT_FUNC PyInit__jsonnet(void)
 {
-    return PyModule_Create(&_jsonnet);
+    PyObject *module = PyModule_Create(&_jsonnet);
+    PyObject *version_str = PyUnicode_FromString(LIB_JSONNET_VERSION);
+    PyModule_AddObjectRef(module, "version", version_str);
+    return module;
 }
 #else
 PyMODINIT_FUNC init_jsonnet(void)
 {
-    Py_InitModule3("_jsonnet", module_methods, "A Python interface to Jsonnet.");
+    PyObject *module = Py_InitModule3("_jsonnet", module_methods, "A Python interface to Jsonnet.");
+    PyObject *version_str = PyUnicode_FromString(LIB_JSONNET_VERSION);
+    if (PyModule_AddObject(module, "version", PyString_FromString(LIB_JSONNET_VERSION)) < 0) {
+      Py_XDECREF(version_str);
+    }
 }
 #endif
