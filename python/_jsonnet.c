@@ -248,24 +248,33 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
         PyObject *file_name = PyTuple_GetItem(result, 0);
         PyObject *file_content = PyTuple_GetItem(result, 1);
 #if PY_MAJOR_VERSION >= 3
-        if (!PyUnicode_Check(file_name) || !PyBytes_Check(file_content)) {
+        if (!PyUnicode_Check(file_name) || !(PyUnicode_Check(file_content) || PyBytes_Check(file_content))) {
 #else
-        if (!PyString_Check(file_name) || !PyString_Check(file_content)) {
+        if (!PyString_Check(file_name) || !(PyString_Check(file_content) || PyBytes_Check(file_content))) {
 #endif
-            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes)", buflen);
+            *buf = jsonnet_str_nonull(ctx->vm, "import_callback did not return (string, bytes) or (string, string)", buflen);
             success = 0;
         } else {
             const char *content_buf;
-            const ssize_t content_len;
+            ssize_t content_len;
 #if PY_MAJOR_VERSION >= 3
             const char *found_here_cstr = PyUnicode_AsUTF8(file_name);
-            PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
 #else
             const char *found_here_cstr = PyString_AsString(file_name);
-            PyString_AsStringAndSize(file_content, &content_buf, &content_len);
 #endif
+            if (PyBytes_Check(file_content)) {
+                PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
+            } else {
+#if PY_MAJOR_VERSION >= 3
+                content_buf = PyUnicode_AsUTF8(file_content);
+                content_len = strlen(content_buf);
+#else
+                content_buf = PyString_AsString(file_content);
+                content_len = strlen(content_buf);
+#endif
+            }
             *found_here = jsonnet_str(ctx->vm, found_here_cstr);
-            *buflen = content_len - 1; // Python always adds a trailing null
+            *buflen = content_len;
             *buf = jsonnet_realloc(ctx->vm, NULL, *buflen);
             memcpy(*buf, content_buf, *buflen);
             success = 1;
