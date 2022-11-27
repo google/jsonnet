@@ -1012,6 +1012,17 @@ limitations under the License.
         ch;
     std.foldl(function(a, b) a + trans(b), std.stringChars(str), ''),
 
+  escapeStringXML(str_)::
+    local str = std.toString(str_);
+    local escapes = {
+      '<': '&lt;',
+      '>': '&gt;',
+      '&': '&amp;',
+      '"': '&quot;',
+      "'": '&apos;',
+    };
+    std.join('', [std.get(escapes, ch, ch) for ch in std.stringChars(str)]),
+
   manifestJson(value):: std.manifestJsonEx(value, '    '),
 
   manifestJsonMinified(value):: std.manifestJsonEx(value, '', '', ':'),

@@ -339,6 +339,11 @@ std.assertEqual(std.escapeStringJson('he"llo'), '"he\\"llo"') &&
 std.assertEqual(std.escapeStringJson('he"llo'), '"he\\"llo"') &&
 std.assertEqual(std.escapeStringBash("he\"l'lo"), "'he\"l'\"'\"'lo'") &&
 std.assertEqual(std.escapeStringDollars('The path is ${PATH}.'), 'The path is $${PATH}.') &&
+std.assertEqual(std.escapeStringXML('2 < 3'), '2 &lt; 3') &&
+std.assertEqual(std.escapeStringXML('3 > 2'), '2 &gt; 3') &&
+std.assertEqual(std.escapeStringXML('"foo"'), '&quot;foo&quot;') &&
+std.assertEqual(std.escapeStringXML("don't believe the hype"), 'don&apos;t believe the hype') &&
+std.assertEqual(std.escapeStringXML('PB&J'), 'PB&amp;J') &&
 std.assertEqual(std.escapeStringJson('!~'), '"!~"') &&
 
 std.assertEqual(std.manifestPython({
