@@ -21,7 +21,7 @@ git_repository(
     name = "com_googlesource_code_re2",
     remote = "https://github.com/google/re2.git",
     # If updating RE2 version, also update RE2CMakeLists.txt.in.
-    commit = "0c95bcce2f1f0f071a786ca2c42384b211b8caba", # release: 2019-06-01
+    commit = "5723bb8950318135ed9cf4fc76bed988a087f536", # release: 2022-06-01
     shallow_since = "1558525654 +0000",
 )
 
@@ -31,3 +31,4 @@ register_toolchains("//platform_defs:default_python3_toolchain")
 # This allows building C++ against python3 headers.
 load("//tools/build_defs:python_repo.bzl", "python_headers")
 python_headers(name = "default_python3_headers")
+
