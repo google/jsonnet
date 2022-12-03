@@ -1093,6 +1093,37 @@ title: Standard Library
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="escapeStringXml">
+        std.escapeStringXml(str)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Convert <code>str</code> to allow it to be embedded in XML (or HTML). The following replacements are made:
+        <pre>
+        {
+          "&lt;": "&amp;lt;",
+          "&gt;": "&amp;gt;",
+          "&amp;": "&amp;amp;",
+          "\&quot;": "&amp;quot;",
+          "&apos;": "&amp;apos;",
+        }
+        </pre>
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
 
 <div class="hgroup">
   <div class="hgroup-inline">
