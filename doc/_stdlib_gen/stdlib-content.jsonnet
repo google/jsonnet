@@ -522,6 +522,22 @@ local html = import 'html.libsonnet';
             <code>std.escapeStringJson</code>.
           |||,
         },
+        {
+          name: 'escapeStringXml',
+          params: ['str'],
+          description: |||
+            Convert <code>str</code> to allow it to be embedded in XML (or HTML). The following replacements are made:
+            <pre>
+            {
+              "&lt;": "&amp;lt;",
+              "&gt;": "&amp;gt;",
+              "&amp;": "&amp;amp;",
+              "\&quot;": "&amp;quot;",
+              "&apos;": "&amp;apos;",
+            }
+            </pre>
+          |||,
+        },
       ],
     },
     {
