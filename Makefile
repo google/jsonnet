@@ -32,8 +32,7 @@ CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidya
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
 CFLAGS += -Iinclude
 MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
-LDFLAGS ?=
-
+LDFLAGS ?= -lre2
 
 SHARED_LDFLAGS ?= -shared
 
@@ -160,11 +159,11 @@ core/desugarer.cpp: core/std.jsonnet.h
 
 # Commandline executable.
 jsonnet: cmd/jsonnet.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+	$(CXX) $(CXXFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@ $(LDFLAGS)
 
 # Commandline executable (reformatter).
 jsonnetfmt: cmd/jsonnetfmt.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+	$(CXX) $(CXXFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@ $(LDFLAGS)
 
 # C binding.
 libjsonnet.so.$(VERSION): $(LIB_OBJ)

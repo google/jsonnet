@@ -12,9 +12,17 @@ git_repository(
 git_repository(
     name = "com_google_googletest",
     remote = "https://github.com/google/googletest.git",
-    # If updating googletest version, also update CMakeLists.txt.in.
+    # If updating googletest version, also update GoogleTestCMakeLists.txt.in.
     commit = "2fe3bd994b3189899d93f1d5a881e725e046fdc2", # release: release-1.8.1
     shallow_since = "1535728917 -0400",
+)
+
+git_repository(
+    name = "com_googlesource_code_re2",
+    remote = "https://github.com/google/re2.git",
+    # If updating RE2 version, also update RE2CMakeLists.txt.in.
+    commit = "5723bb8950318135ed9cf4fc76bed988a087f536", # release: 2022-06-01
+    shallow_since = "1558525654 +0000",
 )
 
 # This allows using py_test and py_library against python3.

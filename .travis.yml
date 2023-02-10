@@ -9,6 +9,7 @@ matrix:
         apt:
           packages:
             - g++-5
+            - libre2-dev
           sources: &sources
             - llvm-toolchain-bionic-11
             - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
@@ -20,6 +21,7 @@ matrix:
         apt:
           packages:
             - clang-11
+            - libre2-dev
           sources: *sources
     - os: osx
       osx_image: xcode11.3
