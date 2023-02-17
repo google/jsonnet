@@ -1308,6 +1308,16 @@ local html = import 'html.libsonnet';
             |||,
           ]),
         },
+        {
+          name: 'sum',
+          params: ['arr'],
+          availableSince: 'v0.19.2',
+          description: html.paragraphs([
+            |||
+              Return sum of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
       ],
     },
     {
