@@ -19,6 +19,8 @@ limitations under the License.
 
 #include "ast.h"
 
+namespace jsonnet::internal {
+
 /** A generic Pass that does nothing but can be extended to easily define real passes.
  */
 class CompilerPass {
@@ -113,5 +115,7 @@ class CompilerPass {
  * This is a deep copy.
  */
 AST *clone_ast(Allocator &alloc, AST *ast);
+
+}  // namespace jsonnet::internal
 
 #endif

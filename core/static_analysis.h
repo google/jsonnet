@@ -19,9 +19,13 @@ limitations under the License.
 
 #include "ast.h"
 
+namespace jsonnet::internal {
+
 /** Check the ast for appropriate use of self, super, and correctly bound variables.  Also
  * initialize the freeVariables member of function and object ASTs.
  */
 void jsonnet_static_analysis(AST *ast);
+
+}  // namespace jsonnet::internal
 
 #endif

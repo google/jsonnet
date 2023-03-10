@@ -24,6 +24,8 @@ limitations under the License.
 #include "string_utils.h"
 #include "unicode.h"
 
+namespace jsonnet::internal {
+
 static std::string unparse_id(const Identifier *id)
 {
     return encode_utf8(id->name);
@@ -2318,3 +2320,5 @@ std::string jsonnet_fmt(AST *ast, Fodder &final_fodder, const FmtOpts &opts)
     }
     return ss.str();
 }
+
+}  // namespace jsonnet::internal

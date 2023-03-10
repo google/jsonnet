@@ -16,6 +16,8 @@ limitations under the License.
 
 #include "pass.h"
 
+namespace jsonnet::internal {
+
 void CompilerPass::fodder(Fodder &fodder)
 {
     for (auto &f : fodder)
@@ -404,3 +406,5 @@ AST *clone_ast(Allocator &alloc, AST *ast)
     ClonePass(alloc).expr(r);
     return r;
 }
+
+}  // namespace jsonnet::internal

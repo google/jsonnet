@@ -23,6 +23,8 @@ limitations under the License.
 #include "lexer.h"
 #include "unicode.h"
 
+namespace jsonnet::internal {
+
 /** Parse a given JSON++ string.
  *
  * \param alloc Used to allocate the AST nodes.  The Allocator must outlive the
@@ -40,5 +42,7 @@ std::string jsonnet_unparse_number(double v);
  */
 std::string jsonnet_unparse_jsonnet(const AST *ast, const Fodder &final_fodder, unsigned indent,
                                     bool pad_arrays, bool pad_objects, char comment_style);
+
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_PARSER_H

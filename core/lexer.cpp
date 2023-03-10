@@ -24,6 +24,8 @@ limitations under the License.
 #include "static_error.h"
 #include "unicode.h"
 
+namespace jsonnet::internal {
+
 static const std::vector<std::string> EMPTY;
 
 /** Is the char whitespace (excluding \n). */
@@ -878,3 +880,5 @@ std::string jsonnet_unlex(const Tokens &tokens)
     }
     return ss.str();
 }
+
+}  // namespace jsonnet::internal

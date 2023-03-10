@@ -25,6 +25,8 @@ limitations under the License.
 #include "pass.h"
 #include "string_utils.h"
 
+namespace jsonnet::internal {
+
 static const Fodder EF;  // Empty fodder.
 
 static const LocationRange E;  // Empty.
@@ -1011,3 +1013,5 @@ void jsonnet_desugar(Allocator *alloc, AST *&ast, std::map<std::string, VmExt> *
     Desugarer desugarer(alloc);
     desugarer.desugarFile(ast, tlas);
 }
+
+}  // namespace jsonnet::internal

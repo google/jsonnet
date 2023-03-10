@@ -29,6 +29,8 @@ limitations under the License.
 #include "lexer.h"
 #include "unicode.h"
 
+namespace jsonnet::internal {
+
 enum ASTType {
     AST_APPLY,
     AST_APPLY_BRACE,
@@ -1091,5 +1093,7 @@ auto unary_map = build_unary_map();
 auto binary_map = build_binary_map();
 
 }  // namespace
+
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_AST_H
