@@ -21,6 +21,7 @@ limitations under the License.
 #include "gtest/gtest.h"
 #include "lexer.h"
 
+namespace jsonnet::internal {
 namespace {
 
 // Checks whether the provided snippet parses successfully.
@@ -343,3 +344,4 @@ TEST(Parser, TestInvalidOverride)
 }
 
 }  // namespace
+}  // namespace jsonnet::internal

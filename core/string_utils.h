@@ -19,6 +19,8 @@ limitations under the License.
 
 #include "lexer.h"
 
+namespace jsonnet::internal {
+
 /** Unparse the string. */
 UString jsonnet_string_unparse(const UString &str, bool single);
 
@@ -31,5 +33,7 @@ UString jsonnet_string_escape(const UString &str, bool single);
 
 /** Resolve escape characters in the string. */
 UString jsonnet_string_unescape(const LocationRange &loc, const UString &s);
+
+}  // namespace jsonnet::internal
 
 #endif

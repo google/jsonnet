@@ -21,6 +21,8 @@ limitations under the License.
 
 #include "ast.h"
 
+namespace jsonnet::internal {
+
 /** A single line of a stack trace from a runtime error.
  */
 struct TraceFrame {
@@ -126,5 +128,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(
     Allocator *alloc, const AST *ast, const std::map<std::string, VmExt> &ext, unsigned max_stack,
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
+
+}  // namespace jsonnet::internal
 
 #endif

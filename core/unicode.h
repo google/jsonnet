@@ -21,6 +21,8 @@ limitations under the License.
 #define JSONNET_CODEPOINT_ERROR 0xfffd
 #define JSONNET_CODEPOINT_MAX 0x110000
 
+namespace jsonnet::internal {
+
 /** Convert a unicode codepoint to UTF8.
  *
  * \param x The unicode codepoint.
@@ -178,5 +180,7 @@ class UStringStream {
         return buf;
     }
 };
+
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_UNICODE_H

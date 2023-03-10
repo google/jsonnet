@@ -23,6 +23,8 @@ limitations under the License.
 #include "ast.h"
 #include "vm.h"
 
+namespace jsonnet::internal {
+
 /** Translate the AST to remove syntax sugar.
  * \param alloc Allocator for making new identifiers / ASTs.
  * \param ast The AST to change.
@@ -36,5 +38,7 @@ void jsonnet_desugar(Allocator *alloc, AST *&ast, std::map<std::string, VmExt> *
  * \param filename to be used as std.thisFile.
  */
 DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename);
+
+}  // namespace jsonnet::internal
 
 #endif

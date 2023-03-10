@@ -20,6 +20,9 @@ extern "C" {
 
 #include "gtest/gtest.h"
 
+namespace jsonnet::internal {
+namespace {
+
 TEST(JsonnetTest, TestEvaluateSnippet)
 {
     const char* snippet = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)";
@@ -31,3 +34,6 @@ TEST(JsonnetTest, TestEvaluateSnippet)
     jsonnet_realloc(vm, output, 0);
     jsonnet_destroy(vm);
 }
+
+}  // namespace
+}  // namespace jsonnet::internal

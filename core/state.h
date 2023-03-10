@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef JSONNET_STATE_H
 #define JSONNET_STATE_H
 
+namespace jsonnet::internal {
 namespace {
 
 /** Mark & sweep: advanced by 1 each GC cycle.
@@ -483,5 +484,6 @@ class Heap {
 };
 
 }  // namespace
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_STATE_H

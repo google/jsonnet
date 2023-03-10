@@ -31,6 +31,8 @@ limitations under the License.
 #include "parser.h"
 #include "static_error.h"
 
+namespace jsonnet::internal {
+
 std::string jsonnet_unparse_number(double v)
 {
     std::stringstream ss;
@@ -1129,3 +1131,5 @@ AST *jsonnet_parse(Allocator *alloc, Tokens &tokens)
 
     return expr;
 }
+
+}  // namespace jsonnet::internal

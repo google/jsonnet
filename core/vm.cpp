@@ -33,6 +33,8 @@ limitations under the License.
 #include "string_utils.h"
 #include "vm.h"
 
+namespace jsonnet::internal {
+
 /** Macro that dumps an error and aborts the program regardless of
  *  whether NDEBUG is defined. This should be used to mark codepaths
  *  as unreachable.
@@ -3382,3 +3384,5 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
     vm.evaluate(ast, 0);
     return vm.manifestStream(string_output);
 }
+
+}  // namespace jsonnet::internal

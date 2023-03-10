@@ -19,6 +19,8 @@ limitations under the License.
 
 #include "ast.h"
 
+namespace jsonnet::internal {
+
 struct FmtOpts {
     char stringStyle;
     char commentStyle;
@@ -50,5 +52,7 @@ struct FmtOpts {
 /** The inverse of jsonnet_parse.
  */
 std::string jsonnet_fmt(AST *ast, Fodder &final_fodder, const FmtOpts &opts);
+
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_PARSER_H

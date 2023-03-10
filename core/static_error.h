@@ -20,6 +20,8 @@ limitations under the License.
 #include <iostream>
 #include <sstream>
 
+namespace jsonnet::internal {
+
 struct Location {
     unsigned long line;
     unsigned long column;
@@ -107,5 +109,7 @@ static inline std::ostream &operator<<(std::ostream &o, const StaticError &err)
     o << err.toString();
     return o;
 }
+
+}  // namespace jsonnet::internal
 
 #endif  // JSONNET_ERROR_H

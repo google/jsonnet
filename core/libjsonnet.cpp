@@ -36,6 +36,20 @@ extern "C" {
 #include "static_analysis.h"
 #include "vm.h"
 
+namespace {
+using ::jsonnet::internal::Allocator;
+using ::jsonnet::internal::AST;
+using ::jsonnet::internal::FmtOpts;
+using ::jsonnet::internal::Fodder;
+using ::jsonnet::internal::jsonnet_lex;
+using ::jsonnet::internal::RuntimeError;
+using ::jsonnet::internal::StaticError;
+using ::jsonnet::internal::Tokens;
+using ::jsonnet::internal::VmExt;
+using ::jsonnet::internal::VmNativeCallback;
+using ::jsonnet::internal::VmNativeCallbackMap;
+}  // namespace
+
 static void memory_panic(void)
 {
     fputs("FATAL ERROR: a memory allocation error occurred.\n", stderr);

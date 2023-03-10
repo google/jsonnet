@@ -19,6 +19,7 @@ limitations under the License.
 #include <list>
 #include "gtest/gtest.h"
 
+namespace jsonnet::internal {
 namespace {
 
 void testLex(const char* name, const char* input, const std::list<Token>& tokens,
@@ -342,3 +343,4 @@ TEST(Lexer, TestComments)
 }
 
 }  // namespace
+}  // namespace jsonnet::internal

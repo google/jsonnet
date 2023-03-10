@@ -19,6 +19,8 @@ limitations under the License.
 #include "static_error.h"
 #include "string_utils.h"
 
+namespace jsonnet::internal {
+
 UString jsonnet_string_unparse(const UString &str, bool single)
 {
     UStringStream ss;
@@ -177,3 +179,5 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
     }
     return r;
 }
+
+}  // namespace jsonnet::internal
