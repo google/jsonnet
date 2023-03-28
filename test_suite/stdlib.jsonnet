@@ -1532,4 +1532,7 @@ std.assertEqual(std.all([]), true) &&
 
 std.assertEqual(std.sum([1, 2, 3]), 6) &&
 
+std.assertEqual(std.xor(true, false), true) &&
+std.assertEqual(std.xor(true, true), false) &&
+
 true
