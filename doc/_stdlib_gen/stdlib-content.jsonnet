@@ -1435,6 +1435,19 @@ local html = import 'html.libsonnet';
       ],
     },
     {
+      name: 'Booleans',
+      id: 'booleans',
+      fields: [
+        {
+          name: 'xor',
+          params: ['x', 'y'],
+          description: |||
+            Returns the xor of the two given booleans.
+          |||,
+        },
+      ],
+    },
+    {
       name: 'JSON Merge Patch',
       id: 'json_merge_patch',
       fields: [

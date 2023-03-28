@@ -1682,4 +1682,6 @@ limitations under the License.
   __array_greater_or_equal(arr1, arr2):: std.__compare_array(arr1, arr2) >= 0,
 
   sum(arr):: std.foldl(function(a,b)a+b,arr,0),
+
+  xor(x, y):: x!=y,
 }
