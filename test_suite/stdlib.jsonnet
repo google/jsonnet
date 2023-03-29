@@ -1535,4 +1535,7 @@ std.assertEqual(std.sum([1, 2, 3]), 6) &&
 std.assertEqual(std.xor(true, false), true) &&
 std.assertEqual(std.xor(true, true), false) &&
 
+std.assertEqual(std.xnor(true, false), false) &&
+std.assertEqual(std.xnor(true, true), true) &&
+
 true
