@@ -1684,4 +1684,6 @@ limitations under the License.
   sum(arr):: std.foldl(function(a,b)a+b,arr,0),
 
   xor(x, y):: x!=y,
+
+  isEmpty(str):: std.length(str) == 0,
 }

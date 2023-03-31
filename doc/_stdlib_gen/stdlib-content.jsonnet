@@ -409,6 +409,13 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'isEmpty',
+          params: ['str'],
+          description: |||
+            Returns true if the the given string is of zero length.
+          |||,
+        },
+        {
           name: 'asciiUpper',
           params: ['str'],
           description: |||

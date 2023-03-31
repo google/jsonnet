@@ -1535,4 +1535,7 @@ std.assertEqual(std.sum([1, 2, 3]), 6) &&
 std.assertEqual(std.xor(true, false), true) &&
 std.assertEqual(std.xor(true, true), false) &&
 
+std.assertEqual(std.isEmpty(""), true) &&
+std.assertEqual(std.isEmpty("non-empty string"), false) &&
+
 true
