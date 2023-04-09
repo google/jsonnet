@@ -98,6 +98,15 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'objectKeysValues',
+          params: ['o'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns an array of objects from the given object, each object having two fields: 
+            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+          |||,
+        },
+        {
           name: 'objectHasAll',
           params: ['o', 'f'],
           description: |||
@@ -117,6 +126,14 @@ local html = import 'html.libsonnet';
           availableSince: '0.17.0',
           description: |||
             As <code>std.objectValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectKeysValuesAll',
+          params: ['o'],
+          availableSince: 'upcoming',
+          description: |||
+            As <code>std.objectKeysValues</code> but also includes hidden fields.
           |||,
         },
         {

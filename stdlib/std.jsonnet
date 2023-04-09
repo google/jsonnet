@@ -1539,6 +1539,12 @@ limitations under the License.
   objectValuesAll(o)::
     [o[k] for k in std.objectFieldsAll(o)],
 
+  objectKeysValues(o)::
+    [{ key: k, value: o[k] } for k in std.objectFields(o)],
+
+  objectKeysValuesAll(o)::
+    [{ key: k, value: o[k] } for k in std.objectFieldsAll(o)],
+
   equals(a, b)::
     local ta = std.type(a);
     local tb = std.type(b);

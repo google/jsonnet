@@ -262,6 +262,34 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="objectKeysValues">
+        std.objectKeysValues(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns an array of objects from the given object, each object having two fields: 
+        <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="objectHasAll">
         std.objectHasAll(o, f)
       </h4>
@@ -323,6 +351,33 @@ title: Standard Library
       </p>
       <p>
         As <code>std.objectValues</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectKeysValuesAll">
+        std.objectKeysValuesAll(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectKeysValues</code> but also includes hidden fields.
       </p>
       
     </div>
@@ -2344,6 +2399,33 @@ e = {"f1": False, "f2": 42}</pre>
   </div>
 </div>
 
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sum">
+        std.sum(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version v0.19.2.
+        </em>
+      </p>
+      <p>
+        Return sum of all element in <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
 
 <div class="hgroup">
   <div class="hgroup-inline">
@@ -2596,6 +2678,40 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         Encodes the given value into an MD5 string.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h3 id="booleans">
+        Booleans
+      </h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="xor">
+        std.xor(x, y)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Returns the xor of the two given booleans.
       </p>
       
     </div>
