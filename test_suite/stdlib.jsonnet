@@ -168,6 +168,18 @@ std.assertEqual(std.objectValues({ x::: 1 } { x: 1 }), [1]) &&
 std.assertEqual(std.objectValues({ x::: 1 } { x:: 1 }), []) &&
 std.assertEqual(std.objectValues({ x::: 1 } { x::: 1 }), [1]) &&
 
+std.assertEqual(std.objectKeysValues({}), []) &&
+std.assertEqual(std.objectKeysValues({ x: 1, y: 2 }), [{ key: 'x', value: 1 }, { key: 'y', value: 2 }]) &&
+std.assertEqual(std.objectKeysValues({ x: 1 } { x: 1 }), [{ key: 'x', value: 1 }]) &&
+std.assertEqual(std.objectKeysValues({ x: 1 } { x:: 1 }), []) &&
+std.assertEqual(std.objectKeysValues({ x: 1 } { x::: 1 }), [{ key: 'x', value: 1 }]) &&
+std.assertEqual(std.objectKeysValues({ x:: 1 } { x: 1 }), []) &&
+std.assertEqual(std.objectKeysValues({ x:: 1 } { x:: 1 }), []) &&
+std.assertEqual(std.objectKeysValues({ x:: 1 } { x::: 1 }), [{ key: 'x', value: 1 }]) &&
+std.assertEqual(std.objectKeysValues({ x::: 1 } { x: 1 }), [{ key: 'x', value: 1 }]) &&
+std.assertEqual(std.objectKeysValues({ x::: 1 } { x:: 1 }), []) &&
+std.assertEqual(std.objectKeysValues({ x::: 1 } { x::: 1 }), [{ key: 'x', value: 1 }]) &&
+
 std.assertEqual(std.get({ x: 1, y: 2 }, 'x', 5), 1) &&
 std.assertEqual(std.get({ x: 1, y: 2 }, 'z', 5), 5) &&
 std.assertEqual(std.get({ x: 1, y: 2 }, 'z'), null) &&
