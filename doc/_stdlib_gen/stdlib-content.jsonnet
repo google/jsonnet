@@ -411,6 +411,7 @@ local html = import 'html.libsonnet';
         {
           name: 'isEmpty',
           params: ['str'],
+          availableSince: 'upcoming',
           description: |||
             Returns true if the the given string is of zero length.
           |||,
