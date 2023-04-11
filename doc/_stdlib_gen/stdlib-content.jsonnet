@@ -183,6 +183,7 @@ local html = import 'html.libsonnet';
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
+              <ul><code>std.round(x)</code></ul>
           </ul>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
