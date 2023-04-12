@@ -16,6 +16,7 @@ examples/check.sh || FAIL=TRUE
 examples/terraform/check.sh || FAIL=TRUE
 test_cmd/run_cmd_tests.sh || FAIL=TRUE
 test_suite/run_tests.sh || FAIL=TRUE
+doc/_stdlib_gen/run_tests.sh || FAIL=TRUE
 if [ -z "$DISABLE_FMT_TESTS" ]; then
     test_suite/run_fmt_tests.sh || FAIL=TRUE
     test_suite/run_fmt_idempotence_tests.sh || FAIL=TRUE
