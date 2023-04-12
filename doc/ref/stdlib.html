@@ -31,6 +31,9 @@ title: Standard Library
         then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>. The
         functions in the standard library are all hidden fields of the <code>std</code> object.
       </p>
+      <p>
+        Note: Some of these functions marked available since v0.10.0 were actually available earlier.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -60,6 +63,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         If an external variable with the given name was defined, return its string value. Otherwise, raise an error.
       </p>
@@ -95,6 +103,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Note that this is a field. It contains the current Jsonnet filename as a string.
       </p>
       
@@ -116,6 +129,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Return a string that indicates the type of the value. The possible return values are:
         "array", "boolean", "function", "null", "number", "object", and "string".
@@ -145,6 +163,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Depending on the type of the value given, either returns the number of elements in the
         array, the number of codepoints in the string, the number of parameters in the function, or
@@ -199,6 +222,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns <code>true</code> if the given object has the field (given as a string), otherwise
         <code>false</code>. Raises an error if the arguments are not object and string
         respectively. Returns false if the field is hidden.
@@ -222,6 +250,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns an array of strings, each element being a field from the given object. Does not include
         hidden fields.
@@ -301,6 +334,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         As <code>std.objectHas</code> but also includes hidden fields.
       </p>
       
@@ -322,6 +360,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         As <code>std.objectFields</code> but also includes hidden fields.
       </p>
@@ -399,6 +442,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
         length `arrays`, zero length `objects`, or `null` values.
         The argument <code>a</code> may have any type.
@@ -422,6 +470,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Apply the given function to all fields of the given object, also passing
         the field name. The function <code>func</code> is expected to take the
@@ -469,6 +522,7 @@ title: Standard Library
           <ul><code>std.asin(x)</code></ul>
           <ul><code>std.acos(x)</code></ul>
           <ul><code>std.atan(x)</code></ul>
+          <ul><code>std.round(x)</code></ul>
       </ul>
       <p>
           The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
@@ -542,6 +596,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Ensure that <code>a == b</code>. Returns <code>true</code> or throws an error message.
       </p>
       
@@ -576,6 +635,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert the given argument to a string.
       </p>
       
@@ -597,6 +661,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns the positive integer representing the unicode codepoint of the character in the
         given single-character string. This function is the inverse of <code>std.char(n)</code>.
@@ -621,6 +690,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.
         This function is the inverse of <code>std.codepoint(str)</code>.
       </p>
@@ -643,6 +717,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
         and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
@@ -668,6 +747,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns an array that contains the indexes of all occurrences of <code>pat</code> in
         <code>str</code>.
       </p>
@@ -691,6 +775,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns whether the string a is prefixed by the string b.
       </p>
       
@@ -712,6 +801,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns whether the string a is suffixed by the string b.
       </p>
@@ -840,6 +934,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Split the string <code>str</code> into an array of strings, divided by the string
         <code>c</code>.
       </p>
@@ -870,6 +969,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         As <code>std.split(str, c)</code> but will stop after <code>maxsplits</code> splits, thereby the largest
         array it will return has length <code>maxsplits + 1</code>. A limit of <code>-1</code> means unlimited.
@@ -903,7 +1007,7 @@ title: Standard Library
     <div class="panel">
       <p>
         <em>
-          Available since version v0.19.0.
+          Available since version 0.19.0.
         </em>
       </p>
       <p>
@@ -931,12 +1035,44 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns a copy of the string in which all occurrences of string <code>from</code> have been
         replaced with string <code>to</code>.
       </p>
       <p>
         Example: <code>std.strReplace('I like to skate with my skateboard', 'skate', 'surf')</code> yields <code>"I like to surf with my surfboard"</code>.
       </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="isEmpty">
+        std.isEmpty(str)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns true if the the given string is of zero length.
+      </p>
+      
     </div>
     <div style="clear: both"></div>
   </div>
@@ -955,6 +1091,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns a copy of the string in which all ASCII letters are capitalized.
       </p>
@@ -980,6 +1121,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Returns a copy of the string in which all ASCII letters are lower cased.
       </p>
       <p>
@@ -1003,6 +1149,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Split the string <code>str</code> into an array of strings, each containing a single
         codepoint.
@@ -1028,6 +1179,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Format the string <code>str</code> using the values in <code>vals</code>. The values can be
         an array, an object, or in other cases are treated as if they were provided in a singleton
@@ -1066,6 +1222,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code>
         by changing them to a sequence <tt>'"'"'</tt>. This allows injection of arbitrary strings
         as arguments of commands in bash scripts.
@@ -1090,6 +1251,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert $ to $$ in <code>str</code>. This allows injection of arbitrary strings into
         systems that use $ for string interpolation (like Terraform).
       </p>
@@ -1112,6 +1278,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Convert <code>str</code> to allow it to be embedded in a JSON representation, within a
         string. This adds quotes, escapes backslashes, and escapes unprintable characters.
@@ -1139,6 +1310,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert <code>str</code> to allow it to be embedded in Python. This is an alias for
         <code>std.escapeStringJson</code>.
       </p>
@@ -1161,6 +1337,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Convert <code>str</code> to allow it to be embedded in XML (or HTML). The following replacements are made:
         <pre>
@@ -1205,6 +1386,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Parses a signed decimal integer from the input string.
       </p>
       <p>
@@ -1232,6 +1418,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
       </p>
       <p>
@@ -1255,6 +1446,11 @@ title: Standard Library
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
       </p>
@@ -1410,6 +1606,11 @@ title: Standard Library
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
         allows using Jsonnet's
         object model to build a configuration to be consumed by an application expecting an INI
@@ -1457,6 +1658,11 @@ q =</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert the given value to a JSON-like form that is compatible with Python. The chief
         differences are True / False / None instead of true / false / null.
       </p>
@@ -1495,6 +1701,11 @@ q =</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert the given object to a JSON-like form that is compatible with Python. The key
         difference to <code>std.manifestPython</code> is that the top level is represented as a list
         of Python global variables.
@@ -1531,6 +1742,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Convert the given object to a JSON form. <code>indent</code> is a string containing
         one or more whitespaces that are used for indentation. <code>newline</code> is
@@ -1607,6 +1823,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
         be used for this purpose, because any JSON is also valid YAML. But this function will
         produce more canonical-looking YAML.
@@ -1665,6 +1886,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Given an array of values, emit a YAML "stream", which is a sequence of documents separated
         by <code>---</code> and ending with <code>...</code>.
       </p>
@@ -1708,6 +1934,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
         containing the XML.
@@ -1833,6 +2064,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize
         each element. Func is expected to be a function that takes a single parameter, the index of
         the element it should initialize.
@@ -1887,6 +2123,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Return the number of times that <code>x</code> occurs in <code>arr</code>.
       </p>
       
@@ -1908,6 +2149,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns an array that contains the indexes of all occurrences of <code>value</code> in
         <code>arr</code>.
@@ -1932,6 +2178,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Apply the given function to every element of the array to form a new array.
       </p>
       
@@ -1953,6 +2204,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Similar to <a href="#map">map</a> above, but it also passes to the function the element's
         index in the array. The function <code>func</code> is expected to take the index as the
@@ -1978,6 +2234,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         It first filters, then maps the given array, using the two functions provided.
       </p>
       
@@ -1999,6 +2260,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Apply the given function to every element of <code>arr</code> to form a new array then flatten the result.
         The argument <code>arr</code> must be an array or a string. If <code>arr</code> is an array, function <code>func</code> must return an array.
@@ -2039,6 +2305,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Return a new array containing all the elements of <code>arr</code> for which the
         <code>func</code> function returns true.
       </p>
@@ -2061,6 +2332,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Classic foldl function. Calls the function on the result of the previous function call and
         each array element, or <code>init</code> in the case of the initial element. Traverses the
@@ -2086,6 +2362,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Classic foldr function. Calls the function on the result of the previous function call and
         each array element, or <code>init</code> in the case of the initial element. Traverses the
         array from right to left.
@@ -2109,6 +2390,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Return an array of ascending numbers between the two limits, inclusively.
       </p>
@@ -2164,6 +2450,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
       </p>
       <p>
@@ -2197,6 +2488,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         If <code>sep</code> is a string, then <code>arr</code> must be an array of strings, in which
         case they are concatenated with <code>sep</code> used as a delimiter. If <code>sep</code>
         is an array, then <code>arr</code> must be an array of arrays, in which case the arrays are
@@ -2227,6 +2523,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Concatenate an array of strings into a text file with newline characters after each string.
         This is suitable for constructing bash scripts and the like.
       </p>
@@ -2249,6 +2550,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Concatenate an array of arrays into a single array.
       </p>
@@ -2301,6 +2607,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Sorts the array using the <= operator.
       </p>
       <p>
@@ -2326,6 +2637,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Removes successive duplicates. When given a sorted array, removes all duplicates.
       </p>
@@ -2354,7 +2670,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         <em>
-          Available since version v0.19.0.
+          Available since version 0.19.0.
         </em>
       </p>
       <p>
@@ -2384,7 +2700,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         <em>
-          Available since version v0.19.0.
+          Available since version 0.19.0.
         </em>
       </p>
       <p>
@@ -2414,7 +2730,7 @@ e = {"f1": False, "f2": 42}</pre>
     <div class="panel">
       <p>
         <em>
-          Available since version v0.19.2.
+          Available in upcoming release.
         </em>
       </p>
       <p>
@@ -2472,6 +2788,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Shortcut for std.uniq(std.sort(arr)).
       </p>
       
@@ -2494,6 +2815,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Set intersection operation (values in both a and b).
       </p>
       
@@ -2515,6 +2841,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Set union operation (values in any of <code>a</code> or <code>b</code>). Note that + on sets will simply
         concatenate
@@ -2546,6 +2877,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Set difference operation (values in a but not b).
       </p>
       
@@ -2567,6 +2903,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.
       </p>
@@ -2602,6 +2943,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Encodes the given value into a base64 string. The encoding sequence is <code>A-Za-z0-9+/</code> with
         <code>=</code>
         to pad the output to a multiple of 4 characters. The value can be a string or an array of
@@ -2628,6 +2974,11 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
         Decodes the given base64 string into an array of bytes (number values). Currently assumes
         the input string has no linebreaks and is padded to a multiple of 4 (with the = character).
         In other words, it consumes the output of std.base64().
@@ -2651,6 +3002,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         <em>Deprecated, use <code>std.base64DecodeBytes</code> and decode the string explicitly (e.g. with <code>std.decodeUTF8</code>) instead.</code></em>
       </p>
@@ -2676,6 +3032,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Encodes the given value into an MD5 string.
       </p>
@@ -2711,7 +3072,39 @@ e = {"f1": False, "f2": 42}</pre>
   <div class="hgroup-inline">
     <div class="panel">
       <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
         Returns the xor of the two given booleans.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="xnor">
+        std.xnor(x, y)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns the xnor of the two given booleans.
       </p>
       
     </div>
@@ -2744,6 +3137,11 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
       <p>
         Applies <code>patch</code> to <code>target</code>
         according to <a href="https://tools.ietf.org/html/rfc7396">RFC7396</a>

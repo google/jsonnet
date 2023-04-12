@@ -69,7 +69,7 @@ in one sitting and fix any unexpected problems.
 ```
 ./tools/scripts/replace_test_cmd_version.sh <NEW_VERSION>
 ```
-* In stdlib documentation replace any "Available in upcoming release." with "Available since NEW_VERSION_GOES_HERE".
+* In `doc/_stdlib_gen/stdlib-content.jsonnet` replace any `availableSince: "upcoming"` with NEW_VERSION".
 * Send a PR and wait for CI to be green before merging.
 * Create a release on Github. Put the previously prepared release notes there.
 * Upload the Python package.
