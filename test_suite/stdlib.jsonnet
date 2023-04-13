@@ -1553,4 +1553,7 @@ std.assertEqual(std.xnor(true, true), true) &&
 std.assertEqual(std.round(1.2), 1) &&
 std.assertEqual(std.round(1.5), 2) &&
 
+std.assertEqual(std.isEmpty(''), true) &&
+std.assertEqual(std.isEmpty('non-empty string'), false) &&
+
 true

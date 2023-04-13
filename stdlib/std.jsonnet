@@ -125,7 +125,7 @@ limitations under the License.
     local aux(idx, ret, val) =
       if idx >= strLen then
         ret + [val]
-      else if str[idx : idx + cLen : 1] == c &&
+      else if str[idx:idx + cLen:1] == c &&
               (maxsplits == -1 || std.length(ret) < maxsplits) then
         aux(idx + cLen, ret + [val], '')
       else
@@ -891,7 +891,7 @@ limitations under the License.
     local
       escapeStringToml = std.escapeStringJson,
       escapeKeyToml(key) =
-        local bare_allowed = std.set(std.stringChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"));
+        local bare_allowed = std.set(std.stringChars('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'));
         if std.setUnion(std.set(std.stringChars(key)), bare_allowed) == bare_allowed then key else escapeStringToml(key),
       isTableArray(v) = std.isArray(v) && std.length(v) > 0 && std.all(std.map(std.isObject, v)),
       isSection(v) = std.isObject(v) || isTableArray(v),
@@ -917,19 +917,19 @@ limitations under the License.
             local separator = if inline then ' ' else '\n';
             local lines = ['[' + separator]
                           + std.join([',' + separator],
-                                    [
-                                      [new_indent + renderValue(v[i], indexedPath + [i], true, '')]
-                                      for i in range
-                                    ])
+                                     [
+                                       [new_indent + renderValue(v[i], indexedPath + [i], true, '')]
+                                       for i in range
+                                     ])
                           + [separator + (if inline then '' else cindent) + ']'];
             std.join('', lines)
         else if std.isObject(v) then
           local lines = ['{ ']
                         + std.join([', '],
-                                  [
-                                    [escapeKeyToml(k) + ' = ' + renderValue(v[k], indexedPath + [k], true, '')]
-                                    for k in std.objectFields(v)
-                                  ])
+                                   [
+                                     [escapeKeyToml(k) + ' = ' + renderValue(v[k], indexedPath + [k], true, '')]
+                                     for k in std.objectFields(v)
+                                   ])
                         + [' }'];
           std.join('', lines),
       renderTableInternal(v, path, indexedPath, cindent) =
@@ -939,10 +939,11 @@ limitations under the License.
           if !isSection(v[k])
         ]);
         local sections = [std.join('\n', kvp)] + [
-          (if std.isObject(v[k]) then
-            renderTable(v[k], path + [k], indexedPath + [k], cindent)
-          else
-            renderTableArray(v[k], path + [k], indexedPath + [k], cindent)
+          (
+            if std.isObject(v[k]) then
+              renderTable(v[k], path + [k], indexedPath + [k], cindent)
+            else
+              renderTableArray(v[k], path + [k], indexedPath + [k], cindent)
           )
           for k in std.objectFields(v)
           if isSection(v[k])
@@ -956,8 +957,8 @@ limitations under the License.
         local range = std.range(0, std.length(v) - 1);
         local sections = [
           (cindent + '[[' + std.join('.', std.map(escapeKeyToml, path)) + ']]'
-          + (if v[i] == {} then '' else '\n')
-          + renderTableInternal(v[i], path, indexedPath + [i], cindent + indent))
+           + (if v[i] == {} then '' else '\n')
+           + renderTableInternal(v[i], path, indexedPath + [i], cindent + indent))
           for i in range
         ];
         std.join('\n\n', sections);
@@ -1076,11 +1077,24 @@ limitations under the License.
       // the risk of missing a permutation.
       local reserved = [
         // Boolean types taken from https://yaml.org/type/bool.html
-        'true', 'false', 'yes', 'no', 'on', 'off', 'y', 'n',
+        'true',
+        'false',
+        'yes',
+        'no',
+        'on',
+        'off',
+        'y',
+        'n',
         // Numerical words taken from https://yaml.org/type/float.html
-        '.nan', '-.inf', '+.inf', '.inf', 'null', 
+        '.nan',
+        '-.inf',
+        '+.inf',
+        '.inf',
+        'null',
         // Invalid keys that contain no invalid characters
-        '-', '---', '',
+        '-',
+        '---',
+        '',
       ];
       local bad = [word for word in reserved if word == std.asciiLower(key)];
       if std.length(bad) > 0 then
@@ -1120,7 +1134,7 @@ limitations under the License.
       local keySet = std.set(keyChars);
       local keySetLc = std.set(std.stringChars(keyLc));
       // Check for unsafe characters
-      if ! onlyChars(safeChars, keySet) then
+      if !onlyChars(safeChars, keySet) then
         false
       // Check for reserved words
       else if isReserved(key) then
@@ -1132,8 +1146,8 @@ limitations under the License.
            - has exactly 2 dashes
          are considered dates.
       */
-      else if onlyChars(dateChars, keySet) 
-          && std.length(std.findSubstr('-', key)) == 2 then
+      else if onlyChars(dateChars, keySet)
+              && std.length(std.findSubstr('-', key)) == 2 then
         false
       /* Check for integers.  Keys that meet all of the following:
            - all characters match [0-9_\-]
@@ -1141,7 +1155,7 @@ limitations under the License.
          are considered integers.
       */
       else if onlyChars(intChars, keySetLc)
-          && std.length(std.findSubstr('-', key)) < 2 then
+              && std.length(std.findSubstr('-', key)) < 2 then
         false
       /* Check for binary integers.  Keys that meet all of the following:
            - all characters match [0-9b_\-]
@@ -1150,8 +1164,8 @@ limitations under the License.
          are considered binary integers.
       */
       else if onlyChars(binChars, keySetLc)
-          && std.length(key) > 2
-          && typeMatch(key, '0b') then
+              && std.length(key) > 2
+              && typeMatch(key, '0b') then
         false
       /* Check for floats. Keys that meet all of the following:
            - all characters match [0-9e._\-]
@@ -1161,9 +1175,9 @@ limitations under the License.
          are considered floats.
       */
       else if onlyChars(floatChars, keySetLc)
-          && std.length(std.findSubstr('.', key)) == 1
-          && std.length(std.findSubstr('-', key)) < 3 
-          && std.length(std.findSubstr('e', keyLc)) < 2 then
+              && std.length(std.findSubstr('.', key)) == 1
+              && std.length(std.findSubstr('-', key)) < 3
+              && std.length(std.findSubstr('e', keyLc)) < 2 then
         false
       /* Check for hexadecimals.  Keys that meet all of the following:
            - all characters match [0-9a-fx_\-]
@@ -1172,10 +1186,10 @@ limitations under the License.
            - starts with (-)0x
          are considered hexadecimals.
       */
-      else if onlyChars(hexChars, keySetLc) 
-          && std.length(std.findSubstr('-', key)) < 2
-          && std.length(keyChars) > 2
-          && typeMatch(key, '0x') then
+      else if onlyChars(hexChars, keySetLc)
+              && std.length(std.findSubstr('-', key)) < 2
+              && std.length(keyChars) > 2
+              && typeMatch(key, '0x') then
         false
       // All checks pass. Key is safe for emission without quotes.
       else true;
@@ -1518,7 +1532,7 @@ limitations under the License.
     else
       patch,
 
-  get(o, f, default = null, inc_hidden = true)::
+  get(o, f, default=null, inc_hidden=true)::
     if std.objectHasEx(o, f, inc_hidden) then o[f] else default,
 
   objectFields(o)::
@@ -1687,11 +1701,13 @@ limitations under the License.
   __array_less_or_equal(arr1, arr2):: std.__compare_array(arr1, arr2) <= 0,
   __array_greater_or_equal(arr1, arr2):: std.__compare_array(arr1, arr2) >= 0,
 
-  sum(arr):: std.foldl(function(a,b)a+b,arr,0),
+  sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
-  xor(x, y):: x!=y,
+  xor(x, y):: x != y,
 
-  xnor(x, y):: x==y,
+  xnor(x, y):: x == y,
 
   round(x):: std.floor(x + 0.5),
+
+  isEmpty(str):: std.length(str) == 0,
 }
