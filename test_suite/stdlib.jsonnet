@@ -1550,7 +1550,7 @@ std.assertEqual(std.xor(true, true), false) &&
 std.assertEqual(std.xnor(true, false), false) &&
 std.assertEqual(std.xnor(true, true), true) &&
 
-std.assertEqual(std.isEmpty(""), true) &&
-std.assertEqual(std.isEmpty("non-empty string"), false) &&
+std.assertEqual(std.isEmpty(''), true) &&
+std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
 true
