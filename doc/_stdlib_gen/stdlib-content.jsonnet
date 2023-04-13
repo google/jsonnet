@@ -1453,6 +1453,13 @@ local html = import 'html.libsonnet';
             Returns the xor of the two given booleans.
           |||,
         },
+        {
+          name: 'xnor',
+          params: ['x', 'y'],
+          description: |||
+            Returns the xnor of the two given booleans.
+          |||,
+        },
       ],
     },
     {
