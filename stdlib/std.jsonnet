@@ -1692,4 +1692,6 @@ limitations under the License.
   xor(x, y):: x!=y,
 
   xnor(x, y):: x==y,
+
+  isEmpty(str):: std.length(str) == 0,
 }
