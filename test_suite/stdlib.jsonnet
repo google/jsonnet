@@ -1556,4 +1556,9 @@ std.assertEqual(std.round(1.5), 2) &&
 std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
+std.assertEqual(std.trim('already trimmed string'), 'already trimmed string') &&
+std.assertEqual(std.trim('    string with spaces on both ends     '), 'string with spaces on both ends') &&
+std.assertEqual(std.trim('string with newline character at end\n'), 'string with newline character at end') &&
+std.assertEqual(std.trim('string with tabs at end\t\t'), 'string with tabs at end') &&
+
 true

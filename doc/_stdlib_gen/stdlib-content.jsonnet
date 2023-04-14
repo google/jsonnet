@@ -459,6 +459,14 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'trim',
+          params: ['str'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a copy of string after eliminating leading and trailing spaces.
+          |||,
+        },
+        {
           name: 'asciiUpper',
           params: ['str'],
           availableSince: '0.10.0',

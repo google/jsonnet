@@ -1710,4 +1710,6 @@ limitations under the License.
   round(x):: std.floor(x + 0.5),
 
   isEmpty(str):: std.length(str) == 0,
+
+  trim(str):: std.stripChars(str, ' \n\t'),
 }
