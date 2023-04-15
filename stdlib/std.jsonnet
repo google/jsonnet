@@ -1703,6 +1703,20 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
+  minArray(arr):: 
+    local len1 = std.length(arr);
+    if len1 == 0 
+      error 'std.minArr Array has no element.';
+    local minVal = arr[0];
+    local aux(i) =
+      if i < minLen then
+        local cmpRes = std.__compare(minVal, arr[i]);
+        if cmpRes > 0 then
+          minVal = cmpRes
+        else
+          aux(i + 1) tailstrict
+    aux(1),
+
   xor(x, y):: x != y,
 
   xnor(x, y):: x == y,
