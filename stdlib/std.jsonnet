@@ -1724,4 +1724,10 @@ limitations under the License.
   isEmpty(str):: std.length(str) == 0,
 
   contains(arr, elem):: std.any([e == elem for e in arr]),
+  
+  objectRemoveKey(obj, key):: {
+    [k]: obj[k],
+    for k in std.objectFields(obj)
+    if k != key
+  },
 }
