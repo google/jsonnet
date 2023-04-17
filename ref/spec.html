@@ -288,13 +288,14 @@ div.rules {
             </li>
             <li>
               Text block, beginning with <code>|||</code>, followed by optional whitespace and a
-              new-line.  The next non-blank line must be prefixed with some non-zero length whitespace
-              <i>W</i>.  The block ends at the first subsequent line that does not begin with
-              <i>W</i>, and it is an error if this line does not contain some optional whitespace
-              followed by <code>|||</code>.  The content of the string is the concatenation of all
-              the lines that began with <i>W</i> but with that prefix stripped.  The line ending
-              style in the file is preserved in the string.  This form cannot be used in
-              <code>import</code> statements.
+              new-line.  The next non-empty line must be prefixed with some non-zero length
+              whitespace <i>W</i>.  The block ends at the first subsequent line that is non-empty
+              and does not begin with <i>W</i>, and it is an error if this line does not contain
+              some optional whitespace followed by <code>|||</code>.  The content of the string is
+              the concatenation of all the lines between the two <code>|||</code>, which either
+              begin with <i>W</i> (in which case that prefix is stripped) or they are empty lines
+              (in which case they remain as empty lines).  The line ending style in the file is
+              preserved in the string.  This form cannot be used in <code>import</code> statements.
             </li>
           </ul>
           <p>
