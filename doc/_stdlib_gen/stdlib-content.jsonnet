@@ -109,7 +109,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectKeysValues',
           params: ['o'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: |||
             Returns an array of objects from the given object, each object having two fields: 
             <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
@@ -142,7 +142,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectKeysValuesAll',
           params: ['o'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: |||
             As <code>std.objectKeysValues</code> but also includes hidden fields.
           |||,
@@ -453,7 +453,7 @@ local html = import 'html.libsonnet';
         {
           name: 'isEmpty',
           params: ['str'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: |||
             Returns true if the the given string is of zero length.
           |||,
@@ -1414,7 +1414,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sum',
           params: ['arr'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: html.paragraphs([
             |||
               Return sum of all element in <code>arr</code>.
@@ -1553,7 +1553,7 @@ local html = import 'html.libsonnet';
         {
           name: 'xor',
           params: ['x', 'y'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: |||
             Returns the xor of the two given booleans.
           |||,
@@ -1561,7 +1561,7 @@ local html = import 'html.libsonnet';
         {
           name: 'xnor',
           params: ['x', 'y'],
-          availableSince: 'upcoming',
+          availableSince: '0.20.0',
           description: |||
             Returns the xnor of the two given booleans.
           |||,
