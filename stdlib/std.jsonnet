@@ -657,7 +657,7 @@ limitations under the License.
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
-          local exponent = std.floor(std.log(std.abs(val)) / std.log(10));
+          local exponent = if val != 0 then std.floor(std.log(std.abs(val)) / std.log(10)) else 0;
           if exponent < -4 || exponent >= fpprec then
             render_float_sci(val,
                              zp,
