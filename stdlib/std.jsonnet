@@ -1724,4 +1724,19 @@ limitations under the License.
   isEmpty(str):: std.length(str) == 0,
 
   contains(arr, elem):: std.any([e == elem for e in arr]),
+  
+  removeAt(arr, at):: [
+    arr[i],
+    for i in std.range(0, std.length(arr) - 1)
+    if i != at
+  ],
+
+  remove(arr, elem):: 
+    local indexes = std.find(elem, arr);
+    if std.length(indexes) == 0
+    then
+      arr
+    else
+      std.removeAt(arr, indexes[0])
+  ,
 }

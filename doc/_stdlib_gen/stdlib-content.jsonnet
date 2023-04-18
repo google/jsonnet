@@ -1439,6 +1439,26 @@ local html = import 'html.libsonnet';
             |||,
           ]),
         },
+        {
+          name: 'remove',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove first occurrence of <code>elem</code> from <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'removeAt',
+          params: ['arr', 'idx'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove element at <code>idx</code> index from <code>arr</code>.
+            |||,
+          ]),
+        },
       ],
     },
     {
