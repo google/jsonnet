@@ -1703,11 +1703,11 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
-  minArray(arr):: 
+  minArray(arr, keyF=id):: 
     assert std.length(arr) > 0 : "Expected atleast one element in array. Got none"; 
     local minVal = arr[0];
     local minFn(a,b) = 
-       if std.__compare(a, b) > 0 then
+       if keyF(a) > keyF(b) then
         b
        else 
         a;
