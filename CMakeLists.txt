@@ -43,7 +43,7 @@ else()
     message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 
 # Include external googletest project. This runs a CMake sub-script
