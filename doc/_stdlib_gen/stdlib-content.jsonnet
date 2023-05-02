@@ -1423,7 +1423,7 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'minArray',
-          params: ['arr'],
+          params: ['arr', 'keyF', 'onEmpty'],
           availableSince: 'upcoming',
           description: html.paragraphs([
             |||
