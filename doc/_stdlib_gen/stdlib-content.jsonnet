@@ -1428,6 +1428,14 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return the min of all element in <code>arr</code>.
+        },
+        {
+          name: 'contains',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
             |||,
           ]),
         },

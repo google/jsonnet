@@ -37,13 +37,13 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
         ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     set(OPT "-O3")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 -O3 ${OPT}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++11 -fPIC ${OPT}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++17 -fPIC ${OPT}")
 else()
     # TODO: Windows support.
     message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 
 # Include external googletest project. This runs a CMake sub-script
