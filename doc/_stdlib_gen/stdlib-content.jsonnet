@@ -1421,6 +1421,16 @@ local html = import 'html.libsonnet';
             |||,
           ]),
         },
+        {
+          name: 'contains',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
+            |||,
+          ]),
+        },
       ],
     },
     {
