@@ -1703,7 +1703,7 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
-  minArray(arr, keyF=id, onEmpty=error 'Expected atleast one element in array. Got none')::
+  minArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
     if std.length(arr) == 0 then
       onEmpty
     else

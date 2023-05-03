@@ -1427,7 +1427,7 @@ local html = import 'html.libsonnet';
           availableSince: 'upcoming',
           description: html.paragraphs([
             |||
-              Return min of all element in <code>arr</code>.
+              Return the min of all element in <code>arr</code>.
             |||,
           ]),
         },
