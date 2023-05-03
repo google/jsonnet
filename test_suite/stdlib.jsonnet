@@ -1556,4 +1556,7 @@ std.assertEqual(std.round(1.5), 2) &&
 std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
+std.contains(std.contains([1, 2, 3], 2), true) &&
+std.contains(std.contains([1, 2, 3], "foo"), false) &&
+
 true
