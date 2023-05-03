@@ -459,6 +459,14 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'equalsIgnoreCase',
+          params: ['str1', 'str2'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
+          |||,
+        },
+        {
           name: 'asciiUpper',
           params: ['str'],
           availableSince: '0.10.0',

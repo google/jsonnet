@@ -1724,4 +1724,6 @@ limitations under the License.
   isEmpty(str):: std.length(str) == 0,
 
   contains(arr, elem):: std.any([e == elem for e in arr]),
+
+  equalsIgnoreCase(str1, str2):: std.asciiLower(str1) == std.asciiLower(str2),
 }
