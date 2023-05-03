@@ -1422,6 +1422,14 @@ local html = import 'html.libsonnet';
           ]),
         },
         {
+          name: 'minArray',
+          params: ['arr', 'keyF', 'onEmpty'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return the min of all element in <code>arr</code>.
+        },
+        {
           name: 'contains',
           params: ['arr', 'elem'],
           availableSince: 'upcoming',
