@@ -1271,6 +1271,20 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'compactArrays',
+          params: ['arrs'],
+          availableSince: 'upcoming',
+          description: |||
+            Concatenate an array of arrays into a single flattened array, removing null values.
+          |||,
+          examples: [
+            {
+              input: 'std.compactArrays([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
+              output: std.compactArrays([1, 2, 3, 4, 5, 6, 7, 8]),
+            },
+          ],
+        },
+        {
           name: 'reverse',
           params: ['arrs'],
           availableSince: '0.13.0',
