@@ -1,0 +1,12 @@
+module(name = "jsonnet", version = "0.0.0")
+
+bazel_dep(name = "googletest", version = "1.11.0", repo_name = "com_google_googletest")
+
+register_toolchains("//platform_defs:default_python3_toolchain")
+
+build_defs = use_extension("//tools/build_defs:extensions.bzl", "build_defs")
+use_repo(
+    build_defs,
+    "default_python3_headers",
+    "io_bazel_rules_jsonnet",
+)
