@@ -216,6 +216,8 @@ std.assertEqual(std.format('%.1f', [1.95555]), '2.0') &&
 std.assertEqual(std.format('%.4f', [0.99995]), '1.0000') &&
 
 // g
+
+std.assertEqual(std.format('%g', [0]), '0') &&
 std.assertEqual(std.format('%#.3g', [1000000001]), '1.00e+09') &&
 std.assertEqual(std.format('%#.3g', [1100]), '1.10e+03') &&
 std.assertEqual(std.format('%#.3g', [1.1]), '1.10') &&
@@ -249,6 +251,7 @@ std.assertEqual(std.format('%10.5g', [110]), '       110') &&
 std.assertEqual(std.format('%10.5g', [1.1]), '       1.1') &&
 
 // G
+std.assertEqual(std.format('%G', [0]), '0') &&
 std.assertEqual(std.format('%#.3G', [1000000001]), '1.00E+09') &&
 std.assertEqual(std.format('%#.3G', [1100]), '1.10E+03') &&
 std.assertEqual(std.format('%#.3G', [1.1]), '1.10') &&

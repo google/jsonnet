@@ -657,7 +657,7 @@ limitations under the License.
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
-          local exponent = std.floor(std.log(std.abs(val)) / std.log(10));
+          local exponent = if val != 0 then std.floor(std.log(std.abs(val)) / std.log(10)) else 0;
           if exponent < -4 || exponent >= fpprec then
             render_float_sci(val,
                              zp,
@@ -1703,6 +1703,18 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
+  minArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
+    if std.length(arr) == 0 then
+      onEmpty
+    else
+      local minVal = arr[0];
+      local minFn(a, b) =
+        if std.__compare(keyF(a), keyF(b)) > 0 then
+          b
+        else
+          a;
+      std.foldl(minFn, arr, minVal),
+
   xor(x, y):: x != y,
 
   xnor(x, y):: x == y,
@@ -1710,6 +1722,8 @@ limitations under the License.
   round(x):: std.floor(x + 0.5),
 
   isEmpty(str):: std.length(str) == 0,
+
+  contains(arr, elem):: std.any([e == elem for e in arr]),
 
   trim(str):: std.stripChars(str, ' \t\n\f\r\v\u0085\u00A0'),
 }

@@ -1544,6 +1544,9 @@ std.assertEqual(std.all([]), true) &&
 
 std.assertEqual(std.sum([1, 2, 3]), 6) &&
 
+std.assertEqual(std.minArray([1, 2, 3]), 1) &&
+std.assertEqual(std.minArray(['1', '2', '3']), '1') &&
+
 std.assertEqual(std.xor(true, false), true) &&
 std.assertEqual(std.xor(true, true), false) &&
 
@@ -1555,6 +1558,9 @@ std.assertEqual(std.round(1.5), 2) &&
 
 std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
+
+std.contains(std.contains([1, 2, 3], 2), true) &&
+std.contains(std.contains([1, 2, 3], "foo"), false) &&
 
 std.assertEqual(std.trim('already trimmed string'), 'already trimmed string') &&
 std.assertEqual(std.trim('    string with spaces on both ends     '), 'string with spaces on both ends') &&
