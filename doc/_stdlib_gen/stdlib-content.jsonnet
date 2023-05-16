@@ -463,7 +463,7 @@ local html = import 'html.libsonnet';
           params: ['str'],
           availableSince: 'upcoming',
           description: |||
-            Returns a copy of string after eliminating leading and trailing spaces.
+            Returns a copy of string after eliminating leading and trailing whitespaces.
           |||,
         },
         {

@@ -1711,5 +1711,5 @@ limitations under the License.
 
   isEmpty(str):: std.length(str) == 0,
 
-  trim(str):: std.stripChars(str, ' \n\t'),
+  trim(str):: std.stripChars(str, ' \t\n\f\r\v\u0085\u00A0'),
 }
