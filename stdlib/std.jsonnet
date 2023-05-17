@@ -25,6 +25,8 @@ limitations under the License.
   local std = self,
   local id = function(x) x,
 
+  local go_only_function = error 'This function is only supported in go version of jsonnet. See https://github.com/google/go-jsonnet',
+
   isString(v):: std.type(v) == 'string',
   isNumber(v):: std.type(v) == 'number',
   isBoolean(v):: std.type(v) == 'boolean',
@@ -1759,4 +1761,9 @@ limitations under the License.
     for k in std.objectFields(obj)
     if k != key
   },
+
+  sha1(str):: go_only_function,
+  sha256(str):: go_only_function,
+  sha512(str):: go_only_function,
+  sha3(str):: go_only_function,
 }

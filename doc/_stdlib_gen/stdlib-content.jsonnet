@@ -1612,6 +1612,58 @@ local html = import 'html.libsonnet';
             Encodes the given value into an MD5 string.
           |||,
         },
+        {
+          name: 'sha1',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA1 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha256',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA256 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha512',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA512 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha3',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA3 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
       ],
     },
     {
