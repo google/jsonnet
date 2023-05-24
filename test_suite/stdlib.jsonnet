@@ -1544,6 +1544,10 @@ std.assertEqual(std.all([]), true) &&
 
 std.assertEqual(std.sum([1, 2, 3]), 6) &&
 
+std.assertEqual(std.avg([1, 2, 3]), 2) &&
+std.assertEqual(std.avg([]), 0) &&
+std.assertEqual(std.avg([1, 1, 2.5]), 1.5) &&
+
 std.assertEqual(std.minArray([1, 2, 3]), 1) &&
 std.assertEqual(std.minArray(['1', '2', '3']), '1') &&
 
@@ -1559,7 +1563,7 @@ std.assertEqual(std.round(1.5), 2) &&
 std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
-std.contains(std.contains([1, 2, 3], 2), true) &&
-std.contains(std.contains([1, 2, 3], "foo"), false) &&
+std.assertEqual(std.contains([1, 2, 3], 2), true) &&
+std.assertEqual(std.contains([1, 2, 3], 'foo'), false) &&
 
 true
