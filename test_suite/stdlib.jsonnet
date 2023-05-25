@@ -1562,6 +1562,9 @@ std.assertEqual(std.isEmpty('non-empty string'), false) &&
 std.assertEqual(std.contains([1, 2, 3], 2), true) &&
 std.assertEqual(std.contains([1, 2, 3], "foo"), false) &&
 
+std.assertEqual(std.equalsIgnoreCase('foo', 'FOO'), true) &&
+std.assertEqual(std.equalsIgnoreCase('foo', 'bar'), false) &&
+
 std.assertEqual(std.remove([1, 2, 3], 2), [1, 3]) &&
 std.assertEqual(std.removeAt([1, 2, 3], 1), [1, 3]) &&
 
