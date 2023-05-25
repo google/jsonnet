@@ -1783,6 +1783,8 @@ limitations under the License.
   sha256(str):: go_only_function,
   sha512(str):: go_only_function,
   sha3(str):: go_only_function,
+  parseCsvWithHeader(str, delimiter, overwrite_duplicate_headers):: go_only_function,
+  manifestCsv(json, headers):: go_only_function,
 
   trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
 }
