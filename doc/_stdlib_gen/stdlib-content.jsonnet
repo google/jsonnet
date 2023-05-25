@@ -71,83 +71,6 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
-          name: 'get',
-          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
-          availableSince: '0.18.0',
-          description: |||
-            Returns the object's field if it exists or default value otherwise.
-            <code>inc_hidden</code> controls whether to include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectHas',
-          params: ['o', 'f'],
-          availableSince: '0.10.0',
-          description: |||
-            Returns <code>true</code> if the given object has the field (given as a string), otherwise
-            <code>false</code>. Raises an error if the arguments are not object and string
-            respectively. Returns false if the field is hidden.
-          |||,
-        },
-        {
-          name: 'objectFields',
-          params: ['o'],
-          availableSince: '0.10.0',
-          description: |||
-            Returns an array of strings, each element being a field from the given object. Does not include
-            hidden fields.
-          |||,
-        },
-        {
-          name: 'objectValues',
-          params: ['o'],
-          availableSince: '0.17.0',
-          description: |||
-            Returns an array of the values in the given object. Does not include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectKeysValues',
-          params: ['o'],
-          availableSince: '0.20.0',
-          description: |||
-            Returns an array of objects from the given object, each object having two fields: 
-            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectHasAll',
-          params: ['o', 'f'],
-          availableSince: '0.10.0',
-          description: |||
-            As <code>std.objectHas</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectFieldsAll',
-          params: ['o'],
-          availableSince: '0.10.0',
-          description: |||
-            As <code>std.objectFields</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectValuesAll',
-          params: ['o'],
-          availableSince: '0.17.0',
-          description: |||
-            As <code>std.objectValues</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectKeysValuesAll',
-          params: ['o'],
-          availableSince: '0.20.0',
-          description: |||
-            As <code>std.objectKeysValues</code> but also includes hidden fields.
-          |||,
-        },
-        {
           name: 'prune',
           params: ['a'],
           availableSince: '0.10.0',
@@ -155,16 +78,6 @@ local html = import 'html.libsonnet';
             Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
             length `arrays`, zero length `objects`, or `null` values.
             The argument <code>a</code> may have any type.
-          |||,
-        },
-        {
-          name: 'mapWithKey',
-          params: ['func', 'obj'],
-          availableSince: '0.10.0',
-          description: |||
-            Apply the given function to all fields of the given object, also passing
-            the field name. The function <code>func</code> is expected to take the
-            field name as the first parameter and the field value as the second.
           |||,
         },
       ],
@@ -456,6 +369,14 @@ local html = import 'html.libsonnet';
           availableSince: '0.20.0',
           description: |||
             Returns true if the the given string is of zero length.
+          |||,
+        },
+        {
+          name: 'equalsIgnoreCase',
+          params: ['str1', 'str2'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
           |||,
         },
         {
@@ -1430,6 +1351,14 @@ local html = import 'html.libsonnet';
               Return the min of all element in <code>arr</code>.
         },
         {
+          name: 'maxArray',
+          params: ['arr', 'keyF', 'onEmpty'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return the max of all element in <code>arr</code>.
+        },
+        {
           name: 'contains',
           params: ['arr', 'elem'],
           availableSince: 'upcoming',
@@ -1446,6 +1375,26 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return average of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'remove',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove first occurrence of <code>elem</code> from <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'removeAt',
+          params: ['arr', 'idx'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove element at <code>idx</code> index from <code>arr</code>.
             |||,
           ]),
         },
@@ -1521,6 +1470,107 @@ local html = import 'html.libsonnet';
           availableSince: '0.10.0',
           description: |||
             Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.
+          |||,
+        },
+      ],
+    },
+    {
+      name: 'Objects',
+      id: 'objects',
+      fields: [
+        {
+          name: 'get',
+          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
+          availableSince: '0.18.0',
+          description: |||
+            Returns the object's field if it exists or default value otherwise.
+            <code>inc_hidden</code> controls whether to include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectHas',
+          params: ['o', 'f'],
+          availableSince: '0.10.0',
+          description: |||
+            Returns <code>true</code> if the given object has the field (given as a string), otherwise
+            <code>false</code>. Raises an error if the arguments are not object and string
+            respectively. Returns false if the field is hidden.
+          |||,
+        },
+        {
+          name: 'objectFields',
+          params: ['o'],
+          availableSince: '0.10.0',
+          description: |||
+            Returns an array of strings, each element being a field from the given object. Does not include
+            hidden fields.
+          |||,
+        },
+        {
+          name: 'objectValues',
+          params: ['o'],
+          availableSince: '0.17.0',
+          description: |||
+            Returns an array of the values in the given object. Does not include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectKeysValues',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns an array of objects from the given object, each object having two fields: 
+            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectHasAll',
+          params: ['o', 'f'],
+          availableSince: '0.10.0',
+          description: |||
+            As <code>std.objectHas</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectFieldsAll',
+          params: ['o'],
+          availableSince: '0.10.0',
+          description: |||
+            As <code>std.objectFields</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectValuesAll',
+          params: ['o'],
+          availableSince: '0.17.0',
+          description: |||
+            As <code>std.objectValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectKeysValuesAll',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            As <code>std.objectKeysValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectRemoveKey',
+          params: ['obj', 'key'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a new object after removing the given key from object.
+          |||,
+        },
+        {
+          name: 'mapWithKey',
+          params: ['func', 'obj'],
+          availableSince: '0.10.0',
+          description: |||
+            Apply the given function to all fields of the given object, also passing
+            the field name. The function <code>func</code> is expected to take the
+            field name as the first parameter and the field value as the second.
           |||,
         },
       ],

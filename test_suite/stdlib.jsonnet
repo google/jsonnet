@@ -1551,6 +1551,11 @@ std.assertEqual(std.avg([1, 1, 2.5]), 1.5) &&
 std.assertEqual(std.minArray([1, 2, 3]), 1) &&
 std.assertEqual(std.minArray(['1', '2', '3']), '1') &&
 
+std.assertEqual(std.maxArray([1, 2, 3]), 3) &&
+std.assertEqual(std.maxArray(['1', '2', '3']), '3') &&
+std.assertEqual(std.maxArray(['a', 'x', 'z']), 'z') &&
+
+
 std.assertEqual(std.xor(true, false), true) &&
 std.assertEqual(std.xor(true, true), false) &&
 
@@ -1565,5 +1570,13 @@ std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
 std.assertEqual(std.contains([1, 2, 3], 2), true) &&
 std.assertEqual(std.contains([1, 2, 3], 'foo'), false) &&
+
+std.assertEqual(std.equalsIgnoreCase('foo', 'FOO'), true) &&
+std.assertEqual(std.equalsIgnoreCase('foo', 'bar'), false) &&
+
+std.assertEqual(std.remove([1, 2, 3], 2), [1, 3]) &&
+std.assertEqual(std.removeAt([1, 2, 3], 1), [1, 3]) &&
+
+std.assertEqual(std.objectRemoveKey({ foo: 1, bar: 2, baz: 3 }, 'foo'), { bar: 2, baz: 3 }) &&
 
 true

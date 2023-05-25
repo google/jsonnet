@@ -1721,6 +1721,18 @@ limitations under the License.
           a;
       std.foldl(minFn, arr, minVal),
 
+  maxArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
+    if std.length(arr) == 0 then
+      onEmpty
+    else
+      local maxVal = arr[0];
+      local maxFn(a, b) =
+        if std.__compare(keyF(a), keyF(b)) < 0 then
+          b
+        else
+          a;
+      std.foldl(maxFn, arr, maxVal),
+
   xor(x, y):: x != y,
 
   xnor(x, y):: x == y,
@@ -1730,4 +1742,27 @@ limitations under the License.
   isEmpty(str):: std.length(str) == 0,
 
   contains(arr, elem):: std.any([e == elem for e in arr]),
+
+  equalsIgnoreCase(str1, str2):: std.asciiLower(str1) == std.asciiLower(str2),
+  
+  removeAt(arr, at):: [
+    arr[i],
+    for i in std.range(0, std.length(arr) - 1)
+    if i != at
+  ],
+
+  remove(arr, elem):: 
+    local indexes = std.find(elem, arr);
+    if std.length(indexes) == 0
+    then
+      arr
+    else
+      std.removeAt(arr, indexes[0])
+  ,
+
+  objectRemoveKey(obj, key):: {
+    [k]: obj[k],
+    for k in std.objectFields(obj)
+    if k != key
+  },
 }
