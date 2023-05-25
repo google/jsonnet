@@ -1739,4 +1739,10 @@ limitations under the License.
     else
       std.removeAt(arr, indexes[0])
   ,
+
+  objectRemoveKey(obj, key):: {
+    [k]: obj[k],
+    for k in std.objectFields(obj)
+    if k != key
+  },
 }
