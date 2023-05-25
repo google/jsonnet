@@ -1547,6 +1547,11 @@ std.assertEqual(std.sum([1, 2, 3]), 6) &&
 std.assertEqual(std.minArray([1, 2, 3]), 1) &&
 std.assertEqual(std.minArray(['1', '2', '3']), '1') &&
 
+std.assertEqual(std.maxArray([1, 2, 3]), 3) &&
+std.assertEqual(std.maxArray(['1', '2', '3']), '3') &&
+std.assertEqual(std.maxArray(['a', 'x', 'z']), 'z') &&
+
+
 std.assertEqual(std.xor(true, false), true) &&
 std.assertEqual(std.xor(true, true), false) &&
 

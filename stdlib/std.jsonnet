@@ -1715,6 +1715,18 @@ limitations under the License.
           a;
       std.foldl(minFn, arr, minVal),
 
+  maxArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
+    if std.length(arr) == 0 then
+      onEmpty
+    else
+      local maxVal = arr[0];
+      local maxFn(a, b) =
+        if std.__compare(keyF(a), keyF(b)) < 0 then
+          b
+        else
+          a;
+      std.foldl(maxFn, arr, maxVal),
+
   xor(x, y):: x != y,
 
   xnor(x, y):: x == y,
