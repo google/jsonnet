@@ -110,11 +110,19 @@ local html = import 'html.libsonnet';
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
               <ul><code>std.round(x)</code></ul>
+              <ul><code>std.isEven(x)</code></ul>
+              <ul><code>std.isOdd(x)</code></ul>
+              <ul><code>std.isInteger(x)</code></ul>
+              <ul><code>std.isDecimal(x)</code></ul>
           </ul>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
               modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
               it does Python-style string formatting with <code>std.format()</code>.
+          </p>
+          <p>
+              The functions <code>std.isEven(x)</code> and <code>std.isOdd(x)</code> use integral part of a
+              floating number to test for even or odd.
           </p>
         |||,
       ],

@@ -1738,6 +1738,11 @@ limitations under the License.
   contains(arr, elem):: std.any([e == elem for e in arr]),
 
   equalsIgnoreCase(str1, str2):: std.asciiLower(str1) == std.asciiLower(str2),
+
+  isEven(x):: std.round(x) % 2 == 0,
+  isOdd(x):: std.round(x) % 2 != 0,
+  isInteger(x):: std.round(x) == x,
+  isDecimal(x):: std.round(x) != x,
   
   removeAt(arr, at):: [
     arr[i],
