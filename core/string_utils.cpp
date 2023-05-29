@@ -44,7 +44,6 @@ UString jsonnet_string_escape(const UString &str, bool single)
             case U'\n': ss << U"\\n"; break;
             case U'\r': ss << U"\\r"; break;
             case U'\t': ss << U"\\t"; break;
-            case U'\v': ss << U"\\v"; break;
             case U'\0': ss << U"\\u0000"; break;
             default: {
                 if (c < 0x20 || (c >= 0x7f && c <= 0x9f)) {
@@ -131,8 +130,6 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
                     case 'r': r += '\r'; break;
 
                     case 't': r += '\t'; break;
-
-                    case 'v': r += '\v'; break;
 
                     case 'u': {
                         ++c;  // Consume the 'u'.

@@ -1725,5 +1725,5 @@ limitations under the License.
 
   contains(arr, elem):: std.any([e == elem for e in arr]),
 
-  trim(str):: std.stripChars(str, ' \t\n\f\r\v\u0085\u00A0'),
+  trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
 }
