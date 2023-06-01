@@ -208,18 +208,27 @@ limitations under the License.
       {
         indexable: indexable,
         index:
-          if index == null then 0
-          else index,
+          if index == null
+          then 0
+          else
+            if index < 0
+            then std.length(indexable) + index
+            else index,
         end:
-          if end == null then std.length(indexable)
-          else end,
+          if end == null
+          then std.length(indexable)
+          else
+            if end < 0
+            then std.length(indexable) + end
+            else end,
         step:
-          if step == null then 1
+          if step == null
+          then 1
           else step,
         length: std.length(indexable),
         type: std.type(indexable),
       };
-    assert invar.index >= 0 && invar.end >= 0 && invar.step >= 0 : 'got [%s:%s:%s] but negative index, end, and steps are not supported' % [invar.index, invar.end, invar.step];
+    assert invar.step >= 0 : 'got [%s:%s:%s] but negative steps are not supported' % [invar.index, invar.end, invar.step];
     assert step != 0 : 'got %s but step must be greater than 0' % step;
     assert std.isString(indexable) || std.isArray(indexable) : 'std.slice accepts a string or an array, but got: %s' % std.type(indexable);
     local build(slice, cur) =
