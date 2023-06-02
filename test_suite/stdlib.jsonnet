@@ -1565,7 +1565,7 @@ std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
 std.assertEqual(std.contains([1, 2, 3], 2), true) &&
-std.assertEqual(std.contains([1, 2, 3], "foo"), false) &&
+std.assertEqual(std.contains([1, 2, 3], 'foo'), false) &&
 
 std.assertEqual(std.equalsIgnoreCase('foo', 'FOO'), true) &&
 std.assertEqual(std.equalsIgnoreCase('foo', 'bar'), false) &&
