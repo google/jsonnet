@@ -865,15 +865,11 @@ limitations under the License.
   flattenArrays(arrs)::
     std.foldl(function(a, b) a + b, arrs, []),
 
-  compactArray(arrs)::
-    local foldable = function(accumulator, value)
-      if std.isArray(value) then
-        accumulator + std.compactArray(value)
-      else if value == null then
-        accumulator
-      else
-        accumulator + [value];
-    std.foldl(foldable, arrs, []),
+  flattenDeepArray(value)::
+    if std.isArray(value) then
+      [y for x in value for y in std.flattenDeepArray(x)]
+    else
+      [value],
 
   manifestIni(ini)::
     local body_lines(body) =

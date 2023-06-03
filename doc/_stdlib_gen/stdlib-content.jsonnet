@@ -1271,16 +1271,16 @@ local html = import 'html.libsonnet';
           ],
         },
         {
-          name: 'compactArrays',
-          params: ['arrs'],
+          name: 'flattenDeepArray',
+          params: ['value'],
           availableSince: 'upcoming',
           description: |||
-            Concatenate an array of arrays into a single flattened array, removing null values.
+            Concatenate an array containing values and arrays into a single flattened array.
           |||,
           examples: [
             {
-              input: 'std.compactArrays([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
-              output: std.compactArrays([1, 2, 3, 4, 5, 6, 7, 8]),
+              input: 'std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
+              output: std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]]),
             },
           ],
         },
