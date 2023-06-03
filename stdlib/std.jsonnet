@@ -1705,7 +1705,7 @@ limitations under the License.
 
   avg(arr)::
     if std.length(arr) == 0 then
-      0
+      error 'Cannot calculate average of an empty array.'
     else
       std.sum(arr)/std.length(arr),
 
