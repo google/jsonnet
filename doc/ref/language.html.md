@@ -154,7 +154,7 @@ func(21)
 The arguments are **not** evaluated when a function is called. They are passed lazily and evaluated only when used. This allows expressing things which in other languages require built-in functionality or macros, such as short-circuit boolean operations:
 ```
 local and3(a, b, c) = a && b && c;
-and3(true, false, error "this one is never evaluated")
+and3(true, false, error, "this one is never evaluated")
 ```
 
 Functions in Jsonnet are [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency), meaning that any function call can be replaced with its definition, without changing the meaning of the program. Therefore, in some sense, functions in Jsonnet are [hygienic macros](https://en.wikipedia.org/wiki/Hygienic_macro). For example consider the following snippet:
