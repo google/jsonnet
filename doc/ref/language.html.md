@@ -213,7 +213,9 @@ The simplest way of creating an array is *an array literal*. It is simply a comm
 
 The most flexible way of creating an array is `std.makeArray(sz, func)`. It takes the size of the array to construct and a function which takes an index `i` and returns the `i`-th element. It is possible to build all other array functionality using this function. In practice, using more specialized functions is usually (but not always) more handy and results in a more efficient program.
 
-Arrays can be concatenated using the operator `+`. Arrays `a` and `b` are equal if they have equal length and for all indexes `i`, `a[i] == b[i]`.
+Arrays can be concatenated using the operator `+`.
+
+Arrays `a` and `b` are equal if they have equal length and for all indexes `i`, `a[i] == b[i]`.
 
 The comparison of arrays is lexicographic, so array `a` is smaller than `b` if `a[i] < b[i]` for some `i` and for all `j < i`, `a[j] == b[j]` or if `a` is a (shorter) prefix of `b`.
 
