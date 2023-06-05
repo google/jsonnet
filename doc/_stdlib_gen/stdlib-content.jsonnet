@@ -1349,6 +1349,8 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return the min of all element in <code>arr</code>.
+            |||,
+          ]),
         },
         {
           name: 'maxArray',
@@ -1357,6 +1359,8 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return the max of all element in <code>arr</code>.
+            |||,
+          ]),
         },
         {
           name: 'contains',
