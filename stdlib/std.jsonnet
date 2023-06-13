@@ -1759,4 +1759,6 @@ limitations under the License.
     for k in std.objectFields(obj)
     if k != key
   },
+
+  trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
 }

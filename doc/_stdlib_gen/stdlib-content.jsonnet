@@ -372,6 +372,14 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'trim',
+          params: ['str'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a copy of string after eliminating leading and trailing whitespaces.
+          |||,
+        },
+        {
           name: 'equalsIgnoreCase',
           params: ['str1', 'str2'],
           availableSince: 'upcoming',

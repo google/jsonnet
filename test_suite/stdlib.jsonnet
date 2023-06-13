@@ -1575,4 +1575,10 @@ std.assertEqual(std.removeAt([1, 2, 3], 1), [1, 3]) &&
 
 std.assertEqual(std.objectRemoveKey({ foo: 1, bar: 2, baz: 3 }, 'foo'), { bar: 2, baz: 3 }) &&
 
+std.assertEqual(std.trim('already trimmed string'), 'already trimmed string') &&
+std.assertEqual(std.trim('    string with spaces on both ends     '), 'string with spaces on both ends') &&
+std.assertEqual(std.trim('string with newline character at end\n'), 'string with newline character at end') &&
+std.assertEqual(std.trim('string with tabs at end\t\t'), 'string with tabs at end') &&
+std.assertEqual(std.trim('string with other special whitespaces at end\f\r\u0085\u00A0'), 'string with carriage return at end') &&
+
 true
