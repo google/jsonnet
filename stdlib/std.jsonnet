@@ -1709,6 +1709,12 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
+  avg(arr)::
+    if std.length(arr) == 0 then
+      error 'Cannot calculate average of an empty array.'
+    else
+      std.sum(arr)/std.length(arr),
+
   minArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
     if std.length(arr) == 0 then
       onEmpty

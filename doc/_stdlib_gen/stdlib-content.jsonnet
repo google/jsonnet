@@ -1395,6 +1395,16 @@ local html = import 'html.libsonnet';
           ]),
         },
         {
+          name: 'avg',
+          params: ['arr'],
+          availableSince: '0.20.0',
+          description: html.paragraphs([
+            |||
+              Return average of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
           name: 'remove',
           params: ['arr', 'elem'],
           availableSince: 'upcoming',
