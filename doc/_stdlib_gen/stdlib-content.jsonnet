@@ -1279,6 +1279,20 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'flattenDeepArray',
+          params: ['value'],
+          availableSince: 'upcoming',
+          description: |||
+            Concatenate an array containing values and arrays into a single flattened array.
+          |||,
+          examples: [
+            {
+              input: 'std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
+              output: std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]]),
+            },
+          ],
+        },
+        {
           name: 'reverse',
           params: ['arrs'],
           availableSince: '0.13.0',

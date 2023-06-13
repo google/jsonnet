@@ -313,6 +313,11 @@ std.assertEqual(std.lines(['a', null, 'b']), 'a\nb\n') &&
 
 std.assertEqual(std.flattenArrays([[1, 2, 3], [4, 5, 6], []]), [1, 2, 3, 4, 5, 6]) &&
 
+std.assertEqual(std.flattenDeepArray([]), []) &&
+std.assertEqual(std.flattenDeepArray([1, 2, 3]), [1, 2, 3]) &&
+std.assertEqual(std.flattenDeepArray([1, [2, 3]]), [1, 2, 3]) &&
+std.assertEqual(std.flattenDeepArray([[1], [2, 3], [[null]]]), [1, 2, 3, null]) &&
+
 std.assertEqual(
   std.manifestIni({
     main: { a: '1', b: '2' },
