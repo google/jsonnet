@@ -1579,6 +1579,15 @@ std.assertEqual(std.contains([1, 2, 3], 'foo'), false) &&
 std.assertEqual(std.equalsIgnoreCase('foo', 'FOO'), true) &&
 std.assertEqual(std.equalsIgnoreCase('foo', 'bar'), false) &&
 
+std.assertEqual(std.isEven(10), true) &&
+std.assertEqual(std.isEven(5), false) &&
+std.assertEqual(std.isOdd(5), true) &&
+std.assertEqual(std.isOdd(10), false) &&
+std.assertEqual(std.isInteger(1), true) &&
+std.assertEqual(std.isInteger(1.1), false) &&
+std.assertEqual(std.isDecimal(1.1), true) &&
+std.assertEqual(std.isDecimal(1), false) &&
+
 std.assertEqual(std.remove([1, 2, 3], 2), [1, 3]) &&
 std.assertEqual(std.removeAt([1, 2, 3], 1), [1, 3]) &&
 
