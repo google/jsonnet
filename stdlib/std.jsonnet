@@ -770,11 +770,24 @@ limitations under the License.
               error 'Cannot use * precision with object.'
             else
               code.prec;
-          local val =
-            if std.objectHasAll(obj, f) then
-              obj[f]
+          local get_nested_val(obj, f, start=0, end=0) =
+            if !std.isObject(obj) then
+              error 'Subfield ' + f[:start] + ' didn\'t yield an object.'
+            else if end >= std.length(f) then
+              if std.objectHasAll(obj, f[start:]) then
+                obj[f[start:]]
+              else
+                error 'No such field: ' + f
+            else if f[end] == "." then
+              local key = f[start:end];
+              if std.objectHasAll(obj, key) then
+                get_nested_val(obj[key], f, end+1, end+1) tailstrict
+              else
+                error 'No such partial field: ' + f[:end]
             else
-              error 'No such field: ' + f;
+              get_nested_val(obj, f, start, end+1) tailstrict
+          ;
+          local val = get_nested_val(obj, f);
           local s =
             if code.ctype == '%' then
               '%'

@@ -1,0 +1,22 @@
+RUNTIME ERROR: No such partial field: a.b
+	std.jsonnet:<stdlib_position_redacted>	function <get_nested_val>
+	std.jsonnet:<stdlib_position_redacted>	function <get_nested_val>
+	std.jsonnet:<stdlib_position_redacted>	thunk <val>
+	std.jsonnet:<stdlib_position_redacted>	thunk <val>
+	std.jsonnet:<stdlib_position_redacted>	thunk <a>
+	std.jsonnet:<stdlib_position_redacted>	
+	std.jsonnet:<stdlib_position_redacted>	thunk <a>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	std.jsonnet:<stdlib_position_redacted>	function <format_code>
+	...
+	std.jsonnet:<stdlib_position_redacted>	function <aux>
+	std.jsonnet:<stdlib_position_redacted>	function <padding>
+	std.jsonnet:<stdlib_position_redacted>	function <pad_left>
+	std.jsonnet:<stdlib_position_redacted>	thunk <s_padded>
+	std.jsonnet:<stdlib_position_redacted>	thunk <v>
+	std.jsonnet:<stdlib_position_redacted>	function <format_codes_obj>
+	std.jsonnet:<stdlib_position_redacted>	function <format_codes_obj>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.format.invalid_object_subfield.jsonnet:1:1-32	
