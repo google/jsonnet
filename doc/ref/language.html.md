@@ -119,7 +119,7 @@ Boolean has two values: `true` and `false`. They are the only values which can b
 
 ### String
 
-Strings in Jsonnet are sequences of Unicode codepoints.
+Strings in Jsonnet are sequences of Unicode [codepoints](https://en.wikipedia.org/wiki/Code_point).
 
 In most contexts a string can be treated as an array of one codepoint strings (e.g. `std.length` and the `[]` operator work like that). Comparisons (`<`, `<=`, `>`, `>=`) and equality checks (`==`, `!=`) also follow this pattern – in both cases codepoints will be compared lexicographically.
 
