@@ -313,6 +313,11 @@ std.assertEqual(std.lines(['a', null, 'b']), 'a\nb\n') &&
 
 std.assertEqual(std.flattenArrays([[1, 2, 3], [4, 5, 6], []]), [1, 2, 3, 4, 5, 6]) &&
 
+std.assertEqual(std.flattenDeepArray([]), []) &&
+std.assertEqual(std.flattenDeepArray([1, 2, 3]), [1, 2, 3]) &&
+std.assertEqual(std.flattenDeepArray([1, [2, 3]]), [1, 2, 3]) &&
+std.assertEqual(std.flattenDeepArray([[1], [2, 3], [[null]]]), [1, 2, 3, null]) &&
+
 std.assertEqual(
   std.manifestIni({
     main: { a: '1', b: '2' },
@@ -1544,6 +1549,10 @@ std.assertEqual(std.all([]), true) &&
 
 std.assertEqual(std.sum([1, 2, 3]), 6) &&
 
+std.assertEqual(std.avg([1, 2, 3]), 2) &&
+std.assertEqual(std.avg([0, 0, 0]), 0) &&
+std.assertEqual(std.avg([1, 1, 2.5]), 1.5) &&
+
 std.assertEqual(std.minArray([1, 2, 3]), 1) &&
 std.assertEqual(std.minArray(['1', '2', '3']), '1') &&
 
@@ -1565,7 +1574,7 @@ std.assertEqual(std.isEmpty(''), true) &&
 std.assertEqual(std.isEmpty('non-empty string'), false) &&
 
 std.assertEqual(std.contains([1, 2, 3], 2), true) &&
-std.assertEqual(std.contains([1, 2, 3], "foo"), false) &&
+std.assertEqual(std.contains([1, 2, 3], 'foo'), false) &&
 
 std.assertEqual(std.equalsIgnoreCase('foo', 'FOO'), true) &&
 std.assertEqual(std.equalsIgnoreCase('foo', 'bar'), false) &&
@@ -1574,5 +1583,11 @@ std.assertEqual(std.remove([1, 2, 3], 2), [1, 3]) &&
 std.assertEqual(std.removeAt([1, 2, 3], 1), [1, 3]) &&
 
 std.assertEqual(std.objectRemoveKey({ foo: 1, bar: 2, baz: 3 }, 'foo'), { bar: 2, baz: 3 }) &&
+
+std.assertEqual(std.trim('already trimmed string'), 'already trimmed string') &&
+std.assertEqual(std.trim('    string with spaces on both ends     '), 'string with spaces on both ends') &&
+std.assertEqual(std.trim('string with newline character at end\n'), 'string with newline character at end') &&
+std.assertEqual(std.trim('string with tabs at end\t\t'), 'string with tabs at end') &&
+std.assertEqual(std.trim('string with other special whitespaces at end\f\r\u0085\u00A0'), 'string with carriage return at end') &&
 
 true

@@ -372,6 +372,14 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'trim',
+          params: ['str'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a copy of string after eliminating leading and trailing whitespaces.
+          |||,
+        },
+        {
           name: 'equalsIgnoreCase',
           params: ['str1', 'str2'],
           availableSince: 'upcoming',
@@ -1271,6 +1279,20 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'flattenDeepArray',
+          params: ['value'],
+          availableSince: 'upcoming',
+          description: |||
+            Concatenate an array containing values and arrays into a single flattened array.
+          |||,
+          examples: [
+            {
+              input: 'std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
+              output: std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]]),
+            },
+          ],
+        },
+        {
           name: 'reverse',
           params: ['arrs'],
           availableSince: '0.13.0',
@@ -1349,6 +1371,8 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return the min of all element in <code>arr</code>.
+            |||,
+          ]),
         },
         {
           name: 'maxArray',
@@ -1357,6 +1381,8 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return the max of all element in <code>arr</code>.
+            |||,
+          ]),
         },
         {
           name: 'contains',
@@ -1365,6 +1391,16 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
+            |||,
+          ]),
+        },
+        {
+          name: 'avg',
+          params: ['arr'],
+          availableSince: '0.20.0',
+          description: html.paragraphs([
+            |||
+              Return average of all element in <code>arr</code>.
             |||,
           ]),
         },

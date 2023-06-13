@@ -867,6 +867,12 @@ limitations under the License.
   flattenArrays(arrs)::
     std.foldl(function(a, b) a + b, arrs, []),
 
+  flattenDeepArray(value)::
+    if std.isArray(value) then
+      [y for x in value for y in std.flattenDeepArray(x)]
+    else
+      [value],
+
   manifestIni(ini)::
     local body_lines(body) =
       std.join([], [
@@ -1705,6 +1711,12 @@ limitations under the License.
 
   sum(arr):: std.foldl(function(a, b) a + b, arr, 0),
 
+  avg(arr)::
+    if std.length(arr) == 0 then
+      error 'Cannot calculate average of an empty array.'
+    else
+      std.sum(arr)/std.length(arr),
+
   minArray(arr, keyF=id, onEmpty=error 'Expected at least one element in array. Got none')::
     if std.length(arr) == 0 then
       onEmpty
@@ -1766,4 +1778,6 @@ limitations under the License.
   sha256(str):: go_only_function,
   sha512(str):: go_only_function,
   sha3(str):: go_only_function,
+
+  trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
 }
