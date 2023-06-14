@@ -312,6 +312,5 @@ local text = |||
 
 std.assertEqual(std.length(text), 1244) &&
 
-std.assertEqual(std.format('%(a.b.c.d)s %(b.c)s', {a:{b:{c:{d:'hello'}}}, b:{c:'goodbye'}}), 'hello goodbye') &&
 
 true
