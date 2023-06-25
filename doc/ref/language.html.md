@@ -151,7 +151,7 @@ local func(x) = x * 2;
 func(21)
 ```
 
-The arguments are **not** evaluated when a function is called. They are passed lazily and evaluated only when used. This allows expressing things which in other languages require built-in functionality or macros, such as short-circuit boolean operations. 
+The arguments are **not** evaluated when a function is called. They are passed lazily and evaluated only when used. This allows expressing things which in other languages require built-in functionality or macros, such as short-circuit boolean operations:
 ```
 local and3(a, b, c) = a && b && c;
 and3(true, false, error "this one is never evaluated")
