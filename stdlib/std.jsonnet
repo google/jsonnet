@@ -1785,4 +1785,6 @@ limitations under the License.
   sha3(str):: go_only_function,
 
   trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
+
+  match(str, pat):: go_only_function,
 }
