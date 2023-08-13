@@ -1432,6 +1432,16 @@ local html = import 'html.libsonnet';
             |||,
           ]),
         },
+        {
+          name: 'groupBy',
+          params: ['arr', 'keyF', 'onEmpty'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return an object composed of keys generated from the results of running each element of  <code>arr</code> through <code>function</code>.
+            |||,
+          ]),
+        },
       ],
     },
     {
