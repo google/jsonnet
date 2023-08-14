@@ -29,7 +29,7 @@ local html = import 'html.libsonnet';
           name: 'extVar',
           params: ['x'],
           availableSince: '0.10.0',
-          description: 'If an external variable with the given name was defined, return its string value. Otherwise, raise an error.',
+          description: 'If an external variable with the given name was defined, return its value. Otherwise, raise an error.',
         },
       ],
     },
