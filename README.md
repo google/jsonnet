@@ -17,6 +17,24 @@ Jsonnet is available on Homebrew:
 brew install jsonnet
 ```
 
+[Jsonnet](https://packages.msys2.org/base/mingw-w64-jsonnet) is available on [MSYS2](https://www.msys2.org/):
+
+```
+pacman -S mingw-w64-clang-i686-jsonnet
+```
+```
+pacman -S mingw-w64-clang-x86_64-jsonnet
+```
+```
+pacman -S mingw-w64-i686-jsonnet
+```
+```
+pacman -S mingw-w64-x86_64-jsonnet
+```
+```
+pacman -S mingw-w64-ucrt-x86_64-jsonnet
+```
+
 The Python binding is on pypi:
 
 ```
