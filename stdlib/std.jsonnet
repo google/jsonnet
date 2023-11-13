@@ -1654,7 +1654,7 @@ limitations under the License.
         true
       else
         local e = arr[idx];
-        assert std.isBoolean(e) : std.format('element "%s" of type %s is not a boolean', e, std.type(e));
+        assert std.isBoolean(e) : 'element "%s" of type %s is not a boolean' % [e, std.type(e)];
         if !e then
           false
         else
@@ -1669,7 +1669,7 @@ limitations under the License.
         false
       else
         local e = arr[idx];
-        assert std.isBoolean(e) : std.format('element "%s" of type %s is not a boolean', e, std.type(e));
+        assert std.isBoolean(e) : 'element "%s" of type %s is not a boolean' % [e, std.type(e)];
         if e then
           true
         else
