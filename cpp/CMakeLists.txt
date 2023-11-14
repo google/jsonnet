@@ -10,7 +10,7 @@ set(LIBJSONNETPP_SOURCE
 
 add_library(libjsonnet++ SHARED ${LIBJSONNETPP_HEADERS} ${LIBJSONNETPP_SOURCE})
 add_dependencies(libjsonnet++ jsonnet)
-# target_link_libraries(libjsonnet libjsonnet)
+target_link_libraries(libjsonnet++ libjsonnet)
 
 # CMake prepends CMAKE_SHARED_LIBRARY_PREFIX to shared libraries, so without
 # this step the output would be |liblibjsonnet|.
