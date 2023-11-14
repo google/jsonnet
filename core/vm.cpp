@@ -23,7 +23,7 @@ limitations under the License.
 
 #include "desugarer.h"
 #include "json.h"
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 #include "md5.h"
 #include "parser.h"
 #include "ryml_std.hpp" // include this before any other ryml header
