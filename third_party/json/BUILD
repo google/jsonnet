@@ -6,7 +6,7 @@ cc_library(
     srcs = [
     ],
     hdrs = [
-        "json.hpp",
+        "nlohmann/json.hpp",
     ],
     includes = ["."],
 )
