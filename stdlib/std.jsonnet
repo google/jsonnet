@@ -1741,6 +1741,15 @@ limitations under the License.
           a;
       std.foldl(maxFn, arr, maxVal),
 
+  groupBy(arr, keyF=id)::
+    local foldf(o, e, f) = 
+    local k = std.toString(f(e));
+    if std.objectHas(o, k) then
+    c + {[k]: o[k] + [e]}
+    else
+    o + {[k]: [e]};
+    std.foldl(function(o, e) foldf(o, e, f), arr, {});
+
   xor(x, y):: x != y,
 
   xnor(x, y):: x == y,
