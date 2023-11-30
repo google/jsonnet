@@ -1785,4 +1785,20 @@ limitations under the License.
   sha3(str):: go_only_function,
 
   trim(str):: std.stripChars(str, ' \t\n\f\r\u0085\u00A0'),
+
+  atan2(y, x)::
+    local pi = std.acos(-1);
+    if x > 0 then
+      std.atan(y / x)
+    else if x < 0 && y >= 0 then
+      std.atan(y / x) + pi
+    else if x < 0 && y < 0 then
+      std.atan(y / x) - pi
+    else if x == 0 && y > 0 then
+      pi / 2
+    else if x == 0 && y < 0 then
+      -pi / 2
+    else
+      0
+  ,
 }
