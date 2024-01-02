@@ -100,6 +100,15 @@ __inline__ static void trap_instruction(void)
 	 * 'aarch64_default_breakpoint' */
 	__asm__ volatile(".inst 0xd4200000");
 }
+#elif defined(__loongarch64)
+enum { HAVE_TRAP_INSTRUCTION = 1, };
+__attribute__((gnu_inline, always_inline))
+__inline__ static void trap_instruction(void)
+{
+	/* See 'loongarch-tdep.c' in GDB source,
+	 * 'loongarch_default_breakpoint' */
+	__asm__ volatile(".word 0x002a0005" ::: "memory");
+}
 #else
 enum { HAVE_TRAP_INSTRUCTION = 0, };
 #endif

@@ -84,6 +84,11 @@
 #       define C4_CPU_PPC
 #       define C4_WORDSIZE 4
 #   endif
+
+#elif defined(__loongarch64)
+#   define C4_CPU_LOONGARCH64
+#   define C4_WORDSIZE 8
+#   define C4_BYTE_ORDER _C4EL
 #elif defined(SWIG)
 #else
 #   error "unknown CPU architecture"
