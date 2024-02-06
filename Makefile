@@ -85,7 +85,8 @@ ALL = \
 	libjsonnet_test_file \
 	$(BINS) \
 	$(LIBS) \
-	$(LIB_OBJ)
+	$(LIB_OBJ) \
+	$(LIB_CPP_OBJ)
 
 # public headers
 INCS = \
