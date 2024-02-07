@@ -1,6 +1,6 @@
 # Jsonnet - The data templating language
 
-[![Build Status](https://travis-ci.org/google/jsonnet.svg?branch=master)](https://travis-ci.org/google/jsonnet)
+![master branch build status badge](https://github.com/google/jsonnet/actions/workflows/build_and_test.yml/badge.svg?event=push&branch=master)
 
 For an introduction to Jsonnet and documentation,
 [visit our website](https://jsonnet.org).
