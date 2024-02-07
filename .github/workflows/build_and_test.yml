@@ -42,6 +42,22 @@ jobs:
         run: |
           make test
 
+  python_module:
+    name: Build and test Python module
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - name: Build environment setup
+        run: |
+          echo 'Nothing to do.'
+          echo 'GitHub runner includes tools we need already.'
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          python setup.py build
+      - name: Test
+        run: |
+          python setup.py test
+
   cmake_build:
     name: Build and test using CMake
     runs-on: 'ubuntu-20.04'
