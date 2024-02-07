@@ -35,6 +35,8 @@ extern "C" {
 #include "parser.h"
 #include "static_analysis.h"
 #include "vm.h"
+#include "pass.h"
+#include "string_utils.h"
 
 namespace {
 using ::jsonnet::internal::Allocator;
@@ -42,12 +44,40 @@ using ::jsonnet::internal::AST;
 using ::jsonnet::internal::FmtOpts;
 using ::jsonnet::internal::Fodder;
 using ::jsonnet::internal::jsonnet_lex;
+using ::jsonnet::internal::jsonnet_string_escape;
 using ::jsonnet::internal::RuntimeError;
 using ::jsonnet::internal::StaticError;
 using ::jsonnet::internal::Tokens;
 using ::jsonnet::internal::VmExt;
 using ::jsonnet::internal::VmNativeCallback;
 using ::jsonnet::internal::VmNativeCallbackMap;
+using ::jsonnet::internal::CompilerPass;
+using ::jsonnet::internal::LiteralString;
+
+// Used in fmtDebugDesugaring mode to ensure the AST can be pretty-printed.
+class ReEscapeStrings : public CompilerPass {
+    using CompilerPass::visit;
+  public:
+    ReEscapeStrings(Allocator &alloc) : CompilerPass(alloc) {}
+    void visit(LiteralString *lit)
+    {
+        if (lit->tokenKind != LiteralString::RAW_DESUGARED)
+            return;
+
+        // TODO: Share code with formatter.cpp EnforceStringStyle.
+        unsigned num_single = 0, num_double = 0;
+        for (char32_t c : lit->value) {
+            if (c == '\'')
+                num_single++;
+            if (c == '"')
+                num_double++;
+        }
+        bool use_single = (num_double > 0) && (num_single == 0);
+
+        lit->value = jsonnet_string_escape(lit->value, use_single);
+        lit->tokenKind = use_single ? LiteralString::SINGLE : LiteralString::DOUBLE;
+    }
+};
 }  // namespace
 
 static void memory_panic(void)
@@ -450,8 +480,10 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
         expr = jsonnet_parse(&alloc, tokens);
         Fodder final_fodder = tokens.front().fodder;
 
-        if (vm->fmtDebugDesugaring)
+        if (vm->fmtDebugDesugaring) {
             jsonnet_desugar(&alloc, expr, &vm->tla);
+            ReEscapeStrings(alloc).expr(expr);
+        }
 
         json_str = jsonnet_fmt(expr, final_fodder, vm->fmtOpts);
 

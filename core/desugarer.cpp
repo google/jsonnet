@@ -119,12 +119,12 @@ class Desugarer {
 
     LiteralString *str(const UString &s)
     {
-        return make<LiteralString>(E, EF, s, LiteralString::DOUBLE, "", "");
+        return make<LiteralString>(E, EF, s, LiteralString::RAW_DESUGARED, "", "");
     }
 
     LiteralString *str(const LocationRange &loc, const UString &s)
     {
-        return make<LiteralString>(loc, EF, s, LiteralString::DOUBLE, "", "");
+        return make<LiteralString>(loc, EF, s, LiteralString::RAW_DESUGARED, "", "");
     }
 
     LiteralNull *null(void)
@@ -851,12 +851,13 @@ class Desugarer {
             // Nothing to do.
 
         } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
-            if ((ast->tokenKind != LiteralString::BLOCK) &&
+            if ((ast->tokenKind != LiteralString::RAW_DESUGARED) &&
+                (ast->tokenKind != LiteralString::BLOCK) &&
                 (ast->tokenKind != LiteralString::VERBATIM_DOUBLE) &&
                 (ast->tokenKind != LiteralString::VERBATIM_SINGLE)) {
                 ast->value = jsonnet_string_unescape(ast->location, ast->value);
             }
-            ast->tokenKind = LiteralString::DOUBLE;
+            ast->tokenKind = LiteralString::RAW_DESUGARED;
             ast->blockIndent.clear();
 
         } else if (dynamic_cast<const LiteralNull *>(ast_)) {

@@ -490,6 +490,7 @@ class Unparser {
             o << ast->originalString;
 
         } else if (auto *ast = dynamic_cast<const LiteralString *>(ast_)) {
+            assert(ast->tokenKind != LiteralString::RAW_DESUGARED);
             if (ast->tokenKind == LiteralString::DOUBLE) {
                 o << "\"";
                 o << encode_utf8(ast->value);
@@ -647,6 +648,7 @@ class EnforceStringStyle : public FmtPass {
     EnforceStringStyle(Allocator &alloc, const FmtOpts &opts) : FmtPass(alloc, opts) {}
     void visit(LiteralString *lit)
     {
+        assert(lit->tokenKind != LiteralString::RAW_DESUGARED);
         if (lit->tokenKind == LiteralString::BLOCK)
             return;
         if (lit->tokenKind == LiteralString::VERBATIM_DOUBLE)
@@ -1881,6 +1883,7 @@ class FixIndentation {
             column += ast->originalString.length();
 
         } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
+            assert(ast->tokenKind != LiteralString::RAW_DESUGARED);
             if (ast->tokenKind == LiteralString::DOUBLE) {
                 column += 2 + ast->value.length();  // Include quotes
             } else if (ast->tokenKind == LiteralString::SINGLE) {

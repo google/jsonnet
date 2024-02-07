@@ -586,7 +586,7 @@ struct LiteralNumber : public AST {
 /** Represents JSON strings. */
 struct LiteralString : public AST {
     UString value;
-    enum TokenKind { SINGLE, DOUBLE, BLOCK, VERBATIM_SINGLE, VERBATIM_DOUBLE };
+    enum TokenKind { SINGLE, DOUBLE, BLOCK, VERBATIM_SINGLE, VERBATIM_DOUBLE, RAW_DESUGARED };
     TokenKind tokenKind;
     std::string blockIndent;      // Only contains ' ' and '\t'.
     std::string blockTermIndent;  // Only contains ' ' and '\t'.
