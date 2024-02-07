@@ -1,0 +1,64 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches-ignore:
+      - 'gh-pages'
+  push:
+    branches:
+      - 'master'
+    tags:
+      - v*
+
+permissions:
+  contents: read
+
+jobs:
+  check_code_format:
+    name: Check code formatting
+    runs-on: 'ubuntu-20.04'
+    # The code currently doesn't pass formatting.
+    # Enable this workflow job once it does, to detect regressions.
+    if: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check clang-format (make test-formatting)
+        run: |
+          make test-formatting
+
+  plain_makefile:
+    name: Build and test using plain Makefile
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - name: Build environment setup
+        run: |
+          echo 'Nothing to do.'
+          echo 'GitHub runner includes tools we need already.'
+      - uses: actions/checkout@v4
+      - name: Build (make all)
+        run: |
+          make all
+      - name: Test (make test)
+        run: |
+          make test
+
+  cmake_build:
+    name: Build and test using CMake
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - name: Build environment setup
+        run: |
+          echo 'Nothing to do.'
+          echo 'GitHub runner includes tools we need already.'
+      - uses: actions/checkout@v4
+      - name: Configure (cmake)
+        run: |
+          cmake -B "${{github.workspace}}/build"
+      - name: Build (cmake --build)
+        working-directory: ${{github.workspace}}/build
+        run: |
+          cmake --build .
+      - name: Test (ctest))
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ctest --output-on-failure
