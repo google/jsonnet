@@ -37,7 +37,7 @@ LDFLAGS ?=
 
 SHARED_LDFLAGS ?= -shared
 
-VERSION := $(shell grep '\#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
+VERSION := $(shell grep '#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
 SOVERSION = 0
 
 ################################################################################
