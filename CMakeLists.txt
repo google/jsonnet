@@ -1,4 +1,3 @@
-# Travis CI runs CMake 2.8.7 so we are pinned to that version.
 cmake_minimum_required(VERSION 2.8.7)
 project(jsonnet C CXX)
 
