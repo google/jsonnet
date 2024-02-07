@@ -141,7 +141,7 @@ reformat:
 	clang-format -i -style=file **/*.cpp **/*.h
 
 test-formatting:
-	test "`clang-format -style=file -output-replacements-xml **/*.cpp **/*.h | grep -c "<replacement "`" == 0
+	clang-format -Werror --dry-run -style=file **/*.cpp **/*.h
 
 MAKEDEPEND_SRCS = \
 	cmd/jsonnet.cpp \
