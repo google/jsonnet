@@ -66,3 +66,15 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           ctest --output-on-failure
+
+  bazel_build:
+    name: Build and test using Bazel
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          bazel build -c opt //cmd:all
+      - name: Test
+        run: |
+          bazel test //...
