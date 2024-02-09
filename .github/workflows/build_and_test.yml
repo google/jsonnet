@@ -17,9 +17,6 @@ jobs:
   check_code_format:
     name: Check code formatting
     runs-on: 'ubuntu-20.04'
-    # The code currently doesn't pass formatting.
-    # Enable this workflow job once it does, to detect regressions.
-    if: false
     steps:
       - uses: actions/checkout@v4
       - name: Check clang-format (make test-formatting)
