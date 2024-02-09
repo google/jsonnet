@@ -1,3 +1,0 @@
-tbump
-gitchangelog
-pystache

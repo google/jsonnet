@@ -28,10 +28,10 @@ OPT ?= -O3
 PREFIX ?= /usr/local
 
 CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++17 -fPIC
-CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
+CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/
 CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
 CFLAGS += -Iinclude
-MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/rapidyaml/src/ -Ithird_party/rapidyaml/rapidyaml/ext/c4core/src/
+MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
 LDFLAGS ?=
 
 
@@ -45,8 +45,7 @@ SOVERSION = 0
 ################################################################################
 
 RAPIDYAML_SRC = \
-	$(wildcard third_party/rapidyaml/rapidyaml/src/c4/yml/*.cpp) \
-	$(wildcard third_party/rapidyaml/rapidyaml/ext/c4core/src/c4/*.cpp)
+	third_party/rapidyaml/rapidyaml.cpp
 
 LIB_SRC = \
 	core/desugarer.cpp \

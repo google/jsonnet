@@ -1,3 +1,0 @@
-[submodule "extern/c4core"]
-	path = ext/c4core
-	url = https://github.com/biojppm/c4core

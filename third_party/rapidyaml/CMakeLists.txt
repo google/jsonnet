@@ -1,0 +1,1 @@
+add_library(ryml STATIC rapidyaml.cpp ryml_all.hpp)

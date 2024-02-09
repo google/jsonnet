@@ -26,8 +26,7 @@ limitations under the License.
 #include <nlohmann/json.hpp>
 #include "md5.h"
 #include "parser.h"
-#include "ryml_std.hpp" // include this before any other ryml header
-#include "ryml.hpp"
+#include "ryml_all.hpp"
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"
@@ -1637,7 +1636,7 @@ class Interpreter {
     }
 
     const ryml::Tree treeFromString(const std::string& s) {
-        return ryml::parse(c4::to_csubstr(s));
+        return ryml::parse_in_arena(ryml::to_csubstr(s));
     }
 
     const std::vector<std::string> split(const std::string& s, const std::string& delimiter) {

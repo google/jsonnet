@@ -1,12 +1,8 @@
 # Vendoring
 
-```
-git clone \
-    --depth=1 \
-    --branch=master \
-    --recursive \
-    git@github.com:biojppm/rapidyaml \
-    third_party/rapidyaml/rapidyaml \
-&& \
-rm -rf third_party/rapidyaml/rapidyaml/.git
-```
+This uses the 'single header' release of Rapid YAML.
+Download from: https://github.com/biojppm/rapidyaml/releases/tag/v0.5.0
+
+`rapidyaml-0.5.0.hpp` (renamed to `ryml_all.hpp`)
+
+rapidyaml.cpp instantiates the library as a single translation unit.

@@ -1,3 +1,0 @@
-ruamel.yaml
-pyyaml
-prettytable
