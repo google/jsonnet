@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "utils.h"
+
 #include <fstream>
 #include <iostream>
-
-#include "utils.h"
 
 long strtol_check(const std::string &str)
 {
@@ -97,8 +97,7 @@ void change_special_filename(bool filename_is_code, std::string *filename)
     }
 }
 
-bool read_input(
-    bool filename_is_code, std::string *filename, std::string *input)
+bool read_input(bool filename_is_code, std::string *filename, std::string *input)
 {
     bool ok;
     if (filename_is_code) {
@@ -144,4 +143,3 @@ bool write_output_file(const char *output, const std::string &output_file)
     }
     return true;
 }
-

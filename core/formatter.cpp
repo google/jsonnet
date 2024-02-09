@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "formatter.h"
+
 #include <algorithm>
 #include <set>
 #include <typeinfo>
 
-#include "formatter.h"
 #include "lexer.h"
 #include "pass.h"
 #include "string_utils.h"
@@ -71,7 +72,8 @@ static AST *left_recursive_deep(AST *ast_)
  * \param separate_token If the last fodder was an interstitial, whether a space should follow it.
  * \param final Whether fodder is the last one in
  */
-void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token, bool final)
+void fodder_fill(std::ostream &o, const Fodder &fodder, bool space_before, bool separate_token,
+                 bool final)
 {
     unsigned last_indent = 0;
     size_t index = 0;
@@ -505,7 +507,8 @@ class Unparser {
                     o << ast->blockIndent;
                 for (const char32_t *cp = ast->value.c_str(); *cp != U'\0'; ++cp) {
                     // Formatter always outputs in unix mode.
-                    if (*cp == '\r') continue;
+                    if (*cp == '\r')
+                        continue;
                     std::string utf8;
                     encode_utf8(*cp, utf8);
                     o << utf8;
@@ -790,7 +793,8 @@ void remove_initial_newlines(AST *ast)
         f.erase(f.begin());
 }
 
-void remove_extra_trailing_newlines(Fodder &final_fodder) {
+void remove_extra_trailing_newlines(Fodder &final_fodder)
+{
     if (!final_fodder.empty()) {
         final_fodder.back().blanks = 0;
     }
@@ -951,7 +955,8 @@ class PrettyFieldNames : public FmtPass {
     bool isIdentifier(const UString &str)
     {
         // Identifiers cannot be zero-length.
-        if (str.length() == 0) return false;
+        if (str.length() == 0)
+            return false;
 
         bool first = true;
         for (char32_t c : str) {
@@ -1918,11 +1923,10 @@ class FixIndentation {
 
         } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
             column++;  // '{'
-            const Fodder &first_fodder = ast->fields.size() == 0
-                                             ? ast->closeFodder
-                                             : ast->fields[0].kind == ObjectField::FIELD_STR
-                                                   ? open_fodder(ast->fields[0].expr1)
-                                                   : ast->fields[0].fodder1;
+            const Fodder &first_fodder = ast->fields.size() == 0 ? ast->closeFodder
+                                         : ast->fields[0].kind == ObjectField::FIELD_STR
+                                             ? open_fodder(ast->fields[0].expr1)
+                                             : ast->fields[0].fodder1;
             Indent new_indent = newIndent(first_fodder, indent, column + (opts.padObjects ? 1 : 0));
 
             fields(ast->fields, new_indent, opts.padObjects);
@@ -1959,11 +1963,10 @@ class FixIndentation {
         } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
             column++;  // '{'
             unsigned start_column = column;
-            const Fodder &first_fodder = ast->fields.size() == 0
-                                             ? ast->closeFodder
-                                             : ast->fields[0].kind == ObjectField::FIELD_STR
-                                                   ? open_fodder(ast->fields[0].expr1)
-                                                   : ast->fields[0].fodder1;
+            const Fodder &first_fodder = ast->fields.size() == 0 ? ast->closeFodder
+                                         : ast->fields[0].kind == ObjectField::FIELD_STR
+                                             ? open_fodder(ast->fields[0].expr1)
+                                             : ast->fields[0].fodder1;
             Indent new_indent =
                 newIndent(first_fodder, indent, start_column + (opts.padObjects ? 1 : 0));
 

@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "vm.h"
+
 #include <cassert>
 #include <cmath>
-
 #include <memory>
 #include <set>
 #include <string>
@@ -26,12 +27,11 @@ limitations under the License.
 #include "json.hpp"
 #include "md5.h"
 #include "parser.h"
-#include "ryml_std.hpp" // include this before any other ryml header
 #include "ryml.hpp"
+#include "ryml_std.hpp"  // include this before any other ryml header
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"
-#include "vm.h"
 
 namespace jsonnet::internal {
 
@@ -39,13 +39,12 @@ namespace jsonnet::internal {
  *  whether NDEBUG is defined. This should be used to mark codepaths
  *  as unreachable.
  */
-#define JSONNET_UNREACHABLE()                                      \
-  do {                                                             \
-    std::cerr << __FILE__ << ":" << __LINE__                       \
-              << ": INTERNAL ERROR: reached unreachable code path" \
-              << std::endl;                                        \
-    abort();                                                       \
-  } while (0)
+#define JSONNET_UNREACHABLE()                                                        \
+    do {                                                                             \
+        std::cerr << __FILE__ << ":" << __LINE__                                     \
+                  << ": INTERNAL ERROR: reached unreachable code path" << std::endl; \
+        abort();                                                                     \
+    } while (0)
 
 using json = nlohmann::json;
 
@@ -83,14 +82,16 @@ enum FrameKind {
     FRAME_INVARIANTS,            // Caches the thunks that need to be executed one at a time.
     FRAME_LOCAL,                 // Stores thunk bindings as we execute e in local ...; e
     FRAME_OBJECT,  // Stores intermediate state as we execute es in { [e]: ..., [e]: ... }
-    FRAME_OBJECT_COMP_ARRAY,    // e in {f:a for x in e]
-    FRAME_OBJECT_COMP_ELEMENT,  // Stores intermediate state when building object
-    FRAME_STRING_CONCAT,        // Stores intermediate state while co-ercing objects
-    FRAME_SUPER_INDEX,          // e in super[e]
-    FRAME_UNARY,                // e in -e
-    FRAME_BUILTIN_JOIN_STRINGS, // When executing std.join over strings, used to hold intermediate state.
-    FRAME_BUILTIN_JOIN_ARRAYS,  // When executing std.join over arrays, used to hold intermediate state.
-    FRAME_BUILTIN_DECODE_UTF8,  // When executing std.decodeUTF8, used to hold intermediate state.
+    FRAME_OBJECT_COMP_ARRAY,     // e in {f:a for x in e]
+    FRAME_OBJECT_COMP_ELEMENT,   // Stores intermediate state when building object
+    FRAME_STRING_CONCAT,         // Stores intermediate state while co-ercing objects
+    FRAME_SUPER_INDEX,           // e in super[e]
+    FRAME_UNARY,                 // e in -e
+    FRAME_BUILTIN_JOIN_STRINGS,  // When executing std.join over strings, used to hold intermediate
+                                 // state.
+    FRAME_BUILTIN_JOIN_ARRAYS,   // When executing std.join over arrays, used to hold intermediate
+                                 // state.
+    FRAME_BUILTIN_DECODE_UTF8,   // When executing std.decodeUTF8, used to hold intermediate state.
 };
 
 /** A frame on the stack.
@@ -546,8 +547,8 @@ class Interpreter {
     BuiltinMap builtins;
 
     /** Source values by name. Source values are values (usually functions)
-      * implemented as Jsonnet source which we use internally in the interpreter.
-      * In a sense they are the opposite of builtins. */
+     * implemented as Jsonnet source which we use internally in the interpreter.
+     * In a sense they are the opposite of builtins. */
     typedef std::map<std::string, HeapThunk *> SourceFuncMap;
     SourceFuncMap sourceVals;
     /* Just for memory management. */
@@ -563,7 +564,7 @@ class Interpreter {
      * \returns The new object
      */
     template <class T, class... Args>
-    T *makeHeap(Args &&... args)
+    T *makeHeap(Args &&...args)
     {
         T *r = heap.makeEntity<T, Args...>(std::forward<Args>(args)...);
         if (heap.checkHeap()) {  // Do a GC cycle?
@@ -861,7 +862,8 @@ class Interpreter {
         }
     }
 
-    void prepareSourceValThunks() {
+    void prepareSourceValThunks()
+    {
         for (const auto &field : stdlibAST->fields) {
             AST *nameAST = field.name;
             if (nameAST->type != AST_LITERAL_STRING) {
@@ -943,14 +945,18 @@ class Interpreter {
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
-        stdlibAST = stdlib; // stdlibAST is const, so we need to do analysis before this assignment
-        auto stdThunk = makeHeap<HeapThunk>(nullptr, nullptr, 0, static_cast<const AST*>(stdlibAST));
-        stack.newCall(stdThunk->body->location, stdThunk, stdThunk->self, stdThunk->offset, stdThunk->upValues);
+        stdlibAST = stdlib;  // stdlibAST is const, so we need to do analysis before this assignment
+        auto stdThunk =
+            makeHeap<HeapThunk>(nullptr, nullptr, 0, static_cast<const AST *>(stdlibAST));
+        stack.newCall(stdThunk->body->location,
+                      stdThunk,
+                      stdThunk->self,
+                      stdThunk->offset,
+                      stdThunk->upValues);
         evaluate(stdThunk->body, 0);
-        stdObject = dynamic_cast<HeapObject*>(scratch.v.h);
+        stdObject = dynamic_cast<HeapObject *>(scratch.v.h);
         prepareSourceValThunks();
     }
-
 
     /** Clean up the heap, stack, stash, and builtin function ASTs. */
     ~Interpreter()
@@ -1402,7 +1408,7 @@ class Interpreter {
     const AST *decodeUTF8(void)
     {
         Frame &f = stack.top();
-        const auto& elements = static_cast<HeapArray*>(f.val.v.h)->elements;
+        const auto &elements = static_cast<HeapArray *>(f.val.v.h)->elements;
         while (f.elementId < elements.size()) {
             auto *th = elements[f.elementId];
             if (th->filled) {
@@ -1415,7 +1421,8 @@ class Interpreter {
                     double d = b.v.d;
                     if (d < 0 || d > 255 || d != int(d)) {
                         std::stringstream ss;
-                        ss << "Element " << f.elementId << " of the provided array was not an integer in range [0,255]";
+                        ss << "Element " << f.elementId
+                           << " of the provided array was not an integer in range [0,255]";
                         throw makeError(stack.top().location, ss.str());
                     }
                     f.bytes.push_back(uint8_t(d));
@@ -1436,7 +1443,7 @@ class Interpreter {
 
         Frame &f = stack.top();
         f.kind = FRAME_BUILTIN_DECODE_UTF8;
-        f.val = args[0]; // arr
+        f.val = args[0];  // arr
         f.bytes.clear();
         f.elementId = 0;
         return decodeUTF8();
@@ -1444,7 +1451,7 @@ class Interpreter {
 
     const AST *builtinTrace(const LocationRange &loc, const std::vector<Value> &args)
     {
-        if(args[0].t != Value::STRING) {
+        if (args[0].t != Value::STRING) {
             std::stringstream ss;
             ss << "Builtin function trace expected string as first parameter but "
                << "got " << type_str(args[0].t);
@@ -1452,8 +1459,7 @@ class Interpreter {
         }
 
         std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
-        std::cerr << "TRACE: " << loc.file << ":" << loc.begin.line << " " <<  str
-            << std::endl;
+        std::cerr << "TRACE: " << loc.file << ":" << loc.begin.line << " " << str << std::endl;
 
         scratch = args[1];
         return nullptr;
@@ -1469,8 +1475,8 @@ class Interpreter {
         unsigned test = 0;
         scratch = makeArray({});
         auto &elements = static_cast<HeapArray *>(scratch.v.h)->elements;
-        while (test < str->value.size() && (maxsplits == -1 ||
-                                            size_t(maxsplits) > elements.size())) {
+        while (test < str->value.size() &&
+               (maxsplits == -1 || size_t(maxsplits) > elements.size())) {
             if (c->value == str->value.substr(test, c->value.size())) {
                 auto *th = makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr);
                 elements.push_back(th);
@@ -1509,7 +1515,7 @@ class Interpreter {
             return nullptr;
         }
         if (size_t(len + from) > str->value.size()) {
-          len = str->value.size() - from;
+            len = str->value.size() - from;
         }
         scratch = makeString(str->value.substr(from, len));
         return nullptr;
@@ -1540,7 +1546,7 @@ class Interpreter {
         const auto *from = static_cast<const HeapString *>(args[1].v.h);
         const auto *to = static_cast<const HeapString *>(args[2].v.h);
         if (from->value.empty()) {
-          throw makeError(loc, "'from' string must not be zero length.");
+            throw makeError(loc, "'from' string must not be zero length.");
         }
         UString new_str(str->value);
         UString::size_type pos = 0;
@@ -1636,11 +1642,13 @@ class Interpreter {
         return nullptr;
     }
 
-    const ryml::Tree treeFromString(const std::string& s) {
+    const ryml::Tree treeFromString(const std::string &s)
+    {
         return ryml::parse(c4::to_csubstr(s));
     }
 
-    const std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
+    const std::vector<std::string> split(const std::string &s, const std::string &delimiter)
+    {
         size_t pos_start = 0, pos_end, delim_len = delimiter.length();
         std::string token;
         std::vector<std::string> res;
@@ -1655,13 +1663,15 @@ class Interpreter {
         return res;
     }
 
-    const json yamlTreeToJson(const ryml::Tree& tree) {
+    const json yamlTreeToJson(const ryml::Tree &tree)
+    {
         std::ostringstream jsonStream;
         jsonStream << ryml::as_json(tree);
         return json::parse(jsonStream.str());
     }
 
-    void otherJsonToHeap(const json &v, bool &filled, Value &attach) {
+    void otherJsonToHeap(const json &v, bool &filled, Value &attach)
+    {
         // In order to not anger the garbage collector, assign to attach immediately after
         // making the heap object.
         switch (v.type()) {
@@ -1687,12 +1697,13 @@ class Interpreter {
                 filled = true;
                 break;
 
-            case json::value_t::array:{
+            case json::value_t::array: {
                 attach = makeArray(std::vector<HeapThunk *>{});
                 filled = true;
                 auto *arr = static_cast<HeapArray *>(attach.v.h);
                 for (size_t i = 0; i < v.size(); ++i) {
-                    arr->elements.push_back(makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
+                    arr->elements.push_back(
+                        makeHeap<HeapThunk>(idArrayElement, nullptr, 0, nullptr));
                     otherJsonToHeap(v[i], arr->elements[i]->filled, arr->elements[i]->content);
                 }
             } break;
@@ -1735,7 +1746,7 @@ class Interpreter {
     const AST *joinStrings(void)
     {
         Frame &f = stack.top();
-        const auto& elements = static_cast<HeapArray*>(f.val2.v.h)->elements;
+        const auto &elements = static_cast<HeapArray *>(f.val2.v.h)->elements;
         while (f.elementId < elements.size()) {
             auto *th = elements[f.elementId];
             if (th->filled) {
@@ -1750,7 +1761,7 @@ class Interpreter {
         return nullptr;
     }
 
-    void joinArray(bool &first, std::vector<HeapThunk*> &running, const Value &sep, unsigned idx,
+    void joinArray(bool &first, std::vector<HeapThunk *> &running, const Value &sep, unsigned idx,
                    const Value &elt)
     {
         if (elt.t == Value::NULL_TYPE) {
@@ -1762,18 +1773,18 @@ class Interpreter {
             throw makeError(stack.top().location, ss.str());
         }
         if (!first) {
-            auto& elts = static_cast<HeapArray *>(sep.v.h)->elements;
+            auto &elts = static_cast<HeapArray *>(sep.v.h)->elements;
             running.insert(running.end(), elts.begin(), elts.end());
         }
         first = false;
-        auto& elts = static_cast<HeapArray *>(elt.v.h)->elements;
+        auto &elts = static_cast<HeapArray *>(elt.v.h)->elements;
         running.insert(running.end(), elts.begin(), elts.end());
     }
 
     const AST *joinArrays(void)
     {
         Frame &f = stack.top();
-        const auto& elements = static_cast<HeapArray*>(f.val2.v.h)->elements;
+        const auto &elements = static_cast<HeapArray *>(f.val2.v.h)->elements;
         while (f.elementId < elements.size()) {
             auto *th = elements[f.elementId];
             if (th->filled) {
@@ -1803,7 +1814,7 @@ class Interpreter {
         Frame &f = stack.top();
         if (args[0].t == Value::STRING) {
             f.kind = FRAME_BUILTIN_JOIN_STRINGS;
-            f.val = args[0];  // sep
+            f.val = args[0];   // sep
             f.val2 = args[1];  // arr
             f.str.clear();
             f.first = true;
@@ -1811,7 +1822,7 @@ class Interpreter {
             return joinStrings();
         } else {
             f.kind = FRAME_BUILTIN_JOIN_ARRAYS;
-            f.val = args[0];  // sep
+            f.val = args[0];   // sep
             f.val2 = args[1];  // arr
             f.thunks.clear();
             f.first = true;
@@ -1960,7 +1971,8 @@ class Interpreter {
      * support default arguments. This is intended to be used internally so,
      * error checking is also skipped.
      */
-    const AST *callSourceVal(const AST *ast, HeapThunk *sourceVal, std::vector<HeapThunk*> args) {
+    const AST *callSourceVal(const AST *ast, HeapThunk *sourceVal, std::vector<HeapThunk *> args)
+    {
         assert(sourceVal != nullptr);
         assert(sourceVal->filled);
         assert(sourceVal->content.t == Value::FUNCTION);
@@ -2194,8 +2206,7 @@ class Interpreter {
                 auto *thunk = stack.lookUpVar(ast.id);
                 if (thunk == nullptr) {
                     std::cerr << "INTERNAL ERROR: Could not bind variable: "
-                              << encode_utf8(ast.id->name) << " at "
-                              << ast.location << std::endl;
+                              << encode_utf8(ast.id->name) << " at " << ast.location << std::endl;
                     std::abort();
                 }
                 if (thunk->filled) {
@@ -2460,33 +2471,35 @@ class Interpreter {
                                 for (auto *el : arr_r->elements)
                                     elements.push_back(el);
                                 scratch = makeArray(elements);
-                            } else if (ast.op == BOP_LESS || ast.op == BOP_LESS_EQ || ast.op == BOP_GREATER || ast.op == BOP_GREATER_EQ) {
+                            } else if (ast.op == BOP_LESS || ast.op == BOP_LESS_EQ ||
+                                       ast.op == BOP_GREATER || ast.op == BOP_GREATER_EQ) {
                                 HeapThunk *func;
-                                switch(ast.op) {
-                                case BOP_LESS:
-                                    func = sourceVals["__array_less"];
-                                    break;
-                                case BOP_LESS_EQ:
-                                    func = sourceVals["__array_less_or_equal"];
-                                    break;
-                                case BOP_GREATER:
-                                    func = sourceVals["__array_greater"];
-                                    break;
-                                case BOP_GREATER_EQ:
-                                    func = sourceVals["__array_greater_or_equal"];
-                                    break;
-                                default:
-                                    JSONNET_UNREACHABLE();
+                                switch (ast.op) {
+                                    case BOP_LESS: func = sourceVals["__array_less"]; break;
+                                    case BOP_LESS_EQ:
+                                        func = sourceVals["__array_less_or_equal"];
+                                        break;
+                                    case BOP_GREATER: func = sourceVals["__array_greater"]; break;
+                                    case BOP_GREATER_EQ:
+                                        func = sourceVals["__array_greater_or_equal"];
+                                        break;
+                                    default: JSONNET_UNREACHABLE();
                                 }
                                 if (!func->filled) {
-                                    stack.newCall(ast.location, func, func->self, func->offset, func->upValues);
+                                    stack.newCall(ast.location,
+                                                  func,
+                                                  func->self,
+                                                  func->offset,
+                                                  func->upValues);
                                     ast_ = func->body;
                                     goto recurse;
                                 }
-                                auto *lhs_th = makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.left);
+                                auto *lhs_th =
+                                    makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.left);
                                 lhs_th->fill(lhs);
                                 f.thunks.push_back(lhs_th);
-                                auto *rhs_th = makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.right);
+                                auto *rhs_th =
+                                    makeHeap<HeapThunk>(idInternal, f.self, f.offset, ast.right);
                                 rhs_th->fill(rhs);
                                 f.thunks.push_back(rhs_th);
                                 const AST *orig_ast = ast_;
@@ -2537,7 +2550,8 @@ class Interpreter {
 
                                 case BOP_SHIFT_L: {
                                     if (rhs.v.d < 0)
-                                        throw makeError(ast.location, "shift by negative exponent.");
+                                        throw makeError(ast.location,
+                                                        "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
                                     long_r = long_r % 64;
@@ -2546,7 +2560,8 @@ class Interpreter {
 
                                 case BOP_SHIFT_R: {
                                     if (rhs.v.d < 0)
-                                        throw makeError(ast.location, "shift by negative exponent.");
+                                        throw makeError(ast.location,
+                                                        "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
                                     long_r = long_r % 64;
@@ -2850,10 +2865,10 @@ class Interpreter {
                         const auto *array = static_cast<HeapArray *>(target.v.h);
                         if (scratch.t == Value::STRING) {
                             const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
-                            throw makeError(
-                                ast.location,
-                                "attempted index an array with string \""
-                                + encode_utf8(jsonnet_string_escape(str, false)) + "\".");
+                            throw makeError(ast.location,
+                                            "attempted index an array with string \"" +
+                                                encode_utf8(jsonnet_string_escape(str, false)) +
+                                                "\".");
                         }
                         if (scratch.t != Value::NUMBER) {
                             throw makeError(
@@ -3132,7 +3147,7 @@ class Interpreter {
                     }
                 } break;
 
-                 case FRAME_BUILTIN_DECODE_UTF8: {
+                case FRAME_BUILTIN_DECODE_UTF8: {
                     auto *ast = decodeUTF8();
                     if (ast != nullptr) {
                         ast_ = ast;

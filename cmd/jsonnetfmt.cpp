@@ -17,7 +17,6 @@ limitations under the License.
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -79,12 +78,7 @@ struct JsonnetConfig {
     bool fmtInPlace;
     bool fmtTest;
 
-    JsonnetConfig()
-        : filenameIsCode(false),
-          fmtInPlace(false),
-          fmtTest(false)
-    {
-    }
+    JsonnetConfig() : filenameIsCode(false), fmtInPlace(false), fmtTest(false) {}
 };
 
 enum ArgStatus {
@@ -123,8 +117,8 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "--") {
             // All subsequent args are not options.
             while ((++i) < args.size())
-                remaining_args.push_back(args[i]);          
-            break;  
+                remaining_args.push_back(args[i]);
+            break;
         } else if (arg == "-i" || arg == "--in-place") {
             config->fmtInPlace = true;
         } else if (arg == "--test") {
@@ -139,8 +133,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "--max-blank-lines") {
             long l = strtol_check(next_arg(i, args));
             if (l < 0) {
-                std::cerr << "ERROR: invalid --max-blank-lines value: " << l << ""
-                            << std::endl;
+                std::cerr << "ERROR: invalid --max-blank-lines value: " << l << "" << std::endl;
                 return ARG_FAILURE;
             }
             jsonnet_fmt_max_blank_lines(vm, l);
@@ -153,8 +146,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (val == "l") {
                 jsonnet_fmt_comment(vm, 'l');
             } else {
-                std::cerr << "ERROR: invalid --comment-style value: " << val
-                            << std::endl;
+                std::cerr << "ERROR: invalid --comment-style value: " << val << std::endl;
                 return ARG_FAILURE;
             }
         } else if (arg == "--string-style") {
@@ -166,8 +158,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             } else if (val == "l") {
                 jsonnet_fmt_string(vm, 'l');
             } else {
-                std::cerr << "ERROR: invalid --string-style value: " << val
-                            << std::endl;
+                std::cerr << "ERROR: invalid --string-style value: " << val << std::endl;
                 return ARG_FAILURE;
             }
         } else if (arg == "--pad-arrays") {
@@ -242,8 +233,7 @@ int main(int argc, const char **argv)
                         return EXIT_FAILURE;
                     }
                     if (config.filenameIsCode) {
-                        std::cerr << "ERROR: cannot use --in-place with --exec"
-                                    << std::endl;
+                        std::cerr << "ERROR: cannot use --in-place with --exec" << std::endl;
                         jsonnet_destroy(vm);
                         return EXIT_FAILURE;
                     }
@@ -294,8 +284,7 @@ int main(int argc, const char **argv)
                 return EXIT_FAILURE;
             }
 
-            output = jsonnet_fmt_snippet(
-                vm, config.inputFiles[0].c_str(), input.c_str(), &error);
+            output = jsonnet_fmt_snippet(vm, config.inputFiles[0].c_str(), input.c_str(), &error);
 
             if (error) {
                 std::cerr << output;

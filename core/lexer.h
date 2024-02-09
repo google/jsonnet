@@ -19,7 +19,6 @@ limitations under the License.
 
 #include <cassert>
 #include <cstdlib>
-
 #include <iostream>
 #include <list>
 #include <sstream>

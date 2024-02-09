@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "string_utils.h"
+
 #include <iomanip>
 
 #include "static_error.h"
-#include "string_utils.h"
 
 namespace jsonnet::internal {
 
@@ -95,7 +96,8 @@ bool is_bmp_codepoint(const unsigned long codepoint)
     return codepoint < 0xd800 || (codepoint >= 0xe000 && codepoint < 0x10000);
 }
 
-char32_t decode_utf16_surrogates(const LocationRange &loc, const unsigned long high, const unsigned long low)
+char32_t decode_utf16_surrogates(const LocationRange &loc, const unsigned long high,
+                                 const unsigned long low)
 {
     if (high >= 0xd800 && high < 0xdc00 && low >= 0xdc00 && low < 0xe000) {
         return 0x10000 + ((high & 0x03ff) << 10) + (low & 0x03ff);
@@ -139,22 +141,22 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
                         // the outer for loop.
                         c += 3;
                         if (!is_bmp_codepoint(codepoint)) {
-                           if (*(++c) != '\\') {
+                            if (*(++c) != '\\') {
                                 std::stringstream ss;
                                 ss << "Invalid non-BMP Unicode escape in string literal";
                                 throw StaticError(loc, ss.str());
-                           }
-                           if (*(++c) != 'u') {
+                            }
+                            if (*(++c) != 'u') {
                                 std::stringstream ss;
                                 ss << "Invalid non-BMP Unicode escape in string literal";
                                 throw StaticError(loc, ss.str());
-                           }
-                           ++c;
-                           unsigned long codepoint2 = jsonnet_string_parse_unicode(loc, c);
-                           c += 3;
-                           codepoint = decode_utf16_surrogates(loc, codepoint, codepoint2);
-                       }
-                       r += codepoint;
+                            }
+                            ++c;
+                            unsigned long codepoint2 = jsonnet_string_parse_unicode(loc, c);
+                            c += 3;
+                            codepoint = decode_utf16_surrogates(loc, codepoint, codepoint2);
+                        }
+                        r += codepoint;
                     } break;
 
                     case '\0': {

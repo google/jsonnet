@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "parser.h"
+
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
 #include <iomanip>
 #include <list>
 #include <memory>
@@ -28,7 +29,6 @@ limitations under the License.
 #include "ast.h"
 #include "desugarer.h"
 #include "lexer.h"
-#include "parser.h"
 #include "static_error.h"
 
 namespace jsonnet::internal {
@@ -897,8 +897,7 @@ class Parser {
                 return alloc->make<Local>(span(begin, body), begin.fodder, binds, body);
             }
 
-            default:
-            return nullptr;
+            default: return nullptr;
         }
     }
 
@@ -909,7 +908,8 @@ class Parser {
     {
         AST *ast = maybeParseGreedy();
         // There cannot be an operator after a greedy parse.
-        if (ast != nullptr) return ast;
+        if (ast != nullptr)
+            return ast;
 
         // If we get here, we could be parsing an infix construct.
 
@@ -925,7 +925,6 @@ class Parser {
     AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence)
     {
         while (true) {
-
             BinaryOp bop = BOP_PLUS;
             unsigned op_precedence = 0;
 
@@ -950,9 +949,7 @@ class Parser {
                 case Token::DOT:
                 case Token::BRACKET_L:
                 case Token::PAREN_L:
-                case Token::BRACE_L:
-                    op_precedence = APPLY_PRECEDENCE;
-                    break;
+                case Token::BRACE_L: op_precedence = APPLY_PRECEDENCE; break;
 
                 default:
                     // This happens when we reach EOF or the terminating token of an outer context.
@@ -1031,12 +1028,8 @@ class Parser {
                 case Token::DOT: {
                     Token field_id = popExpect(Token::IDENTIFIER);
                     const Identifier *id = alloc->makeIdentifier(field_id.data32());
-                    lhs = alloc->make<Index>(span(begin, field_id),
-                                             EMPTY_FODDER,
-                                             lhs,
-                                             op.fodder,
-                                             field_id.fodder,
-                                             id);
+                    lhs = alloc->make<Index>(
+                        span(begin, field_id), EMPTY_FODDER, lhs, op.fodder, field_id.fodder, id);
                     break;
                 }
                 case Token::PAREN_L: {
@@ -1044,12 +1037,14 @@ class Parser {
                     bool got_comma;
                     Token end = parseArgs(args, "function argument", got_comma);
                     bool got_named = false;
-                    for (const auto& arg : args) {
+                    for (const auto &arg : args) {
                         if (arg.id != nullptr) {
                             got_named = true;
                         } else {
                             if (got_named) {
-                                throw StaticError(arg.expr->location, "Positional argument after a named argument is not allowed");
+                                throw StaticError(
+                                    arg.expr->location,
+                                    "Positional argument after a named argument is not allowed");
                             }
                         }
                     }
@@ -1109,11 +1104,11 @@ class Parser {
         //
         //
 
-/*
-        // Allocate this on the heap to control stack growth.
-        std::unique_ptr<Token> begin_(new Token(peek()));
-        const Token &begin = *begin_;
-*/
+        /*
+                // Allocate this on the heap to control stack growth.
+                std::unique_ptr<Token> begin_(new Token(peek()));
+                const Token &begin = *begin_;
+        */
     }
 };
 

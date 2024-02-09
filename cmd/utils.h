@@ -24,7 +24,7 @@ limitations under the License.
  */
 long strtol_check(const std::string &str);
 
-/** Advances i and returns args[i]. 
+/** Advances i and returns args[i].
  * Exits the program if args is not large enough.
  */
 std::string next_arg(unsigned &i, const std::vector<std::string> &args);
@@ -40,8 +40,7 @@ void change_special_filename(bool filename_is_code, std::string *filename);
 
 /** Gets Jsonnet code from any source into the input buffer and changes
  * the filename if it's not an actual filename (e.g. "-"). */
-bool read_input(
-    bool filename_is_code, std::string *filename, std::string *input);
+bool read_input(bool filename_is_code, std::string *filename, std::string *input);
 
 /** Writes the output text to the specified output file.
  */

@@ -17,6 +17,7 @@ limitations under the License.
 #include "parser.h"
 
 #include <list>
+
 #include "ast.h"
 #include "gtest/gtest.h"
 #include "lexer.h"
@@ -167,8 +168,7 @@ TEST(Parser, TestInvalidLocal)
 
 TEST(Parser, TestInvalidTuple)
 {
-    testParseError("{a b}",
-                   R"(test:1:4: expected token OPERATOR but got (IDENTIFIER, "b"))");
+    testParseError("{a b}", R"(test:1:4: expected token OPERATOR but got (IDENTIFIER, "b"))");
     testParseError("{a = b}", "test:1:2: expected one of :, ::, :::, +:, +::, +:::, got: =");
     testParseError("{a :::: b}", "test:1:2: expected one of :, ::, :::, +:, +::, +:::, got: ::::");
 }
@@ -248,8 +248,7 @@ TEST(Parser, TestInvalidUnexpectedFunction)
 
 TEST(Parser, TestInvalidArray)
 {
-    testParseError("[(a b), 2, 3]",
-                   R"_(test:1:5: expected token ")" but got (IDENTIFIER, "b"))_");
+    testParseError("[(a b), 2, 3]", R"_(test:1:5: expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("[1, (a b), 2, 3]",
                    R"_(test:1:8: expected token ")" but got (IDENTIFIER, "b"))_");
     testParseError("[a for b in [1 2 3]]",
@@ -280,8 +279,7 @@ TEST(Parser, TestInvalidAssert)
     // TODO(jsonnet-team): The error output of this differs from the Go
     // implementation, which is:
     // test:1:16: expected token ";" but got (",", ",")
-    testParseError("assert a: 'foo', true",
-                   R"(test:1:16: expected token ";" but got ",")");
+    testParseError("assert a: 'foo', true", R"(test:1:16: expected token ";" but got ",")");
     testParseError("assert a: 'foo'; (a b)",
                    R"_(test:1:21: expected token ")" but got (IDENTIFIER, "b"))_");
 }
@@ -295,8 +293,7 @@ TEST(Parser, TestInvalidIf)
 {
     testParseError("if (a b) then c",
                    R"_(test:1:7: expected token ")" but got (IDENTIFIER, "b"))_");
-    testParseError("if a b c",
-                   R"(test:1:6: expected token then but got (IDENTIFIER, "b"))");
+    testParseError("if a b c", R"(test:1:6: expected token then but got (IDENTIFIER, "b"))");
     testParseError("if a then (b c)",
                    R"_(test:1:14: expected token ")" but got (IDENTIFIER, "c"))_");
     testParseError("if a then b else (c d)",

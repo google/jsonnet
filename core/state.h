@@ -153,10 +153,7 @@ struct HeapArray : public HeapEntity {
     // time after creation.  Thus, elements are not GCed as the array is being
     // created.
     std::vector<HeapThunk *> elements;
-    HeapArray(const std::vector<HeapThunk *> &elements)
-        : HeapEntity(ARRAY), elements(elements)
-    {
-    }
+    HeapArray(const std::vector<HeapThunk *> &elements) : HeapEntity(ARRAY), elements(elements) {}
 };
 
 /** Supertype of all objects that are not super objects or extended objects.  */
@@ -234,7 +231,11 @@ struct HeapComprehensionObject : public HeapLeafObject {
 
     HeapComprehensionObject(const BindingFrame &up_values, const AST *value, const Identifier *id,
                             const std::map<const Identifier *, HeapThunk *> &comp_values)
-        : HeapLeafObject(COMPREHENSION_OBJECT), upValues(up_values), value(value), id(id), compValues(comp_values)
+        : HeapLeafObject(COMPREHENSION_OBJECT),
+          upValues(up_values),
+          value(value),
+          id(id),
+          compValues(comp_values)
     {
     }
 };
@@ -367,7 +368,7 @@ class Heap {
             if (curr->mark != thisMark) {
                 curr->mark = thisMark;
 
-                switch(curr->type) {
+                switch (curr->type) {
                     case HeapEntity::SIMPLE_OBJECT: {
                         assert(dynamic_cast<HeapSimpleObject *>(curr));
                         auto *obj = static_cast<HeapSimpleObject *>(curr);
@@ -421,12 +422,8 @@ class Heap {
                         }
                         break;
                     }
-                    case HeapEntity::STRING:
-                        assert(dynamic_cast<HeapString *>(curr));
-                        break;
-                    default:
-                        assert(false);
-                        break;
+                    case HeapEntity::STRING: assert(dynamic_cast<HeapString *>(curr)); break;
+                    default: assert(false); break;
                 }
             }
 
@@ -473,7 +470,7 @@ class Heap {
      * last collection cycle (\see gcTuneGrowthTrigger), a collection cycle should be performed.
      */
     template <class T, class... Args>
-    T *makeEntity(Args &&... args)
+    T *makeEntity(Args &&...args)
     {
         T *r = new T(std::forward<Args>(args)...);
         entities.push_back(r);

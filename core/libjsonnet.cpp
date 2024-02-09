@@ -17,7 +17,6 @@ limitations under the License.
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -33,31 +32,32 @@ extern "C" {
 #include "formatter.h"
 #include "json.h"
 #include "parser.h"
-#include "static_analysis.h"
-#include "vm.h"
 #include "pass.h"
+#include "static_analysis.h"
 #include "string_utils.h"
+#include "vm.h"
 
 namespace {
 using ::jsonnet::internal::Allocator;
 using ::jsonnet::internal::AST;
+using ::jsonnet::internal::CompilerPass;
 using ::jsonnet::internal::FmtOpts;
 using ::jsonnet::internal::Fodder;
 using ::jsonnet::internal::jsonnet_lex;
 using ::jsonnet::internal::jsonnet_string_escape;
+using ::jsonnet::internal::LiteralString;
 using ::jsonnet::internal::RuntimeError;
 using ::jsonnet::internal::StaticError;
 using ::jsonnet::internal::Tokens;
 using ::jsonnet::internal::VmExt;
 using ::jsonnet::internal::VmNativeCallback;
 using ::jsonnet::internal::VmNativeCallbackMap;
-using ::jsonnet::internal::CompilerPass;
-using ::jsonnet::internal::LiteralString;
 
 // Used in fmtDebugDesugaring mode to ensure the AST can be pretty-printed.
 class ReEscapeStrings : public CompilerPass {
     using CompilerPass::visit;
-  public:
+
+   public:
     ReEscapeStrings(Allocator &alloc) : CompilerPass(alloc) {}
     void visit(LiteralString *lit)
     {

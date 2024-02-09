@@ -19,7 +19,6 @@ limitations under the License.
 
 #include <cassert>
 #include <cstdlib>
-
 #include <iostream>
 #include <list>
 #include <map>
@@ -959,7 +958,7 @@ class Allocator {
 
    public:
     template <class T, class... Args>
-    T *make(Args &&... args)
+    T *make(Args &&...args)
     {
         auto r = new T(std::forward<Args>(args)...);
         allocated.push_back(r);
@@ -1003,9 +1002,9 @@ class Allocator {
 namespace {
 
 // Precedences used by various compilation units are defined here.
-const int APPLY_PRECEDENCE = 2;         // Function calls and indexing.
-const int UNARY_PRECEDENCE = 4;         // Logical and bitwise negation, unary + -
-const int MAX_PRECEDENCE = 15;          // higher than any other precedence
+const int APPLY_PRECEDENCE = 2;  // Function calls and indexing.
+const int UNARY_PRECEDENCE = 4;  // Logical and bitwise negation, unary + -
+const int MAX_PRECEDENCE = 15;   // higher than any other precedence
 
 /** These are the binary operator precedences, unary precedence is given by
  * UNARY_PRECEDENCE.

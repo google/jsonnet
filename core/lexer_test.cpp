@@ -17,6 +17,7 @@ limitations under the License.
 #include "lexer.h"
 
 #include <list>
+
 #include "gtest/gtest.h"
 
 namespace jsonnet::internal {

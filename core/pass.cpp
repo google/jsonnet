@@ -289,16 +289,16 @@ void CompilerPass::visit(Unary *ast)
     expr(ast->expr);
 }
 
-#define VISIT(var,astType,astClass) \
-   case astType: { \
-     assert(dynamic_cast<astClass *>(var)); \
-     auto *ast = static_cast<astClass *>(var); \
-     visit(ast); \
-   } break
+#define VISIT(var, astType, astClass)             \
+    case astType: {                               \
+        assert(dynamic_cast<astClass *>(var));    \
+        auto *ast = static_cast<astClass *>(var); \
+        visit(ast);                               \
+    } break
 
 void CompilerPass::visitExpr(AST *&ast_)
 {
-    switch(ast_->type) {
+    switch (ast_->type) {
         VISIT(ast_, AST_APPLY, Apply);
         VISIT(ast_, AST_APPLY_BRACE, ApplyBrace);
         VISIT(ast_, AST_ARRAY, Array);
@@ -350,16 +350,16 @@ class ClonePass : public CompilerPass {
     virtual void expr(AST *&ast);
 };
 
-#define CLONE(var,astType,astClass) \
-   case astType: { \
-     assert(dynamic_cast<astClass *>(var)); \
-     auto *ast = static_cast<astClass *>(var); \
-     var = alloc.clone(ast); \
-   } break
+#define CLONE(var, astType, astClass)             \
+    case astType: {                               \
+        assert(dynamic_cast<astClass *>(var));    \
+        auto *ast = static_cast<astClass *>(var); \
+        var = alloc.clone(ast);                   \
+    } break
 
 void ClonePass::expr(AST *&ast_)
 {
-    switch(ast_->type) {
+    switch (ast_->type) {
         CLONE(ast_, AST_APPLY, Apply);
         CLONE(ast_, AST_APPLY_BRACE, ApplyBrace);
         CLONE(ast_, AST_ARRAY, Array);

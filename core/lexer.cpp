@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <cassert>
+#include "lexer.h"
 
+#include <cassert>
 #include <map>
 #include <sstream>
 #include <string>
 
-#include "lexer.h"
 #include "static_error.h"
 #include "unicode.h"
 
@@ -171,7 +171,8 @@ static bool is_symbol(char c)
     return false;
 }
 
-bool allowed_at_end_of_operator(char c) {
+bool allowed_at_end_of_operator(char c)
+{
     switch (c) {
         case '+':
         case '-':
@@ -704,7 +705,8 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     // Text block
                     if (*c == '|' && *(c + 1) == '|' && *(c + 2) == '|') {
                         c += 3;  // Skip the "|||".
-                        while (is_horz_ws(*c)) ++c;  // Chomp whitespace at end of line.
+                        while (is_horz_ws(*c))
+                            ++c;  // Chomp whitespace at end of line.
                         if (*c != '\n') {
                             auto msg = "text block syntax requires new line after |||.";
                             throw StaticError(filename, begin, msg);

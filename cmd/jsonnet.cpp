@@ -17,7 +17,6 @@ limitations under the License.
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -104,12 +103,7 @@ struct JsonnetConfig {
     bool evalStream;
     std::string evalMultiOutputDir;
 
-    JsonnetConfig()
-        : filenameIsCode(false),
-          evalMulti(false),
-          evalStream(false)
-    {
-    }
+    JsonnetConfig() : filenameIsCode(false), evalMulti(false), evalStream(false) {}
 };
 
 bool get_var_val(const std::string &var_val, std::string &var, std::string &val)
@@ -130,7 +124,8 @@ bool get_var_val(const std::string &var_val, std::string &var, std::string &val)
     return true;
 }
 
-bool get_var_file(const std::string &var_file, const std::string &imp, std::string &var, std::string &val)
+bool get_var_file(const std::string &var_file, const std::string &imp, std::string &var,
+                  std::string &val)
 {
     size_t eq_pos = var_file.find_first_of('=', 0);
     if (eq_pos == std::string::npos) {
@@ -215,7 +210,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "-E" || arg == "--var" || arg == "--env") {
             // TODO(dcunnin): Delete this in a future release.
             std::cerr << "WARNING: jsonnet eval -E, --var and --env are deprecated,"
-                        << " please use -V or --ext-str." << std::endl;
+                      << " please use -V or --ext-str." << std::endl;
             std::string var, val;
             if (!get_var_val(next_arg(i, args), var, val))
                 return ARG_FAILURE;
@@ -228,7 +223,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "-F" || arg == "--file") {
             // TODO(dcunnin): Delete this in a future release.
             std::cerr << "WARNING: jsonnet eval -F and --file are deprecated,"
-                        << " please use --ext-str-file." << std::endl;
+                      << " please use --ext-str-file." << std::endl;
             std::string var, val;
             if (!get_var_file(next_arg(i, args), "importstr", var, val))
                 return ARG_FAILURE;
@@ -241,7 +236,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "--code-var" || arg == "--code-env") {
             // TODO(dcunnin): Delete this in a future release.
             std::cerr << "WARNING: jsonnet eval --code-var and --code-env are deprecated,"
-                        << " please use --ext-code." << std::endl;
+                      << " please use --ext-code." << std::endl;
             std::string var, val;
             if (!get_var_val(next_arg(i, args), var, val))
                 return ARG_FAILURE;
@@ -254,7 +249,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "--code-file") {
             // TODO(dcunnin): Delete this in a future release.
             std::cerr << "WARNING: jsonnet eval --code-file is deprecated,"
-                        << " please use --ext-code-file." << std::endl;
+                      << " please use --ext-code-file." << std::endl;
             std::string var, val;
             if (!get_var_file(next_arg(i, args), "import", var, val))
                 return ARG_FAILURE;
@@ -303,8 +298,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
                 return ARG_FAILURE;
             }
             if (v < 0) {
-                std::cerr << "ERROR: invalid --gc-growth-trigger \"" << num << "\""
-                            << std::endl;
+                std::cerr << "ERROR: invalid --gc-growth-trigger \"" << num << "\"" << std::endl;
                 return ARG_FAILURE;
             }
             jsonnet_gc_growth_trigger(vm, v);
@@ -525,8 +519,8 @@ int main(int argc, const char **argv)
             output = jsonnet_evaluate_snippet_stream(
                 vm, config.inputFiles[0].c_str(), input.c_str(), &error);
         } else {
-            output = jsonnet_evaluate_snippet(
-                vm, config.inputFiles[0].c_str(), input.c_str(), &error);
+            output =
+                jsonnet_evaluate_snippet(vm, config.inputFiles[0].c_str(), input.c_str(), &error);
         }
 
         if (error) {

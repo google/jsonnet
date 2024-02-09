@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <cassert>
+#include "desugarer.h"
 
 #include <algorithm>
+#include <cassert>
 
 #include "ast.h"
-#include "desugarer.h"
 #include "lexer.h"
 #include "parser.h"
 #include "pass.h"
@@ -102,7 +102,7 @@ class Desugarer {
     Allocator *alloc;
 
     template <class T, class... Args>
-    T *make(Args &&... args)
+    T *make(Args &&...args)
     {
         return alloc->make<T>(std::forward<Args>(args)...);
     }
@@ -407,7 +407,8 @@ class Desugarer {
         return super_vars;
     }
 
-    AST* makeArrayComprehension(ArrayComprehension *ast) {
+    AST *makeArrayComprehension(ArrayComprehension *ast)
+    {
         int n = ast->specs.size();
         AST *zero = make<LiteralNumber>(E, EF, "0.0");
         AST *one = make<LiteralNumber>(E, EF, "1.0");
@@ -439,7 +440,7 @@ class Desugarer {
             var(_aux[last_for]),
             EF,
             ArgParams{{make<Binary>(E, EF, var(_i[last_for]), EF, BOP_PLUS, one), EF},
-                {make<Binary>(E, EF, var(_r), EF, BOP_PLUS, singleton(ast->body)), EF}},
+                      {make<Binary>(E, EF, var(_r), EF, BOP_PLUS, singleton(ast->body)), EF}},
             false,  // trailingComma
             EF,
             EF,
@@ -460,13 +461,13 @@ class Desugarer {
                     var(_aux[prev_for]),
                     EF,
                     ArgParams{{
-                        make<Binary>(E, EF, var(_i[prev_for]), EF, BOP_PLUS, one),
-                            EF,
-                            },
-                      {
-                        var(_r),
-                            EF,
-                            }},
+                                  make<Binary>(E, EF, var(_i[prev_for]), EF, BOP_PLUS, one),
+                                  EF,
+                              },
+                              {
+                                  var(_r),
+                                  EF,
+                              }},
                     false,  // trailingComma
                     EF,
                     EF,
@@ -477,12 +478,12 @@ class Desugarer {
             }
             switch (spec.kind) {
                 case ComprehensionSpec::IF: {
-                  /*
-                    if [[[...cond...]]] then
-                    [[[...in...]]]
-                    else
-                    [[[...out...]]]
-                  */
+                    /*
+                      if [[[...cond...]]] then
+                      [[[...in...]]]
+                      else
+                      [[[...out...]]]
+                    */
                     in = make<Conditional>(ast->location,
                                            EF,
                                            spec.expr,
@@ -509,42 +510,41 @@ class Desugarer {
                         ast->location,
                         EF,
                         Local::Binds{
-                          bind(_l, spec.expr),  // Need to check expr is an array
-                              bind(_aux[i],
-                                   make<Function>(
-                                       ast->location,
-                                       EF,
-                                       EF,
-                                       ArgParams{{EF, _i[i], EF}, {EF, _r, EF}},
-                                       false,  // trailingComma
-                                       EF,
-                                       make<Conditional>(ast->location,
-                                                         EF,
-                                                         make<Binary>(E,
-                                                                      EF,
-                                                                      var(_i[i]),
-                                                                      EF,
-                                                                      BOP_GREATER_EQ,
-                                                                      length(var(_l))),
-                                                         EF,
-                                                         out,
-                                                         EF,
-                                                         make<Local>(
-                                                             ast->location,
-                                                             EF,
-                                                             singleBind(spec.var,
-                                                                        make<Index>(E,
-                                                                                    EF,
-                                                                                    var(_l),
-                                                                                    EF,
-                                                                                    false,
-                                                                                    var(_i[i]),
-                                                                                    EF,
-                                                                                    nullptr,
-                                                                                    EF,
-                                                                                    nullptr,
-                                                                                    EF)),
-                                                             in))))},
+                            bind(_l, spec.expr),  // Need to check expr is an array
+                            bind(
+                                _aux[i],
+                                make<Function>(
+                                    ast->location,
+                                    EF,
+                                    EF,
+                                    ArgParams{{EF, _i[i], EF}, {EF, _r, EF}},
+                                    false,  // trailingComma
+                                    EF,
+                                    make<Conditional>(
+                                        ast->location,
+                                        EF,
+                                        make<Binary>(
+                                            E, EF, var(_i[i]), EF, BOP_GREATER_EQ, length(var(_l))),
+                                        EF,
+                                        out,
+                                        EF,
+                                        make<Local>(
+                                            ast->location,
+                                            EF,
+                                            singleBind(
+                                                spec.var,
+                                                make<Index>(E,
+                                                            EF,
+                                                            var(_l),
+                                                            EF,
+                                                            false,
+                                                            var(_i[i]),
+                                                            EF,
+                                                            nullptr,
+                                                            EF,
+                                                            nullptr,
+                                                            EF)),
+                                            in))))},
                         make<Conditional>(
                             ast->location,
                             EF,
@@ -555,13 +555,13 @@ class Desugarer {
                                 EF,
                                 var(_aux[i]),
                                 EF,
-                                ArgParams{{zero, EF},
-                                  {
-                                    i == 0 ? make<Array>(
-                                        E, EF, Array::Elements{}, false, EF)
-                                        : static_cast<AST *>(var(_r)),
+                                ArgParams{
+                                    {zero, EF},
+                                    {
+                                        i == 0 ? make<Array>(E, EF, Array::Elements{}, false, EF)
+                                               : static_cast<AST *>(var(_r)),
                                         EF,
-                                        }},
+                                    }},
                                 false,  // trailingComma
                                 EF,
                                 EF,
@@ -576,7 +576,8 @@ class Desugarer {
         return in;
     }
 
-    AST* makeObject(Object *ast, unsigned obj_level) {
+    AST *makeObject(Object *ast, unsigned obj_level)
+    {
         // Hidden variable to allow outer/top binding.
         if (obj_level == 0) {
             const Identifier *hidden_var = id(U"$");
@@ -599,7 +600,7 @@ class Desugarer {
             }
         }
 
-        AST* retval = make<DesugaredObject>(ast->location, new_asserts, new_fields);
+        AST *retval = make<DesugaredObject>(ast->location, new_asserts, new_fields);
         if (svs.size() > 0) {
             Local::Binds binds;
             for (const auto &pair : svs) {
@@ -617,7 +618,8 @@ class Desugarer {
         return retval;
     }
 
-    AST* makeObjectComprehension(ObjectComprehension *ast, unsigned obj_level) {
+    AST *makeObjectComprehension(ObjectComprehension *ast, unsigned obj_level)
+    {
         // Hidden variable to allow outer/top binding.
         if (obj_level == 0) {
             const Identifier *hidden_var = id(U"$");
@@ -911,7 +913,8 @@ class Desugarer {
         }
     }
 
-    DesugaredObject *stdlibAST(std::string filename) {
+    DesugaredObject *stdlibAST(std::string filename)
+    {
         // Now, implement the std library by wrapping in a local construct.
         Tokens tokens = jsonnet_lex("std.jsonnet", STD_CODE);
         AST *std_ast = jsonnet_parse(alloc, tokens);
@@ -931,9 +934,9 @@ class Desugarer {
                 params.push_back(id(p));
             auto name = str(decl.name);
             auto fn = make<BuiltinFunction>(E, encode_utf8(decl.name), params);
-            auto field = std::find_if(fields.begin(), fields.end(),
-                [=](const DesugaredObject::Field& f) {
-                    return static_cast<LiteralString*>(f.name)->value == decl.name;
+            auto field =
+                std::find_if(fields.begin(), fields.end(), [=](const DesugaredObject::Field &f) {
+                    return static_cast<LiteralString *>(f.name)->value == decl.name;
                 });
             if (field != fields.end()) {
                 field->body = fn;
@@ -941,8 +944,7 @@ class Desugarer {
                 fields.emplace_back(ObjectField::HIDDEN, name, fn);
             }
         }
-        fields.emplace_back(
-            ObjectField::HIDDEN, str(U"thisFile"), str(decode_utf8(filename)));
+        fields.emplace_back(ObjectField::HIDDEN, str(U"thisFile"), str(decode_utf8(filename)));
         return std_obj;
     }
 
@@ -1004,7 +1006,8 @@ class Desugarer {
     }
 };
 
-DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename) {
+DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename)
+{
     Desugarer desugarer(alloc);
     return desugarer.stdlibAST(filename);
 }

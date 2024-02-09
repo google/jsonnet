@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "libjsonnet++.h"
-
 #include <fstream>
 #include <streambuf>
 #include <string>
 
 #include "gtest/gtest.h"
+#include "libjsonnet++.h"
 
 namespace jsonnet {
 std::string readFile(const std::string& filename)
 {
     std::ifstream in(filename);
-    if (!in.good()){
+    if (!in.good()) {
         ADD_FAILURE() << "Could not open: " << filename;
         return "";
     }

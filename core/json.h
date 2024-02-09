@@ -17,11 +17,11 @@ limitations under the License.
 #ifndef JSONNET_JSON_H
 #define JSONNET_JSON_H
 
+#include <libjsonnet.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <libjsonnet.h>
 
 struct JsonnetJsonValue {
     enum Kind {
