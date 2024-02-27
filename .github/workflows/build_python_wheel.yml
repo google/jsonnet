@@ -1,0 +1,31 @@
+name: Build Python Wheel
+
+# For now, just trigger this workflow manually.
+on: [workflow_dispatch]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [ubuntu-20.04, windows-latest, macos-latest]
+        os: [ubuntu-20.04, windows-latest]
+
+    # We're using third party actions (not just the official GitHub-maintained actions),
+    # so it's very important to minimise the ability for this workflow to do anything dangerous.
+    # Grant it only read access to the repository content (which is public anyway); it shouldn't
+    # need anything else.
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
