@@ -1,5 +1,5 @@
 include LICENSE include/*.h core/*.cpp core/*.h python/*.c stdlib/std.jsonnet Makefile
-include third_party/json/*.hpp
+recursive-include third_party/json *.hpp
 include third_party/md5/*.cpp third_party/md5/*.h
-recursive-include third_party/rapidyaml/rapidyaml *.hpp *.cpp *.h
+include third_party/rapidyaml/*.cpp third_party/rapidyaml/*.hpp
 #recursive-include test_suite examples gc_stress benchmarks editors

@@ -13,71 +13,85 @@
 # limitations under the License.
 
 import os
-from setuptools import setup
-from setuptools import Extension
+import re
+import setuptools
 from setuptools.command.build_ext import build_ext as BuildExt
-from subprocess import Popen
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 # NOTE: If you are editing the array below then you probably also need
 # to change MANIFEST.in.
-LIB_OBJECTS = [
-    'core/desugarer.o',
-    'core/formatter.o',
-    'core/libjsonnet.o',
-    'core/lexer.o',
-    'core/parser.o',
-    'core/pass.o',
-    'core/static_analysis.o',
-    'core/string_utils.o',
-    'core/vm.o',
-    'third_party/md5/md5.o',
-    'third_party/rapidyaml/rapidyaml.o',
+LIB_SOURCES = [
+    "core/desugarer.cpp",
+    "core/formatter.cpp",
+    "core/libjsonnet.cpp",
+    "core/lexer.cpp",
+    "core/parser.cpp",
+    "core/pass.cpp",
+    "core/static_analysis.cpp",
+    "core/string_utils.cpp",
+    "core/vm.cpp",
+    "third_party/md5/md5.cpp",
+    "third_party/rapidyaml/rapidyaml.cpp",
+    "python/_jsonnet.c",
 ]
 
-MODULE_SOURCES = ['python/_jsonnet.c']
 
 def get_version():
     """
     Parses the version out of libjsonnet.h
     """
-    with open(os.path.join(DIR, 'include/libjsonnet.h')) as f:
+    rx = re.compile(r'^\s*#\s*define\s+LIB_JSONNET_VERSION\s+"v([0-9.]+)"\s*$')
+    with open(os.path.join(DIR, "include/libjsonnet.h")) as f:
         for line in f:
-            if '#define' in line and 'LIB_JSONNET_VERSION' in line:
-                v_code = line.partition('LIB_JSONNET_VERSION')[2].strip('\n "')
-                if v_code[0] == "v":
-                    v_code = v_code[1:]
-                return v_code
+            m = rx.match(line)
+            if m:
+                return m.group(1)
+    raise Exception(
+        "could not find LIB_JSONNET_VERSION definition in include/libjsonnet.h"
+    )
+
 
 class BuildJsonnetExt(BuildExt):
+    def _pack_std_jsonnet(self):
+        print("generating core/std.jsonnet.h from stdlib/std.jsonnet")
+        with open("stdlib/std.jsonnet", "rb") as f:
+            stdlib = f.read()
+        with open("core/std.jsonnet.h", "w", encoding="utf-8") as f:
+            f.write(",".join(str(x) for x in stdlib))
+            f.write(",0\n\n")
+
     def run(self):
-        p = Popen(['make'] + LIB_OBJECTS, cwd=DIR)
-        p.wait()
-        if p.returncode != 0:
-            raise Exception('Could not build %s' % (', '.join(LIB_OBJECTS)))
-        BuildExt.run(self)
+        self._pack_std_jsonnet()
+        super().run()
 
-jsonnet_ext = Extension(
-    '_jsonnet',
-    sources=MODULE_SOURCES,
-    extra_objects=LIB_OBJECTS,
-    include_dirs = ['include'],
-    language='c++'
-)
 
-setup(name='jsonnet',
-      url='https://jsonnet.org',
-      project_urls={
-        'Source': 'https://github.com/google/jsonnet',
-      },
-      description='Python bindings for Jsonnet - The data templating language ',
-      license="Apache License 2.0",
-      author='David Cunningham',
-      author_email='dcunnin@google.com',
-      version=get_version(),
-      cmdclass={
-          'build_ext': BuildJsonnetExt,
-      },
-      ext_modules=[jsonnet_ext],
-      test_suite="python._jsonnet_test",
+setuptools.setup(
+    name="jsonnet",
+    url="https://jsonnet.org",
+    project_urls={
+        "Source": "https://github.com/google/jsonnet",
+    },
+    description="Python bindings for Jsonnet - The data templating language ",
+    license="Apache License 2.0",
+    author="David Cunningham",
+    author_email="dcunnin@google.com",
+    version=get_version(),
+    cmdclass={
+        "build_ext": BuildJsonnetExt,
+    },
+    ext_modules=[
+        setuptools.Extension(
+            "_jsonnet",
+            sources=LIB_SOURCES,
+            include_dirs=[
+                "include",
+                "third_party/md5",
+                "third_party/json",
+                "third_party/rapidyaml",
+            ],
+            extra_compile_args=["-std=c++17"],
+            language="c++",
+        )
+    ],
+    test_suite="python._jsonnet_test",
 )
