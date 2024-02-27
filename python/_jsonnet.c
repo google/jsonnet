@@ -255,7 +255,7 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
             success = 0;
         } else {
             char *content_buf;
-            ssize_t content_len;
+            Py_ssize_t content_len;
 #if PY_MAJOR_VERSION >= 3
             const char *found_here_cstr = PyUnicode_AsUTF8(file_name);
 #else
