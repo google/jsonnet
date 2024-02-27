@@ -60,6 +60,21 @@ class BuildJsonnetExt(BuildExt):
             f.write(",".join(str(x) for x in stdlib))
             f.write(",0\n\n")
 
+    def build_extension(self, ext):
+        # At this point, the compiler has been chosen so we add compiler-specific flags.
+        # There is unfortunately no built in support for this in setuptools.
+        # Feature request: https://github.com/pypa/setuptools/issues/1819
+
+        print("Setting compile flags for compiler type " + self.compiler.compiler_type)
+        # This is quite hacky as we're modifying the Extension object itself.
+        if self.compiler.compiler_type == "msvc":
+            ext.extra_compile_args.append("/std:c++17")
+        else:
+            ext.extra_compile_args.append("-std=c++17")
+
+        # Actually build.
+        super().build_extension(ext)
+
     def run(self):
         self._pack_std_jsonnet()
         super().run()
@@ -89,7 +104,6 @@ setuptools.setup(
                 "third_party/json",
                 "third_party/rapidyaml",
             ],
-            extra_compile_args=["-std=c++17"],
             language="c++",
         )
     ],
