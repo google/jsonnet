@@ -1512,6 +1512,8 @@ std.assertEqual(
 ) &&
 // Issue https://github.com/google/jsonnet/issues/1014
 std.assertEqual(std.parseYaml('version: 1.2.3'), { version: '1.2.3' }) &&
+// Issue https://github.com/google/jsonnet/issues/1050
+std.assertEqual(std.type(std.parseYaml('id: "12345"').id), 'string') &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
 std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
