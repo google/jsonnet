@@ -1510,6 +1510,8 @@ std.assertEqual(
     |||
   ), { f1: 'a\nb\n', f2: 'a\nb\n' }
 ) &&
+// Issue https://github.com/google/jsonnet/issues/1014
+std.assertEqual(std.parseYaml('version: 1.2.3'), { version: '1.2.3' }) &&
 
 std.assertEqual(std.asciiUpper('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()ASDFGHFGHJKL09876 ') &&
 std.assertEqual(std.asciiLower('!@#$%&*()asdfghFGHJKL09876 '), '!@#$%&*()asdfghfghjkl09876 ') &&
