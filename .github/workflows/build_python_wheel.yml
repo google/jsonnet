@@ -28,6 +28,8 @@ jobs:
           # Skip PyPy, 32-bit Windows, 32-bit Linux, and CPython before 3.9.
           # See https://cibuildwheel.readthedocs.io/en/stable/options/#examples_1
           CIBW_SKIP: "*-win32 pp* *-manylinux_i686 *-musllinux_i686 cp36-* cp37-* cp38-*"
+          CIBW_TEST_COMMAND: >
+            python {package}/python/_jsonnet_test.py
 
       - uses: actions/upload-artifact@v4
         with:
