@@ -10,6 +10,7 @@ set(LIBJSONNET_HEADERS
     ../include/libjsonnet_fmt.h
     parser.h
     pass.h
+    path_utils.h
     state.h
     static_analysis.h
     static_error.h
@@ -24,6 +25,7 @@ set(LIBJSONNET_SOURCE
     libjsonnet.cpp
     parser.cpp
     pass.cpp
+    path_utils.cpp
     static_analysis.cpp
     string_utils.cpp
     vm.cpp)

@@ -35,6 +35,7 @@ limitations under the License.
 #include "static_analysis.h"
 #include "string_utils.h"
 #include "vm.h"
+#include "path_utils.h"
 
 namespace jsonnet::internal {
 
@@ -53,17 +54,6 @@ namespace jsonnet::internal {
 using json = nlohmann::json;
 
 namespace {
-
-/** Turn a path e.g. "/a/b/c" into a dir, e.g. "/a/b/".  If there is no path returns "".
- */
-std::string dir_name(const std::string &path)
-{
-    size_t last_slash = path.rfind('/');
-    if (last_slash != std::string::npos) {
-        return path.substr(0, last_slash + 1);
-    }
-    return "";
-}
 
 /** Stack frames.
  *
@@ -800,7 +790,11 @@ class Interpreter {
      */
     ImportCacheValue *importData(const LocationRange &loc, const LiteralString *file)
     {
-        std::string dir = dir_name(loc.file);
+        // `dir` is passed to the importCallback, which may be externally defined.
+        // For backwards compatibility, we need to keep the trailing directory separator.
+        // For example, the default callback in libjsonnet.cpp joins paths with simple
+        // string concatenation. Other (external) implementations might do the same.
+        std::string dir = path_dir_with_trailing_separator(loc.file);
 
         const UString &path = file->value;
 
