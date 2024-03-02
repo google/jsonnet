@@ -1240,6 +1240,10 @@ local html = import 'html.libsonnet';
               input: 'std.slice("jsonnet", 0, 4, 1)',
               output: std.slice('jsonnet', 0, 4, 1),
             },
+            {
+              input: 'std.slice("jsonnet", -3, null, null)',
+              output: std.slice('jsonnet', -3, null, null),
+            },
           ],
         },
         {
