@@ -82,6 +82,7 @@ LIBS = \
 ALL = \
 	libjsonnet_test_snippet \
 	libjsonnet_test_file \
+	libjsonnet_test_locale \
 	$(BINS) \
 	$(LIBS) \
 	$(LIB_OBJ) \
