@@ -92,7 +92,34 @@ local arrCases = [
     input: (arr)[2:1000],
     output: [2, 3, 4, 5],
   },
-
+  {
+    input: arr[-2:],
+    output: [4, 5],
+  },
+  {
+    input: arr[:-3],
+    output: [0, 1, 2],
+  },
+  {
+    input: arr[-3:-1],
+    output: [3, 4],
+  },
+  {
+    input: arr[-1:-1],
+    output: [],
+  },
+  {
+    input: arr[-6:3],
+    output: [0, 1, 2],
+  },
+  {
+    input: arr[-100:3],
+    output: [0, 1, 2],
+  },
+  {
+    input: arr[-100:-90],
+    output: [],
+  },
 ];
 
 local strCases = [
@@ -167,6 +194,34 @@ local strCases = [
   {
     input: (str)[2:1000],
     output: '2345',
+  },
+  {
+    input: str[-2:],
+    output: '45',
+  },
+  {
+    input: str[:-3],
+    output: '012',
+  },
+  {
+    input: str[-3:-1],
+    output: '34',
+  },
+  {
+    input: str[-1:-1],
+    output: '',
+  },
+  {
+    input: str[-6:3],
+    output: '012',
+  },
+  {
+    input: str[-100:3],
+    output: '012',
+  },
+  {
+    input: str[-100:-90],
+    output: '',
   },
 ];
 

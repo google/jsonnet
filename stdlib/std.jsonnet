@@ -212,7 +212,7 @@ limitations under the License.
           then 0
           else
             if index < 0
-            then std.length(indexable) + index
+            then std.max(0, std.length(indexable) + index)
             else index,
         end:
           if end == null

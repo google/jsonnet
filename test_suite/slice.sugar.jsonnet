@@ -108,6 +108,18 @@ local arrCases = [
     input: arr[-1:-1],
     output: [],
   },
+  {
+    input: arr[-6:3],
+    output: [0, 1, 2],
+  },
+  {
+    input: arr[-100:3],
+    output: [0, 1, 2],
+  },
+  {
+    input: arr[-100:-90],
+    output: [],
+  },
 ];
 
 local strCases = [
@@ -197,6 +209,18 @@ local strCases = [
   },
   {
     input: str[-1:-1],
+    output: '',
+  },
+  {
+    input: str[-6:3],
+    output: '012',
+  },
+  {
+    input: str[-100:3],
+    output: '012',
+  },
+  {
+    input: str[-100:-90],
     output: '',
   },
 ];
