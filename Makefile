@@ -147,7 +147,7 @@ MAKEDEPEND_SRCS = \
 	cmd/jsonnetfmt.cpp \
 	core/libjsonnet_test_snippet.c \
 	core/libjsonnet_test_file.c \
-	core/libjsonnet_test_locale.cpp
+	cpp/libjsonnet_test_locale.cpp
 
 depend: core/std.jsonnet.h
 	rm -f Makefile.depend
@@ -198,7 +198,7 @@ libjsonnet_test_file: $(LIBJSONNET_TEST_FILE_SRCS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
 
 LIBJSONNET_TEST_LOCALE_SRCS = \
-	core/libjsonnet_test_locale.cpp \
+	cpp/libjsonnet_test_locale.cpp \
 	libjsonnet++.so \
 	include/libjsonnet++.h
 

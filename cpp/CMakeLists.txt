@@ -61,4 +61,7 @@ if (BUILD_TESTS)
     add_test_executablepp(libjsonnet++_test)
     # Run this in the source tree because it needs to access testdata files.
     add_test(NAME libjsonnet++_test COMMAND ${GLOBAL_OUTPUT_PATH}/libjsonnet++_test WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+    add_test_executablepp(libjsonnet_test_locale)
+    add_test(NAME libjsonnet_test_locale COMMAND ${GLOBAL_OUTPUT_PATH}/libjsonnet_test_locale WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
