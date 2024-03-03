@@ -1,0 +1,3 @@
+RUNTIME ERROR: Assertion failed. {"a": 1} != {"b": 1}
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.assert_equal_obj.jsonnet:17:1-36	

@@ -1,0 +1,3 @@
+RUNTIME ERROR: Assertion failed. "one\ntwo" != "three\nfour\n"
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.assert_equal_str.jsonnet:17:1-45	

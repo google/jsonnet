@@ -831,10 +831,14 @@ limitations under the License.
       std.map(map_func, std.filter(filter_func, arr)),
 
   assertEqual(a, b)::
+    // If the values are strings, escape them for printing.
+    // If not, they'll be JSON-stringified anyway by the later string concatenation.
+    local astr = if std.type(a) == 'string' then std.escapeStringJson(a) else a;
+    local bstr = if std.type(b) == 'string' then std.escapeStringJson(b) else b;
     if a == b then
       true
     else
-      error 'Assertion failed. ' + a + ' != ' + b,
+      error 'Assertion failed. ' + astr + ' != ' + bstr,
 
   abs(n)::
     if !std.isNumber(n) then
