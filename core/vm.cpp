@@ -748,7 +748,7 @@ class Interpreter {
 
         } else if (auto *obj = dynamic_cast<const HeapComprehensionObject *>(obj_)) {
             for (const auto &f : obj->compValues)
-                r[f.first] = ObjectField::VISIBLE;
+                r[f.first] = ObjectField::INHERIT;
         }
         return r;
     }
