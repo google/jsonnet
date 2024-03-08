@@ -1717,7 +1717,7 @@ class Interpreter {
             }
 
             default: {
-                // Newer mlohmann json.hpp (from v3.8.0 https://github.com/nlohmann/json/pull/1662)
+                // Newer nlohmann json.hpp (from v3.8.0 https://github.com/nlohmann/json/pull/1662)
                 // add a `value_t::binary` type, used when dealing with some JSON-adjacent binary
                 // formats (BSON, CBOR, etc). Since it doesn't exist prior to v3.8.0 we can't match
                 // on it explicitly, but we can just treat any unknown type as an error.
