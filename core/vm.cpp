@@ -336,8 +336,11 @@ class Stack {
 
         if (name == "")
             name = "anonymous";
+
         if (dynamic_cast<const HeapObject *>(e)) {
             return "object <" + name + ">";
+        } else if (dynamic_cast<const HeapArray *>(e)) {
+            return "array <" + name + ">";
         } else if (auto *thunk = dynamic_cast<const HeapThunk *>(e)) {
             if (thunk->name == nullptr) {
                 return "";  // Argument of builtin, or root (since top level functions).
@@ -345,6 +348,7 @@ class Stack {
                 return "thunk <" + encode_utf8(thunk->name->name) + ">";
             }
         } else {
+            assert(dynamic_cast<const HeapClosure *>(e));
             const auto *func = static_cast<const HeapClosure *>(e);
             if (func->body == nullptr) {
                 return "builtin function <" + func->builtinName + ">";
@@ -3354,7 +3358,7 @@ class Interpreter {
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
                         // Add a call frame for the JSON conversion, used to apply depth limit.
-                        stack.newCall(thunk->body->location, arr, nullptr, 0, BindingFrame{});
+                        stack.newCall(thunk->body ? thunk->body->location : LocationRange("unknown"), arr, nullptr, 0, BindingFrame{});
                         stack.newFrame(FRAME_TO_JSON, loc);
                         stack.top().indentLevel = indentLevel;
                         if (thunk->filled) {
