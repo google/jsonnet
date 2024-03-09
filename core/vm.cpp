@@ -3301,20 +3301,31 @@ class Interpreter {
                         } break;
                         case Value::OBJECT:
                             const auto obj = static_cast<HeapObject *>(scratch.v.h);
-                            // TODO: Do this by constructing a FRAME_INVARIANT here?
-                            runInvariants(f.location, obj);
+                            const auto loc = f.location;
+
+                            f.kind = FRAME_OBJECT_TO_JSON;
+                            f.first = true;
+                            f.val = scratch;
+                            f.str.clear();
                             std::map<UString, const Identifier *> fields;
                             for (const auto &field : objectFields(obj, true)) {
                                 fields[field->name] = field;
                             }
-                            if (fields.empty()) {
+                            std::swap(f.manifestFields, fields); // Swap instead of deep copy.
+
+                            // runInvariants re-enters evaluate() so it messes with the stack.
+                            // Hence we need to make sure that the FRAME_OBJECT_TO_JSON is set up _first_,
+                            // even if the object is "empty" (no fields to manifest).
+                            // TODO: Do this by constructing a FRAME_INVARIANT here?
+                            runInvariants(loc, obj);
+
+                            // fields was already cleared above, and `f` may have been invalidated
+                            // by the stack-manipulation inside runInvariants. So we need to explicitly
+                            // look at stack.top().manifestFields.
+                            if (stack.top().manifestFields.empty()) {
                                 scratch = makeString(U"{ }");
                             } else {
-                                f.kind = FRAME_OBJECT_TO_JSON;
-                                f.first = true;
-                                f.val = scratch;
-                                f.str.clear();
-                                std::swap(f.manifestFields, fields); // Swap instead of deep copy.
+                                assert(stack.top().kind == FRAME_OBJECT_TO_JSON);
                                 goto replaceframe;
                             }
                             break;
