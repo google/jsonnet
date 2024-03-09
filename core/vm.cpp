@@ -3357,7 +3357,7 @@ class Interpreter {
                         const auto thunk = arr->elements[f.elementId];
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
-                        const LocationRange tloc = thunk ? thunk->body->location : loc;
+                        const LocationRange tloc = thunk->body ? thunk->body->location : loc;
                         // Add an explicit call frame for the JSON conversion, used to apply depth limit.
                         stack.newCall(tloc, arr, nullptr, 0, BindingFrame{});
                         stack.newFrame(FRAME_TO_JSON, tloc);
