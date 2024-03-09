@@ -3357,15 +3357,16 @@ class Interpreter {
                         const auto thunk = arr->elements[f.elementId];
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
-                        // Add a call frame for the JSON conversion, used to apply depth limit.
-                        stack.newCall(thunk->body ? thunk->body->location : LocationRange("unknown"), arr, nullptr, 0, BindingFrame{});
-                        stack.newFrame(FRAME_TO_JSON, loc);
+                        const LocationRange tloc = thunk ? thunk->body->location : loc;
+                        // Add an explicit call frame for the JSON conversion, used to apply depth limit.
+                        stack.newCall(tloc, arr, nullptr, 0, BindingFrame{});
+                        stack.newFrame(FRAME_TO_JSON, tloc);
                         stack.top().indentLevel = indentLevel;
                         if (thunk->filled) {
                             scratch = thunk->content;
                             goto replaceframe;
                         } else {
-                            stack.newCall(loc, thunk, thunk->self, thunk->offset, thunk->upValues);
+                            stack.newCall(tloc, thunk, thunk->self, thunk->offset, thunk->upValues);
                             ast_ = thunk->body;
                             goto recurse;
                         }
