@@ -3405,12 +3405,12 @@ class Interpreter {
                         const Identifier *ident = f.manifestFields.begin()->second;
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
-                        // Add a call frame for the JSON conversion, used to apply depth limit.
-                        stack.newCall(loc, obj, nullptr, 0, BindingFrame{});
-                        stack.newFrame(FRAME_TO_JSON, loc);
-                        stack.top().indentLevel = indentLevel;
-                        // pushes FRAME_CALL
+                        // pushes FRAME_CALL (note this also applies the stack depth limit)
                         const AST *body = objectIndex(loc, obj, ident, 0);
+                        // Before returning from the objectIndex call, convert the result to a JSON string value.
+                        stack.newFrame(FRAME_TO_JSON, body->location);
+                        stack.top().indentLevel = indentLevel;
+                        // Replace the location up the stack for better traces.
                         ast_ = body;
                         goto recurse;
                     } else {
