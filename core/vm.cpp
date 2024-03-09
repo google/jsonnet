@@ -2509,11 +2509,11 @@ class Interpreter {
                             stack.top().kind = FRAME_STRING_CONCAT;
                             if (lhs.t != Value::STRING) {
                                 ast_ = ast.left;
-                                stack.newFrame(FRAME_TO_JSON, stack.top().location);
+                                stack.newFrame(FRAME_TO_JSON, ast_->location);
                                 goto recurse;
                             } else if (rhs.t != Value::STRING) {
                                 ast_ = ast.right;
-                                stack.newFrame(FRAME_TO_JSON, stack.top().location);
+                                stack.newFrame(FRAME_TO_JSON, ast_->location);
                                 goto recurse;
                             } else {
                                 goto replaceframe;
