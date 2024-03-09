@@ -3333,7 +3333,7 @@ class Interpreter {
                 } break;
                 case FRAME_ARRAY_TO_JSON: {
                     assert(f.val.t == Value::ARRAY);
-                    const auto arr = static_cast<const HeapArray *>(stack.top().val.v.h);
+                    const auto arr = static_cast<HeapArray *>(stack.top().val.v.h);
                     if (!f.first) {
                         // We should have got here by coercing an array element to a string,
                         // leaving the JSON representation in scratch.
@@ -3353,6 +3353,8 @@ class Interpreter {
                         const auto thunk = arr->elements[f.elementId];
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
+                        // Add a call frame for the JSON conversion, used to apply depth limit.
+                        stack.newCall(thunk->body->location, arr, nullptr, 0, BindingFrame{});
                         stack.newFrame(FRAME_TO_JSON, loc);
                         stack.top().indentLevel = indentLevel;
                         if (thunk->filled) {
@@ -3399,6 +3401,8 @@ class Interpreter {
                         const Identifier *ident = f.manifestFields.begin()->second;
                         const auto loc = f.location;
                         const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
+                        // Add a call frame for the JSON conversion, used to apply depth limit.
+                        stack.newCall(loc, obj, nullptr, 0, BindingFrame{});
                         stack.newFrame(FRAME_TO_JSON, loc);
                         stack.top().indentLevel = indentLevel;
                         // pushes FRAME_CALL
