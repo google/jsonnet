@@ -17,7 +17,7 @@ limitations under the License.
 #include "libjsonnet++.h"
 
 namespace jsonnet {
-Jsonnet::Jsonnet() {}
+Jsonnet::Jsonnet(): vm_(nullptr) {}
 
 Jsonnet::~Jsonnet()
 {
