@@ -282,6 +282,8 @@ int main(int argc, const char **argv)
                             jsonnet_destroy(vm);
                             return EXIT_FAILURE;
                         }
+                    } else {
+                        jsonnet_realloc(vm, output, 0);
                     }
                 }
             }
