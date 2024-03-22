@@ -157,19 +157,19 @@ Or you can build it yourself, which requires checking out
 [go-jsonnet](https://github.com/google/go-jsonnet).  See the README.md in
 that repo for instructions.
 
-Then, from the root of the repository you can generate and serve the website using
-[Jekyll](https://jekyllrb.com/):
-
-```
-tools/scripts/serve_docs.sh
-```
-
-This should the website on localhost:8200, automatically rebuild when you change any underlying
-files, and automatically refresh your browser when that happens.
-
 The standard library is documented in a structured format in `doc/_stdlib_gen/stdlib-content.jsonnet`.
 The HTML (input for Jekyll) is regenerated using the following command:
 
 ```
 tools/scripts/update_web_content.sh
 ```
+
+Then, from the root of the repository you can generate and serve the website using
+[Jekyll](https://jekyllrb.com/) (you need version 4.3.0 or later):
+
+```
+jekyll serve -s doc/
+```
+
+This should build and serve the website locally, and automatically rebuild
+when you change any underlying files.

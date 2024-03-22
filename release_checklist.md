@@ -35,8 +35,8 @@ Before doing the release, make sure that the project is in good state:
 * Make sure that the stdlib documentation is complete. Check the release notes for any
 additions or changes to stdlib and make sure they are reflected in the documentation.
 * Make sure that you can build the website locally.
-    * `make doc/js/libjsonnet.js`
-    * `tools/scripts/serve_docs.sh`
+    * Download or build libjsonnet.wasm (see README.md for instructions)
+    * `jekyll serve -s doc/` (you need Jekyll 4.3.0 or later) to serve the site locally to check it.
     * Check that it works in two different browsers. Make sure that live evaluation
     in the tutorial works.
 
@@ -98,8 +98,8 @@ in one sitting and fix any unexpected problems.
 ## Update the website
 
 In google/jsonnet:
-* `make doc/js/libjsonnet.js`
-* `tools/scripts/serve_docs.sh`
+* Build or download libjsonnet.wasm (see README.md)
+* `jekyll serve -s docs/`
 * Check that the local version works in two different browsers. Make sure that live evaluation in the tutorial works.
 * `tools/scripts/push_docs.sh`
 * Check that the public works in two different browsers. Make sure that you are getting the new version (and not an old cached version). Make sure that live evaluation in the tutorial works.
