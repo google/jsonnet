@@ -36,6 +36,9 @@ bazel-*
 /dist/
 /jsonnet.egg-info/
 /doc/.jekyll-cache/
+/production/
+/doc/production/
+/doc/js/libjsonnet.wasm
 
 # Cmake
 **/CMakeCache.txt
