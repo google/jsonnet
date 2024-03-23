@@ -56,7 +56,7 @@ if [ -z "$working_dir" ]; then
   trap "rm -rf ${working_dir}" EXIT
 fi
 
-git clone $JSONNET_REPO "$working_dir"
+git clone -b gh-pages $JSONNET_REPO "$working_dir"
 
 (
   cd "$working_dir"
@@ -74,5 +74,3 @@ jekyll build -d "$working_dir"
   git commit -am "Update docs."
   git push -u origin gh-pages
 )
-
-
