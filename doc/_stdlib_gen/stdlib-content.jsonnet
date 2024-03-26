@@ -376,7 +376,7 @@ local html = import 'html.libsonnet';
           params: ['str'],
           availableSince: '0.20.0',
           description: |||
-            Returns true if the the given string is of zero length.
+            Returns true if the given string is of zero length.
           |||,
         },
         {

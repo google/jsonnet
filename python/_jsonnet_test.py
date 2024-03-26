@@ -21,7 +21,7 @@ import _jsonnet
 
 # Returns (full_path, contents) if the file was successfully retrieved,
 # (full_path, None) if file not found, or throws an exception when the path
-# is invalid or an IO error occured.
+# is invalid or an IO error occurred.
 # It caches both hits and misses in the `cache` dict. Exceptions
 # do not need to be cached, because they abort the computation anyway.
 def try_path_cached(cache, dir, rel):

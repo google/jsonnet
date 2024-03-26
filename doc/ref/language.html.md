@@ -478,7 +478,7 @@ By default nested objects are completely replaced when overriden. For example:
 ```
 {
   nested_object: {
-    field_of_the_nested_object: "will dissappear"
+    field_of_the_nested_object: "will disappear"
   },
   not_touched: "still there",
 }
