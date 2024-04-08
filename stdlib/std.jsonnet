@@ -1018,21 +1018,11 @@ limitations under the License.
 
   escapeStringBash(str_)::
     local str = std.toString(str_);
-    local trans(ch) =
-      if ch == "'" then
-        "'\"'\"'"
-      else
-        ch;
-    "'%s'" % std.join('', [trans(ch) for ch in std.stringChars(str)]),
+    "'%s'" % std.strReplace(str, "'", "'\"'\"'"),
 
   escapeStringDollars(str_)::
     local str = std.toString(str_);
-    local trans(ch) =
-      if ch == '$' then
-        '$$'
-      else
-        ch;
-    std.foldl(function(a, b) a + trans(b), std.stringChars(str), ''),
+    std.strReplace(str, '$', '$$'),
 
   local xml_escapes = {
     '<': '&lt;',
