@@ -807,12 +807,48 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'manifestJson',
+          params: ['value'],
+          availableSince: '0.10.0',
+          description: |||
+            Convert the given object to a JSON form. Under the covers,
+            it calls <code>std.manifestJsonEx</code> with a 4-space indent:
+          |||,
+          examples: [
+            {
+              input: |||
+                std.manifestJson(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                })
+              |||,
+              output:
+                std.manifestJson(
+                  {
+                    x: [
+                      1,
+                      2,
+                      3,
+                      true,
+                      false,
+                      null,
+                      'string\nstring',
+                    ],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                  }
+                ),
+            },
+          ],
+        },
+        {
           name: 'manifestJsonMinified',
           params: ['value'],
           availableSince: '0.18.0',
           description: |||
             Convert the given object to a minified JSON form. Under the covers,
-            it calls <code>std.manifestJsonEx:')</code>:
+            it calls <code>std.manifestJsonEx</code>:
           |||,
           examples: [
             {
