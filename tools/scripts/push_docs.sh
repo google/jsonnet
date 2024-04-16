@@ -30,22 +30,24 @@
 set -e
 
 readonly JSONNET_REPO="git@github.com.:google/jsonnet.git"
+readonly JSONNET_REPO_HTTPS="https://github.com/google/jsonnet.git"
 
 function check {
   which $1 > /dev/null || (echo "$1 not installed. Please install $1."; exit 1)
 }
 
+[ -x ./jsonnet ] || (echo "Please build ./jsonnet first."; exit 1)
 check git
 check jekyll
+
+if [ ! -t 0 ]; then
+  echo "Not attached to a TTY. Can't prompt the user for confirmation. Exiting." >&1
+  exit 1
+fi
 
 if [ ! -r 'doc/_config.yml' ]; then
   echo 'No doc/_config.yml file found.' >&1
   echo 'Are you running this script from the root of the Jsonnet repository?' >&1
-  exit 1
-fi
-
-if [ ! -r 'doc/js/libjsonnet.wasm' ]; then
-  echo 'Cannot push as doc/js/libjsonnet.wasm has not been built.' >&1
   exit 1
 fi
 
@@ -56,7 +58,12 @@ if [ -z "$working_dir" ]; then
   trap "rm -rf ${working_dir}" EXIT
 fi
 
-git clone -b gh-pages $JSONNET_REPO "$working_dir"
+git clone \
+  -b gh-pages \
+  --origin origin \
+  --config "remote.origin.pushUrl=$JSONNET_REPO" \
+  "$JSONNET_REPO_HTTPS" \
+  "$working_dir"
 
 (
   cd "$working_dir"
@@ -65,12 +72,43 @@ git clone -b gh-pages $JSONNET_REPO "$working_dir"
 )
 
 tools/scripts/update_web_content.sh
-cd doc
-jekyll build -d "$working_dir"
+jekyll build -s doc -d "$working_dir"
+
+if [ ! -r "$working_dir/js/libjsonnet.wasm" ]; then
+  echo 'We have no js/libjsonnet.wasm; restoring the existing one from git' >&1
+  (
+    cd "$working_dir"
+    git checkout -- js/libjsonnet.wasm
+  )
+fi
 
 (
   cd "$working_dir"
   git add .
   git commit -am "Update docs."
+
+  if [ -t 0 ]; then
+    # We're on a TTY. Prompt the user for input.
+    while true; do
+      read -p "Push new gh-pages commit? Y/n " yn
+      case "$yn" in
+        Y* )
+          break
+          ;;
+        [nN]* )
+          echo "ok; aborting."
+          exit
+          ;;
+        * )
+          echo "please enter 'Y' or 'n'"
+          ;;
+      esac
+    done
+  else
+    # Not on a TTY. Exit.
+    exit 1
+  fi
+
+  echo "Pushing gh-pages..."
   git push -u origin gh-pages
 )
