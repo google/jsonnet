@@ -1680,6 +1680,41 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="manifestJson">
+        std.manifestJson(value)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Convert the given object to a JSON form. Under the covers,
+        it calls <code>std.manifestJsonEx</code> with a 4-space indent:
+      </p>
+      <p>
+        Example: <code>std.manifestJson(
+        {
+            x: [1, 2, 3, true, false, null,
+                "string\nstring"],
+            y: { a: 1, b: 2, c: [1, 2] },
+        })</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="manifestJsonMinified">
         std.manifestJsonMinified(value)
       </h4>
@@ -1697,7 +1732,7 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Convert the given object to a minified JSON form. Under the covers,
-        it calls <code>std.manifestJsonEx:')</code>:
+        it calls <code>std.manifestJsonEx</code>:
       </p>
       <p>
         Example: <code>std.manifestJsonMinified(
