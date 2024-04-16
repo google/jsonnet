@@ -253,7 +253,7 @@ In particular arrays can have null elements and objects can have null fields. Th
 
 <h3 id="string">String</h3>
 
-<p>Strings in Jsonnet are sequences of Unicode codepoints.</p>
+<p>Strings in Jsonnet are sequences of Unicode <a href="https://en.wikipedia.org/wiki/Code_point">codepoints</a>.</p>
 
 <p>In most contexts a string can be treated as an array of one codepoint strings (e.g. <code>std.length</code> and the <code>[]</code> operator work like that). Comparisons (<code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>) and equality checks (<code>==</code>, <code>!=</code>) also follow this pattern – in both cases codepoints will be compared lexicographically.</p>
 
@@ -287,6 +287,7 @@ func(21)
 <pre><code>local and3(a, b, c) = a &amp;&amp; b &amp;&amp; c;
 and3(true, false, error "this one is never evaluated")
 </code></pre>
+<p>The expression <code>error "message"</code> raises an error with the provided message string. Thus, in this example, the values for <code>a</code> and <code>b</code> are evaluated because they are required to compute <code>a &amp;&amp; b</code>. However, since <code>a &amp;&amp; b</code> is <code>false</code> - there is no need to evaluate the value for <code>c</code> and the error is never thrown.</p>
 
 <p>Functions in Jsonnet are <a href="https://en.wikipedia.org/wiki/Referential_transparency">referentially transparent</a>, meaning that any function call can be replaced with its definition, without changing the meaning of the program. Therefore, in some sense, functions in Jsonnet are <a href="https://en.wikipedia.org/wiki/Hygienic_macro">hygienic macros</a>. For example consider the following snippet:</p>
 
@@ -340,7 +341,9 @@ arr[1]
 
 <p>The most flexible way of creating an array is <code>std.makeArray(sz, func)</code>. It takes the size of the array to construct and a function which takes an index <code>i</code> and returns the <code>i</code>-th element. It is possible to build all other array functionality using this function. In practice, using more specialized functions is usually (but not always) more handy and results in a more efficient program.</p>
 
-<p>Arrays can be concatenated using the operator <code>+</code>. Arrays <code>a</code> and <code>b</code> are equal if they have equal length and for all indexes <code>i</code>, <code>a[i] == b[i]</code>.</p>
+<p>Arrays can be concatenated using the operator <code>+</code>.</p>
+
+<p>Arrays <code>a</code> and <code>b</code> are equal if they have equal length and for all indexes <code>i</code>, <code>a[i] == b[i]</code>.</p>
 
 <p>The comparison of arrays is lexicographic, so array <code>a</code> is smaller than <code>b</code> if <code>a[i] &lt; b[i]</code> for some <code>i</code> and for all <code>j &lt; i</code>, <code>a[j] == b[j]</code> or if <code>a</code> is a (shorter) prefix of <code>b</code>.</p>
 
@@ -586,7 +589,7 @@ arr[1]
 <p>By default nested objects are completely replaced when overriden. For example:</p>
 <pre><code>{
   nested_object: {
-    field_of_the_nested_object: "will dissappear"
+    field_of_the_nested_object: "will disappear"
   },
   not_touched: "still there",
 }

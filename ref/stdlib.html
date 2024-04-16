@@ -187,7 +187,7 @@
         </em>
       </p>
       <p>
-        If an external variable with the given name was defined, return its string value. Otherwise, raise an error.
+        If an external variable with the given name was defined, return its value. Otherwise, raise an error.
       </p>
       
     </div>
@@ -301,254 +301,6 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h4 id="get">
-        std.get(o, f, default=null, inc_hidden=true)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.18.0.
-        </em>
-      </p>
-      <p>
-        Returns the object's field if it exists or default value otherwise.
-        <code>inc_hidden</code> controls whether to include hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectHas">
-        std.objectHas(o, f)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.10.0.
-        </em>
-      </p>
-      <p>
-        Returns <code>true</code> if the given object has the field (given as a string), otherwise
-        <code>false</code>. Raises an error if the arguments are not object and string
-        respectively. Returns false if the field is hidden.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectFields">
-        std.objectFields(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.10.0.
-        </em>
-      </p>
-      <p>
-        Returns an array of strings, each element being a field from the given object. Does not include
-        hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectValues">
-        std.objectValues(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.17.0.
-        </em>
-      </p>
-      <p>
-        Returns an array of the values in the given object. Does not include hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectKeysValues">
-        std.objectKeysValues(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.20.0.
-        </em>
-      </p>
-      <p>
-        Returns an array of objects from the given object, each object having two fields: 
-        <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectHasAll">
-        std.objectHasAll(o, f)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.10.0.
-        </em>
-      </p>
-      <p>
-        As <code>std.objectHas</code> but also includes hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectFieldsAll">
-        std.objectFieldsAll(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.10.0.
-        </em>
-      </p>
-      <p>
-        As <code>std.objectFields</code> but also includes hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectValuesAll">
-        std.objectValuesAll(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.17.0.
-        </em>
-      </p>
-      <p>
-        As <code>std.objectValues</code> but also includes hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="objectKeysValuesAll">
-        std.objectKeysValuesAll(o)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.20.0.
-        </em>
-      </p>
-      <p>
-        As <code>std.objectKeysValues</code> but also includes hidden fields.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
       <h4 id="prune">
         std.prune(a)
       </h4>
@@ -568,35 +320,6 @@
         Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
         length `arrays`, zero length `objects`, or `null` values.
         The argument <code>a</code> may have any type.
-      </p>
-      
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h4 id="mapWithKey">
-        std.mapWithKey(func, obj)
-      </h4>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        <em>
-          Available since version 0.10.0.
-        </em>
-      </p>
-      <p>
-        Apply the given function to all fields of the given object, also passing
-        the field name. The function <code>func</code> is expected to take the
-        field name as the first parameter and the field value as the second.
       </p>
       
     </div>
@@ -641,11 +364,19 @@
           <ul><code>std.acos(x)</code></ul>
           <ul><code>std.atan(x)</code></ul>
           <ul><code>std.round(x)</code></ul>
+          <ul><code>std.isEven(x)</code></ul>
+          <ul><code>std.isOdd(x)</code></ul>
+          <ul><code>std.isInteger(x)</code></ul>
+          <ul><code>std.isDecimal(x)</code></ul>
       </ul>
       <p>
           The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
           modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
           it does Python-style string formatting with <code>std.format()</code>.
+      </p>
+      <p>
+          The functions <code>std.isEven(x)</code> and <code>std.isOdd(x)</code> use integral part of a
+          floating number to test for even or odd.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -1188,7 +919,61 @@
         </em>
       </p>
       <p>
-        Returns true if the the given string is of zero length.
+        Returns true if the given string is of zero length.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="trim">
+        std.trim(str)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns a copy of string after eliminating leading and trailing whitespaces.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="equalsIgnoreCase">
+        std.equalsIgnoreCase(str1, str2)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
       </p>
       
     </div>
@@ -2587,6 +2372,9 @@ e = {"f1": False, "f2": 42}</pre>
       <p>
         Example: <code>std.slice("jsonnet", 0, 4, 1)</code> yields <code>"json"</code>.
       </p>
+      <p>
+        Example: <code>std.slice("jsonnet", -3, null, null)</code> yields <code>"net"</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -2678,6 +2466,35 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Example: <code>std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])</code> yields <code>[ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="flattenDeepArray">
+        std.flattenDeepArray(value)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Concatenate an array containing values and arrays into a single flattened array.
+      </p>
+      <p>
+        Example: <code>std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])</code> yields <code>[ 1, 2, 3, 4, 5, 6, null, 7, 8 ]</code>.
       </p>
     </div>
     <div style="clear: both"></div>
@@ -2853,6 +2670,168 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Return sum of all element in <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="minArray">
+        std.minArray(arr, keyF, onEmpty)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Return the min of all element in <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="maxArray">
+        std.maxArray(arr, keyF, onEmpty)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Return the max of all element in <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="contains">
+        std.contains(arr, elem)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="avg">
+        std.avg(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.20.0.
+        </em>
+      </p>
+      <p>
+        Return average of all element in <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="remove">
+        std.remove(arr, elem)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Remove first occurrence of <code>elem</code> from <code>arr</code>.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="removeAt">
+        std.removeAt(arr, idx)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Remove element at <code>idx</code> index from <code>arr</code>.
       </p>
       
     </div>
@@ -3039,6 +3018,322 @@ e = {"f1": False, "f2": 42}</pre>
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h3 id="objects">
+        Objects
+      </h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="get">
+        std.get(o, f, default=null, inc_hidden=true)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.18.0.
+        </em>
+      </p>
+      <p>
+        Returns the object's field if it exists or default value otherwise.
+        <code>inc_hidden</code> controls whether to include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectHas">
+        std.objectHas(o, f)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Returns <code>true</code> if the given object has the field (given as a string), otherwise
+        <code>false</code>. Raises an error if the arguments are not object and string
+        respectively. Returns false if the field is hidden.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectFields">
+        std.objectFields(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Returns an array of strings, each element being a field from the given object. Does not include
+        hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectValues">
+        std.objectValues(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
+      <p>
+        Returns an array of the values in the given object. Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectKeysValues">
+        std.objectKeysValues(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.20.0.
+        </em>
+      </p>
+      <p>
+        Returns an array of objects from the given object, each object having two fields: 
+        <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectHasAll">
+        std.objectHasAll(o, f)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectHas</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectFieldsAll">
+        std.objectFieldsAll(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectFields</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectValuesAll">
+        std.objectValuesAll(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.17.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectValues</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectKeysValuesAll">
+        std.objectKeysValuesAll(o)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.20.0.
+        </em>
+      </p>
+      <p>
+        As <code>std.objectKeysValues</code> but also includes hidden fields.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="objectRemoveKey">
+        std.objectRemoveKey(obj, key)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Returns a new object after removing the given key from object.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="mapWithKey">
+        std.mapWithKey(func, obj)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Apply the given function to all fields of the given object, also passing
+        the field name. The function <code>func</code> is expected to take the
+        field name as the first parameter and the field value as the second.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h3 id="encoding">
         Encoding
       </h3>
@@ -3157,6 +3452,126 @@ e = {"f1": False, "f2": 42}</pre>
       </p>
       <p>
         Encodes the given value into an MD5 string.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sha1">
+        std.sha1(s)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Encodes the given value into an SHA1 string.
+      </p>
+      <p>
+        This function is only available in Go version of jsonnet.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sha256">
+        std.sha256(s)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Encodes the given value into an SHA256 string.
+      </p>
+      <p>
+        This function is only available in Go version of jsonnet.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sha512">
+        std.sha512(s)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Encodes the given value into an SHA512 string.
+      </p>
+      <p>
+        This function is only available in Go version of jsonnet.
+      </p>
+      
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="sha3">
+        std.sha3(s)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available in upcoming release.
+        </em>
+      </p>
+      <p>
+        Encodes the given value into an SHA3 string.
+      </p>
+      <p>
+        This function is only available in Go version of jsonnet.
       </p>
       
     </div>
