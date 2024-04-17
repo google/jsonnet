@@ -109,6 +109,7 @@ local html = import 'html.libsonnet';
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
+              <ul><code>std.atan2(y, x)</code></ul>
               <ul><code>std.round(x)</code></ul>
               <ul><code>std.isEven(x)</code></ul>
               <ul><code>std.isOdd(x)</code></ul>
