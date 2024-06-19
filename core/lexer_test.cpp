@@ -115,8 +115,27 @@ TEST(Lexer, TestNumbers)
             "1e+!",
             {},
             "number 1e+!:1:1: couldn't lex number, junk after exponent sign: !");
+}
 
+TEST(Lexer, TestNumbersWithSeparators)
+{
     testLex("number 123_456", "123_456", {Token(Token::Kind::NUMBER, "123456")}, "");
+    testLex("number 1_750_000", "1_750_000", {Token(Token::Kind::NUMBER, "1750000")}, "");
+    testLex("number 1_2_3", "1_2_3", {Token(Token::Kind::NUMBER, "123")}, "");
+    testLex("number 3.141_592", "3.141_592", {Token(Token::Kind::NUMBER, "3.141592")}, "");
+
+    testLex("number 1_2.0", "1_2.0", {Token(Token::Kind::NUMBER, "12.0")}, "");
+    testLex("number 0e1_01", "0e1_01", {Token(Token::Kind::NUMBER, "0e101")}, "");
+    testLex("number 10_10e3", "10_10e3", {Token(Token::Kind::NUMBER, "1010e3")}, "");
+    testLex("number 2_3e1_2", "2_3e1_2", {Token(Token::Kind::NUMBER, "23e12")}, "");
+    testLex("number 1.1_2e100", "1.1_2e100", {Token(Token::Kind::NUMBER, "1.12e100")}, "");
+    testLex("number 1.1e-10_1", "1.1e-10_1", {Token(Token::Kind::NUMBER, "1.1e-101")}, "");
+
+    testLex("number 123456_!", "123456_!", {}, "number 123456_!:1:1: couldn't lex number, junk after _: !");
+    testLex("number 123__456",
+            "123__456",
+            {},
+            "number 123__456:1:1: couldn't lex number, multiple consecutive _'s");
 }
 
 TEST(Lexer, TestDoubleStrings)
@@ -330,6 +349,7 @@ TEST(Lexer, TestIdentifier)
             "foo bar123",
             {Token(Token::Kind::IDENTIFIER, "foo"), Token(Token::Kind::IDENTIFIER, "bar123")},
             "");
+    testLex("identifier _123", "_123", {Token(Token::Kind::IDENTIFIER, "_123")}, "");
 }
 
 TEST(Lexer, TestComments)
