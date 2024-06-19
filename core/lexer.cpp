@@ -227,10 +227,10 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
         AFTER_ONE_TO_NINE,
         AFTER_DOT,
         AFTER_DIGIT,
+        AFTER_UNDERSCORE,
         AFTER_E,
         AFTER_EXP_SIGN,
         AFTER_EXP_DIGIT,
-        AFTER_UNDERSCORE,
         AFTER_EXP_UNDERSCORE
     } state;
 
