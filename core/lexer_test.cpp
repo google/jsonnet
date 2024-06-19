@@ -130,6 +130,7 @@ TEST(Lexer, TestNumbersWithSeparators)
     testLex("number 2_3e1_2", "2_3e1_2", {Token(Token::Kind::NUMBER, "23e12")}, "");
     testLex("number 1.1_2e100", "1.1_2e100", {Token(Token::Kind::NUMBER, "1.12e100")}, "");
     testLex("number 1.1e-10_1", "1.1e-10_1", {Token(Token::Kind::NUMBER, "1.1e-101")}, "");
+    testLex("number 9.109_383_56e-31", "9.109_383_56e-31", {Token(Token::Kind::NUMBER, "9.10938356e-31")}, "");
 
     testLex("number 123456_!",
             "123456_!",
@@ -159,6 +160,10 @@ TEST(Lexer, TestNumbersWithSeparators)
             "200e-_2",
             {},
             "number 200e-_2:1:1: couldn't lex number, junk after exponent sign: _");
+    testLex("number 200e+_2",
+            "200e+_2",
+            {},
+            "number 200e+_2:1:1: couldn't lex number, junk after exponent sign: _");
 }
 
 TEST(Lexer, TestDoubleStrings)
