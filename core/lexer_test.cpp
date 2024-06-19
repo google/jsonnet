@@ -115,6 +115,8 @@ TEST(Lexer, TestNumbers)
             "1e+!",
             {},
             "number 1e+!:1:1: couldn't lex number, junk after exponent sign: !");
+
+    testLex("number 123_456", "123_456", {Token(Token::Kind::NUMBER, "123456")}, "");
 }
 
 TEST(Lexer, TestDoubleStrings)

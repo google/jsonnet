@@ -229,7 +229,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
         AFTER_DIGIT,
         AFTER_E,
         AFTER_EXP_SIGN,
-        AFTER_EXP_DIGIT
+        AFTER_EXP_DIGIT,
+        AFTER_UNDERSCORE
     } state;
 
     std::string r;
@@ -262,6 +263,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case 'e':
                     case 'E': state = AFTER_E; break;
 
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
+
                     default: goto end;
                 }
                 break;
@@ -283,6 +286,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_ONE_TO_NINE; break;
+
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
@@ -324,6 +329,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_DIGIT; break;
+
+                    //case '_': state = AFTER_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
@@ -386,12 +393,46 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_EXP_DIGIT; break;
+                    
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
                 break;
+  
+            case AFTER_UNDERSCORE:
+                switch (*c) {
+                    case '_': {
+                        // Can't do repeated _s.
+                        std::stringstream ss;
+                        ss << "couldn't lex number, multiple consecutive _'s: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
+
+                    // The only valid transition from _ is to a digit.
+
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_EXP_DIGIT; break;
+
+                    default: {
+                        std::stringstream ss;
+                        ss << "couldn't lex number, junk after _: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
+                }
+                break;
         }
         r += *c;
+
+        skip_char:
         c++;
     }
 end:
