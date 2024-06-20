@@ -186,7 +186,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
     }
 
     // Call python function.
-    result = PyEval_CallObject(ctx->callback, arglist);
+    result = PyObject_CallObject(ctx->callback, arglist);
     Py_DECREF(arglist);
 
     if (result == NULL) {
@@ -226,7 +226,7 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
 
     PyEval_RestoreThread(*ctx->py_thread);
     arglist = Py_BuildValue("(s, s)", base, rel);
-    result = PyEval_CallObject(ctx->callback, arglist);
+    result = PyObject_CallObject(ctx->callback, arglist);
     Py_DECREF(arglist);
 
     if (result == NULL) {
