@@ -139,7 +139,7 @@ TEST(Lexer, TestNumbersWithSeparators)
     testLex("number 123__456",
             "123__456",
             {},
-            "number 123__456:1:1: couldn't lex number, multiple consecutive _'s");
+            "number 123__456:1:1: couldn't lex number, junk after _: _");
     testLex("number 1_200_.0",
             "1_200_.0",
             {},

@@ -339,12 +339,7 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
 
             case AFTER_UNDERSCORE:
                 switch (*c) {
-                    case '_': {
-                        throw StaticError(filename, begin, "couldn't lex number, multiple consecutive _'s");
-                    }
-
                     // The only valid transition from _ is to a digit.
-
                     case '0':
                     case '1':
                     case '2':
@@ -430,12 +425,7 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
   
             case AFTER_EXP_UNDERSCORE:
                 switch (*c) {
-                    case '_': {
-                        throw StaticError(filename, begin, "couldn't lex number, multiple consecutive _'s");
-                    }
-
                     // The only valid transition from _ is to a digit.
-
                     case '0':
                     case '1':
                     case '2':
