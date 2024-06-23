@@ -1125,7 +1125,7 @@ div.rules {
         </p>
         <div class="desugar-rule">
           \[
-            desugar(e) =  desugar_{expr}(\local{\texttt{std} = e_{std}}{e}, false)
+            desugar(e) =  desugar_{expr}(\local{\texttt{\$std} = e_{std}}{\local{\texttt{std} = \texttt{\$std}}{e}}, false)
           \]
         </div>
       </div>
@@ -1287,7 +1287,7 @@ div.rules {
         <div class="desugar-rule">
           \[
             desugar_{expr}(e[e':e'':e'''], b) =
-                desugar_{expr}(\texttt{std.slice}(e, e', e'', e'''), b)
+                desugar_{expr}(\texttt{\$std.slice}(e, e', e'', e'''), b)
           \]
         </div>
 
@@ -1318,27 +1318,27 @@ div.rules {
 
         <div class="desugar-rule">
           \[
-            desugar_{expr}(e \mathop{==} e', b) = desugar_{expr}(\texttt{std.equals}(e, e'), b)
+            desugar_{expr}(e \mathop{==} e', b) = desugar_{expr}(\texttt{\$std.equals}(e, e'), b)
           \]
         </div>
 
         <div class="desugar-rule">
           \[
-            desugar_{expr}(e \mathop{\%} e', b) = desugar_{expr}(\texttt{std.mod}(e, e'), b)
+            desugar_{expr}(e \mathop{\%} e', b) = desugar_{expr}(\texttt{\$std.mod}(e, e'), b)
           \]
         </div>
 
         <div class="desugar-rule">
           \[
             desugar_{expr}(e \mathop{\texttt{in}} e', b) =
-                desugar_{expr}(\texttt{std.objectHasEx}(e', e, \texttt{true}), b)
+                desugar_{expr}(\texttt{\$std.objectHasEx}(e', e, \texttt{true}), b)
           \]
         </div>
 
         <div class="desugar-rule">
           \[
             desugar_{expr}(e \mathop{\texttt{in}} \texttt{super}, b) =
-                desugar_{expr}(\texttt{std.objectHasEx}(\texttt{super}, e, \texttt{true}), b)
+                desugar_{expr}(\texttt{\$std.objectHasEx}(\texttt{super}, e, \texttt{true}), b)
           \]
         </div>
       </div>
@@ -1484,8 +1484,8 @@ div.rules {
             \hspace{10mm}\textrm{Let }arr, i\textrm{ fresh} \\
             \hspace{10mm}desugar_{expr}(
                 \local{arr = e'}{
-                    \texttt{std.join}(\\\hspace{20mm}[\ ], \texttt{std.makeArray}(
-                        \texttt{std.length}(arr),
+                    \texttt{\$std.join}(\\\hspace{20mm}[\ ], \texttt{\$std.makeArray}(
+                        \texttt{\$std.length}(arr),
                         \function{i}{\local{x = arr[i]}{desugar_{arrcomp}(e, compspec, b)}}
                     ))
                 },
@@ -1499,8 +1499,8 @@ div.rules {
             \hspace{10mm}\textrm{Let }arr, i\textrm{ fresh} \\
             \hspace{10mm}desugar_{expr}(
                 \local{arr = e'}{
-                    \texttt{std.join}(\\\hspace{20mm}[\ ], \texttt{std.makeArray}(
-                        \texttt{std.length}(arr),
+                    \texttt{\$std.join}(\\\hspace{20mm}[\ ], \texttt{\$std.makeArray}(
+                        \texttt{\$std.length}(arr),
                         \function{i}{\local{x = arr[i]}{[e]}}
                     ))
                 },

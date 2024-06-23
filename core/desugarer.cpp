@@ -100,6 +100,7 @@ static constexpr char STD_CODE[] = {
  */
 class Desugarer {
     Allocator *alloc;
+    bool isStdlib;
 
     template <class T, class... Args>
     T *make(Args &&... args)
@@ -139,7 +140,10 @@ class Desugarer {
 
     Var *std(void)
     {
-        return var(id(U"std"));
+        // In most places, there is a "$std" variable inserted by
+        // the desugarer. On the standard library itself there isn't,
+        // so use "std" instead.
+        return var(id(isStdlib ? U"std" : U"$std"));
     }
 
     Local::Bind bind(const Identifier *id, AST *body)
@@ -219,7 +223,7 @@ class Desugarer {
     }
 
    public:
-    Desugarer(Allocator *alloc) : alloc(alloc) {}
+    Desugarer(Allocator *alloc, bool isStdlib = false) : alloc(alloc), isStdlib(isStdlib) {}
 
     void desugarParams(ArgParams &params, unsigned obj_level)
     {
@@ -999,13 +1003,17 @@ class Desugarer {
                                               make<Var>(E, line_end, body)));
         }
 
-        // local std = (std.jsonnet stuff); ast
-        ast = make<Local>(ast->location, EF, singleBind(id(U"std"), std_obj), ast);
+        // local $std = (std.jsonnet stuff); std = $std; ast
+        // The standard library is bound to $std, which cannot be overriden,
+        // so redefining std won't break expressions that desugar to calls
+        // to standard library functions.
+        ast = make<Local>(ast->location, EF, singleBind(id(U"std"), std()), ast);
+        ast = make<Local>(ast->location, EF, singleBind(id(U"$std"), std_obj), ast);
     }
 };
 
 DesugaredObject *makeStdlibAST(Allocator *alloc, std::string filename) {
-    Desugarer desugarer(alloc);
+    Desugarer desugarer(alloc, true);
     return desugarer.stdlibAST(filename);
 }
 
