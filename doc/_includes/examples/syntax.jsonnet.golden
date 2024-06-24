@@ -19,32 +19,28 @@
       ],
       "served": "Straight Up"
     },
-    "Tom Collins": {
-      "description": "The Tom Collins is essentially gin and\nlemonade.  The bitters add complexity.\n",
-      "garnish": "Maraschino Cherry",
+    "Trinidad Sour": {
+      "description": "Boldly balanced: 1 1/3 oz Angostura\ntransforms bitters into the star spirit.\n",
+      "garnish": "Lemon twist",
       "ingredients": [
         {
-          "kind": "Farmer's Gin",
-          "qty": 1.5
+          "kind": "Angostura bitters",
+          "qty": 1.333333
         },
         {
-          "kind": "Lemon",
-          "qty": 1
-        },
-        {
-          "kind": "Simple Syrup",
+          "kind": "Rye whiskey",
           "qty": 0.5
         },
         {
-          "kind": "Soda",
-          "qty": 2
+          "kind": "Fresh lemon juice",
+          "qty": 0.75
         },
         {
-          "kind": "Angostura",
-          "qty": "dash"
+          "kind": "Orgeat syrup",
+          "qty": 1
         }
       ],
-      "served": "Tall"
+      "served": "chilled Nick & Nora glass"
     }
   }
 }

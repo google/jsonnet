@@ -217,9 +217,11 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
     // https://www.json.org/img/number.png
 
     // Note, we deviate from the json.org documentation as follows:
-    // There is no reason to lex negative numbers as atomic tokens, it is better to parse them
-    // as a unary operator combined with a numeric literal.  This avoids x-1 being tokenized as
-    // <identifier> <number> instead of the intended <identifier> <binop> <number>.
+    // * There is no reason to lex negative numbers as atomic tokens, it is better to parse them
+    //   as a unary operator combined with a numeric literal.  This avoids x-1 being tokenized as
+    //   <identifier> <number> instead of the intended <identifier> <binop> <number>.
+    // * We support digit separators using the _ character for readability in
+    //   large numeric literals.
 
     enum State {
         BEGIN,
