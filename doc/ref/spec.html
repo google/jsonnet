@@ -142,8 +142,19 @@ div.rules {
         </li>
         <li>
           <p>
-            <i>number</i>: As defined by <a href="https://json.org/">JSON</a> but without the leading
-            minus.
+            <i>number</i>: As defined by <a href="https://json.org/">JSON</a>, with two exceptions:
+            <ul>
+              <li>
+                Numeric literals may be rendered with underscores (<code>_</code>) between any two adjacent 0-9 digits
+                to improve readability. The underscores are discarded by the lexer.
+                <br />
+                Examples: <code>1_000_000</code>, <code>0.000_001</code>, <code>6.022_140_76e23</code>
+              </li>
+              <li>
+                Negative numbers are lexed as the <code>-</code> unary operator applied to a positive number to
+                simplify parsing.
+              </li>
+            </ul>
           </p>
         </li>
         <li>
