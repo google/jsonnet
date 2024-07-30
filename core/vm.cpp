@@ -2390,7 +2390,7 @@ class Interpreter {
                     stack.top().val2 = scratch;
                     stack.top().kind = FRAME_BINARY_OP;
                 }
-                // Falls through.
+                [[fallthrough]];
                 case FRAME_BINARY_OP: {
                     const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
