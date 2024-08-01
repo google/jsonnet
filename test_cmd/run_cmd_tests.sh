@@ -103,6 +103,7 @@ do_test "yaml2" 1 -y -e 'null'
 if do_test "yaml3" 0 -y -o "out/yaml3/stream" -e '[1,2,3]'; then
     check_file "yaml3" "out/yaml3/stream" "yaml3.golden.stream"
 fi
+do_test "parseYaml" 0 "parseYaml.jsonnet"
 do_test "string1" 0 -S -e '"A long\nparagraph."'
 do_test "string2" 1 -S -e 'null'
 

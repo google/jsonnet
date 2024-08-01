@@ -1606,6 +1606,9 @@ class Interpreter {
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         ryml::Tree tree = treeFromString(value);
+        // in order to manifest as JSON at any point we have to resolve all
+        // anchors as it seems the JSON conversion doesn't do that always
+        tree.resolve();
 
         json j;
         if (tree.is_stream(tree.root_id())) {
