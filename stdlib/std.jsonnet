@@ -1611,7 +1611,7 @@ limitations under the License.
     local arr = std.split(f, '/');
     std.join('/', std.makeArray(std.length(arr) - 1, function(i) arr[i]) + [r]),
 
-  prune(a)::
+  prune(a, ex=[])::
     local isContent(b) =
       if b == null then
         false
@@ -1622,11 +1622,11 @@ limitations under the License.
       else
         true;
     if std.isArray(a) then
-      [std.prune(x) for x in a if isContent($.prune(x))]
+      [$.prune(x, ex) for x in a if isContent($.prune(x, ex))]
     else if std.isObject(a) then {
-      [x]: $.prune(a[x])
+      [x]: $.prune(a[x], ex)
       for x in std.objectFields(a)
-      if isContent(std.prune(a[x]))
+      if std.member(ex, x) || isContent($.prune(a[x], ex))
     } else
       a,
 

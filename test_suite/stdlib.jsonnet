@@ -1451,6 +1451,8 @@ std.assertEqual(std.prune([[], {}, null]), []) &&
 std.assertEqual(std.prune({ a: [[], {}, null], b: { a: [], b: {}, c: null } }), {}) &&
 std.assertEqual(std.prune([[[], {}, null], { a: [], b: {}, c: null }]), []) &&
 std.assertEqual(std.prune({ a: [{ b: true }] }), { a: [{ b: true }] }) &&
+std.assertEqual(std.prune({ a: [{ b: [] }] }, ['b']), { a: [{ b: [] }] }) &&
+
 
 std.assertEqual(std.parseJson('"foo"'), 'foo') &&
 std.assertEqual(std.parseJson('{}'), {}) &&
