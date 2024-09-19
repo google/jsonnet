@@ -1625,7 +1625,7 @@ limitations under the License.
       [std.prune(x) for x in a if isContent($.prune(x))]
     else if std.isObject(a) then {
       [x]: $.prune(a[x])
-      for x in std.objectFields(a)
+      for x in std.objectFieldsAll(a)
       if isContent(std.prune(a[x]))
     } else
       a,
