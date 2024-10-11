@@ -58,6 +58,33 @@ local bash_mixed = |||
 std.assertEqual(bash_golden, bash_mixed) &&
 
 
+// Chomp trailing newline
+local str1 = |||-
+  foo bar baz
+|||;
+
+std.assertEqual(str1, "foo bar baz") &&
+
+
+// Chomp just one trailing newline
+local str1 = |||-
+  foo bar baz
+
+|||;
+
+std.assertEqual(str1, "foo bar baz\n") &&
+
+
+// Concatenate chomped blocks
+local str1 = |||-
+    foo bar baz
+||| + " " + |||-
+    biz buzz
+|||;
+
+std.assertEqual(str1, "foo bar baz biz buzz") &&
+
+
 // More indent
 local str1 = |||
         text
