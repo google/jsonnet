@@ -1,0 +1,29 @@
+# TODO: This one and sentry_jsonish are almost the same.
+# A reusable flow would help.
+name: build sentry_forked_jsonnet
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+
+jobs:
+  dist:
+    name: Create wheel and source distribution for sentry_forked_jsonnet
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+      - name: "Prepare artifacts"
+        run: |
+          pip install wheel
+          pip install build
+          python -m build --wheel
+      - uses: actions/upload-artifact@v3.1.1
+        with:
+          name: ${{ github.sha }}
+          path: dist/*

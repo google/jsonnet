@@ -1,0 +1,11 @@
+---
+minVersion: 0.34.1
+github:
+  owner: getsentry
+  repo: sentry-forked-jsonnet
+changelogPolicy: auto
+releaseBranchPrefix: release
+targets:
+  - name: pypi
+  - name: sentry-pypi
+    internalPypiRepo: getsentry/pypi
