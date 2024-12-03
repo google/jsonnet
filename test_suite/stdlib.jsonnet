@@ -56,31 +56,47 @@ std.assertEqual(std.abs(33), 33) &&
 std.assertEqual(std.abs(-33), 33) &&
 std.assertEqual(std.abs(0), 0) &&
 
-// Ordinary (non-test) code can define pi as 2*std.acos(0)
-local pi = 3.14159265359;
-
-assertClose(std.sin(0.0 * pi), 0) &&
-assertClose(std.sin(0.5 * pi), 1) &&
-assertClose(std.sin(1.0 * pi), 0) &&
-assertClose(std.sin(1.5 * pi), -1) &&
-assertClose(std.sin(2.0 * pi), 0) &&
-assertClose(std.cos(0.0 * pi), 1) &&
-assertClose(std.cos(0.5 * pi), 0) &&
-assertClose(std.cos(1.0 * pi), -1) &&
-assertClose(std.cos(1.5 * pi), 0) &&
-assertClose(std.cos(2.0 * pi), 1) &&
+assertClose(std.sin(0.0 * std.pi), 0) &&
+assertClose(std.sin(0.5 * std.pi), 1) &&
+assertClose(std.sin(1.0 * std.pi), 0) &&
+assertClose(std.sin(1.5 * std.pi), -1) &&
+assertClose(std.sin(2.0 * std.pi), 0) &&
+assertClose(std.cos(0.0 * std.pi), 1) &&
+assertClose(std.cos(0.5 * std.pi), 0) &&
+assertClose(std.cos(1.0 * std.pi), -1) &&
+assertClose(std.cos(1.5 * std.pi), 0) &&
+assertClose(std.cos(2.0 * std.pi), 1) &&
 assertClose(std.tan(0), 0) &&
-assertClose(std.tan(0.25 * pi), 1) &&
+assertClose(std.tan(0.25 * std.pi), 1) &&
 assertClose(std.asin(0), 0) &&
 assertClose(std.acos(1), 0) &&
-assertClose(std.asin(1), 0.5 * pi) &&
-assertClose(std.acos(0), 0.5 * pi) &&
+assertClose(std.asin(1), 0.5 * std.pi) &&
+assertClose(std.acos(0), 0.5 * std.pi) &&
 assertClose(std.atan(0), 0) &&
+assertClose(std.atan2(1, 1), std.pi / 4) &&
+assertClose(std.atan2(-1, 1), -std.pi / 4) &&
+assertClose(std.atan2(1.2, -3.8), 2.835713782184941) &&  // arbitrary, done on a calculator
+assertClose(std.deg2rad(0), 0) &&
+assertClose(std.deg2rad(45), std.pi / 4) &&
+assertClose(std.deg2rad(90), std.pi / 2) &&
+assertClose(std.deg2rad(172), 3.0019663134302466) &&  // arbitrary, done on a calculator
+assertClose(std.rad2deg(std.pi / 4), 45) &&
+assertClose(std.rad2deg(std.pi / 2), 90) &&
+assertClose(std.rad2deg(3.0019663134302466), 172) &&  // arbitrary, done on a calculator
+assertClose(std.hypot(3, 4), 5) &&
+assertClose(std.hypot(5, 12), 13) &&
+assertClose(std.hypot(1, 1), std.sqrt(2)) &&
 assertClose(std.log(std.exp(5)), 5) &&
 assertClose(std.mantissa(1), 0.5) &&
 assertClose(std.exponent(1), 1) &&
 assertClose(std.mantissa(128), 0.5) &&
 assertClose(std.exponent(128), 8) &&
+assertClose(std.log2(std.pow(2, -5)), -5) &&
+assertClose(std.log2(std.pow(2, 0)), 0) &&
+assertClose(std.log2(std.pow(2, std.pi)), std.pi) &&
+assertClose(std.log10(std.pow(10, -5)), -5) &&
+assertClose(std.log10(std.pow(10, 0)), 0) &&
+assertClose(std.log10(std.pow(10, std.pi)), std.pi) &&
 
 std.assertEqual(std.clamp(-3, 0, 5), 0) &&
 std.assertEqual(std.clamp(4, 0, 5), 4) &&

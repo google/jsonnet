@@ -261,6 +261,17 @@ limitations under the License.
     else
       error 'Operator % cannot be used on types ' + std.type(a) + ' and ' + std.type(b) + '.',
 
+  // this is the most precision that will fit in a f64
+  pi:: 3.14159265358979311600,
+
+  deg2rad(x):: x * std.pi / 180,
+  rad2deg(x):: x * 180 / std.pi,
+
+  hypot(a, b):: std.sqrt(a * a + b * b),
+
+  log2(x):: std.log(x) / std.log(2),
+  log10(x):: std.log(x) / std.log(10),
+
   map(func, arr)::
     if !std.isFunction(func) then
       error ('std.map first param must be function, got ' + std.type(func))
