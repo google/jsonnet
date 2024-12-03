@@ -267,16 +267,6 @@ limitations under the License.
   deg2rad(x):: x * std.pi / 180,
   rad2deg(x):: x * 180 / std.pi,
 
-  hypot(a, b)::
-    // copied from
-    // https://www.johndcook.com/blog/2010/06/02/whats-so-hard-about-finding-a-hypotenuse/
-    local a_abs = std.abs(a);
-    local b_abs = std.abs(b);
-    local max = std.max(a_abs, b_abs);
-    local min = std.min(a_abs, b_abs);
-    local r = min / max;
-    max * std.sqrt(1 + r * r),
-
   log2(x):: std.log(x) / std.log(2),
   log10(x):: std.log(x) / std.log(10),
 

@@ -938,6 +938,7 @@ class Interpreter {
         builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
         builtins["atan2"] = &Interpreter::builtinAtan2;
+        builtins["hypot"] = &Interpreter::builtinHypot;
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
@@ -1104,6 +1105,13 @@ class Interpreter {
     {
         validateBuiltinArgs(loc, "atan2", args, {Value::NUMBER, Value::NUMBER});
         scratch = makeNumberCheck(loc, std::atan2(args[0].v.d, args[1].v.d));
+        return nullptr;
+    }
+
+    const AST *builtinHypot(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "atan2", args, {Value::NUMBER, Value::NUMBER});
+        scratch = makeNumberCheck(loc, std::hypot(args[0].v.d, args[1].v.d));
         return nullptr;
     }
 
