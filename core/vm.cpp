@@ -1110,7 +1110,7 @@ class Interpreter {
 
     const AST *builtinHypot(const LocationRange &loc, const std::vector<Value> &args)
     {
-        validateBuiltinArgs(loc, "atan2", args, {Value::NUMBER, Value::NUMBER});
+        validateBuiltinArgs(loc, "hypot", args, {Value::NUMBER, Value::NUMBER});
         scratch = makeNumberCheck(loc, std::hypot(args[0].v.d, args[1].v.d));
         return nullptr;
     }
