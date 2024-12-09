@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
 cc_binary(
     name = "_jsonnet.so",
     srcs = ["_jsonnet.c"],
