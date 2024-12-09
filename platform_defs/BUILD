@@ -1,4 +1,4 @@
-load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
+load("@rules_python//python:defs.bzl", "py_runtime", "py_runtime_pair")
 
 py_runtime(
     name = "python3",
