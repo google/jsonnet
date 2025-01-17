@@ -16,6 +16,6 @@ py_runtime_pair(
 toolchain(
     name = "default_python3_toolchain",
     toolchain = ":just_python3",
-    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    toolchain_type = "@rules_python//python:toolchain_type",
 )
 
