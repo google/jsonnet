@@ -247,6 +247,7 @@
         Keyword arguments to these functions are used to control the virtual machine.  They are:
       </p>
       <ul>
+        <li><tt>jpathdir</tt>&nbsp;&nbsp; (string or list of strings)</li>
         <li><tt>max_stack</tt>&nbsp;&nbsp; (number)</li>
         <li><tt>gc_min_objects</tt>&nbsp;&nbsp; (number)</li>
         <li><tt>gc_growth_trigger</tt>&nbsp;&nbsp; (number)</li>
@@ -329,7 +330,10 @@ for person_id, person in json_obj.items():
           <a href="https://github.com/yuduanchen/luajit-jsonnet">LuaJIT (FFI)</a>
         </li>
         <li>
-          <a href="https://github.com/yosuke-furukawa/node-jsonnet">Node.js</a>
+          <a href="https://github.com/yosuke-furukawa/node-jsonnet">Node.js node-jsonnet</a>: C++ version compiled to JS code
+        </li>
+        <li>
+          <a href="https://github.com/olpa/templating-for-api/tree/master/jsonnet-js-ts">Node.js tplfa-jsonnet</a>: Golang version compiled to WASM code
         </li>
         <li>
           <a href="https://github.com/Neeke/Jsonnet-PHP">PHP</a>
@@ -338,8 +342,9 @@ for person_id, person in json_obj.items():
           <a href="https://github.com/yugui/ruby-jsonnet">Ruby</a>
         </li>
         <li>
-          <a href="https://github.com/anguslees/rust-jsonnet">Rust</a> but please first consider the
-          <a href="https://github.com/CertainLach/jrsonnet">native port</a>
+          <a href="https://github.com/anguslees/rust-jsonnet">Rust</a> but please first consider
+          one of the native ports (<a href="https://github.com/CertainLach/jrsonnet">jrsonnet</a>
+          or <a href="https://github.com/eduardosm/rsjsonnet">rsjsonnet</a>)
         </li>
         <li>
           <a href="https://github.com/moleike/haskell-jsonnet">Haskell native port</a>
