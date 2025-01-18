@@ -98,6 +98,8 @@ local html = import 'html.libsonnet';
               <ul><code>std.pow(x, n)</code></ul>
               <ul><code>std.exp(x)</code></ul>
               <ul><code>std.log(x)</code></ul>
+              <ul><code>std.log2(x)</code></ul>
+              <ul><code>std.log10(x)</code></ul>
               <ul><code>std.exponent(x)</code></ul>
               <ul><code>std.mantissa(x)</code></ul>
               <ul><code>std.floor(x)</code></ul>
@@ -109,12 +111,19 @@ local html = import 'html.libsonnet';
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
+              <ul><code>std.atan2(y, x)</code></ul>
+              <ul><code>std.deg2rad(x)</code></ul>
+              <ul><code>std.rad2deg(x)</code></ul>
+              <ul><code>std.hypot(a, b)</code></ul>
               <ul><code>std.round(x)</code></ul>
               <ul><code>std.isEven(x)</code></ul>
               <ul><code>std.isOdd(x)</code></ul>
               <ul><code>std.isInteger(x)</code></ul>
               <ul><code>std.isDecimal(x)</code></ul>
           </ul>
+          <p>
+              The constant <code>std.pi</code> is also available.
+          </p>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
               modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
