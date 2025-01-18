@@ -36,8 +36,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GLOBAL_OUTPUT_PATH})
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
         ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     set(OPT "-O3")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -pedantic -std=c99 -O3 ${OPT}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++17 -fPIC ${OPT}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -Wimplicit-fallthrough -pedantic -std=c99 -O3 ${OPT}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Wimplicit-fallthrough -Woverloaded-virtual -pedantic -std=c++17 -fPIC ${OPT}")
 else()
     # TODO: Windows support.
     message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
