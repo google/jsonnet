@@ -1,10 +1,10 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@io_bazel_rules_jsonnet//jsonnet:jsonnet.bzl",
-    "jsonnet_to_json_test",
     "jsonnet_library",
+    "jsonnet_to_json_test",
 )
+
+package(default_visibility = ["//visibility:public"])
 
 jsonnet_to_json_test(
     name = "example_test",

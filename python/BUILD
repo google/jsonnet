@@ -23,8 +23,8 @@ py_test(
     srcs = ["_jsonnet_test.py"],
     data = [
         "testdata/basic_check.jsonnet",
-        "testdata/binary1230123.bin",
         "testdata/binary123.bin",
+        "testdata/binary1230123.bin",
         "testdata/trivial.jsonnet",
         "testdata/trivial_no_eol.jsonnet",
     ],

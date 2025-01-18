@@ -7,8 +7,8 @@ filegroup(
 
 cc_library(
     name = "std",
-    hdrs = ["std.jsonnet.h"],
     srcs = [":gen-std-jsonnet-h"],
+    hdrs = ["std.jsonnet.h"],
     includes = ["."],
     linkstatic = 1,
 )

@@ -1,4 +1,5 @@
 licenses(["permissive"])
+
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
@@ -9,7 +10,6 @@ cc_library(
     hdrs = [
         "md5.h",
     ],
-    linkopts = ["-lm"],
     includes = ["."],
+    linkopts = ["-lm"],
 )
-
