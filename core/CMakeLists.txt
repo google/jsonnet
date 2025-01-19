@@ -87,6 +87,9 @@ function(add_test_executable test_name)
 endfunction()
 
 if (BUILD_TESTS)
+    add_test_executable(unicode_test)
+    add_test(unicode_test ${GLOBAL_OUTPUT_PATH}/unicode_test)
+
     add_test_executable(lexer_test)
     add_test(lexer_test ${GLOBAL_OUTPUT_PATH}/lexer_test)
 

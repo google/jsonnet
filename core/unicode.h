@@ -114,7 +114,7 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
         if ((c3 & 0xC0) != 0x80) {
             return JSONNET_CODEPOINT_ERROR;
         }
-        return ((c0 & 0x7) << 24ul) | ((c1 & 0x3F) << 12ul) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+        return ((c0 & 0x7) << 18ul) | ((c1 & 0x3F) << 12ul) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
     } else {
         return JSONNET_CODEPOINT_ERROR;
     }

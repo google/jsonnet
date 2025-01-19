@@ -133,6 +133,6 @@ if (BUILD_TESTS)
     # target runs tests without building them.
     add_custom_target(run_tests COMMAND ${CMAKE_CTEST_COMMAND}
         DEPENDS libjsonnet_test libjsonnet_test_file libjsonnet_test_snippet
-                jsonnet parser_test lexer_test libjsonnet++_test libjsonnet_test_locale
+                jsonnet unicode_test parser_test lexer_test libjsonnet++_test libjsonnet_test_locale
     )
 endif()

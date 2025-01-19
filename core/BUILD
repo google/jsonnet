@@ -69,3 +69,12 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "unicode_test",
+    srcs = ["unicode_test.cpp"],
+    deps = [
+        ":libjsonnet",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
