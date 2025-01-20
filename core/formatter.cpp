@@ -500,7 +500,11 @@ class Unparser {
                 o << encode_utf8(ast->value);
                 o << "'";
             } else if (ast->tokenKind == LiteralString::BLOCK) {
-                o << "|||\n";
+                o << "|||";
+                if (ast->value.back() != U'\n') {
+                    o << "-";
+                }
+                o << "\n";
                 if (ast->value.c_str()[0] != U'\n')
                     o << ast->blockIndent;
                 for (const char32_t *cp = ast->value.c_str(); *cp != U'\0'; ++cp) {
@@ -512,6 +516,9 @@ class Unparser {
                     if (*cp == U'\n' && *(cp + 1) != U'\n' && *(cp + 1) != U'\0') {
                         o << ast->blockIndent;
                     }
+                }
+                if (ast->value.back() != U'\n') {
+                    o << "\n";
                 }
                 o << ast->blockTermIndent << "|||";
             } else if (ast->tokenKind == LiteralString::VERBATIM_DOUBLE) {

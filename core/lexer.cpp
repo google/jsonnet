@@ -704,6 +704,13 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                     // Text block
                     if (*c == '|' && *(c + 1) == '|' && *(c + 2) == '|') {
                         c += 3;  // Skip the "|||".
+
+                        bool chomp_trailing_nl = false;
+                        if (*c == '-') {
+                            chomp_trailing_nl = true;
+                            c++;
+                        }
+
                         while (is_horz_ws(*c)) ++c;  // Chomp whitespace at end of line.
                         if (*c != '\n') {
                             auto msg = "text block syntax requires new line after |||.";
@@ -762,6 +769,10 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                                 c += 3;  // Leave after the last |
                                 data = block.str();
                                 kind = Token::STRING_BLOCK;
+                                if (chomp_trailing_nl) {
+                                    assert(data.back() == '\n');
+                                    data.pop_back();
+                                }
                                 break;  // Out of the while loop.
                             }
                         }
