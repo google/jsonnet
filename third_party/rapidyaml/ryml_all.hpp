@@ -29082,7 +29082,7 @@ bool Parser::_handle_key_anchors_and_refs()
     }
     else if(C4_UNLIKELY(rem.begins_with('*')))
     {
-        _c4err("not implemented - this should have been catched elsewhere");
+        _c4err("not implemented - this should have been caught elsewhere");
         C4_NEVER_REACH();
         return false;
     }
@@ -29141,7 +29141,7 @@ bool Parser::_handle_val_anchors_and_refs()
     }
     else if(C4_UNLIKELY(rem.begins_with('*')))
     {
-        _c4err("not implemented - this should have been catched elsewhere");
+        _c4err("not implemented - this should have been caught elsewhere");
         C4_NEVER_REACH();
         return false;
     }
