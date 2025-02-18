@@ -73,7 +73,7 @@ local group(group_spec, prefix) =
   ];
 
 local stdlibPage = [
-  in_panel(html.h1({id: 'standard_library'}, 'Standard Library')),
+  in_panel(html.h1({ id: 'standard_library' }, 'Standard Library')),
   '',
   in_panel(content.intro),
   '',
