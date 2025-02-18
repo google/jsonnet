@@ -1549,20 +1549,42 @@ e = {"f1": False, "f2": 42}</pre>
         of an object field:
       </p>
       <p>
-        Example: <code>std.manifestJsonEx(
-        {
-            x: [1, 2, 3, true, false, null,
-                "string\nstring"],
-            y: { a: 1, b: 2, c: [1, 2] },
-        }, "    ")</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
-      </p>
+        Example:
+      </p><pre>std.manifestJsonEx(
+{
+    x: [1, 2, 3, true, false, null,
+        "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+}, "    ")</pre><p>
+        Yields a string containing this JSON:
+      </p><pre>{
+    "x": [
+        1,
+        2,
+        3,
+        true,
+        false,
+        null,
+        "string\nstring"
+    ],
+    "y": {
+        "a": 1,
+        "b": 2,
+        "c": [
+            1,
+            2
+        ]
+    }
+}</pre>
       <p>
-        Example: <code>std.manifestJsonEx(
-        {
-          x: [1, 2, "string\nstring"],
-          y: { a: 1, b: [1, 2] },
-        }, "", " ", " : ")</code> yields <code>"{ \"x\" : [ 1, 2, \"string\\nstring\" ], \"y\" : { \"a\" : 1, \"b\" : [ 1, 2 ] } }"</code>.
-      </p>
+        Example:
+      </p><pre>std.manifestJsonEx(
+{
+  x: [1, 2, "string\nstring"],
+  y: { a: 1, b: [1, 2] },
+}, "", " ", " : ")</pre><p>
+        Yields a string containing this JSON:
+      </p><pre>{ "x" : [ 1, 2, "string\nstring" ], "y" : { "a" : 1, "b" : [ 1, 2 ] } }</pre>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1591,13 +1613,33 @@ e = {"f1": False, "f2": 42}</pre>
         it calls <code>std.manifestJsonEx</code> with a 4-space indent:
       </p>
       <p>
-        Example: <code>std.manifestJson(
-        {
-            x: [1, 2, 3, true, false, null,
-                "string\nstring"],
-            y: { a: 1, b: 2, c: [1, 2] },
-        })</code> yields <code>"{\n    \"x\": [\n        1,\n        2,\n        3,\n        true,\n        false,\n        null,\n        \"string\\nstring\"\n    ],\n    \"y\": {\n        \"a\": 1,\n        \"b\": 2,\n        \"c\": [\n            1,\n            2\n        ]\n    }\n}"</code>.
-      </p>
+        Example:
+      </p><pre>std.manifestJson(
+{
+    x: [1, 2, 3, true, false, null,
+        "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+})</pre><p>
+        Yields a string containing this JSON:
+      </p><pre>{
+    "x": [
+        1,
+        2,
+        3,
+        true,
+        false,
+        null,
+        "string\nstring"
+    ],
+    "y": {
+        "a": 1,
+        "b": 2,
+        "c": [
+            1,
+            2
+        ]
+    }
+}</pre>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1626,13 +1668,15 @@ e = {"f1": False, "f2": 42}</pre>
         it calls <code>std.manifestJsonEx</code>:
       </p>
       <p>
-        Example: <code>std.manifestJsonMinified(
-        {
-            x: [1, 2, 3, true, false, null,
-                "string\nstring"],
-            y: { a: 1, b: 2, c: [1, 2] },
-        })</code> yields <code>"{\"x\":[1,2,3,true,false,null,\"string\\nstring\"],\"y\":{\"a\":1,\"b\":2,\"c\":[1,2]}}"</code>.
-      </p>
+        Example:
+      </p><pre>std.manifestJsonMinified(
+{
+    x: [1, 2, 3, true, false, null,
+        "string\nstring"],
+    y: { a: 1, b: 2, c: [1, 2] },
+})</pre><p>
+        Yields a string containing this JSON:
+      </p><pre>{"x":[1,2,3,true,false,null,"string\nstring"],"y":{"a":1,"b":2,"c":[1,2]}}</pre>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -1844,24 +1888,48 @@ e = {"f1": False, "f2": 42}</pre>
         one or more whitespaces that are used for indentation:
       </p>
       <p>
-        Example: <code>std.manifestTomlEx({
-          key1: "value",
-          key2: 1,
-          section: {
-            a: 1,
-            b: "str",
-            c: false,
-            d: [1, "s", [2, 3]],
-            subsection: {
-              k: "v",
-            },
-          },
-          sectionArray: [
-            { k: "v1", v: 123 },
-            { k: "v2", c: "value2" },
-          ],
-        }, "  ")</code> yields <code>"key1 = \"value\"\nkey2 = 1\n\n[section]\n  a = 1\n  b = \"str\"\n  c = false\n  d = [\n    1,\n    \"s\",\n    [ 2, 3 ]\n  ]\n\n  [section.subsection]\n    k = \"v\"\n\n[[sectionArray]]\n  k = \"v1\"\n  v = 123\n\n[[sectionArray]]\n  c = \"value2\"\n  k = \"v2\""</code>.
-      </p>
+        Example:
+      </p><pre>std.manifestTomlEx({
+  key1: "value",
+  key2: 1,
+  section: {
+    a: 1,
+    b: "str",
+    c: false,
+    d: [1, "s", [2, 3]],
+    subsection: {
+      k: "v",
+    },
+  },
+  sectionArray: [
+    { k: "v1", v: 123 },
+    { k: "v2", c: "value2" },
+  ],
+}, "  ")</pre><p>
+        Yields a string containing this TOML file:
+      </p><pre>key1 = "value"
+key2 = 1
+
+[section]
+  a = 1
+  b = "str"
+  c = false
+  d = [
+    1,
+    "s",
+    [ 2, 3 ]
+  ]
+
+  [section.subsection]
+    k = "v"
+
+[[sectionArray]]
+  k = "v1"
+  v = 123
+
+[[sectionArray]]
+  c = "value2"
+  k = "v2"</pre>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -3083,7 +3151,7 @@ e = {"f1": False, "f2": 42}</pre>
         </em>
       </p>
       <p>
-        Returns an array of objects from the given object, each object having two fields: 
+        Returns an array of objects from the given object, each object having two fields:
         <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
       </p>
       

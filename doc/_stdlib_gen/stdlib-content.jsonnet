@@ -1,5 +1,14 @@
 local html = import 'html.libsonnet';
 
+local exampleDocMultiline(mid, ex) =
+  html.spaceless([
+    html.p({}, 'Example:'),
+    html.pre({}, ex.input),
+    html.p({}, mid),
+    html.pre({}, ex.output),
+  ])
+;
+
 {
   intro: html.paragraphs([
     |||
@@ -772,7 +781,7 @@ local html = import 'html.libsonnet';
             |||),
           ],
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonEx(
                 {
@@ -796,8 +805,8 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }, '    '
                 ),
-            },
-            {
+            }),
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonEx(
                 {
@@ -812,7 +821,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: [1, 2] },
                   }, '', ' ', ' : '
                 ),
-            },
+            }),
           ],
         },
         {
@@ -824,7 +833,7 @@ local html = import 'html.libsonnet';
             it calls <code>std.manifestJsonEx</code> with a 4-space indent:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJson(
                 {
@@ -848,7 +857,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }
                 ),
-            },
+            }),
           ],
         },
         {
@@ -860,7 +869,7 @@ local html = import 'html.libsonnet';
             it calls <code>std.manifestJsonEx</code>:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonMinified(
                 {
@@ -884,7 +893,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }
                 ),
-            },
+            }),
           ],
         },
         {
@@ -1055,7 +1064,7 @@ local html = import 'html.libsonnet';
             one or more whitespaces that are used for indentation:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this TOML file:', {
               input: |||
                 std.manifestTomlEx({
                   key1: "value",
@@ -1094,7 +1103,7 @@ local html = import 'html.libsonnet';
                   ],
                 }, '  ')
               ),
-            },
+            }),
           ],
         },
       ],
@@ -1602,7 +1611,7 @@ local html = import 'html.libsonnet';
           params: ['o'],
           availableSince: '0.20.0',
           description: |||
-            Returns an array of objects from the given object, each object having two fields: 
+            Returns an array of objects from the given object, each object having two fields:
             <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
           |||,
         },

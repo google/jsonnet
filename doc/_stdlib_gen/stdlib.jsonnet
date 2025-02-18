@@ -15,7 +15,10 @@ local exampleDoc(ex) =
     else
       html.spaceless([html.code({}, ex.input), ' yields ', html.code({}, manifestJsonSingleLine(ex.output))])
   ;
-  html.p({}, html.spaceless(['Example: ', exRep, '.']))
+  if std.objectHas(ex, 'type') then
+    ex
+  else
+    html.p({}, html.spaceless(['Example: ', exRep, '.']))
 ;
 
 local hgroup(body) = html.div({ class: 'hgroup' }, body);
