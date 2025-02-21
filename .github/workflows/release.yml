@@ -15,10 +15,7 @@
 # Cut a release whenever a new tag is pushed to the repo.
 name: Release
 
-on:
-  push:
-    tags:
-      - "*.*.*"
+on: [workflow_dispatch]
 
 jobs:
   build:
