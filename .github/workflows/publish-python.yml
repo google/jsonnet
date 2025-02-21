@@ -1,21 +1,56 @@
-name: Build Python Wheel
+name: Build and Publish Python Package
+
+# Be very careful granting extra permissions here, as this workflow uses third party actions.
+# Prefer to pin to exact commits for third-party actions. I'm making an exception for actions
+# maintained by GitHub itself.
 
 # For now, just trigger this workflow manually.
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      upload_to_pypi:
+        description: "Upload generate package files to PyPI"
+        required: true
+        type: boolean
+      use_prod_pypi:
+        description: "Use production PyPI not Test PyPI"
+        required: false
+        type: boolean
 
 jobs:
+  build_sdist:
+    name: Build Python sdist
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - run: pip install 'build==1.2.2'
+
+      - name: Build sdist
+        run: python3 -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: ./dist/*.gz
+          if-no-files-found: error
+
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [ubuntu-20.04, windows-latest, macos-latest]
-        os: [ubuntu-20.04, windows-latest]
+        #os: [ubuntu-22.04, windows-latest, macos-latest]
+        os: [ubuntu-22.04, windows-latest]
 
-    # We're using third party actions (not just the official GitHub-maintained actions),
-    # so it's very important to minimise the ability for this workflow to do anything dangerous.
-    # Grant it only read access to the repository content (which is public anyway); it shouldn't
-    # need anything else.
     permissions:
       contents: read
 
@@ -23,7 +58,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@ee63bf16da6cddfb925f542f2c7b59ad50e93969 # v2.22.0
         env:
           # Skip PyPy, 32-bit Windows, 32-bit Linux, and CPython before 3.9.
           # See https://cibuildwheel.readthedocs.io/en/stable/options/#examples_1
@@ -33,5 +68,38 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
+          if-no-files-found: error
+
+  upload_to_test_pypi:
+    name: Upload packages to TEST PyPI
+    needs: [build_sdist, build_wheels]
+    runs-on: ubuntu-24.04
+    if: "${{ inputs.upload_to_pypi && !inputs.use_prod_pypi }}"
+    permissions:
+      contents: read
+      id-token: write # Needed for PyPI Trusted Publishing
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/jsonnet
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: cibw-wheels
+          pattern: cibw-wheels-*
+      - uses: actions/download-artifact@v4
+        with:
+          path: sdist
+          name: sdist
+      - name: Flatten wheels to one directory
+        run: |
+          mkdir dist
+          find cibw-wheels/ -type f -name '*.whl' -exec mv '{}' ./dist/ ';'
+          find sdist/ -type f -name '*.gz' -exec mv '{}' ./dist/ ';'
+      - name: Publish to TEST PyPI
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        with:
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
