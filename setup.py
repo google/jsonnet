@@ -41,7 +41,9 @@ def get_version():
     """
     Parses the version out of libjsonnet.h
     """
-    rx = re.compile(r'^\s*#\s*define\s+LIB_JSONNET_VERSION\s+"v([0-9.]+)"\s*$')
+    rx = re.compile(
+        r'^\s*#\s*define\s+LIB_JSONNET_VERSION\s+"v([0-9.]+(?:-?[a-z][a-z0-9]*)?)"\s*$'
+    )
     with open(os.path.join(DIR, "include/libjsonnet.h")) as f:
         for line in f:
             m = rx.match(line)
