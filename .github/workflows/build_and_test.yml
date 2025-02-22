@@ -4,10 +4,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, review_requested]
     branches-ignore:
-      - 'gh-pages'
+      - "gh-pages"
   push:
     branches:
-      - 'master'
+      - "master"
     tags:
       - v*
 
@@ -17,7 +17,7 @@ permissions:
 jobs:
   check_code_format:
     name: Check code formatting
-    runs-on: 'ubuntu-20.04'
+    runs-on: "ubuntu-22.04"
     # The code currently doesn't pass formatting.
     # Enable this workflow job once it does, to detect regressions.
     if: false
@@ -29,7 +29,7 @@ jobs:
 
   plain_makefile:
     name: Build and test using plain Makefile
-    runs-on: 'ubuntu-20.04'
+    runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
       - name: Build (make all)
@@ -41,7 +41,7 @@ jobs:
 
   python_module:
     name: Build and test Python module
-    runs-on: 'ubuntu-20.04'
+    runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
       - name: Build
@@ -53,7 +53,7 @@ jobs:
 
   cmake_build:
     name: Build and test using CMake
-    runs-on: 'ubuntu-20.04'
+    runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
       - name: Configure (cmake)
@@ -70,7 +70,7 @@ jobs:
 
   bazel_build:
     name: Build and test using Bazel
-    runs-on: 'ubuntu-20.04'
+    runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
       - name: Build
