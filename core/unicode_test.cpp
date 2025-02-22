@@ -59,7 +59,7 @@ TEST(Unicode, TestUTF8)
 
 TEST(Unicode, TestUTF8RejectBad)
 {
-    const auto test_cases = std::array{
+    const auto test_cases = std::array<const char*, 20>{
         "\x80",  // Continuation byte without leading byte
         "\xa0",  // Continuation byte without leading byte
         "\xbf",  // Continuation byte without leading byte
