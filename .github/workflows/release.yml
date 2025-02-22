@@ -42,6 +42,4 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           draft: true
           fail_on_unmatched_files: true
-          body_path: bazel_dep_release_notes.txt
-          append_body: true
           files: jsonnet-*.tar.gz
