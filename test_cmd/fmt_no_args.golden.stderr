@@ -1,6 +1,6 @@
 ERROR: must give filename
 
-Jsonnet reformatter v0.20.0
+Jsonnet reformatter v0.21.0-rc1
 
 jsonnetfmt {<option>} { <filename> }
 

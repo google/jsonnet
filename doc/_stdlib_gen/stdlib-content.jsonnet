@@ -400,7 +400,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'trim',
           params: ['str'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns a copy of string after eliminating leading and trailing whitespaces.
           |||,
@@ -408,7 +408,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'equalsIgnoreCase',
           params: ['str1', 'str2'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
           |||,
@@ -1347,7 +1347,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'flattenDeepArray',
           params: ['value'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Concatenate an array containing values and arrays into a single flattened array.
           |||,
@@ -1433,7 +1433,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'minArray',
           params: ['arr', 'keyF', 'onEmpty'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Return the min of all element in <code>arr</code>.
@@ -1443,7 +1443,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'maxArray',
           params: ['arr', 'keyF', 'onEmpty'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Return the max of all element in <code>arr</code>.
@@ -1453,7 +1453,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'contains',
           params: ['arr', 'elem'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
@@ -1473,7 +1473,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'remove',
           params: ['arr', 'elem'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Remove first occurrence of <code>elem</code> from <code>arr</code>.
@@ -1483,7 +1483,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'removeAt',
           params: ['arr', 'idx'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Remove element at <code>idx</code> index from <code>arr</code>.
@@ -1650,7 +1650,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'objectRemoveKey',
           params: ['obj', 'key'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns a new object after removing the given key from object.
           |||,
@@ -1717,7 +1717,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'sha1',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA1 string.
@@ -1730,7 +1730,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'sha256',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA256 string.
@@ -1743,7 +1743,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'sha512',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA512 string.
@@ -1756,7 +1756,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'sha3',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA3 string.
