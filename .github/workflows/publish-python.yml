@@ -72,6 +72,36 @@ jobs:
           path: ./wheelhouse/*.whl
           if-no-files-found: error
 
+  upload_to_prod_pypi:
+    name: Upload packages to PyPI
+    needs: [build_sdist, build_wheels]
+    runs-on: ubuntu-24.04
+    if: "${{ inputs.upload_to_pypi && inputs.use_prod_pypi && startsWith(github.ref, 'refs/tags') }}"
+    permissions:
+      contents: read
+      id-token: write # Needed for PyPI Trusted Publishing
+    environment:
+      name: pypi
+      url: https://pypi.org/p/jsonnet
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: cibw-wheels
+          pattern: cibw-wheels-*
+      - uses: actions/download-artifact@v4
+        with:
+          path: sdist
+          name: sdist
+      - name: Flatten wheels to one directory
+        run: |
+          mkdir dist
+          find cibw-wheels/ -type f -name '*.whl' -exec mv '{}' ./dist/ ';'
+          find sdist/ -type f -name '*.gz' -exec mv '{}' ./dist/ ';'
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        with:
+          print-hash: true
+
   upload_to_test_pypi:
     name: Upload packages to TEST PyPI
     needs: [build_sdist, build_wheels]
