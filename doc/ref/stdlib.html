@@ -2412,6 +2412,40 @@ key2 = 1
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h4 id="deepJoin">
+        std.deepJoin(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Concatenate an array containing strings and arrays to form a single string. If <code>arr</code> is
+        a string, it is returned unchanged. If it is an array, it is flattened and the string elements are
+        concatenated together with no separator.
+      </p>
+      <p>
+        Example: <code>std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]])</code> yields <code>"one two three four five six"</code>.
+      </p>
+      <p>
+        Example: <code>std.deepJoin("hello")</code> yields <code>"hello"</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h4 id="lines">
         std.lines(arr)
       </h4>

@@ -1322,6 +1322,26 @@ local exampleDocMultiline(mid, ex) =
           ],
         },
         {
+          name: 'deepJoin',
+          params: ['arr'],
+          availableSince: '0.10.0',
+          description: |||
+            Concatenate an array containing strings and arrays to form a single string. If <code>arr</code> is
+            a string, it is returned unchanged. If it is an array, it is flattened and the string elements are
+            concatenated together with no separator.
+          |||,
+          examples: [
+            {
+              input: 'std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]])',
+              output: std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]]),
+            },
+            {
+              input: 'std.deepJoin("hello")',
+              output: std.deepJoin("hello")
+            },
+          ],
+        },
+        {
           name: 'lines',
           params: ['arr'],
           availableSince: '0.10.0',
