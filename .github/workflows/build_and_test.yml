@@ -46,12 +46,20 @@ jobs:
     runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
       - name: Build
         run: |
-          python setup.py build
+          pip install build
+          python -m build --sdist --wheel
       - name: Test
         run: |
-          python setup.py test
+          python -m venv --upgrade-deps --clear trial &&
+          cd trial &&
+          source bin/activate &&
+          pip install ../dist/jsonnet-*.whl &&
+          python3 ../python/_jsonnet_test.py
 
   cmake_build:
     name: Build and test using CMake
