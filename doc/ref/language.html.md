@@ -159,7 +159,7 @@ and3(true, false, error "this one is never evaluated")
 The expression `error "message"` raises an error with the provided message string. Thus, in this example, the values for `a` and `b` are evaluated because they are required to compute `a && b`. However, since `a && b` is `false` - there is no need to evaluate the value for `c` and the error is never thrown.
 
 
-Functions in Jsonnet are [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency), meaning that any function call can be replaced with its definition, without changing the meaning of the program. Therefore, in some sense, functions in Jsonnet are [hygienic macros](https://en.wikipedia.org/wiki/Hygienic_macro). For example consider the following snippet:
+Functions in Jsonnet are [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency), meaning that any function call can be replaced with its definition, without changing the meaning of the program. For example consider the following snippet:
 
 ```
 local pow2(n) = if n == 0 then 1 else 2 * pow2(n - 1);
