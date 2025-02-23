@@ -63,20 +63,35 @@ class BuildJsonnetExt(BuildExt):
             f.write(",".join(str(x) for x in stdlib))
             f.write(",0\n\n")
 
-    def build_extension(self, ext):
+    def build_extensions(self):
         # At this point, the compiler has been chosen so we add compiler-specific flags.
         # There is unfortunately no built in support for this in setuptools.
         # Feature request: https://github.com/pypa/setuptools/issues/1819
-
-        print("Setting compile flags for compiler type " + self.compiler.compiler_type)
+        print("Adjusting compiler for compiler type " + self.compiler.compiler_type)
         # This is quite hacky as we're modifying the Extension object itself.
         if self.compiler.compiler_type == "msvc":
-            ext.extra_compile_args.append("/std:c++17")
+            for ext in self.extensions:
+                ext.extra_compile_args.append("/std:c++17")
         else:
-            ext.extra_compile_args.append("-std=c++17")
-
-        # Actually build.
-        super().build_extension(ext)
+            # -std=c++17 should only be applied to C++ build,
+            # not when compiling C source code. Unfortunately,
+            # the extra_compile_args applies to both. Instead,
+            # patch the CC/CXX commands in the compiler object.
+            #
+            # Note that older versions of distutils/setuptools do not
+            # have the necessary separation between C and C++ compilers.
+            # This requires setuptools 72.2.
+            for v in ("compiler_cxx", "compiler_so_cxx"):
+                if not hasattr(self.compiler, v):
+                    print(
+                        f"WARNING: cannot adjust flag {v}, "
+                        f"compiler type {self.compiler.compiler_type}, "
+                        f"compiler class {type(self.compiler).__name__}"
+                    )
+                    continue
+                current = getattr(self.compiler, v)
+                self.compiler.set_executable(v, current + ["-std=c++17"])
+        super().build_extensions()
 
     def run(self):
         self._pack_std_jsonnet()
