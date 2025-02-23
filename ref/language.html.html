@@ -289,7 +289,7 @@ and3(true, false, error "this one is never evaluated")
 </code></pre>
 <p>The expression <code>error "message"</code> raises an error with the provided message string. Thus, in this example, the values for <code>a</code> and <code>b</code> are evaluated because they are required to compute <code>a &amp;&amp; b</code>. However, since <code>a &amp;&amp; b</code> is <code>false</code> - there is no need to evaluate the value for <code>c</code> and the error is never thrown.</p>
 
-<p>Functions in Jsonnet are <a href="https://en.wikipedia.org/wiki/Referential_transparency">referentially transparent</a>, meaning that any function call can be replaced with its definition, without changing the meaning of the program. Therefore, in some sense, functions in Jsonnet are <a href="https://en.wikipedia.org/wiki/Hygienic_macro">hygienic macros</a>. For example consider the following snippet:</p>
+<p>Functions in Jsonnet are <a href="https://en.wikipedia.org/wiki/Referential_transparency">referentially transparent</a>, meaning that any function call can be replaced with its definition, without changing the meaning of the program. For example consider the following snippet:</p>
 
 <pre><code>local pow2(n) = if n == 0 then 1 else 2 * pow2(n - 1);
 pow2(17)

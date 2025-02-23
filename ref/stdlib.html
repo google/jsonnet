@@ -581,9 +581,14 @@
         </em>
       </p>
       <p>
-        Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-        and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
+        Returns a string that is the part of <code>str</code> that starts at offset <code>from</code>
+        and is <code>len</code> codepoints long. If the string <code>str</code> is shorter than
         <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
+      </p>
+      <p>
+        The slice operator (e.g., <code>str[from:to]</code>) can also be used on strings, as an
+        alternative to this function. However, note that the slice operator takes a start and an
+        end index, but <code>std.substr</code> takes a start index and a length.
       </p>
       
     </div>
@@ -2353,9 +2358,12 @@ key2 = 1
         </em>
       </p>
       <p>
-        Classic foldl function. Calls the function on the result of the previous function call and
-        each array element, or <code>init</code> in the case of the initial element. Traverses the
-        array from left to right.
+        Classic foldl function. Calls the function for each array element, passing the result from
+        the previous call (or <code>init</code> for the first call), and the array element. Traverses
+        the array from left to right.
+      </p>
+      <p>
+        For example: <code>foldl(f, [1,2,3], 0)</code> is equivalent to <code>f(f(f(0, 1), 2), 3)</code>.
       </p>
       
     </div>
@@ -2382,9 +2390,12 @@ key2 = 1
         </em>
       </p>
       <p>
-        Classic foldr function. Calls the function on the result of the previous function call and
-        each array element, or <code>init</code> in the case of the initial element. Traverses the
-        array from right to left.
+        Classic foldr function. Calls the function for each array element, passing the array element
+        and the result from the previous call (or <code>init</code> for the first call). Traverses
+        the array from right to left.
+      </p>
+      <p>
+        For example: <code>foldr(f, [1,2,3], 0)</code> is equivalent to <code>f(1, f(2, f(3, 0)))</code>.
       </p>
       
     </div>
@@ -2521,6 +2532,40 @@ key2 = 1
       </p>
       <p>
         Example: <code>std.join([9, 9], [[1], [2, 3]])</code> yields <code>[ 1, 9, 9, 2, 3 ]</code>.
+      </p>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <h4 id="deepJoin">
+        std.deepJoin(arr)
+      </h4>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        <em>
+          Available since version 0.10.0.
+        </em>
+      </p>
+      <p>
+        Concatenate an array containing strings and arrays to form a single string. If <code>arr</code> is
+        a string, it is returned unchanged. If it is an array, it is flattened and the string elements are
+        concatenated together with no separator.
+      </p>
+      <p>
+        Example: <code>std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]])</code> yields <code>"one two three four five six"</code>.
+      </p>
+      <p>
+        Example: <code>std.deepJoin("hello")</code> yields <code>"hello"</code>.
       </p>
     </div>
     <div style="clear: both"></div>

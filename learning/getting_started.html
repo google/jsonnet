@@ -225,6 +225,57 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h3 id="text_output">Generating non-JSON output</h3>
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
+      <p>
+        Sometimes it is useful to generate output that is not in JSON format. You can do this by
+        writing Jsonnet code which evaluates to a string containing whatever your desired format
+        is. When executed with <tt>jsonnet -S</tt> or <tt>jsonnet --string</tt> jsonnet will
+        manifest the string result as plain text rather than a JSON-formatted string.
+      </p>
+
+      <pre>// ini_output.jsonnet
+std.manifestIni({
+  sections: {
+    main: {
+      host: "127.0.0.1",
+      port: "9000",
+    },
+    database: {
+      path: "/var/data",
+    },
+  },
+})</pre>
+
+      <p>
+        When executed using <tt>jsonnet -S ini_output.jsonnet</tt>, this will output the generated
+        INI formatted text directly.
+      </p>
+
+      <pre>$ jsonnet -S ini_output.jsonnet
+[database]
+path = /var/data
+[main]
+host = 127.0.0.1
+port = 9000</pre>
+
+    </div>
+    <div style="clear: both"></div>
+  </div>
+</div>
+
+
+<div class="hgroup">
+  <div class="hgroup-inline">
+    <div class="panel">
       <h3 id="multi">Multiple File Output</h3>
     </div>
     <div style="clear: both"></div>
@@ -267,12 +318,12 @@
       <pre>$ jsonnet -m . multiple_output.jsonnet
 a.json
 b.json
-$ cat a.json 
+$ cat a.json
 {
    "x": 1,
    "y": 2
 }
-$ cat b.json 
+$ cat b.json
 {
    "x": 1,
    "y": 2
@@ -407,7 +458,6 @@ local
     <div style="clear: both"></div>
   </div>
 </div>
-
 
 
 
