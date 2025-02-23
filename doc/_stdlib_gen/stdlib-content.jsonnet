@@ -217,11 +217,18 @@ local exampleDocMultiline(mid, ex) =
           name: 'substr',
           params: ['str', 'from', 'len'],
           availableSince: '0.10.0',
-          description: |||
-            Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-            and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
-            <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
-          |||,
+          description: html.paragraphs([
+            |||
+              Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
+              and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
+              <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
+            |||,
+            |||
+              The slice operator (e.g., <code>s[from:to]</code>) can also be used on strings, as an alternative
+              to this function. However, note that the slice operator takes a start and an end index, but
+              <code>std.substr</code> takes a start index and a length.
+            |||,
+          ]),
         },
         {
           name: 'findSubstr',
