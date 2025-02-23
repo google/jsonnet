@@ -1227,21 +1227,31 @@ local exampleDocMultiline(mid, ex) =
           name: 'foldl',
           params: ['func', 'arr', 'init'],
           availableSince: '0.10.0',
-          description: |||
-            Classic foldl function. Calls the function on the result of the previous function call and
-            each array element, or <code>init</code> in the case of the initial element. Traverses the
-            array from left to right.
-          |||,
+          description: html.paragraphs([
+            |||
+              Classic foldl function. Calls the function for each array element, passing the result from
+              the previous call (or <code>init</code> for the first call), and the array element. Traverses
+              the array from left to right.
+            |||,
+            |||
+              For example: <code>foldl(f, [1,2,3], 0)</code> is equivalent to <code>f(f(f(0, 1), 2), 3)</code>.
+            |||,
+          ]),
         },
         {
           name: 'foldr',
           params: ['func', 'arr', 'init'],
           availableSince: '0.10.0',
-          description: |||
-            Classic foldr function. Calls the function on the result of the previous function call and
-            each array element, or <code>init</code> in the case of the initial element. Traverses the
-            array from right to left.
-          |||,
+          description: html.paragraphs([
+            |||
+              Classic foldr function. Calls the function for each array element, passing the array element
+              and the result from the previous call (or <code>init</code> for the first call). Traverses
+              the array from right to left.
+            |||,
+            |||
+              For example: <code>foldr(f, [1,2,3], 0)</code> is equivalent to <code>f(1, f(2, f(3, 0)))</code>.
+            |||,
+          ]),
         },
         {
           name: 'range',

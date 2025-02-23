@@ -2235,9 +2235,12 @@ key2 = 1
         </em>
       </p>
       <p>
-        Classic foldl function. Calls the function on the result of the previous function call and
-        each array element, or <code>init</code> in the case of the initial element. Traverses the
-        array from left to right.
+        Classic foldl function. Calls the function for each array element, passing the result from
+        the previous call (or <code>init</code> for the first call), and the array element. Traverses
+        the array from left to right.
+      </p>
+      <p>
+        For example: <code>foldl(f, [1,2,3], 0)</code> is equivalent to <code>f(f(f(0, 1), 2), 3)</code>.
       </p>
       
     </div>
@@ -2264,9 +2267,12 @@ key2 = 1
         </em>
       </p>
       <p>
-        Classic foldr function. Calls the function on the result of the previous function call and
-        each array element, or <code>init</code> in the case of the initial element. Traverses the
-        array from right to left.
+        Classic foldr function. Calls the function for each array element, passing the array element
+        and the result from the previous call (or <code>init</code> for the first call). Traverses
+        the array from right to left.
+      </p>
+      <p>
+        For example: <code>foldr(f, [1,2,3], 0)</code> is equivalent to <code>f(1, f(2, f(3, 0)))</code>.
       </p>
       
     </div>
