@@ -84,7 +84,7 @@ local stdlibPage = [
 ];
 
 local stdlibFrontMatter = {
-  layout: 'default',
+  layout: 'stdlib',
   title: 'Standard Library',
 };
 
