@@ -43,7 +43,7 @@ local fieldDescription(f) =
 
 local fieldDoc(f, prefix) =
   [
-    in_panel(html.h4({ id: f.name }, prefix + '.' + f.name + fieldParams(f))),
+    in_panel(html.h4({ id: 'std-' + f.name }, prefix + '.' + f.name + fieldParams(f))),
     in_panel([
       if std.objectHas(f, 'availableSince') then (
         html.p(
