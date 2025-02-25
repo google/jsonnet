@@ -50,9 +50,9 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        #os: [ubuntu-22.04, windows-latest, macos-latest]
-        os: [ubuntu-22.04, windows-latest]
+        os: [ubuntu-22.04, windows-latest, macos-13, macos-latest]
 
     permissions:
       contents: read
