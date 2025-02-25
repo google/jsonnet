@@ -217,9 +217,11 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
     // https://www.json.org/img/number.png
 
     // Note, we deviate from the json.org documentation as follows:
-    // There is no reason to lex negative numbers as atomic tokens, it is better to parse them
-    // as a unary operator combined with a numeric literal.  This avoids x-1 being tokenized as
-    // <identifier> <number> instead of the intended <identifier> <binop> <number>.
+    // * There is no reason to lex negative numbers as atomic tokens, it is better to parse them
+    //   as a unary operator combined with a numeric literal.  This avoids x-1 being tokenized as
+    //   <identifier> <number> instead of the intended <identifier> <binop> <number>.
+    // * We support digit separators using the _ character for readability in
+    //   large numeric literals.
 
     enum State {
         BEGIN,
@@ -227,9 +229,11 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
         AFTER_ONE_TO_NINE,
         AFTER_DOT,
         AFTER_DIGIT,
+        AFTER_UNDERSCORE,
         AFTER_E,
         AFTER_EXP_SIGN,
-        AFTER_EXP_DIGIT
+        AFTER_EXP_DIGIT,
+        AFTER_EXP_UNDERSCORE
     } state;
 
     std::string r;
@@ -262,6 +266,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case 'e':
                     case 'E': state = AFTER_E; break;
 
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
+
                     default: goto end;
                 }
                 break;
@@ -283,6 +289,8 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_ONE_TO_NINE; break;
+
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
@@ -325,7 +333,31 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '8':
                     case '9': state = AFTER_DIGIT; break;
 
+                    case '_': state = AFTER_UNDERSCORE; goto skip_char;
+
                     default: goto end;
+                }
+                break;
+
+            case AFTER_UNDERSCORE:
+                switch (*c) {
+                    // The only valid transition from _ is to a digit.
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_ONE_TO_NINE; break;
+
+                    default: {
+                        std::stringstream ss;
+                        ss << "couldn't lex number, junk after _: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
                 }
                 break;
 
@@ -386,12 +418,38 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_EXP_DIGIT; break;
+                    
+                    case '_': state = AFTER_EXP_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
                 break;
+  
+            case AFTER_EXP_UNDERSCORE:
+                switch (*c) {
+                    // The only valid transition from _ is to a digit.
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': state = AFTER_EXP_DIGIT; break;
+
+                    default: {
+                        std::stringstream ss;
+                        ss << "couldn't lex number, junk after _: " << *c;
+                        throw StaticError(filename, begin, ss.str());
+                    }
+                }
+                break;
         }
         r += *c;
+
+skip_char:
         c++;
     }
 end:
