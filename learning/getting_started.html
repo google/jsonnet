@@ -20,6 +20,7 @@
     });
     </script>
     <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+    <script type="text/javascript" src="/third_party/anchor.min.js"></script>
 
 
     <!-- Google Analytics -->
@@ -225,7 +226,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h3 id="text_output">Generating non-JSON output</h3>
+      <h3 id="text-output">Generating non-JSON output</h3>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -471,6 +472,14 @@ local
   </div>
 </div>
 
+<script>
+  anchors.options = {
+    placement: 'right',
+    visible: 'always',
+    icon: '#'
+  };
+  anchors.add('h2,h3');
+</script>
 </body>
 
 </html>

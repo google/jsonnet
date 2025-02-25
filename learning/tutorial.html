@@ -20,6 +20,7 @@
     });
     </script>
     <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+    <script type="text/javascript" src="/third_party/anchor.min.js"></script>
 
 
     <!-- Google Analytics -->
@@ -2002,7 +2003,7 @@ assert std.isFunction(subtract);
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h3 id="parameterize-entire-config">External variables</h3>
+      <h3 id="external-variables">External variables</h3>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -2190,7 +2191,7 @@ else
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h3 id="parameterize-entire-config">Top-level arguments</h3>
+      <h3 id="top-level-arguments">Top-level arguments</h3>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -2385,7 +2386,7 @@ function(prefix, brunch=false) {
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h2 id="oo">Object-Orientation</h2>
+      <h2 id="object-orientation">Object-Orientation</h2>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -2984,6 +2985,14 @@ local templates = import 'templates.libsonnet';
   </div>
 </div>
 
+<script>
+  anchors.options = {
+    placement: 'right',
+    visible: 'always',
+    icon: '#'
+  };
+  anchors.add('h2,h3');
+</script>
 </body>
 
 </html>

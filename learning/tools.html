@@ -20,6 +20,7 @@
     });
     </script>
     <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+    <script type="text/javascript" src="/third_party/anchor.min.js"></script>
 
 
     <!-- Google Analytics -->
@@ -288,7 +289,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h2 id="formatter">Linter</h2>
+      <h2 id="linter">Linter</h2>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -313,7 +314,7 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h2 id="formatter">Bazel Jsonnet Rules</h2>
+      <h2 id="bazel-rules">Bazel Jsonnet Rules</h2>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -344,6 +345,14 @@
   </div>
 </div>
 
+<script>
+  anchors.options = {
+    placement: 'right',
+    visible: 'always',
+    icon: '#'
+  };
+  anchors.add('h2,h3');
+</script>
 </body>
 
 </html>

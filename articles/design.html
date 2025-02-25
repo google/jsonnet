@@ -20,6 +20,7 @@
     });
     </script>
     <script type="text/javascript" src="/third_party/MathJax-2.7.2/MathJax.js"></script>
+    <script type="text/javascript" src="/third_party/anchor.min.js"></script>
 
 
     <!-- Google Analytics -->
@@ -611,6 +612,14 @@ local util2 = import "util2.jsonnet" { square(x):: x*x*x };
   </div>
 </div>
 
+<script>
+  anchors.options = {
+    placement: 'right',
+    visible: 'always',
+    icon: '#'
+  };
+  anchors.add('h2,h3');
+</script>
 </body>
 
 </html>
