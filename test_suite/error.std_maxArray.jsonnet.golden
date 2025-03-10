@@ -1,0 +1,4 @@
+RUNTIME ERROR: Expected at least one element in array. Got none
+	std.jsonnet:<stdlib_position_redacted>	thunk <onEmpty>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.std_maxArray.jsonnet:1:1-17	
