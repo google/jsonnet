@@ -1473,7 +1473,11 @@ local exampleDocMultiline(mid, ex) =
           availableSince: '0.21.0',
           description: html.paragraphs([
             |||
-              Return the min of all element in <code>arr</code>.
+              Return the minimum of all elements in <code>arr</code>. If <code>keyF</code> is provided, it is called on each element
+              of the array and should return a comparator value, and in this case <code>minArray</code> will return an element
+              with the minimum comparator value. If <code>onEmpty</code> is provided, and <code>arr</code> is empty, then
+              <code>minArray</code> will return the provided <code>onEmpty</code> value. If <code>onEmpty</code> is not provided,
+              then an empty <code>arr</code> will raise an error.
             |||,
           ]),
         },
@@ -1483,7 +1487,11 @@ local exampleDocMultiline(mid, ex) =
           availableSince: '0.21.0',
           description: html.paragraphs([
             |||
-              Return the max of all element in <code>arr</code>.
+              Return the maximum of all elements in <code>arr</code>. If <code>keyF</code> is provided, it is called on each element
+              of the array and should return a comparator value, and in this case <code>maxArray</code> will return an element
+              with the maximum comparator value. If <code>onEmpty</code> is provided, and <code>arr</code> is empty, then
+              <code>maxArray</code> will return the provided <code>onEmpty</code> value. If <code>onEmpty</code> is not provided,
+              then an empty <code>arr</code> will raise an error.
             |||,
           ]),
         },
