@@ -31,7 +31,7 @@ limitations under the License.
  *
  * If this isn't the same as jsonnet_version() then you've got a mismatched binary / header.
  */
-#define LIB_JSONNET_VERSION "v0.21.0-rc1"
+#define LIB_JSONNET_VERSION "v0.21.0-rc2"
 
 /** Return the version string of the Jsonnet interpreter.  Conforms to semantic versioning
  * https://semver.org/ If this does not match LIB_JSONNET_VERSION then there is a mismatch between

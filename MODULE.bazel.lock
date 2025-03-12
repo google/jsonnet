@@ -140,7 +140,7 @@
     "//tools/build_defs:extensions.bzl%build_defs": {
       "general": {
         "bzlTransitiveDigest": "6f8Oylr9DA+8hYKfbZwBsGpI5tTCwizzI/2Rapezfqw=",
-        "usagesDigest": "VGUbLKg8azzf3m1ms/J5b4eL4k5LciigcGYjsyp7PGA=",
+        "usagesDigest": "OR0iDkVoeqdP2L2cX0hShRrM76Jn3YzBKlr/A5ItBFI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
