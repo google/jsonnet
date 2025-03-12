@@ -85,7 +85,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: |
-          bazel build -c opt //cmd:all
+          bazelisk build --lockfile_mode=error -c opt //cmd:all
       - name: Test
         run: |
-          bazel test //...
+          bazelisk test --lockfile_mode=error //...
