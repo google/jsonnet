@@ -3,13 +3,5 @@ module(
     version = "0.21.0-rc2",
 )
 
-bazel_dep(name = "googletest", version = "1.11.0", repo_name = "com_google_googletest")
-bazel_dep(name = "rules_python", version = "0.40.0")
-
-build_defs = use_extension("//tools/build_defs:extensions.bzl", "build_defs")
-use_repo(
-    build_defs,
-    "default_python3_headers",
-)
-
-register_toolchains("//platform_defs:default_python3_toolchain")
+bazel_dep(name = "googletest", version = "1.16.0")
+bazel_dep(name = "rules_python", version = "1.2.0")

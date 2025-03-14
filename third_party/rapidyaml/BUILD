@@ -11,5 +11,5 @@ cc_library(
         "ryml_all.hpp",
     ],
     includes = ["."],
-    visibility = ["//visibility:public"],
+    visibility = ["//core:__pkg__"],
 )

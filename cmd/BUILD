@@ -1,4 +1,4 @@
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "utils",
@@ -10,6 +10,7 @@ cc_library(
 cc_binary(
     name = "jsonnet",
     srcs = ["jsonnet.cpp"],
+    visibility = ["//visibility:public"],
     deps = [
         ":utils",
         "//core:libjsonnet",
@@ -19,6 +20,7 @@ cc_binary(
 cc_binary(
     name = "jsonnetfmt",
     srcs = ["jsonnetfmt.cpp"],
+    visibility = ["//visibility:public"],
     deps = [
         ":utils",
         "//core:libjsonnet",

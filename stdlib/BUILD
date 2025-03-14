@@ -1,4 +1,4 @@
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 filegroup(
     name = "stdlib",
@@ -7,10 +7,10 @@ filegroup(
 
 cc_library(
     name = "std",
-    srcs = [":gen-std-jsonnet-h"],
-    hdrs = ["std.jsonnet.h"],
     includes = ["."],
     linkstatic = 1,
+    textual_hdrs = [":gen-std-jsonnet-h"],
+    visibility = ["//core:__pkg__"],
 )
 
 genrule(
