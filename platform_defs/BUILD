@@ -1,5 +1,7 @@
 load("@rules_python//python:defs.bzl", "py_runtime", "py_runtime_pair")
 
+package(default_visibility = ["//visibility:private"])
+
 py_runtime(
     name = "python3",
     interpreter_path = "/usr/bin/python3",

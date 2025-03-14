@@ -1,13 +1,12 @@
 licenses(["permissive"])
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "json",
-    srcs = [
-    ],
     hdrs = [
         "nlohmann/json.hpp",
     ],
     includes = ["."],
+    visibility = ["//core:__pkg__"],
 )

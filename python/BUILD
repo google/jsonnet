@@ -1,12 +1,14 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
+package(default_visibility = ["//visibility:private"])
+
 cc_binary(
     name = "_jsonnet.so",
     srcs = ["_jsonnet.c"],
     linkshared = 1,
     deps = [
         "//core:libjsonnet",
-        "@default_python3_headers//:headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -20,6 +22,7 @@ py_library(
 
 py_test(
     name = "_jsonnet_test",
+    size = "small",
     srcs = ["_jsonnet_test.py"],
     data = [
         "testdata/basic_check.jsonnet",
