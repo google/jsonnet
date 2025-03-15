@@ -2559,8 +2559,9 @@ class Interpreter {
                                 case BOP_SHIFT_L: {
                                     if (rhs.v.d < 0)
                                         throw makeError(ast.location, "shift by negative exponent.");
-                                    int64_t long_l = lhs.v.d;
-                                    int64_t long_r = rhs.v.d;
+
+                                    int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
+                                    int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
                                     scratch = makeNumber(long_l << long_r);
                                 } break;
@@ -2568,27 +2569,28 @@ class Interpreter {
                                 case BOP_SHIFT_R: {
                                     if (rhs.v.d < 0)
                                         throw makeError(ast.location, "shift by negative exponent.");
-                                    int64_t long_l = lhs.v.d;
-                                    int64_t long_r = rhs.v.d;
+
+                                    int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
+                                    int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
                                     scratch = makeNumber(long_l >> long_r);
                                 } break;
 
                                 case BOP_BITWISE_AND: {
-                                    int64_t long_l = lhs.v.d;
-                                    int64_t long_r = rhs.v.d;
+                                    int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
+                                    int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     scratch = makeNumber(long_l & long_r);
                                 } break;
 
                                 case BOP_BITWISE_XOR: {
-                                    int64_t long_l = lhs.v.d;
-                                    int64_t long_r = rhs.v.d;
+                                    int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
+                                    int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     scratch = makeNumber(long_l ^ long_r);
                                 } break;
 
                                 case BOP_BITWISE_OR: {
-                                    int64_t long_l = lhs.v.d;
-                                    int64_t long_r = rhs.v.d;
+                                    int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
+                                    int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     scratch = makeNumber(long_l | long_r);
                                 } break;
 
@@ -3404,6 +3406,23 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                    ctx);
     vm.evaluate(ast, 0);
     return vm.manifestStream(string_output);
+}
+
+inline int64_t safeDoubleToInt64(double value, const internal::LocationRange& loc) {
+    if (std::isnan(value) || std::isinf(value)) {
+        throw internal::StaticError(loc, "numeric value is not finite");
+    }
+
+    // Constants for safe double-to-int conversion
+    // IEEE 754 doubles can only precisely represent integers up to 2^53-1
+    constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = (1LL << 53) - 1;
+    constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -((1LL << 53) - 1);
+
+    // Check if the value is within the safe integer range
+    if (value < DOUBLE_MIN_SAFE_INTEGER || value > DOUBLE_MAX_SAFE_INTEGER) {
+        throw internal::StaticError(loc, "numeric value outside safe integer range for bitwise operation");
+    }
+    return static_cast<int64_t>(value);
 }
 
 }  // namespace jsonnet::internal
