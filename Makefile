@@ -224,7 +224,7 @@ $(RELEASE_FILE): bins
 dist: $(RELEASE_FILE)
 
 clean:
-	rm -vf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* $(RELEASE_FILE)
+	rm -rvf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* build jsonnet.egg-info $(RELEASE_FILE)
 
 -include Makefile.depend
 
