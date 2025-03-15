@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Build
         run: |
           pip install build
@@ -89,3 +89,13 @@ jobs:
       - name: Test
         run: |
           bazelisk test --lockfile_mode=error //...
+
+  bazel_use_module:
+    name: Build Bazel example
+    runs-on: "ubuntu-22.04"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          cd examples/bazel
+          bazelisk build --lockfile_mode=off //...
