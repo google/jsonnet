@@ -1,0 +1,5 @@
+# Example of using jsonnet by depending on the Bazel module.
+
+bazel_dep(name = "rules_python", version = "1.2.0")
+bazel_dep(name = "jsonnet")
+local_path_override(module_name = "jsonnet", path = "../..")

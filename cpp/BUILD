@@ -1,8 +1,9 @@
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "libjsonnet++",
     srcs = ["libjsonnet++.cpp"],
+    visibility = ["//visibility:public"],
     deps = [
         "//core:libjsonnet",
         "//include:libjsonnet++",
@@ -15,6 +16,6 @@ cc_test(
     data = ["//cpp/testdata"],
     deps = [
         ":libjsonnet++",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )

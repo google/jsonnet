@@ -1,6 +1,6 @@
 licenses(["permissive"])
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "libmd5",
@@ -12,4 +12,5 @@ cc_library(
     ],
     includes = ["."],
     linkopts = ["-lm"],
+    visibility = ["//core:__pkg__"],
 )

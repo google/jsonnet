@@ -1,44 +1,45 @@
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "libjsonnet",
     srcs = [
-        "desugarer.cpp",
-        "formatter.cpp",
-        "lexer.cpp",
-        "libjsonnet.cpp",
-        "parser.cpp",
-        "pass.cpp",
-        "path_utils.cpp",
-        "static_analysis.cpp",
-        "string_utils.cpp",
-        "vm.cpp",
-    ],
-    hdrs = [
         "ast.h",
+        "desugarer.cpp",
         "desugarer.h",
+        "formatter.cpp",
         "formatter.h",
         "json.h",
+        "lexer.cpp",
         "lexer.h",
+        "libjsonnet.cpp",
+        "parser.cpp",
         "parser.h",
+        "pass.cpp",
         "pass.h",
+        "path_utils.cpp",
         "path_utils.h",
         "state.h",
+        "static_analysis.cpp",
         "static_analysis.h",
         "static_error.h",
+        "string_utils.cpp",
         "string_utils.h",
         "unicode.h",
+        "vm.cpp",
         "vm.h",
     ],
-    includes = ["."],
-    linkopts = ["-lm"],
-    deps = [
-        "//include:libjsonnet",
-        "//include:libjsonnet_fmt",
+    copts = ["-I."],
+    implementation_deps = [
         "//stdlib:std",
         "//third_party/json",
         "//third_party/md5:libmd5",
         "//third_party/rapidyaml:ryml",
+    ],
+    linkopts = ["-lm"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//include:libjsonnet",
+        "//include:libjsonnet_fmt",
     ],
 )
 
@@ -48,7 +49,7 @@ cc_test(
     deps = [
         ":libjsonnet",
         # Note: On Ubuntu, apt-get install libgtest-dev google-mock
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -57,7 +58,7 @@ cc_test(
     srcs = ["parser_test.cpp"],
     deps = [
         ":libjsonnet",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -66,7 +67,7 @@ cc_test(
     srcs = ["libjsonnet_test.cpp"],
     deps = [
         ":libjsonnet",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -75,6 +76,6 @@ cc_test(
     srcs = ["unicode_test.cpp"],
     deps = [
         ":libjsonnet",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
