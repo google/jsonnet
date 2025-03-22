@@ -1,0 +1,1 @@
+STATIC ERROR: error.integer_conversion.jsonnet:3:1-16: numeric value outside safe integer range for bitwise operation.

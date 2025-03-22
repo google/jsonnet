@@ -1,0 +1,2 @@
+RUNTIME ERROR: numeric value outside safe integer range for bitwise operation.
+	error.integer_left_shift_runtime.jsonnet:2:1-18	

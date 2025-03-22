@@ -2563,6 +2563,13 @@ class Interpreter {
                                     int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
                                     int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
+
+                                    // Additional safety check for left shifts to prevent undefined behavior
+                                    if (long_r >= 1 && long_l >= (1LL << (63 - long_r))) {
+                                        throw makeError(ast.location,
+                                                      "numeric value outside safe integer range for bitwise operation.");
+                                    }
+
                                     scratch = makeNumber(long_l << long_r);
                                 } break;
 
@@ -3414,13 +3421,13 @@ inline int64_t safeDoubleToInt64(double value, const internal::LocationRange& lo
     }
 
     // Constants for safe double-to-int conversion
-    // IEEE 754 doubles can only precisely represent integers up to 2^53-1
+    // IEEE 754 doubles precisely represent integers up to 2^53, beyond which precision is lost
     constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = (1LL << 53) - 1;
     constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -((1LL << 53) - 1);
 
     // Check if the value is within the safe integer range
     if (value < DOUBLE_MIN_SAFE_INTEGER || value > DOUBLE_MAX_SAFE_INTEGER) {
-        throw internal::StaticError(loc, "numeric value outside safe integer range for bitwise operation");
+        throw internal::StaticError(loc, "numeric value outside safe integer range for bitwise operation.");
     }
     return static_cast<int64_t>(value);
 }
