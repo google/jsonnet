@@ -1,0 +1,2 @@
+RUNTIME ERROR: left shift of negative value is undefined.
+	error.integer_negative_left_shift.jsonnet:3:1-20	

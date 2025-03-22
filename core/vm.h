@@ -137,7 +137,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(
  * 2. Ensures the value is within the safe integer range (±(2^53-1))
  *
  * The safe integer range limitation is necessary because IEEE 754 double precision
- * floating point numbers can only precisely represent integers up to 2^53-1.
+ * floating point numbers can only precisely represent integers up to 2^53.
  * Beyond this range, precision is lost, which would lead to unpredictable results
  * in bitwise operations that depend on exact bit patterns.
  *
