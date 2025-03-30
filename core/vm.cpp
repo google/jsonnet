@@ -3421,9 +3421,9 @@ inline int64_t safeDoubleToInt64(double value, const internal::LocationRange& lo
     }
 
     // Constants for safe double-to-int conversion
-    // IEEE 754 doubles precisely represent integers up to 2^53, beyond which precision is lost
-    constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = (1LL << 53) - 1;
-    constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -((1LL << 53) - 1);
+    // Jsonnet uses IEEE 754 doubles, which precisely represent integers in the range [-2^53, 2^53].
+    constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = 1LL << 53;
+    constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -(1LL << 53);
 
     // Check if the value is within the safe integer range
     if (value < DOUBLE_MIN_SAFE_INTEGER || value > DOUBLE_MAX_SAFE_INTEGER) {

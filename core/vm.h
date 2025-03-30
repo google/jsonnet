@@ -134,10 +134,10 @@ std::vector<std::string> jsonnet_vm_execute_stream(
  * This function is used primarily for bitwise operations which require integer operands.
  * It performs two safety checks:
  * 1. Verifies the value is finite (not NaN or Infinity)
- * 2. Ensures the value is within the safe integer range (±(2^53-1))
+ * 2. Ensures the value is within the safe integer range [-2^53, 2^53]
  *
  * The safe integer range limitation is necessary because IEEE 754 double precision
- * floating point numbers can only precisely represent integers up to 2^53.
+ * floating point numbers can only precisely represent integers in the range [-2^53, 2^53].
  * Beyond this range, precision is lost, which would lead to unpredictable results
  * in bitwise operations that depend on exact bit patterns.
  *
