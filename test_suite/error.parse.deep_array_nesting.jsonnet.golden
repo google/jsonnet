@@ -1,0 +1,1 @@
+STATIC ERROR: error.parse.deep_array_nesting.jsonnet:1:501: Exceeded maximum parse depth limit.
