@@ -52,6 +52,12 @@ std::string jsonnet_unparse_number(double v)
     return ss.str();
 }
 
+/** Maximum parsing depth to avoid stack overflow due to pathological or malicious code.
+ * This is especially important when parsing deeply nested structures that could lead to
+ * excessive recursion in the parser functions.
+ */
+static const unsigned MAX_PARSER_DEPTH = 1000;
+
 namespace {
 
 static const Fodder EMPTY_FODDER;
@@ -151,12 +157,13 @@ class Parser {
     /** Parse a comma-separated list of expressions.
      *
      * Allows an optional ending comma.
-     * \param exprs Expressions added here.
-     * \param end The token that ends the list (e.g. ] or )).
+     * \param args Expressions added here.
      * \param element_kind Used in error messages when a comma was not found.
+     * \param got_comma Whether a trailing comma was found.
+     * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The last token (the one that matched parameter end).
      */
-    Token parseArgs(ArgParams &args, const std::string &element_kind, bool &got_comma)
+    Token parseArgs(ArgParams &args, const std::string &element_kind, bool &got_comma, unsigned current_depth = 0)
     {
         got_comma = false;
         bool first = true;
@@ -186,7 +193,7 @@ class Parser {
                     pop();  // eq
                 }
             }
-            AST *expr = parse(MAX_PRECEDENCE);
+            AST *expr = parse(MAX_PRECEDENCE, current_depth + 1);
             got_comma = false;
             first = false;
             Fodder comma_fodder;
@@ -199,10 +206,18 @@ class Parser {
         } while (true);
     }
 
-    ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder)
+    /** Parse function parameters.
+     *
+     * \param element_kind Used in error messages.
+     * \param got_comma Whether a trailing comma was found.
+     * \param close_fodder Fodder after the closing parenthesis.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The parameters as ArgParams.
+     */
+    ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder, unsigned current_depth = 0)
     {
         ArgParams params;
-        Token paren_r = parseArgs(params, element_kind, got_comma);
+        Token paren_r = parseArgs(params, element_kind, got_comma, current_depth);
 
         // Check they're all identifiers
         // parseArgs returns f(x) with x as an expression.  Convert it here.
@@ -223,7 +238,13 @@ class Parser {
         return params;
     }
 
-    Token parseBind(Local::Binds &binds)
+    /** Parse a local bind statement.
+     *
+     * \param binds The bindings to be populated.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The token after the binding (comma or semicolon).
+     */
+    Token parseBind(Local::Binds &binds, unsigned current_depth = 0)
     {
         Token var_id = popExpect(Token::IDENTIFIER);
         auto *id = alloc->makeIdentifier(var_id.data32());
@@ -238,11 +259,11 @@ class Parser {
         if (peek().kind == Token::PAREN_L) {
             Token paren_l = pop();
             fodder_l = paren_l.fodder;
-            params = parseParams("function parameter", trailing_comma, fodder_r);
+            params = parseParams("function parameter", trailing_comma, fodder_r, current_depth);
             is_function = true;
         }
         Token eq = popExpect(Token::OPERATOR, "=");
-        AST *body = parse(MAX_PRECEDENCE);
+        AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
         Token delim = pop();
         binds.emplace_back(var_id.fodder,
                            id,
@@ -257,8 +278,19 @@ class Parser {
         return delim;
     }
 
-    Token parseObjectRemainder(AST *&obj, const Token &tok)
+    /** Parse the remainder of an object after the opening brace.
+     *
+     * \param obj The object AST to be populated.
+     * \param tok The opening brace token.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The closing brace token.
+     */
+    Token parseObjectRemainder(AST *&obj, const Token &tok, unsigned current_depth = 0)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
         ObjectFields fields;
         std::set<std::string> literal_fields;  // For duplicate fields detection.
         std::set<const Identifier *> binds;    // For duplicate locals detection.
@@ -309,7 +341,7 @@ class Parser {
                 }
 
                 std::vector<ComprehensionSpec> specs;
-                Token last = parseComprehensionSpecs(Token::BRACE_R, next.fodder, specs);
+                Token last = parseComprehensionSpecs(Token::BRACE_R, next.fodder, specs, current_depth + 1);
                 obj = alloc->make<ObjectComprehension>(
                     span(tok, last), tok.fodder, fields, got_comma, specs, last.fodder);
 
@@ -383,7 +415,7 @@ class Parser {
                     } else {
                         kind = ObjectField::FIELD_EXPR;
                         fodder1 = next.fodder;
-                        expr1 = parse(MAX_PRECEDENCE);
+                        expr1 = parse(MAX_PRECEDENCE, current_depth + 1);
                         Token bracket_r = popExpect(Token::BRACKET_R);
                         fodder2 = bracket_r.fodder;
                     }
@@ -396,7 +428,7 @@ class Parser {
                     if (peek().kind == Token::PAREN_L) {
                         Token paren_l = pop();
                         fodder_l = paren_l.fodder;
-                        params = parseParams("method parameter", meth_comma, fodder_r);
+                        params = parseParams("method parameter", meth_comma, fodder_r, current_depth);
                         is_method = true;
                     }
 
@@ -442,7 +474,7 @@ class Parser {
                         }
                     }
 
-                    AST *body = parse(MAX_PRECEDENCE);
+                    AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
 
                     Fodder comma_fodder;
                     next = pop();
@@ -487,10 +519,10 @@ class Parser {
                         Token paren_l = pop();
                         paren_l_fodder = paren_l.fodder;
                         is_method = true;
-                        params = parseParams("function parameter", func_comma, paren_r_fodder);
+                        params = parseParams("function parameter", func_comma, paren_r_fodder, current_depth);
                     }
                     Token eq = popExpect(Token::OPERATOR, "=");
-                    AST *body = parse(MAX_PRECEDENCE);
+                    AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                     binds.insert(id);
 
                     Fodder comma_fodder;
@@ -516,13 +548,13 @@ class Parser {
 
                 case Token::ASSERT: {
                     Fodder assert_fodder = next.fodder;
-                    AST *cond = parse(MAX_PRECEDENCE);
+                    AST *cond = parse(MAX_PRECEDENCE, current_depth + 1);
                     AST *msg = nullptr;
                     Fodder colon_fodder;
                     if (peek().kind == Token::OPERATOR && peek().data == ":") {
                         Token colon = pop();
                         colon_fodder = colon.fodder;
-                        msg = parse(MAX_PRECEDENCE);
+                        msg = parse(MAX_PRECEDENCE, current_depth + 1);
                     }
 
                     Fodder comma_fodder;
@@ -542,22 +574,34 @@ class Parser {
         } while (true);
     }
 
-    /** parses for x in expr for y in expr if expr for z in expr ... */
+    /** Parses for x in expr for y in expr if expr for z in expr ...
+     *
+     * \param end The token that ends the comprehension (e.g. ] or }).
+     * \param for_fodder Fodder before the first 'for'.
+     * \param specs The comprehension specs to be populated.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The closing token.
+     */
     Token parseComprehensionSpecs(Token::Kind end, Fodder for_fodder,
-                                  std::vector<ComprehensionSpec> &specs)
+                                  std::vector<ComprehensionSpec> &specs,
+                                  unsigned current_depth = 0)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
         while (true) {
             LocationRange l;
             Token id_token = popExpect(Token::IDENTIFIER);
             const Identifier *id = alloc->makeIdentifier(id_token.data32());
             Token in_token = popExpect(Token::IN);
-            AST *arr = parse(MAX_PRECEDENCE);
+            AST *arr = parse(MAX_PRECEDENCE, current_depth + 1);
             specs.emplace_back(
                 ComprehensionSpec::FOR, for_fodder, id_token.fodder, id, in_token.fodder, arr);
 
             Token maybe_if = pop();
             for (; maybe_if.kind == Token::IF; maybe_if = pop()) {
-                AST *cond = parse(MAX_PRECEDENCE);
+                AST *cond = parse(MAX_PRECEDENCE, current_depth + 1);
                 specs.emplace_back(
                     ComprehensionSpec::IF, maybe_if.fodder, Fodder{}, nullptr, Fodder{}, cond);
             }
@@ -573,8 +617,18 @@ class Parser {
         }
     }
 
-    AST *parseTerminalBracketsOrUnary(void)
+    /** Parse a terminal (literal, var, import, etc.), an object declaration, unary operator,
+     * or a parenthesized expression.
+     *
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The parsed AST.
+     */
+    AST *parseTerminalBracketsOrUnary(unsigned current_depth = 0)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
         Token tok = pop();
         switch (tok.kind) {
             case Token::ASSERT:
@@ -606,12 +660,12 @@ class Parser {
                     ss << "not a unary operator: " << tok.data;
                     throw StaticError(tok.location, ss.str());
                 }
-                AST *expr = parse(UNARY_PRECEDENCE);
+                AST *expr = parse(UNARY_PRECEDENCE, current_depth + 1);
                 return alloc->make<Unary>(span(tok, expr), tok.fodder, uop, expr);
             }
             case Token::BRACE_L: {
                 AST *obj;
-                parseObjectRemainder(obj, tok);
+                parseObjectRemainder(obj, tok, current_depth + 1);
                 return obj;
             }
 
@@ -622,7 +676,7 @@ class Parser {
                     return alloc->make<Array>(
                         span(tok, next), tok.fodder, Array::Elements{}, false, bracket_r.fodder);
                 }
-                AST *first = parse(MAX_PRECEDENCE);
+                AST *first = parse(MAX_PRECEDENCE, current_depth + 1);
                 bool got_comma = false;
                 Fodder comma_fodder;
                 next = peek();
@@ -637,7 +691,7 @@ class Parser {
                     // It's a comprehension
                     Token for_token = pop();
                     std::vector<ComprehensionSpec> specs;
-                    Token last = parseComprehensionSpecs(Token::BRACKET_R, for_token.fodder, specs);
+                    Token last = parseComprehensionSpecs(Token::BRACKET_R, for_token.fodder, specs, current_depth + 1);
                     return alloc->make<ArrayComprehension>(span(tok, last),
                                                            tok.fodder,
                                                            first,
@@ -661,7 +715,7 @@ class Parser {
                         ss << "expected a comma before next array element.";
                         throw StaticError(next.location, ss.str());
                     }
-                    AST *expr = parse(MAX_PRECEDENCE);
+                    AST *expr = parse(MAX_PRECEDENCE, current_depth + 1);
                     comma_fodder.clear();
                     got_comma = false;
                     next = peek();
@@ -676,7 +730,7 @@ class Parser {
             }
 
             case Token::PAREN_L: {
-                auto *inner = parse(MAX_PRECEDENCE);
+                auto *inner = parse(MAX_PRECEDENCE, current_depth + 1);
                 Token close = popExpect(Token::PAREN_R);
                 return alloc->make<Parens>(span(tok, close), tok.fodder, inner, close.fodder);
             }
@@ -730,7 +784,7 @@ class Parser {
                         id = alloc->makeIdentifier(field_id.data32());
                     } break;
                     case Token::BRACKET_L: {
-                        index = parse(MAX_PRECEDENCE);
+                        index = parse(MAX_PRECEDENCE, current_depth + 1);
                         Token bracket_r = popExpect(Token::BRACKET_R);
                         id_fodder = bracket_r.fodder;  // Not id_fodder, but use the same var.
                     } break;
@@ -746,11 +800,19 @@ class Parser {
         return nullptr;  // Quiet, compiler.
     }
 
-    // If the first token makes it clear that we will parsing a greedy construct, then return the
-    // AST.  Otherwise, return nullptr.  Greedy constructs are those that consume as many tokens
-    // as possible on the right hand side, because they have no closing token.
-    AST *maybeParseGreedy(void)
+    /** If the first token makes it clear that we will be parsing a greedy construct, return the AST.
+     * Otherwise, return nullptr. Greedy constructs are those that consume as many tokens as possible
+     * on the right hand side because they have no closing token.
+     *
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The parsed AST or nullptr.
+     */
+    AST *maybeParseGreedy(unsigned current_depth = 0)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
         // Allocate this on the heap to control stack growth.
         std::unique_ptr<Token> begin_(new Token(peek()));
         const Token &begin = *begin_;
@@ -760,16 +822,16 @@ class Parser {
             // call to parse will parse them.
             case Token::ASSERT: {
                 pop();
-                AST *cond = parse(MAX_PRECEDENCE);
+                AST *cond = parse(MAX_PRECEDENCE, current_depth + 1);
                 Fodder colonFodder;
                 AST *msg = nullptr;
                 if (peek().kind == Token::OPERATOR && peek().data == ":") {
                     Token colon = pop();
                     colonFodder = colon.fodder;
-                    msg = parse(MAX_PRECEDENCE);
+                    msg = parse(MAX_PRECEDENCE, current_depth + 1);
                 }
                 Token semicolon = popExpect(Token::SEMICOLON);
-                AST *rest = parse(MAX_PRECEDENCE);
+                AST *rest = parse(MAX_PRECEDENCE, current_depth + 1);
                 return alloc->make<Assert>(span(begin, rest),
                                            begin.fodder,
                                            cond,
@@ -781,18 +843,18 @@ class Parser {
 
             case Token::ERROR: {
                 pop();
-                AST *expr = parse(MAX_PRECEDENCE);
+                AST *expr = parse(MAX_PRECEDENCE, current_depth + 1);
                 return alloc->make<Error>(span(begin, expr), begin.fodder, expr);
             }
 
             case Token::IF: {
                 pop();
-                AST *cond = parse(MAX_PRECEDENCE);
+                AST *cond = parse(MAX_PRECEDENCE, current_depth + 1);
                 Token then = popExpect(Token::THEN);
-                AST *branch_true = parse(MAX_PRECEDENCE);
+                AST *branch_true = parse(MAX_PRECEDENCE, current_depth + 1);
                 if (peek().kind == Token::ELSE) {
                     Token else_ = pop();
-                    AST *branch_false = parse(MAX_PRECEDENCE);
+                    AST *branch_false = parse(MAX_PRECEDENCE, current_depth + 1);
                     return alloc->make<Conditional>(span(begin, branch_false),
                                                     begin.fodder,
                                                     cond,
@@ -817,8 +879,8 @@ class Parser {
                     std::vector<AST *> params_asts;
                     bool got_comma;
                     Fodder paren_r_fodder;
-                    ArgParams params = parseParams("function parameter", got_comma, paren_r_fodder);
-                    AST *body = parse(MAX_PRECEDENCE);
+                    ArgParams params = parseParams("function parameter", got_comma, paren_r_fodder, current_depth);
+                    AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                     return alloc->make<Function>(span(begin, body),
                                                  begin.fodder,
                                                  paren_l.fodder,
@@ -835,7 +897,7 @@ class Parser {
 
             case Token::IMPORT: {
                 pop();
-                AST *body = parse(MAX_PRECEDENCE);
+                AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
@@ -852,7 +914,7 @@ class Parser {
 
             case Token::IMPORTSTR: {
                 pop();
-                AST *body = parse(MAX_PRECEDENCE);
+                AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
@@ -869,7 +931,7 @@ class Parser {
 
             case Token::IMPORTBIN: {
                 pop();
-                AST *body = parse(MAX_PRECEDENCE);
+                AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
@@ -888,7 +950,7 @@ class Parser {
                 pop();
                 Local::Binds binds;
                 do {
-                    Token delim = parseBind(binds);
+                    Token delim = parseBind(binds, current_depth + 1);
                     if (delim.kind != Token::SEMICOLON && delim.kind != Token::COMMA) {
                         std::stringstream ss;
                         ss << "expected , or ; but got " << delim;
@@ -897,7 +959,7 @@ class Parser {
                     if (delim.kind == Token::SEMICOLON)
                         break;
                 } while (true);
-                AST *body = parse(MAX_PRECEDENCE);
+                AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                 return alloc->make<Local>(span(begin, body), begin.fodder, binds, body);
             }
 
@@ -906,12 +968,21 @@ class Parser {
         }
     }
 
-    // Parse a general expression.
-    //
-    // Consume infix tokens up to (but not including) max_precedence, then stop.
-    AST *parse(unsigned max_precedence)
+
+    /** Parse a general expression.
+     *
+     * Consume infix tokens up to (but not including) max_precedence, then stop.
+     * \param max_precedence The maximum precedence to consider.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The parsed AST.
+     */
+    AST *parse(unsigned max_precedence, unsigned current_depth = 0)
     {
-        AST *ast = maybeParseGreedy();
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
+        AST *ast = maybeParseGreedy(current_depth + 1);
         // There cannot be an operator after a greedy parse.
         if (ast != nullptr) return ast;
 
@@ -921,13 +992,25 @@ class Parser {
         std::unique_ptr<Token> begin_(new Token(peek()));
         const Token &begin = *begin_;
 
-        AST *lhs = parseTerminalBracketsOrUnary();
+        AST *lhs = parseTerminalBracketsOrUnary(current_depth + 1);
 
-        return parseInfix(lhs, begin, max_precedence);
+        return parseInfix(lhs, begin, max_precedence, current_depth + 1);
     }
 
-    AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence)
+    /** Parse infix operators (binary operators, indexing, function calls).
+     *
+     * \param lhs Left-hand side of the operator.
+     * \param begin The token representing the beginning of the expression.
+     * \param max_precedence The maximum precedence to consider.
+     * \param current_depth Current recursion depth to prevent stack overflow.
+     * \returns The parsed AST.
+     */
+    AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence, unsigned current_depth = 0)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
+
         while (true) {
 
             BinaryOp bop = BOP_PLUS;
@@ -982,7 +1065,7 @@ class Parser {
                         throw unexpected(pop(), "parsing index");
 
                     if (peek().data != ":" && peek().data != "::") {
-                        first = parse(MAX_PRECEDENCE);
+                        first = parse(MAX_PRECEDENCE, current_depth + 1);
                     }
 
                     if (peek().kind == Token::OPERATOR && peek().data == "::") {
@@ -992,7 +1075,7 @@ class Parser {
                         second_fodder = joined.fodder;
 
                         if (peek().kind != Token::BRACKET_R)
-                            third = parse(MAX_PRECEDENCE);
+                            third = parse(MAX_PRECEDENCE, current_depth + 1);
 
                     } else if (peek().kind != Token::BRACKET_R) {
                         is_slice = true;
@@ -1003,7 +1086,7 @@ class Parser {
                         second_fodder = delim.fodder;
 
                         if (peek().data != ":" && peek().kind != Token::BRACKET_R)
-                            second = parse(MAX_PRECEDENCE);
+                            second = parse(MAX_PRECEDENCE, current_depth + 1);
 
                         if (peek().kind != Token::BRACKET_R) {
                             Token delim = pop();
@@ -1013,7 +1096,7 @@ class Parser {
                             third_fodder = delim.fodder;
 
                             if (peek().kind != Token::BRACKET_R)
-                                third = parse(MAX_PRECEDENCE);
+                                third = parse(MAX_PRECEDENCE, current_depth + 1);
                         }
                     } else {
                         is_slice = false;
@@ -1046,7 +1129,7 @@ class Parser {
                 case Token::PAREN_L: {
                     ArgParams args;
                     bool got_comma;
-                    Token end = parseArgs(args, "function argument", got_comma);
+                    Token end = parseArgs(args, "function argument", got_comma, current_depth);
                     bool got_named = false;
                     for (const auto& arg : args) {
                         if (arg.id != nullptr) {
@@ -1077,7 +1160,7 @@ class Parser {
                 }
                 case Token::BRACE_L: {
                     AST *obj;
-                    Token end = parseObjectRemainder(obj, op);
+                    Token end = parseObjectRemainder(obj, op, current_depth + 1);
                     lhs = alloc->make<ApplyBrace>(span(begin, end), EMPTY_FODDER, lhs, obj);
                     break;
                 }
@@ -1088,7 +1171,7 @@ class Parser {
                         lhs = alloc->make<InSuper>(
                             span(begin, super), EMPTY_FODDER, lhs, op.fodder, super.fodder);
                     } else {
-                        AST *rhs = parse(op_precedence);
+                        AST *rhs = parse(op_precedence, current_depth + 1);
                         lhs = alloc->make<Binary>(
                             span(begin, rhs), EMPTY_FODDER, lhs, op.fodder, bop, rhs);
                     }
@@ -1096,7 +1179,7 @@ class Parser {
                 }
 
                 case Token::OPERATOR: {
-                    AST *rhs = parse(op_precedence);
+                    AST *rhs = parse(op_precedence, current_depth + 1);
                     lhs = alloc->make<Binary>(
                         span(begin, rhs), EMPTY_FODDER, lhs, op.fodder, bop, rhs);
                     break;
@@ -1126,7 +1209,8 @@ class Parser {
 AST *jsonnet_parse(Allocator *alloc, Tokens &tokens)
 {
     Parser parser(tokens, alloc);
-    AST *expr = parser.parse(MAX_PRECEDENCE);
+    unsigned parse_depth = 0;
+    AST *expr = parser.parse(MAX_PRECEDENCE, parse_depth);
     if (tokens.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
         ss << "did not expect: " << tokens.front();
