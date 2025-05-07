@@ -1,6 +1,6 @@
 ERROR: must give filename
 
-Jsonnet commandline interpreter (Go implementation) v0.21.0-rc2
+Jsonnet commandline interpreter (Go implementation) v0.21.0
 
 jsonnet {<option>} <filename>
 

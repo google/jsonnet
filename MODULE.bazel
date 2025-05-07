@@ -1,6 +1,6 @@
 module(
     name = "jsonnet",
-    version = "0.21.0-rc2",
+    version = "0.21.0",
 )
 
 bazel_dep(name = "googletest", version = "1.16.0")
