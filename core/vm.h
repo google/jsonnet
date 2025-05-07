@@ -18,6 +18,7 @@ limitations under the License.
 #define JSONNET_VM_H
 
 #include <libjsonnet.h>
+#include <cstdint>
 
 #include "ast.h"
 
