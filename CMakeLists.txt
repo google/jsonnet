@@ -46,6 +46,11 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 
 
+# Manuals
+add_subdirectory(doc/man)
+install(FILES doc/man/jsonnet.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+install(FILES doc/man/jsonnetfmt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
 # Include external googletest project. This runs a CMake sub-script
 # (CMakeLists.txt.in) that downloads googletest source. It's then built as part
 # of the jsonnet project. The conventional way of handling CMake dependencies is
