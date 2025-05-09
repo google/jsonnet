@@ -121,6 +121,8 @@ std.assertEqual(std.isNumber(0), true) &&
 std.assertEqual(std.isObject({}), true) &&
 std.assertEqual(std.isArray([]), true) &&
 std.assertEqual(std.isFunction(function() 0), true) &&
+std.assertEqual(std.isNull(null), true) &&
+std.assertEqual(std.isNull('foo'), false) &&
 
 std.assertEqual(std.isString(null), false) &&
 std.assertEqual(std.isBoolean(null), false) &&

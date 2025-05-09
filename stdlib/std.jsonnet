@@ -33,6 +33,7 @@ limitations under the License.
   isObject(v):: std.type(v) == 'object',
   isArray(v):: std.type(v) == 'array',
   isFunction(v):: std.type(v) == 'function',
+  isNull(v):: v == null,
 
   toString(a)::
     if std.type(a) == 'string' then a else '' + a,
