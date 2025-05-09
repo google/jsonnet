@@ -89,6 +89,28 @@ local exampleDocMultiline(mid, ex) =
             The argument <code>a</code> may have any type.
           |||,
         },
+        {
+          name: 'isNull',
+          params: ['x'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns true if the given value is null, false otherwise.
+          |||,
+          examples: [
+            {
+              input: 'std.isNull(null)',
+              output: true,
+            },
+            {
+              input: 'std.isNull(42)',
+              output: false,
+            },
+            {
+              input: 'std.isNull("string")',
+              output: false,
+            },
+          ],
+        },
       ],
     },
     {
