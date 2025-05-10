@@ -3,21 +3,6 @@
 {
   cocktails: {
     // Ingredient quantities are in fl oz.
-    'Tom Collins': {
-      ingredients: [
-        { kind: "Farmer's Gin", qty: 1.5 },
-        { kind: 'Lemon', qty: 1 },
-        { kind: 'Simple Syrup', qty: 0.5 },
-        { kind: 'Soda', qty: 2 },
-        { kind: 'Angostura', qty: 'dash' },
-      ],
-      garnish: 'Maraschino Cherry',
-      served: 'Tall',
-      description: |||
-        The Tom Collins is essentially gin and
-        lemonade.  The bitters add complexity.
-      |||,
-    },
     Manhattan: {
       ingredients: [
         { kind: 'Rye', qty: 2.5 },
@@ -27,6 +12,20 @@
       garnish: 'Maraschino Cherry',
       served: 'Straight Up',
       description: @'A clear \ red drink.',
+    },
+    'Trinidad Sour': {
+      ingredients: [
+        { kind: 'Angostura bitters', qty: 1.333_333 },
+        { kind: 'Rye whiskey', qty: 0.5 },
+        { kind: 'Fresh lemon juice', qty: 0.75 },
+        { kind: 'Orgeat syrup', qty: 1 },
+      ],
+      garnish: 'Lemon twist',
+      served: 'chilled Nick & Nora glass',
+      description: |||
+        Boldly balanced: 1 1/3 oz Angostura
+        transforms bitters into the star spirit.
+      |||,
     },
   },
 }
