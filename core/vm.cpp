@@ -873,6 +873,40 @@ class Interpreter {
         }
     }
 
+    /** Safely converts a double to an int64_t, with range and validity checks.
+    *
+    * This function is used primarily for bitwise operations which require integer operands.
+    * It performs two safety checks:
+    * 1. Verifies the value is finite (not NaN or Infinity)
+    * 2. Ensures the value is within the safe integer range [-2^53, 2^53]
+    *
+    * The safe integer range limitation is necessary because IEEE 754 double precision
+    * floating point numbers can only precisely represent integers in the range [-2^53, 2^53].
+    * Beyond this range, precision is lost, which would lead to unpredictable results
+    * in bitwise operations that depend on exact bit patterns.
+    *
+    * \param value The double value to convert
+    * \param loc The location in source code (for error reporting)
+    * \throws RuntimeError if value is not finite or outside the safe integer range
+    * \returns The value converted to int64_t
+    */
+    int64_t safeDoubleToInt64(double value, const internal::LocationRange& loc) {
+        if (std::isnan(value) || std::isinf(value)) {
+            throw internal::StaticError(loc, "numeric value is not finite");
+        }
+
+        // Constants for safe double-to-int conversion
+        // Jsonnet uses IEEE 754 doubles, which precisely represent integers in the range [-2^53 + 1, 2^53 - 1].
+        constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = (1LL << 53) - 1;
+        constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -((1LL << 53) - 1);
+
+        // Check if the value is within the safe integer range
+        if (value < DOUBLE_MIN_SAFE_INTEGER || value > DOUBLE_MAX_SAFE_INTEGER) {
+            throw makeError(loc, "numeric value outside safe integer range for bitwise operation.");
+        }
+        return static_cast<int64_t>(value);
+    }
+
    public:
     /** Create a new interpreter.
      *
@@ -3413,23 +3447,6 @@ std::vector<std::string> jsonnet_vm_execute_stream(Allocator *alloc, const AST *
                    ctx);
     vm.evaluate(ast, 0);
     return vm.manifestStream(string_output);
-}
-
-inline int64_t safeDoubleToInt64(double value, const internal::LocationRange& loc) {
-    if (std::isnan(value) || std::isinf(value)) {
-        throw internal::StaticError(loc, "numeric value is not finite");
-    }
-
-    // Constants for safe double-to-int conversion
-    // Jsonnet uses IEEE 754 doubles, which precisely represent integers in the range [-2^53, 2^53].
-    constexpr int64_t DOUBLE_MAX_SAFE_INTEGER = 1LL << 53;
-    constexpr int64_t DOUBLE_MIN_SAFE_INTEGER = -(1LL << 53);
-
-    // Check if the value is within the safe integer range
-    if (value < DOUBLE_MIN_SAFE_INTEGER || value > DOUBLE_MAX_SAFE_INTEGER) {
-        throw internal::StaticError(loc, "numeric value outside safe integer range for bitwise operation.");
-    }
-    return static_cast<int64_t>(value);
 }
 
 }  // namespace jsonnet::internal
