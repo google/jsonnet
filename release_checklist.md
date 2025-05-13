@@ -50,6 +50,7 @@ will be included in that release.
    (`upstream` might have a different name depending on your local git checkout)
 1. Modify `include/libjsonnet.h` to the version number for the new release. If you are making a
    release candidate and not a full release, include a suffix like `-rc1`.
+1. Modify `MODULE.bazel` to match the new release version number.
 1. Update `test_cmd` golden file version numbers:
 
    ```
@@ -107,6 +108,7 @@ the standard library from the C++ version, and some header files.
    source tarball (which has a stable hash that can be used) instead of the unstable GitHub automatic
    tarball for the commit.
 1. Modify `vm.go` to update the version number.
+1. Modify `MODULE.bazel` to update the version number.
 1. Run tests locally, commit, and push to the `go-jsonnet` `prepare-release` branch. CI checks should run
    automatically on this branch - check the results in https://github.com/google/go-jsonnet/actions
 1. Optionally: Perform a preflight Python build & publish by manually triggering the workflow in GitHub actions.
