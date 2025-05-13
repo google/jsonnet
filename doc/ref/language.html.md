@@ -133,7 +133,7 @@ Strings can be constructed as literals, slices of existing strings, concatenatio
 
 Jsonnet numbers are 64-bit floating point numbers as defined in IEEE754 excluding `nan` and `inf` values. Operations resulting in infinity or not a number are errors.
 
-Integers can be precisely represented as a Jsonnet number in the range [-2^53,2^53]. This is [a direct consequence of IEEE754 spec](https://en.wikipedia.org/wiki/Double-precision_floating-point_format).
+Integers can be safely represented as a Jsonnet number in the range [-2^53 + 1,2^53 - 1]. This is [a direct consequence of IEEE754 spec](https://en.wikipedia.org/wiki/Double-precision_floating-point_format), with the requirements that a safe integer is representable exactly, and cannot be produced by rounding any other integer to fit the IEEE-754 representation. See also, the JavaScript [`Number.MAX_SAFE_INTEGER`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER), [`Number.MIN_SAFE_INTEGER`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER), and [`Number.isSafeInteger`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger) definitions.
 
 ### Function
 

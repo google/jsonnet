@@ -1,1 +1,2 @@
-STATIC ERROR: error.integer_left_shift.jsonnet:3:1-17: numeric value outside safe integer range for bitwise operation.
+RUNTIME ERROR: numeric value outside safe integer range for bitwise operation.
+	error.integer_left_shift.jsonnet:3:1-17	

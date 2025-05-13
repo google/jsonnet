@@ -130,25 +130,6 @@ std::vector<std::string> jsonnet_vm_execute_stream(
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
 
-/** Safely converts a double to an int64_t, with range and validity checks.
- *
- * This function is used primarily for bitwise operations which require integer operands.
- * It performs two safety checks:
- * 1. Verifies the value is finite (not NaN or Infinity)
- * 2. Ensures the value is within the safe integer range [-2^53, 2^53]
- *
- * The safe integer range limitation is necessary because IEEE 754 double precision
- * floating point numbers can only precisely represent integers in the range [-2^53, 2^53].
- * Beyond this range, precision is lost, which would lead to unpredictable results
- * in bitwise operations that depend on exact bit patterns.
- *
- * \param value The double value to convert
- * \param loc The location in source code (for error reporting)
- * \throws StaticError if value is not finite or outside the safe integer range
- * \returns The value converted to int64_t
- */
-int64_t safeDoubleToInt64(double value, const LocationRange& loc);
-
 }  // namespace jsonnet::internal
 
 #endif
