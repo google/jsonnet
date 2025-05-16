@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 2.8.7...4.0)
 project(jsonnet C CXX)
 
 include(ExternalProject)
@@ -7,7 +7,10 @@ include(GNUInstallDirs)
 # User-configurable options.
 option(BUILD_JSONNET "Build jsonnet command-line tool." ON)
 option(BUILD_JSONNETFMT "Build jsonnetfmt command-line tool." ON)
-option(BUILD_TESTS "Build and run jsonnet tests." ON)
+if(MSVC)
+	option(BUILD_TESTS "Build and run jsonnet tests." OFF)
+endif()
+
 option(BUILD_STATIC_LIBS "Build a static libjsonnet." ON)
 option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of the static one." OFF)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
@@ -39,12 +42,17 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -Wimplicit-fallthrough -pedantic -std=c99 ${OPT}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Wimplicit-fallthrough -Woverloaded-virtual -pedantic -std=c++17 -fPIC ${OPT}")
 else()
-    # TODO: Windows support.
-    message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
+	if(MSVC)
+		#nothing 
+	else()
+    	message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER_ID} not supported")
+    endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-
+if(MSVC)
+    set( CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/release )
+endif()
 
 # Include external googletest project. This runs a CMake sub-script
 # (CMakeLists.txt.in) that downloads googletest source. It's then built as part
@@ -126,7 +134,9 @@ add_subdirectory(third_party/rapidyaml)
 add_subdirectory(core)
 add_subdirectory(cpp)
 add_subdirectory(cmd)
-add_subdirectory(test_suite)
+if(NOT MSVC)
+	add_subdirectory(test_suite)
+endfi()
 
 if (BUILD_TESTS)
     # s`run_tests` target builds and runs all tests. The cmake-generated `test`
