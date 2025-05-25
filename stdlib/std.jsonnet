@@ -206,27 +206,27 @@ limitations under the License.
     local invar =
       // loop invariant with defaults applied
       {
+        length: std.length(indexable),
         indexable: indexable,
         index:
           if index == null
           then 0
           else
             if index < 0
-            then std.max(0, std.length(indexable) + index)
+            then std.max(0, self.length + index)
             else index,
         end:
           if end == null
-          then std.length(indexable)
+          then self.length
           else
             if end < 0
-            then std.length(indexable) + end
+            then self.length + end
             else end,
         step:
           if step == null
           then 1
           else step,
-        length: std.length(indexable),
-        type: std.type(indexable),
+        type: std.type(indexable)
       };
     assert invar.step >= 0 : 'got [%s:%s:%s] but negative steps are not supported' % [invar.index, invar.end, invar.step];
     assert step != 0 : 'got %s but step must be greater than 0' % step;
