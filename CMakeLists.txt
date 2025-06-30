@@ -48,6 +48,7 @@ option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(BUILD_STATIC_LIBS "Build a static libjsonnet." ON)
 option(BUILD_SHARED_LIBS "Build shared libjsonnet." ON)
 option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of the static one." OFF)
+option(BUILD_MAN_PAGES "Build manpages." OFF)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 # TODO: Support using a system Rapid YAML install.
@@ -325,6 +326,39 @@ if(BUILD_TESTS)
 
     add_subdirectory(test_suite)
 endif()  # if(BUILD_TESTS)
+
+#### Man pages
+#
+
+if(BUILD_MAN_PAGES)
+    find_program(HELP2MAN_BINARY NAMES help2man)
+    if (HELP2MAN_BINARY)
+        message(STATUS "help2man found, man pages will be generated.")
+        file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1)
+        set(CMAKE_INSTALL_MANDIR "share/man" CACHE STRING "Directory for man pages")
+
+        add_custom_command(
+            OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1
+            COMMAND ${HELP2MAN_BINARY}
+            ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnet
+            DEPENDS jsonnet
+        )
+        add_custom_command(
+            OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1
+            COMMAND ${HELP2MAN_BINARY}
+            ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnetfmt
+            DEPENDS jsonnetfmt
+        )
+
+        add_custom_target(jsonnet-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1)
+        add_custom_target(jsonnetfmt-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1)
+
+        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    else()
+        message(STATUS "help2man not found, man pages will not be generated.")
+    endif()
+endif()  # if(BUILD_MAN_PAGES)
 
 # --- CMake debugging outputs.
 
