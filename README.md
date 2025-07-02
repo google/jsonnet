@@ -5,9 +5,11 @@
 For an introduction to Jsonnet and documentation,
 [visit our website](https://jsonnet.org).
 
-This repository contains the original implementation. You can also try [go-jsonnet](https://github.com/google/go-jsonnet), a newer implementation which in some cases is orders of magnitude faster.
+This repository contains the original implementation. You can also try [go-jsonnet](https://github.com/google/go-jsonnet), a newer implementation which in some cases is orders of magnitude faster, and is recommended in preference to the C++ version.
 
 Visit our [discussion forum](https://groups.google.com/g/jsonnet).
+
+**Security note:** If you need to process *untrusted inputs* (untrusted Jsonnet code), it is best not to use the C++ implementation, as it is not hardened for that use-case. The expected use-case is for evaluating Jsonnet code that you / your organisation has written and trusts not to be malicious.
 
 ## Packages
 

@@ -274,7 +274,7 @@ local
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
-      <h2 id="cpp-or-go">C++ or Go?</h2>
+      <h2 id="cpp-or-go">C++, Go, or others?</h2>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -284,58 +284,20 @@ local
   <div class="hgroup-inline">
     <div class="panel">
       <p>
-        There are two feature-compatible implementations of the Jsonnet interpreter.  The first one
-        we built was the C++ interpreter, and it is still the most mature / widely used.  The new Go
-        implementation has the benefits of simpler code (due to leveraging goroutines and the GO
-        garbage collector).  Our long term plan is to migrate everyone to the Go implementation
-        eventually.  Both implementations are tested against the same test suite (which is quite
-        thorough).  Please report any deviations.  The performance of the C++ implementation is
-        currently a bit better, but for most people this should not be a factor and we're intending
-        to address it over time, anyway.
+        There are multiple implementations of the Jsonnet interpreter. The original interpreter was
+        written in C++. However, there is a newer implementation written in Go, and this generally
+        has better performance, as well as the benefits of being written in a memory safe language.
+        The Go implementation also includes a linter, which is not available in the C++ implementation.
+        Both the C++ and Go versions are tested against the same test suite.
       </p>
       <p>
-        Another factor is that the formatter is currently only implemented in the C++ repo, and the
-        linter is only implemented in the Go repo.
+        Beyond the 'official' C++ and Go implementations, there are also various implementations written
+        independently by other people, such as Rust and Haskell implementations, along with language
+        bindings / wrappers for some other languages (such as PHP, and JavaScript).
+        These are listed on the <a href="/ref/bindings.html#third_party_apis">Bindings</a> page.
       </p>
     </div>
     <div style="clear: both"></div>
   </div>
 </div>
 
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <h2 id="javascript">JavaScript</h2>
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
-
-<div class="hgroup">
-  <div class="hgroup-inline">
-    <div class="panel">
-      <p>
-        The C++ implementation can be compiled with <a
-        href="https://emscripten.org/">emscripten</a> to produce a JavaScript
-        implementation of Jsonnet.  This is how we implement the interactive demos on this site.  A
-        native implementation of Jsonnet in JavaScript would probably be faster.  In fact, a
-        GopherJs transpile of the Go Jsonnet implementation may work better as well.  However, the
-        emscripten version is easy to build, and is sufficient for many purposes.
-      </p>
-
-      <p>
-        To compile it, first <a
-        href="https://emscripten.org/docs/getting_started/downloads.html">install
-        </a> emscripten and ensure em++ and emcc are in your path.  Then make libjsonnet.js.
-      </p>
-
-      <p>
-        An unofficial <a href="https://github.com/yosuke-furukawa/node-jsonnet">nodejs package</a>
-        of Jsonnet is also available.
-      </p>
-
-    </div>
-    <div style="clear: both"></div>
-  </div>
-</div>
