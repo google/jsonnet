@@ -1,7 +1,7 @@
 # CMake script run a generation-time. This must be separate from the main
 # CMakeLists.txt file to allow downloading and building googletest at generation
 # time.
-cmake_minimum_required(VERSION 2.8.2)
+cmake_minimum_required(VERSION 2.8.2...4.0)
 
 project(googletest-download NONE)
 

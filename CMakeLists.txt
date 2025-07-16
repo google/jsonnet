@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 2.8.7...4.0)
 project(jsonnet C CXX)
 
 include(ExternalProject)
