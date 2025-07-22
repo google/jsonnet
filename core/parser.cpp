@@ -52,15 +52,15 @@ std::string jsonnet_unparse_number(double v)
     return ss.str();
 }
 
+namespace {
+
+static const Fodder EMPTY_FODDER;
+
 /** Maximum parsing depth to avoid stack overflow due to pathological or malicious code.
  * This is especially important when parsing deeply nested structures that could lead to
  * excessive recursion in the parser functions.
  */
 static const unsigned MAX_PARSER_DEPTH = 1000;
-
-namespace {
-
-static const Fodder EMPTY_FODDER;
 
 static bool op_is_unary(const std::string &op, UnaryOp &uop)
 {
@@ -163,7 +163,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The last token (the one that matched parameter end).
      */
-    Token parseArgs(ArgParams &args, const std::string &element_kind, bool &got_comma, unsigned current_depth = 0)
+    Token parseArgs(ArgParams &args, const std::string &element_kind, bool &got_comma, unsigned current_depth)
     {
         got_comma = false;
         bool first = true;
@@ -214,7 +214,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The parameters as ArgParams.
      */
-    ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder, unsigned current_depth = 0)
+    ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder, unsigned current_depth)
     {
         ArgParams params;
         Token paren_r = parseArgs(params, element_kind, got_comma, current_depth);
@@ -244,7 +244,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The token after the binding (comma or semicolon).
      */
-    Token parseBind(Local::Binds &binds, unsigned current_depth = 0)
+    Token parseBind(Local::Binds &binds, unsigned current_depth)
     {
         Token var_id = popExpect(Token::IDENTIFIER);
         auto *id = alloc->makeIdentifier(var_id.data32());
@@ -285,7 +285,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The closing brace token.
      */
-    Token parseObjectRemainder(AST *&obj, const Token &tok, unsigned current_depth = 0)
+    Token parseObjectRemainder(AST *&obj, const Token &tok, unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
@@ -584,7 +584,7 @@ class Parser {
      */
     Token parseComprehensionSpecs(Token::Kind end, Fodder for_fodder,
                                   std::vector<ComprehensionSpec> &specs,
-                                  unsigned current_depth = 0)
+                                  unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
@@ -623,7 +623,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The parsed AST.
      */
-    AST *parseTerminalBracketsOrUnary(unsigned current_depth = 0)
+    AST *parseTerminalBracketsOrUnary(unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
@@ -807,7 +807,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The parsed AST or nullptr.
      */
-    AST *maybeParseGreedy(unsigned current_depth = 0)
+    AST *maybeParseGreedy(unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
@@ -976,7 +976,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The parsed AST.
      */
-    AST *parse(unsigned max_precedence, unsigned current_depth = 0)
+    AST *parse(unsigned max_precedence, unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
@@ -1005,7 +1005,7 @@ class Parser {
      * \param current_depth Current recursion depth to prevent stack overflow.
      * \returns The parsed AST.
      */
-    AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence, unsigned current_depth = 0)
+    AST *parseInfix(AST *lhs, const Token &begin, unsigned max_precedence, unsigned current_depth)
     {
         if (current_depth >= MAX_PARSER_DEPTH) {
             throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
