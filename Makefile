@@ -40,6 +40,11 @@ SHARED_LDFLAGS ?= -shared
 VERSION := $(shell grep '\#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
 SOVERSION = 0
 
+# Define the help2man command with appropriate options
+HELP2MAN ?= help2man
+
+MAN1_DIR ?= man/man1
+
 ################################################################################
 # End of user-servicable parts
 ################################################################################
@@ -123,15 +128,17 @@ ifeq ($(shell uname -s),Darwin)
 	SONAME = -install_name
 endif
 
-default: jsonnet jsonnetfmt
+default: jsonnet jsonnetfmt man
 
-install: bins libs
+install: bins libs man
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp $(BINS) $(DESTDIR)$(PREFIX)/bin/
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
 	cp $(LIBS) $(DESTDIR)$(PREFIX)/lib/
 	mkdir -p $(DESTDIR)$(PREFIX)/include
 	cp $(INCS) $(DESTDIR)$(PREFIX)/include/
+	mkdir -p $(DESTDIR)$(PREFIX)/share/$(MAN1_DIR)
+	install -Dm 644 $(addprefix $(MAN1_DIR)/, $(BINS:=.1)) $(DESTDIR)$(PREFIX)/share/$(MAN1_DIR)/
 
 all: $(ALL)
 
@@ -160,6 +167,16 @@ core/desugarer.cpp: core/std.jsonnet.h
 # Object files
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+# Target to generate the man page
+
+$(MAN1_DIR)/%.1: % | $(MAN1_DIR)
+	$(HELP2MAN) --output=$@ ./$<
+
+man: $(addprefix $(MAN1_DIR)/, $(BINS:=.1))
+
+$(MAN1_DIR):
+	mkdir -p $@
 
 # Commandline executable.
 jsonnet: cmd/jsonnet.cpp cmd/utils.cpp $(LIB_OBJ)
@@ -224,7 +241,7 @@ $(RELEASE_FILE): bins
 dist: $(RELEASE_FILE)
 
 clean:
-	rm -rvf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* build jsonnet.egg-info $(RELEASE_FILE)
+	rm -rvf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* build jsonnet.egg-info $(RELEASE_FILE) man
 
 -include Makefile.depend
 
