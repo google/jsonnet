@@ -590,6 +590,16 @@ Field names of Jsonnet objects can be arbitrary strings and can be calculated dy
 
 When an object is evaluated, all the field names are evaluated. This means they cannot refer to object locals, `self`, or `super`. In other words, their scope is "outside of the object".
 
+#### Conditional Fields
+
+If a field name evaluates to null, that field value is discarded and not included in the resulting object. The following code will evaluate to the empty object:
+
+```
+{
+  [if 1 == 2 then "foo"]: "bar",
+}
+```
+
 ## Independence from the Environment (Hermeticity)
 
 Jsonnet programs are *pure computations*, which have no side-effects and which depend only on the values which were explicitly passed.
