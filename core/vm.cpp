@@ -1393,10 +1393,10 @@ class Interpreter {
         for (int i = 0; i < 2; ++i) {
             Value::Type t = args[i].t;
             if (t != Value::STRING && t != Value::NUMBER && t != Value::BOOLEAN &&
-                t != Value::NULL_TYPE) {
+                t != Value::NULL_TYPE && t != Value::OBJECT) {
                 std::stringstream ss;
                 ss << "extVarWithDefault argument " << (i + 1)
-                   << " must be string, number, boolean, or null, got " << type_str(args[i]);
+                   << " must be string, number, boolean, null, or object, got " << type_str(args[i]);
                 throw makeError(loc, ss.str());
             }
         }

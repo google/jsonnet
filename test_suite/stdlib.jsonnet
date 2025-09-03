@@ -516,6 +516,11 @@ std.assertEqual(std.toString(std.extVar('var2')), '{"x": 1, "y": 2}') &&
 std.assertEqual(std.extVar('var2'), { x: 1, y: 2 }) &&
 std.assertEqual(std.extVar('var2') { x+: 2 }.x, 3) &&
 
+std.assertEqual(std.extVarWithDefault('var1', 'default'), 'test') &&
+std.assertEqual(std.extVarWithDefault('missing', 'default'), 'default') &&
+std.assertEqual(std.extVarWithDefault('var2', { x: 0, y: 0 }), { x: 1, y: 2 }) &&
+std.assertEqual(std.extVarWithDefault('missingObj', { x: 0, y: 0 }), { x: 0, y: 0 }) &&
+
 std.assertEqual(std.split('foo/bar', '/'), ['foo', 'bar']) &&
 std.assertEqual(std.split('/foo/', '/'), ['', 'foo', '']) &&
 std.assertEqual(std.split('foo/_bar', '/_'), ['foo', 'bar']) &&
