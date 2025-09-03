@@ -973,6 +973,7 @@ class Interpreter {
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
         builtins["atan2"] = &Interpreter::builtinAtan2;
         builtins["hypot"] = &Interpreter::builtinHypot;
+        builtins["extVarWithDefault"] = &Interpreter::builtinExtVarWithDefault;
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
@@ -1366,6 +1367,50 @@ class Interpreter {
             scratch = makeString(decode_utf8(ext.data));
             return nullptr;
         }
+    }
+
+    const AST *builtinExtVarWithDefault(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if (args.size() != 2) {
+            std::stringstream ss;
+            ss << "extVarWithDefault expects 2 arguments, got " << args.size();
+            throw makeError(loc, ss.str());
+        }
+        for (int i = 0; i < 2; ++i) {
+            Value::Type t = args[i].t;
+            if (t != Value::STRING && t != Value::NUMBER && t != Value::BOOLEAN &&
+                t != Value::NULL_TYPE) {
+                std::stringstream ss;
+                ss << "extVarWithDefault argument " << (i + 1)
+                   << " must be string, number, boolean, or null, got " << type_str(args[i]);
+                throw makeError(loc, ss.str());
+            }
+        }
+        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
+        std::string var8 = encode_utf8(var);
+        Value result;
+        auto it = externalVars.find(var8);
+        if (it == externalVars.end()) {
+            return nullptr;
+        }
+        const VmExt &ext = it->second;
+        if (ext.isCode) {
+            std::string filename = "<extvar:" + var8 + ">";
+            Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
+            AST *expr = jsonnet_parse(alloc, tokens);
+            jsonnet_desugar(alloc, expr, nullptr);
+            jsonnet_static_analysis(expr);
+            stack.pop();
+            return expr;
+        } else {
+            result = makeString(decode_utf8(ext.data));
+        }
+        if (result.t == Value::STRING) {
+            scratch = result;
+            return nullptr;
+        }
+        scratch = args[1];
+        return nullptr;
     }
 
     const AST *builtinPrimitiveEquals(const LocationRange &loc, const std::vector<Value> &args)
