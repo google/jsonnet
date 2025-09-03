@@ -1344,15 +1344,11 @@ class Interpreter {
         return nullptr;
     }
 
-    const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
+    const AST *getExtVarOrValue(const std::string &var8, Value *outValue = nullptr)
     {
-        validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
-        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
-        std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
-            std::string msg = "undefined external variable: " + var8;
-            throw makeError(loc, msg);
+            return nullptr;
         }
         const VmExt &ext = it->second;
         if (ext.isCode) {
@@ -1364,8 +1360,26 @@ class Interpreter {
             stack.pop();
             return expr;
         } else {
-            scratch = makeString(decode_utf8(ext.data));
+            if (outValue) *outValue = makeString(decode_utf8(ext.data));
             return nullptr;
+        }
+    }
+
+    const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
+        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
+        std::string var8 = encode_utf8(var);
+        Value result;
+        const AST *expr = getExtVarOrValue(var8, &result);
+        if (expr) {
+            return expr;
+        } else if (result.t == Value::STRING) {
+            scratch = result;
+            return nullptr;
+        } else {
+            std::string msg = "undefined external variable: " + var8;
+            throw makeError(loc, msg);
         }
     }
 
@@ -1389,23 +1403,10 @@ class Interpreter {
         const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
         std::string var8 = encode_utf8(var);
         Value result;
-        auto it = externalVars.find(var8);
-        if (it == externalVars.end()) {
-            return nullptr;
-        }
-        const VmExt &ext = it->second;
-        if (ext.isCode) {
-            std::string filename = "<extvar:" + var8 + ">";
-            Tokens tokens = jsonnet_lex(filename, ext.data.c_str());
-            AST *expr = jsonnet_parse(alloc, tokens);
-            jsonnet_desugar(alloc, expr, nullptr);
-            jsonnet_static_analysis(expr);
-            stack.pop();
+        const AST *expr = getExtVarOrValue(var8, &result);
+        if (expr) {
             return expr;
-        } else {
-            result = makeString(decode_utf8(ext.data));
-        }
-        if (result.t == Value::STRING) {
+        } else if (result.t == Value::STRING) {
             scratch = result;
             return nullptr;
         }
