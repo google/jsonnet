@@ -69,6 +69,27 @@ do_test "ext4" 0 --ext-code x=1+1 -e 'std.extVar("x")'
 do_test "ext5" 0 --ext-str-file "x=test.txt" -e 'std.extVar("x")'
 do_test "ext6" 0 --ext-code-file "x=test.jsonnet" -e 'std.extVar("x")'
 do_test "ext7" 0 --ext-code-file "x=lib1/lib3_test.jsonnet" -e 'std.extVar("x")'
+if do_test "extWithDefault1" 0 --ext-str x=1 -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault1" "out/extWithDefault1/stdout" "extWithDefault1.golden.stdout"
+fi
+if do_test "extWithDefault2" 0 -V x=1 -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault2" "out/extWithDefault2/stdout" "extWithDefault2.golden.stdout"
+fi
+if do_test "extWithDefault3" 0 -V y=1 -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault3" "out/extWithDefault3/stdout" "extWithDefault3.golden.stdout"
+fi
+if do_test "extWithDefault4" 0 --ext-code x=1+1 -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault4" "out/extWithDefault4/stdout" "extWithDefault4.golden.stdout"
+fi
+if do_test "extWithDefault5" 0 --ext-str-file "x=test.txt" -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault5" "out/extWithDefault5/stdout" "extWithDefault5.golden.stdout"
+fi
+if do_test "extWithDefault6" 0 --ext-code-file "x=test.jsonnet" -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault6" "out/extWithDefault6/stdout" "extWithDefault6.golden.stdout"
+fi
+if do_test "extWithDefault7" 0 --ext-code-file "x=lib1/lib3_test.jsonnet" -e 'std.extVarWithDefault("x", "default")'; then
+    check_file "extWithDefault7" "out/extWithDefault7/stdout" "extWithDefault7.golden.stdout"
+fi
 do_test "tla1" 0 --tla-str x=1 -e 'function(x) x'
 do_test "tla2" 0 -A x=1 -e 'function(x) x'
 do_test "tla3" 1 -A y=1 -e 'function(x) x'
