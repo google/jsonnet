@@ -126,7 +126,7 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
     let startedJobId = 0;
     let finishedJobId = 0;
     editor.on('change', async function() {
-      // yield to duplicated change events
+      // Yield until we finish duplicated change events
       startedJobId += 1;
       const currJobId = startedJobId;
       while (finishedJobId < currJobId - 1) {
