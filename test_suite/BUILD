@@ -1,3 +1,5 @@
+load("@rules_shell//shell:sh_library.bzl", "sh_library")
+
 package(default_visibility = ["//visibility:private"])
 
 # Export the tests.source so it can be used by Bazel tests elsewhere in the repo.

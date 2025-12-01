@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 licenses(["permissive"])
 
 package(default_visibility = ["//visibility:private"])
