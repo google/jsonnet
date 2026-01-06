@@ -445,13 +445,13 @@ std::string lex_number(const char *&c, const std::string &filename, const Locati
                     case '7':
                     case '8':
                     case '9': state = AFTER_EXP_DIGIT; break;
-                    
+
                     case '_': state = AFTER_EXP_UNDERSCORE; goto skip_char;
 
                     default: goto end;
                 }
                 break;
-  
+
             case AFTER_EXP_UNDERSCORE:
                 switch (*c) {
                     // The only valid transition from _ is to a digit.
@@ -496,17 +496,26 @@ static int whitespace_check(const char *a, const char *b)
     return i;
 }
 
-/*
-static void add_whitespace(Fodder &fodder, const char *s, size_t n)
-{
-    std::string ws(s, n);
-    if (fodder.size() == 0 || fodder.back().kind != FodderElement::WHITESPACE) {
-        fodder.emplace_back(FodderElement::WHITESPACE, ws);
+static void describe_whitespace(std::stringstream& msg, const std::string& ws) {
+    int spaces = 0;
+    int tabs = 0;
+    for (char c : ws) {
+        if (c == ' ')
+            spaces++;
+        else if (c == '\t')
+            tabs++;
+    }
+    if (spaces > 0 && tabs > 0) {
+        msg << spaces << (spaces == 1 ? " space" : " spaces") << " and " << tabs
+            << (tabs == 1 ? " tab" : " tabs");
+    } else if (spaces > 0) {
+        msg << spaces << (spaces == 1 ? " space" : " spaces");
+    } else if (tabs > 0) {
+        msg << tabs << (tabs == 1 ? " tab" : " tabs");
     } else {
-        fodder.back().data += ws;
+        msg << "no indentation";
     }
 }
-*/
 
 Tokens jsonnet_lex(const std::string &filename, const char *input)
 {
@@ -840,17 +849,48 @@ Tokens jsonnet_lex(const std::string &filename, const char *input)
                             // Examine next line
                             ws_chars = whitespace_check(first_line, c);
                             if (ws_chars == 0) {
-                                // End of text block
-                                // Skip over any whitespace
+                                // End of text block (or indentation error).
+                                // Count actual whitespace on this line.
+                                int actual_ws = 0;
+                                while (c[actual_ws] == ' ' ||
+                                       c[actual_ws] == '\t') {
+                                    actual_ws++;
+                                }
+
+                                // Check if this is the terminator |||
+                                bool is_terminator = (
+                                    c[actual_ws] == '|' &&
+                                    c[actual_ws + 1] == '|' &&
+                                    c[actual_ws + 2] == '|');
+
+                                if (!is_terminator) {
+                                    // Not a terminator - check if it's an
+                                    // indentation issue.
+                                    if (actual_ws > 0) {
+                                        // Has whitespace but doesn't match expected
+                                        // indentation.
+                                        std::stringstream msg;
+                                        msg << "text block indentation mismatch: "
+                                                "expected at least ";
+                                        describe_whitespace(msg, string_block_indent);
+                                        msg << ", found ";
+                                        describe_whitespace(msg, std::string(c, actual_ws));
+                                        throw StaticError(filename, begin, msg.str());
+                                    } else {
+                                        // No whitespace and no ||| - missing
+                                        // terminator.
+                                        auto msg =
+                                            "text block not terminated with |||";
+                                        throw StaticError(filename, begin, msg);
+                                    }
+                                }
+
+                                // Valid termination - skip over any whitespace.
                                 while (*c == ' ' || *c == '\t') {
                                     string_block_term_indent += *c;
                                     ++c;
                                 }
-                                // Expect |||
-                                if (!(*c == '|' && *(c + 1) == '|' && *(c + 2) == '|')) {
-                                    auto msg = "text block not terminated with |||";
-                                    throw StaticError(filename, begin, msg);
-                                }
+                                // Skip the |||
                                 c += 3;  // Leave after the last |
                                 data = block.str();
                                 kind = Token::STRING_BLOCK;

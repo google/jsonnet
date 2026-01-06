@@ -341,7 +341,7 @@ TEST(Lexer, TestBlockStringBadIndent)
     testLex("block string bad indent",
             str,
             {},
-            "block string bad indent:1:1: text block not terminated with |||");
+            "block string bad indent:1:1: text block indentation mismatch: expected at least 2 spaces, found 1 space");
 }
 
 TEST(Lexer, TestBlockStringEof)
