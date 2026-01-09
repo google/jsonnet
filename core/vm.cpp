@@ -21,16 +21,12 @@ limitations under the License.
 #include <set>
 #include <string>
 
-// charconv is because the RapidYAML 0.5.0 release has a bug in the single-header build.
-// https://github.com/biojppm/rapidyaml/issues/364#issuecomment-1536625415
-#include <charconv>
-
 #include "desugarer.h"
 #include "json.h"
 #include <nlohmann/json.hpp>
 #include "md5.h"
 #include "parser.h"
-#include "ryml_all.hpp"
+#include "rapidyaml-0.10.0.hpp"
 #include "state.h"
 #include "static_analysis.h"
 #include "string_utils.h"

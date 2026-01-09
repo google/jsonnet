@@ -109,7 +109,7 @@ ALL_HEADERS = \
 	core/std.jsonnet.h \
 	third_party/md5/md5.h \
 	third_party/json/json.hpp \
-	third_party/rapidyaml/rapidyaml/src/ryml_std.hpp \
+	third_party/rapidyaml/rapidyaml-0.10.0.hpp \
 	$(INCS)
 
 
