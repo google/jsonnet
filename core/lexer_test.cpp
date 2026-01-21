@@ -115,6 +115,18 @@ TEST(Lexer, TestNumbers)
             "1e+!",
             {},
             "number 1e+!:1:1: couldn't lex number, junk after exponent sign: !");
+    testLex("number 1.2.3.4",
+            "1.2.3.4",
+            {Token(Token::Kind::NUMBER, "1.2"),
+             Token(Token::Kind::DOT, ""),
+             Token(Token::Kind::NUMBER, "3.4")},
+            "");
+    testLex("number 1e2.34",
+            "1e2.34",
+            {Token(Token::Kind::NUMBER, "1e2"),
+             Token(Token::Kind::DOT, ""),
+             Token(Token::Kind::NUMBER, "34")},
+            "");
 }
 
 TEST(Lexer, TestNumbersWithSeparators)
@@ -131,7 +143,23 @@ TEST(Lexer, TestNumbersWithSeparators)
     testLex("number 1.1_2e100", "1.1_2e100", {Token(Token::Kind::NUMBER, "1.12e100")}, "");
     testLex("number 1.1e-10_1", "1.1e-10_1", {Token(Token::Kind::NUMBER, "1.1e-101")}, "");
     testLex("number 9.109_383_56e-31", "9.109_383_56e-31", {Token(Token::Kind::NUMBER, "9.10938356e-31")}, "");
+    // Strange cases of adjacent tokens.
+    testLex("number 1_2.3_4.5_6.7_8",
+            "1_2.3_4.5_6.7_8",
+            {Token(Token::Kind::NUMBER, "12.34"),
+             Token(Token::Kind::DOT, ""),
+             Token(Token::Kind::NUMBER, "56.78")},
+             {});
+    testLex("number 1e2_3e4",
+            "1e2_3e4",
+            {Token(Token::Kind::NUMBER, "1e23"),
+             Token(Token::Kind::IDENTIFIER, "e4")},
+            "");
 
+    testLex("number 0_5",
+            "0_5",
+            {},
+            "number 0_5:1:1: couldn't lex number, _ not allowed after leading 0");
     testLex("number 123456_!",
             "123456_!",
             {},
