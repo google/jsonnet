@@ -7,6 +7,9 @@ Before doing the release, make sure that the project is in good state:
 - Triage issues – make sure that all issues are labelled.
 - Check for release-blocking bugs. All bugs which results in a wrong result of the evaluation are release-blocking.
 - Go through the open PRs – consider merging any outstanding ones. Do not merge big changes right before the release.
+- Check for new major Bazel versions (https://bazel.build/release), update
+  `.github/workflows/build_and_test.yml` "Build Bazel example" job to check all actively maintained Bazel versions
+  and confirm that it stays green.
 - Sync google/go-jsonnet and google/jsonnet
   1. Check out master from both
   1. Use the `update_cpp_jsonnet.sh` script in the go-jsonnet repository to sync it to jsonnet master.
