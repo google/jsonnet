@@ -93,9 +93,15 @@ jobs:
   bazel_use_module:
     name: Build Bazel example
     runs-on: "ubuntu-22.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel_version: ["7.*", "8.*", "9.*"]
     steps:
       - uses: actions/checkout@v4
       - name: Build
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         run: |
           cd examples/bazel
           bazelisk build --lockfile_mode=off //...
