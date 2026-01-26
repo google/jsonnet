@@ -1,0 +1,9 @@
+# The bazel example is an entirely separate bazel module and should
+# not be built as part of the main library module.
+examples/bazel
+
+# The README instructions for building with CMake involve initialising the
+# CMake build directory as a subdirectory called build, that directory
+# ends up containing other bazel BUILD files, which then interfere with a
+# bazel build. Therefore, exclude it.
+build
