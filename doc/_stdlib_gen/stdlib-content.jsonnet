@@ -435,6 +435,14 @@ local exampleDocMultiline(mid, ex) =
           |||,
         },
         {
+          name: 'match',
+          params: ['str', 'pat'],
+          availableSince: 'upcoming',
+          description: |||
+            Matches the given <code>str</code> using <code>pat</code> as regexp pattern and returns an array of the matches.
+          |||,
+        },
+        {
           name: 'equalsIgnoreCase',
           params: ['str1', 'str2'],
           availableSince: '0.21.0',
