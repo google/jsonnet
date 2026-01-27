@@ -969,6 +969,7 @@ class Interpreter {
         builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
         builtins["atan2"] = &Interpreter::builtinAtan2;
         builtins["hypot"] = &Interpreter::builtinHypot;
+        builtins["extVarWithDefault"] = &Interpreter::builtinExtVarWithDefault;
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
@@ -1339,15 +1340,11 @@ class Interpreter {
         return nullptr;
     }
 
-    const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
+    const AST *getExtVarOrValue(const std::string &var8, Value *outValue = nullptr)
     {
-        validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
-        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
-        std::string var8 = encode_utf8(var);
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
-            std::string msg = "undefined external variable: " + var8;
-            throw makeError(loc, msg);
+            return nullptr;
         }
         const VmExt &ext = it->second;
         if (ext.isCode) {
@@ -1359,9 +1356,58 @@ class Interpreter {
             stack.pop();
             return expr;
         } else {
-            scratch = makeString(decode_utf8(ext.data));
+            if (outValue) *outValue = makeString(decode_utf8(ext.data));
             return nullptr;
         }
+    }
+
+    const AST *builtinExtVar(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "extVar", args, {Value::STRING});
+        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
+        std::string var8 = encode_utf8(var);
+        Value result;
+        const AST *expr = getExtVarOrValue(var8, &result);
+        if (expr) {
+            return expr;
+        } else if (result.t == Value::STRING) {
+            scratch = result;
+            return nullptr;
+        } else {
+            std::string msg = "undefined external variable: " + var8;
+            throw makeError(loc, msg);
+        }
+    }
+
+    const AST *builtinExtVarWithDefault(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        if (args.size() != 2) {
+            std::stringstream ss;
+            ss << "extVarWithDefault expects 2 arguments, got " << args.size();
+            throw makeError(loc, ss.str());
+        }
+        for (int i = 0; i < 2; ++i) {
+            Value::Type t = args[i].t;
+            if (t != Value::STRING && t != Value::NUMBER && t != Value::BOOLEAN &&
+                t != Value::NULL_TYPE && t != Value::OBJECT) {
+                std::stringstream ss;
+                ss << "extVarWithDefault argument " << (i + 1)
+                   << " must be string, number, boolean, null, or object, got " << type_str(args[i]);
+                throw makeError(loc, ss.str());
+            }
+        }
+        const UString &var = static_cast<HeapString *>(args[0].v.h)->value;
+        std::string var8 = encode_utf8(var);
+        Value result;
+        const AST *expr = getExtVarOrValue(var8, &result);
+        if (expr) {
+            return expr;
+        } else if (result.t == Value::STRING) {
+            scratch = result;
+            return nullptr;
+        }
+        scratch = args[1];
+        return nullptr;
     }
 
     const AST *builtinPrimitiveEquals(const LocationRange &loc, const std::vector<Value> &args)
