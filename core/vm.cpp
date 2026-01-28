@@ -688,6 +688,16 @@ class Interpreter {
             auto *l = findObject(f, ext->left, start_from, counter);
             if (l)
                 return l;
+        } else if (auto *ext = dynamic_cast<HeapRestrictedObject *>(curr)) {
+            // The RestrictedObject is on the 'right', that is it is checked/counted first.
+            if (counter >= start_from) {
+                if (ext->retainedKeys.find(f) == ext->retainedKeys.end()) {
+                    counter += 1 + countLeaves(ext->obj);
+                    return nullptr;
+                }
+            }
+            ++counter;
+            return findObject(f, ext->obj, start_from, counter);
         } else {
             if (counter >= start_from) {
                 if (auto *simp = dynamic_cast<HeapSimpleObject *>(curr)) {
@@ -718,6 +728,9 @@ class Interpreter {
             for (const auto &f : obj->fields) {
                 r[f.first] = f.second.hide;
             }
+
+        } else if (auto *obj = dynamic_cast<const HeapRestrictedObject *>(obj_)) {
+            return obj->retainedKeys;
 
         } else if (auto *obj = dynamic_cast<const HeapExtendedObject *>(obj_)) {
             r = objectFieldsAux(obj->right);
@@ -848,6 +861,8 @@ class Interpreter {
     {
         if (auto *ext = dynamic_cast<HeapExtendedObject *>(obj)) {
             return countLeaves(ext->left) + countLeaves(ext->right);
+        } else if (auto *ext = dynamic_cast<HeapRestrictedObject *>(obj)) {
+            return countLeaves(ext->obj) + 1;
         } else {
             // Must be a HeapLeafObject.
             return 1;
@@ -944,6 +959,7 @@ class Interpreter {
         builtins["objectHasEx"] = &Interpreter::builtinObjectHasEx;
         builtins["length"] = &Interpreter::builtinLength;
         builtins["objectFieldsEx"] = &Interpreter::builtinObjectFieldsEx;
+        builtins["objectRemoveKey"] = &Interpreter::builtinObjectRemoveKey;
         builtins["codepoint"] = &Interpreter::builtinCodepoint;
         builtins["char"] = &Interpreter::builtinChar;
         builtins["log"] = &Interpreter::builtinLog;
@@ -1260,6 +1276,22 @@ class Interpreter {
             elements.push_back(th);
             th->fill(makeString(field));
         }
+        return nullptr;
+    }
+
+    const AST *builtinObjectRemoveKey(const LocationRange &loc, const std::vector<Value> &args)
+    {
+        validateBuiltinArgs(loc, "objectRemoveKey", args, {Value::OBJECT, Value::STRING});
+        auto *obj = static_cast<HeapObject *>(args[0].v.h);
+        const auto *key = static_cast<HeapString *>(args[1].v.h);
+        const auto *key_id = alloc->makeIdentifier(key->value);
+        auto fields = objectFieldsAux(obj);
+        const auto it = fields.find(key_id);
+        if (it != fields.end()) {
+            fields.erase(it);
+        }
+        // TODO: If the key isn't found perhaps we can evaluate to the existing `obj`?
+        scratch = makeObject<HeapRestrictedObject>(obj, fields);
         return nullptr;
     }
 
@@ -1939,6 +1971,8 @@ class Interpreter {
         if (auto *ext = dynamic_cast<HeapExtendedObject *>(curr)) {
             objectInvariants(ext->right, self, counter, thunks);
             objectInvariants(ext->left, self, counter, thunks);
+        } else if (auto *ext = dynamic_cast<HeapRestrictedObject *>(curr)) {
+            objectInvariants(ext->obj, self, counter, thunks);
         } else {
             if (auto *simp = dynamic_cast<HeapSimpleObject *>(curr)) {
                 for (AST *assert : simp->asserts) {
