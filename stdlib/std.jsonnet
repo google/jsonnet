@@ -1786,12 +1786,6 @@ limitations under the License.
       std.removeAt(arr, indexes[0])
   ,
 
-  objectRemoveKey(obj, key):: {
-    [k]: obj[k],
-    for k in std.objectFields(obj)
-    if k != key
-  },
-
   sha1(str):: go_only_function,
   sha256(str):: go_only_function,
   sha512(str):: go_only_function,
