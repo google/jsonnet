@@ -23,6 +23,8 @@ jobs:
     runs-on: "ubuntu-24.04"
     steps:
       - uses: actions/checkout@v6
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
       - name: Create Gemfile
         run: |
           echo $'source "https://rubygems.org"\n\ngem "jekyll"\n' > Gemfile
@@ -65,12 +67,7 @@ jobs:
           cd "$WORKDIR"/work
           git diff --cached --stat
           git diff --cached
-      - name: Pack docs
-        uses: actions/upload-artifact@v6
+      - name: Upload Pages package
+        uses: actions/upload-pages-artifact@v4
         with:
-          name: gh-pages-content
-          retention-days: 22
-          include-hidden-files: true
-          if-no-files-found: "error"
           path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/work/
-
