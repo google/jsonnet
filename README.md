@@ -9,7 +9,7 @@ This repository contains the original implementation. You can also try [go-jsonn
 
 Visit our [discussion forum](https://groups.google.com/g/jsonnet).
 
-**Security note:** If you need to process *untrusted inputs* (untrusted Jsonnet code), it is best not to use the C++ implementation, as it is not hardened for that use-case. The expected use-case is for evaluating Jsonnet code that you / your organisation has written and trusts not to be malicious.
+**Security notes:** If you need to process *untrusted inputs* (untrusted Jsonnet code), it is best not to use the C++ implementation, as it is not hardened for that use-case. The expected use-case is for evaluating Jsonnet code that you / your organisation has written and trusts not to be malicious. Even ignoring the risk of exploitable bugs in the implementation, the `import`, `importstr`, and `importbin` language constructs can potentially be used to exfiltrate sensitive data unless you take extra steps to restrict these or sandbox the jsonnet interpreter. By default, these constructs can import from any path accessible to the interpreter process.
 
 ## Packages
 

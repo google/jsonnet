@@ -218,6 +218,10 @@ void jsonnet_max_trace(struct JsonnetVm *vm, unsigned v);
 /** Add to the default import callback's library search path.
  *
  * The search order is last to first, so more recently appended paths take precedence.
+ * Note this is not an isolation mechanism or a way to restrict access to the file
+ * system. Imports can directly refer to absolute paths, or traverse 'up' the
+ * filesystem with '..' paths. They are not limited to paths below the specified
+ * search paths.
  */
 void jsonnet_jpath_add(struct JsonnetVm *vm, const char *v);
 

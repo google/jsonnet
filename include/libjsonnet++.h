@@ -64,6 +64,10 @@ class Jsonnet {
     void setMaxTrace(uint32_t lines);
 
     /// Add to the default import callback's library search path.
+    /// Note this is not an isolation mechanism or a way to restrict access to the file
+    /// system. Imports can directly refer to absolute paths, or traverse 'up' the
+    /// filesystem with '..' paths. They are not limited to paths below the specified
+    /// search paths.
     void addImportPath(const std::string& path);
 
     /// Bind a string top-level argument for a top-level parameter.
