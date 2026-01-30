@@ -31,6 +31,12 @@ jobs:
         with:
           ruby-version: "4.0.1"
           bundler-cache: true
+      - name: Cache jsonnet binary
+        id: cache-jsonnet-binary
+        uses: actions/cache@v5
+        with:
+          key: jsonnet-bin-${{ hashFiles('include/*', 'core/*', 'cmd/*', 'cpp/*', 'third_party/**/*', 'stdlib/std.jsonnet') }}
+          path: ./jsonnet
       - name: Build jsonnet binary
         if: steps.cache-jsonnet-binary.outputs.cache-hit != 'true'
         run: |
