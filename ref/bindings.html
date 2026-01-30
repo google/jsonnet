@@ -162,6 +162,23 @@
 <div class="hgroup">
   <div class="hgroup-inline">
     <div class="panel">
+      <h3>Data exfiltration risk</h3>
+      <p>
+        The normal behaviour of the <tt>import</tt>, <tt>importstr</tt>, and <tt>importbin</tt>
+        keywords is to import files from the filesystem. These accesses are unrestricted; any file
+        accessible to the Jsonnet process can be read this way, including potentially sensitive files
+        such as `/etc/passwd`, `/proc/self/environ`, etc. If you evaluate untrusted Jsonnet code and
+        expose the output of that in any way (for example by reporting error messages back to the user),
+        then you may be exposed to this data exfiltration risk.
+      <p>
+      <p>
+        <b>Mitigation:</b> Using Jsonnet as a library allows you to replace the import lookup logic
+        entirely, in which case you can restrict imports to files (or other data sources) to mitigate
+        data exfiltration risk. As a broader mitigation, executing Jsonnet inside a strong sandbox
+        (for example, gvisor container, firecracker VM, etc) can limit access to sensitive data
+        as long as the sandbox is properly configured.
+      </p>
+      <h3>Denial of Service risk</h3>
       <p>
         If you are creating an API server that will evaluate untrusted Jsonnet code in the same
         process that handles other requests, be aware of your exposure to denial of service attacks.

@@ -695,6 +695,15 @@ arr[1]
 
 <p>When an object is evaluated, all the field names are evaluated. This means they cannot refer to object locals, <code>self</code>, or <code>super</code>. In other words, their scope is “outside of the object”.</p>
 
+<h4 id="conditional-fields">Conditional Fields</h4>
+
+<p>If a field name evaluates to null, that field value is discarded and not included in the resulting object. The following code will evaluate to the empty object:</p>
+
+<pre><code>{
+  [if 1 == 2 then "foo"]: "bar",
+}
+</code></pre>
+
 <h2 id="independence-from-the-environment-hermeticity">Independence from the Environment (Hermeticity)</h2>
 
 <p>Jsonnet programs are <em>pure computations</em>, which have no side-effects and which depend only on the values which were explicitly passed.

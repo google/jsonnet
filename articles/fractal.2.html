@@ -455,7 +455,7 @@
         basis.  All the instances extend from <code>FractalInstance</code>, which is parameterized
         by the index <code>zone_hash</code> (it's actually just a function that takes zone_hash and
         returns an instance template).  It is this index that is used to compute the zone, as can be
-        seen in the body of <code>FractalInstance</code>.  The zone is also also a namespace for the
+        seen in the body of <code>FractalInstance</code>.  The zone is also a namespace for the
         instance name, so when we list the instances behind each load balancer in the
         <code>google_compute_target_pool</code> object, we compute the zone for each instance there
         as well.
