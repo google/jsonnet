@@ -8,10 +8,7 @@ on:
   push:
     branches:
       - "master"
-      - "prepare-release"
       - "doc-workflow"
-    tags:
-      - v*
   workflow_dispatch:
 
 permissions:
@@ -40,7 +37,7 @@ jobs:
           key: jsonnet-bin-${{ hashFiles('include/*', 'core/*', 'cmd/*', 'cpp/*', 'third_party/**/*', 'stdlib/std.jsonnet') }}
           path: ./jsonnet
       - name: Build jsonnet binary
-        if: steps.cache-jsonnet-binary.outputs.cache-hit != 'true'
+        if: ${{ steps.cache-jsonnet-binary.outputs.cache-hit != 'true' }}
         run: |
           make jsonnet
       - name: Set up output dir
@@ -61,13 +58,20 @@ jobs:
           git checkout HEAD -- js/libjsonnet.wasm
           git add .
       - name: Diff docs
+        id: diff-generated
         env:
           WORKDIR: ${{ steps.make-output-dir.outputs.doc_output_dir }}
         run: |
           cd "$WORKDIR"/work
           git diff --cached --stat
           git diff --cached
+          if git diff-index --quiet HEAD; then
+            echo "diff_status=clean" >> "$GITHUB_OUTPUT"
+          else
+            echo "diff_status=changed" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload Pages package
+        if: ${{ steps.diff-generated.outputs.diff_status == 'changed' }}
         uses: actions/upload-pages-artifact@v4
         with:
           path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/work/
