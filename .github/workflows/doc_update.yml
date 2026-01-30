@@ -18,6 +18,13 @@ jobs:
   build_website:
     name: Build website
     runs-on: "ubuntu-24.04"
+    outputs:
+      diff_status: ${{ steps.diff-generated.outputs.diff_status }}
+      # Note upload-pages-artifact output name is artifact_id (with underscore).
+      pages_artifact_id: ${{ steps.upload-pages-package.outputs.artifact_id }}
+      # Note upload-artifact output name is artifact-id (with dash).
+      branch_content_artifact_id: ${{ steps.upload-full-archive.outputs.artifact-id }}
+      git_tree_hash: ${{ steps.diff-generated.outputs.git_tree_hash }}
     steps:
       - uses: actions/checkout@v6
       - name: Setup Pages
@@ -67,13 +74,92 @@ jobs:
           cd "$WORKDIR"/work
           git diff --cached --stat
           git diff --cached
+          TREE_SHA1=$(git write-tree)
+          echo "git_tree_hash=$TREE_SHA1" >> "$GITHUB_OUTPUT"
           if git diff-index --quiet HEAD; then
             echo "diff_status=clean" >> "$GITHUB_OUTPUT"
           else
             echo "diff_status=changed" >> "$GITHUB_OUTPUT"
           fi
+          git archive --format=tar -o ../gh-pages-content.tar "$TREE_SHA1"
+      - name: Upload full archive
+        id: upload-full-archive
+        if: ${{ steps.diff-generated.outputs.diff_status == 'changed' }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/gh-pages-content.tar
+          name: full-gh-pages-content
+          if-no-files-found: "error"
+          retention-days: 4
+          include-hidden-files: true
       - name: Upload Pages package
+        id: upload-pages-package
         if: ${{ steps.diff-generated.outputs.diff_status == 'changed' }}
         uses: actions/upload-pages-artifact@v4
         with:
           path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/work/
+
+  push_pages_branch:
+    name: Update gh-pages branch
+    needs: build_website
+    if: ${{ needs.build_website.outputs.diff_status == 'changed' }}
+    permissions:
+      contents: write
+    environment:
+      name: pages-via-branch-push
+    runs-on: "ubuntu-24.04"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: repo
+      - uses: actions/download-artifact@v7
+        with:
+          artifact-ids: ${{ needs.build_website.outputs.branch_content_artifact_id }}
+          path: built
+      - name: Extract and push
+        env:
+          TREE_SHA1: ${{ needs.build_website.outputs.git_tree_hash }}
+          GIT_AUTHOR_NAME: "github-actions[bot]"
+          GIT_AUTHOR_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "github-actions[bot]"
+          GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+        run: |
+          [[ ! -z "$TREE_SHA1" ]] || {
+            >&2 echo "did not get valid sha1 hash for expected git tree from builder job"
+            exit 1
+          }
+          cd repo
+          rm --one-file-system -r -- $(git ls-tree --name-only HEAD)
+          echo "Cleared working dir. Content is now:"
+          ls -R "$GITHUB_WORKSPACE"
+          echo "Unpacking artifact from builder job."
+          tar -xf ../built/gh-pages-content.tar
+          git add .
+          git diff --cached --stat
+          git diff --cached
+          UNPACKED_TREE_SHA1=$(git write-tree)
+          echo "Unpacked tree SHA1: $UNPACKED_TREE_SHA1"
+          [[ "$TREE_SHA1" = "$UNPACKED_TREE_SHA1" ]] || {
+            >&2 echo "builder-produced tree differs from extracted tree"
+            exit 1
+          }
+          git commit -m 'Update docs.'
+          git log -n1
+          git push
+
+  publish_pages:
+    name: Direct publish pages
+    needs: build_website
+    if: ${{ false && needs.build_website.outputs.diff_status == 'changed' }}
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: "ubuntu-24.04"
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
