@@ -1,0 +1,70 @@
+name: Rebuild Docs
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, review_requested]
+    branches-ignore:
+      - "gh-pages"
+  push:
+    branches:
+      - "master"
+      - "prepare-release"
+      - "doc-workflow"
+    tags:
+      - v*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build_website:
+    name: Build website
+    runs-on: "ubuntu-24.04"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create Gemfile
+        run: |
+          echo $'source "https://rubygems.org"\n\ngem "jekyll"\n' > Gemfile
+      - name: Setup Ruby and Jekyll
+        uses: ruby/setup-ruby@8d27f39a5e7ad39aebbcbd1324f7af020229645c # v1.287.0
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: true
+      - name: Build jsonnet binary
+        if: steps.cache-jsonnet-binary.outputs.cache-hit != 'true'
+        run: |
+          make jsonnet
+      - name: Set up output dir
+        id: make-output-dir
+        run: |
+          WORKDIR="$(mktemp -d)"
+          git fetch origin gh-pages
+          git worktree add --no-checkout --detach "$WORKDIR"/work FETCH_HEAD
+          echo "doc_output_dir=$WORKDIR" >> "$GITHUB_OUTPUT"
+      - name: Build website
+        env:
+          WORKDIR: ${{ steps.make-output-dir.outputs.doc_output_dir }}
+        run: |
+          tools/scripts/update_web_content.sh
+          bundler exec jekyll build -s doc -d "$WORKDIR"/work
+          cd "$WORKDIR"/work
+          # Keep existing libjsonnet.wasm.
+          git checkout HEAD -- js/libjsonnet.wasm
+          git add .
+      - name: Diff docs
+        env:
+          WORKDIR: ${{ steps.make-output-dir.outputs.doc_output_dir }}
+        run: |
+          cd "$WORKDIR"/work
+          git diff --cached --stat
+          git diff --cached
+      - name: Pack docs
+        uses: actions/upload-artifact@v6
+        with:
+          name: gh-pages-content
+          retention-days: 22
+          include-hidden-files: true
+          if-no-files-found: "error"
+          path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/work/
+
