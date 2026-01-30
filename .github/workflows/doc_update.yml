@@ -56,6 +56,8 @@ jobs:
           cd "$WORKDIR"/work
           # Keep existing libjsonnet.wasm.
           git checkout HEAD -- js/libjsonnet.wasm
+          # Want a .nojekyll file while we're still publishing by pushing to gh-pages branch.
+          touch .nojekyll
           git add .
       - name: Diff docs
         id: diff-generated
