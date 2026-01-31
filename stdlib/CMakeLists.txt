@@ -1,15 +1,15 @@
-# Utility to convert file to a list of integeters.
+add_executable(to_c_array EXCLUDE_FROM_ALL to_c_array.cpp)
+configure_target_cc_props(to_c_array)
 
-add_executable(to_c_array to_c_array.cpp)
-
-# Custom command that will only build stdlib when it changes.
 add_custom_command(
-	OUTPUT ${PROJECT_SOURCE_DIR}/core/std.jsonnet.h
-	COMMAND ${GLOBAL_OUTPUT_PATH}/to_c_array
-			    ${PROJECT_SOURCE_DIR}/stdlib/std.jsonnet
-					${PROJECT_SOURCE_DIR}/core/std.jsonnet.h
-	DEPENDS to_c_array std.jsonnet)
+	COMMENT "Packing std.jsonnet into std.jsonnet.h"
+	COMMAND
+		to_c_array
+			"${CMAKE_CURRENT_SOURCE_DIR}/std.jsonnet"
+			"${CMAKE_CURRENT_BINARY_DIR}/std.jsonnet.h"
+	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/std.jsonnet.h"
+	MAIN_DEPENDENCY std.jsonnet
+	DEPENDS to_c_array)
 
-# Standard library build target that libjsonnet can depend on.
-add_custom_target(stdlib ALL
-	DEPENDS ${PROJECT_SOURCE_DIR}/core/std.jsonnet.h)
+add_library(stdlib_h INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/std.jsonnet.h")
+target_include_directories(stdlib_h INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")

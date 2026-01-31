@@ -48,6 +48,7 @@ bazel-*
 tags
 bin/
 Testing/
+cmake_test_discovery_*.json
 
 # Ignore auto-generated makefiles from CMake.
 **/Makefile
