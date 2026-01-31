@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - "master"
-      - "doc-workflow"
   workflow_dispatch:
 
 permissions:
@@ -102,7 +101,7 @@ jobs:
   push_pages_branch:
     name: Update gh-pages branch
     needs: build_website
-    if: ${{ needs.build_website.outputs.diff_status == 'changed' }}
+    if: ${{ contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
     permissions:
       contents: write
     environment:
@@ -151,7 +150,7 @@ jobs:
   publish_pages:
     name: Direct publish pages
     needs: build_website
-    if: ${{ false && needs.build_website.outputs.diff_status == 'changed' }}
+    if: ${{ false && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
     permissions:
       pages: write
       id-token: write
