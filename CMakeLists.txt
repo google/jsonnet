@@ -136,3 +136,33 @@ if (BUILD_TESTS)
                 jsonnet unicode_test parser_test lexer_test libjsonnet++_test libjsonnet_test_locale
     )
 endif()
+
+
+# Man pages
+find_program(HELP2MAN_BINARY NAMES help2man)
+if (HELP2MAN_BINARY)
+    message(STATUS "help2man found, man pages will be generated.")
+    file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1)
+    set(CMAKE_INSTALL_MANDIR "share/man" CACHE STRING "Directory for man pages")
+
+    add_custom_command(
+        OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1
+        COMMAND ${HELP2MAN_BINARY}
+        ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnet
+        DEPENDS jsonnet
+    )
+    add_custom_command(
+        OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1
+        COMMAND ${HELP2MAN_BINARY}
+        ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnetfmt
+        DEPENDS jsonnetfmt
+    )
+
+    add_custom_target(jsonnet-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1)
+    add_custom_target(jsonnetfmt-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1)
+
+    install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+else()
+    message(STATUS "help2man not found, man pages will not be generated.")
+endif()
