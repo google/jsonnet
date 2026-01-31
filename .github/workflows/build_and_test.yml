@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Configure (cmake)
         run: |
-          cmake -B "${{github.workspace}}/build"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -B "${{github.workspace}}/build"
       - name: Build (cmake --build)
         working-directory: ${{github.workspace}}/build
         run: |

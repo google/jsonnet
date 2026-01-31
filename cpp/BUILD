@@ -22,3 +22,13 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "libjsonnet_locale_test",
+    srcs = ["libjsonnet_test_locale.cpp"],
+    data = ["//cpp/testdata"],
+    deps = [
+        ":libjsonnet++",
+        "@googletest//:gtest_main",
+    ],
+)
