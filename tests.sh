@@ -11,8 +11,6 @@ if [ -z "$DISABLE_LIB_TESTS" ]; then
     LD_LIBRARY_PATH=. ./libjsonnet_test_snippet "${TEST_SNIPPET}" || FAIL=TRUE
     printf 'libjsonnet_test_file: '
     LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
-    echo -n 'libjsonnet_test_locale: '
-    LD_LIBRARY_PATH=. ./libjsonnet_test_locale || FAIL=TRUE
 fi
 examples/check.sh || FAIL=TRUE
 examples/terraform/check.sh || FAIL=TRUE

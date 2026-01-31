@@ -3,6 +3,7 @@
 #include <locale>
 #include <cassert>
 #include <libjsonnet++.h>
+#include "gtest/gtest.h"
 
 // Regression test for the follwing issue: https://github.com/google/jsonnet/issues/722
 
@@ -15,26 +16,36 @@ protected:
     virtual char do_thousands_sep() const override { return '\''; }
 };
 
-int main() {
+class TestWithModifiedGlobalLocale : public testing::Test {
+    protected:
+        TestWithModifiedGlobalLocale():
+            glocale_(std::locale::classic(), new Punctuator()) {}
+
+        void SetUp() override {
+            this->previous_global_locale_ = std::locale::global(this->glocale_);
+        }
+        void TearDown() override {
+            std::locale::global(this->previous_global_locale_);
+        }
+    private:
+        std::locale glocale_;
+        std::locale previous_global_locale_;
+};
+
+TEST_F(TestWithModifiedGlobalLocale, Test) {
     std::string templatedJSONString { "20000.5" };
-    Punctuator punctuator;
-    std::locale glocale(std::locale::classic(), &punctuator);
-    std::locale::global(glocale);
 
     // Self-test to make sure the custom global locale is actually being applied.
     std::ostringstream ss;
     ss << 20000.5;
-    assert(ss.str() == "20'00'0!5");
+    EXPECT_EQ(ss.str(), "20'00'0!5");
 
     jsonnet::Jsonnet jsonnet {};
-    jsonnet.init();
+    ASSERT_TRUE(jsonnet.init());
 
     std::string expanded;
-    if (!jsonnet.evaluateSnippet("", templatedJSONString, &expanded)) {
-        std::cerr << "Error parsing Jsonnet: "+jsonnet.lastError();
-        exit(1);
-    }
+    ASSERT_TRUE(jsonnet.evaluateSnippet("", templatedJSONString, &expanded))
+        << "Error parsing Jsonnet: " << jsonnet.lastError();
     std::string expected = "20000.5\n";
-    assert(expected == expanded);
-    return 0;
+    EXPECT_EQ(expected, expanded);
 }
