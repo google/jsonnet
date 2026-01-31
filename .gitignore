@@ -39,6 +39,7 @@ bazel-*
 /production/
 /doc/production/
 /doc/js/libjsonnet.wasm
+/man
 
 # Cmake
 **/CMakeCache.txt
