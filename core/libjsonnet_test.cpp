@@ -35,5 +35,18 @@ TEST(JsonnetTest, TestEvaluateSnippet)
     jsonnet_destroy(vm);
 }
 
+TEST(JsonnetTest, TestEvaluateFile)
+{
+    const char* file_path = "test_suite/object.jsonnet";
+    struct JsonnetVm *vm = jsonnet_make();
+    ASSERT_FALSE(vm == nullptr);
+    int error = 0;
+    char* output = jsonnet_evaluate_file(vm, file_path, &error);
+    EXPECT_EQ(0, error);
+    EXPECT_STREQ("true\n", output);
+    jsonnet_realloc(vm, output, 0);
+    jsonnet_destroy(vm);
+}
+
 }  // namespace
 }  // namespace jsonnet::internal

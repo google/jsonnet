@@ -8,3 +8,9 @@ sh_library(
     srcs = ["tests.source"],
     visibility = ["//tools/build_defs:__pkg__"],
 )
+
+filegroup(
+    name = "test_input_for_core_test",
+    srcs = ["object.jsonnet"],
+    visibility = ["//core:__pkg__"],
+)

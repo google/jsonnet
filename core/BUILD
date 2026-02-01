@@ -68,6 +68,7 @@ cc_test(
 cc_test(
     name = "libjsonnet_test",
     srcs = ["libjsonnet_test.cpp"],
+    data = ["//test_suite:test_input_for_core_test"],
     deps = [
         ":libjsonnet",
         "@googletest//:gtest_main",
