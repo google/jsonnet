@@ -48,7 +48,7 @@ option(BUILD_TESTS "Build and run jsonnet tests." ON)
 option(BUILD_STATIC_LIBS "Build a static libjsonnet." ON)
 option(BUILD_SHARED_LIBS "Build shared libjsonnet." ON)
 option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of the static one." OFF)
-option(BUILD_MAN_PAGES "Build manpages." OFF)
+option(BUILD_MAN_PAGES "Build manpages." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 # TODO: Support using a system Rapid YAML install.
@@ -330,37 +330,40 @@ endif()  # if(BUILD_TESTS)
 #### Man pages
 #
 
-if(BUILD_MAN_PAGES)
+if(BUILD_MAN_PAGES AND (BUILD_JSONNET OR BUILD_JSONNETFMT))
     find_program(HELP2MAN_BINARY NAMES help2man)
     if (HELP2MAN_BINARY)
         message(STATUS "help2man found, man pages will be generated.")
-        file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1)
-        set(CMAKE_INSTALL_MANDIR "share/man" CACHE STRING "Directory for man pages")
+        file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/man/man1")
+        if(BUILD_JSONNET)
+            add_custom_command(
+                OUTPUT "${PROJECT_BINARY_DIR}/man/man1/jsonnet.1"
+                COMMAND "${HELP2MAN_BINARY}"
+                ARGS --section=1 --no-info --name="Jsonnet data templating language interpreter" --output="${PROJECT_BINARY_DIR}/man/man1/jsonnet.1" "$<TARGET_FILE:jsonnet>"
+                DEPENDS jsonnet
+            )
+        endif()
+        if(BUILD_JSONNETFMT)
+            add_custom_command(
+                OUTPUT "${PROJECT_BINARY_DIR}/man/man1/jsonnetfmt.1"
+                COMMAND "${HELP2MAN_BINARY}"
+                ARGS --section=1 --no-info --name="Jsonnet data templating language auto-formatter" --output="${PROJECT_BINARY_DIR}/man/man1/jsonnetfmt.1" "$<TARGET_FILE:jsonnetfmt>"
+                DEPENDS jsonnetfmt
+            )
+        endif()
 
-        add_custom_command(
-            OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1
-            COMMAND ${HELP2MAN_BINARY}
-            ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnet
-            DEPENDS jsonnet
-        )
-        add_custom_command(
-            OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1
-            COMMAND ${HELP2MAN_BINARY}
-            ARGS --section=1 --name="Jsonnet data templating language interpreter" --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/jsonnetfmt
-            DEPENDS jsonnetfmt
-        )
+        add_custom_target(jsonnet-man ALL DEPENDS "${PROJECT_BINARY_DIR}/man/man1/jsonnet.1")
+        add_custom_target(jsonnetfmt-man ALL DEPENDS "${PROJECT_BINARY_DIR}/man/man1/jsonnetfmt.1")
 
-        add_custom_target(jsonnet-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1)
-        add_custom_target(jsonnetfmt-man ALL DEPENDS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1)
-
-        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnet.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/man/man1/jsonnetfmt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+        install(FILES ${PROJECT_BINARY_DIR}/man/man1/jsonnet.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
+        install(FILES ${PROJECT_BINARY_DIR}/man/man1/jsonnetfmt.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
     else()
         message(STATUS "help2man not found, man pages will not be generated.")
     endif()
 endif()  # if(BUILD_MAN_PAGES)
 
-# --- CMake debugging outputs.
+#### CMake debugging outputs
+#
 
 # Note cmake_language GET_MESSAGE_LOG_LEVEL exists only in 3.25 and above.
 if(CMAKE_VERSION VERSION_GREATER "3.25")
@@ -380,7 +383,9 @@ if(CMAKE_VERSION VERSION_GREATER "3.25")
                 jsonnet_cpp_shared
                 jsonnet_cmd_utils
                 jsonnet
-                jsonnetfmt 
+                jsonnetfmt
+                jsonnet-man
+                jsonnetfmt-man
             PROPERTIES 
                 TYPE
                 C_STANDARD
@@ -394,6 +399,7 @@ if(CMAKE_VERSION VERSION_GREATER "3.25")
                 INTERFACE_INCLUDE_DIRECTORIES
                 OUTPUT_NAME
                 PUBLIC_HEADER
+                RUNTIME_OUTPUT_DIRECTORY
         )
     endif()
 endif()

@@ -169,7 +169,7 @@ core/desugarer.cpp: core/std.jsonnet.h
 # Target to generate the man page
 
 $(MAN1_DIR)/%.1: % | $(MAN1_DIR)
-	$(HELP2MAN) --output=$@ ./$<
+	$(HELP2MAN) --no-info --output=$@ ./$<
 
 man: $(addprefix $(MAN1_DIR)/, $(BINS:=.1))
 
