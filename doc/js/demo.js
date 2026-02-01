@@ -123,84 +123,79 @@ function aux_demo(input_id, input_files, main_file, output_id, process_func) {
 
   for (let textarea_id in editor_by_textarea_id) {
     let editor = editor_by_textarea_id[textarea_id];
-    let startedJobId = 0;
-    let finishedJobId = 0;
-    editor.on('change', async function() {
-      // Yield until we finish duplicated change events (#1254)
-      startedJobId += 1;
-      const currJobId = startedJobId;
-      while (finishedJobId < currJobId - 1) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-
-      try {
-        // Clean out the existing textareas and tabs.
-        // There should be only one.
-        let tab_header = output.getElementsByClassName('tab-header')[0];
-        let last_selected;
-        while (tab_header.firstChild) {
-          let child = tab_header.firstChild;
-          if (child.className == 'selected') {
-            last_selected = child.innerHTML;
-          }
-          tab_header.removeChild(child);
-        }
-
-        let condemned_textareas = output.getElementsByTagName('TEXTAREA');
-        let last_scroll = 0;
-        while (condemned_textareas[0]) {
-          if (condemned_textareas[0].classList.contains('selected')) {
-            last_scroll = condemned_textareas[0].scrollTop;
-          }
-          output.removeChild(condemned_textareas[0]);
-        }
-
-
-        let input_files_content = {};
-        for (let id in input_files) {
-          let file = input_files[id];
-          let file_editor = editor_by_textarea_id[id];
-          input_files_content[file] = file_editor.getValue();
-        }
-        function add_textarea_and_tab(filename, selected, scroll, output_content, output_class) {
-          let output_textarea = document.createElement('TEXTAREA');
-          let id = 'output-' + counter++;
-          output_textarea.setAttribute('id', id);
-          output_textarea.value = output_content;
-          output.appendChild(output_textarea);
-
-          let selected_class = 'unselected';
-          if (filename == selected) {
-            selected_class = 'selected';
-            output_textarea.scrollTop = scroll;
-          }
-          output_textarea.className = selected_class + ' ' + output_class;
-          let max_height = 300;
-          for (let id in editor_by_textarea_id) {
-            let editor_div = editor_by_textarea_id[id].getWrapperElement();
-            max_height = Math.max(max_height, editor_div.offsetHeight);
-          }
-          resize_textarea_max(max_height, output_textarea);
-
-          let output_tab = document.createElement('DIV');
-          tab_header.appendChild(output_tab);
-          output_tab.className = selected_class;
-          output_tab.onclick = function() { tab_output_click(this, output_textarea.id); };
-          output_tab.innerHTML = filename;
-        }
+    // Serialize processing of change events, otherwise they can interfere with each other.
+    let ongoingChange = Promise.resolve(true);
+    editor.on('change', () => {
+      return (ongoingChange = ongoingChange.then(async () => {
         try {
-          await process_func(
-              main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab);
-        } catch (e) {
-          if (typeof e === 'string') {
-            // Remove last \n
-            e = e.replace(/\n$/, '');
+          // Clean out the existing textareas and tabs.
+          // There should be only one.
+          let tab_header = output.getElementsByClassName('tab-header')[0];
+          let last_selected;
+          while (tab_header.firstChild) {
+            let child = tab_header.firstChild;
+            if (child.className == 'selected') {
+              last_selected = child.innerHTML;
+            }
+            tab_header.removeChild(child);
           }
-          add_textarea_and_tab(last_selected, last_selected, last_scroll, e, 'code-error');
+
+          let condemned_textareas = output.getElementsByTagName('TEXTAREA');
+          let last_scroll = 0;
+          while (condemned_textareas[0]) {
+            if (condemned_textareas[0].classList.contains('selected')) {
+              last_scroll = condemned_textareas[0].scrollTop;
+            }
+            output.removeChild(condemned_textareas[0]);
+          }
+
+
+          let input_files_content = {};
+          for (let id in input_files) {
+            let file = input_files[id];
+            let file_editor = editor_by_textarea_id[id];
+            input_files_content[file] = file_editor.getValue();
+          }
+          function add_textarea_and_tab(filename, selected, scroll, output_content, output_class) {
+            let output_textarea = document.createElement('TEXTAREA');
+            let id = 'output-' + counter++;
+            output_textarea.setAttribute('id', id);
+            output_textarea.value = output_content;
+            output.appendChild(output_textarea);
+
+            let selected_class = 'unselected';
+            if (filename == selected) {
+              selected_class = 'selected';
+              output_textarea.scrollTop = scroll;
+            }
+            output_textarea.className = selected_class + ' ' + output_class;
+            let max_height = 300;
+            for (let id in editor_by_textarea_id) {
+              let editor_div = editor_by_textarea_id[id].getWrapperElement();
+              max_height = Math.max(max_height, editor_div.offsetHeight);
+            }
+            resize_textarea_max(max_height, output_textarea);
+
+            let output_tab = document.createElement('DIV');
+            tab_header.appendChild(output_tab);
+            output_tab.className = selected_class;
+            output_tab.onclick = function() { tab_output_click(this, output_textarea.id); };
+            output_tab.innerHTML = filename;
+          }
+          try {
+            await process_func(
+                main_file, input_files_content, last_selected, last_scroll, add_textarea_and_tab);
+          } catch (e) {
+            if (typeof e === 'string') {
+              // Remove last \n
+              e = e.replace(/\n$/, '');
+            }
+            add_textarea_and_tab(last_selected, last_selected, last_scroll, e, 'code-error');
+          }
+        } catch (e) {
+          console.error(`error while processing CodeMirror edit/change: ${e}`);
         }
-      } finally {
-        finishedJobId = Math.max(finishedJobId, currJobId);
-      }
+      }));
     });
   }
   
