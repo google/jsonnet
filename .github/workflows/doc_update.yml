@@ -154,7 +154,7 @@ jobs:
           tar -xf ../built/gh-pages-content.tar
           git add .
           git diff --cached --stat
-          UNPACKED_WANT_TREE_SHA1=$(git write-tree)
+          UNPACKED_TREE_SHA1=$(git write-tree)
           echo "Expect   tree SHA1: $WANT_TREE_SHA1 (computed in build step)"
           echo "Unpacked tree SHA1: $UNPACKED_TREE_SHA1"
           [[ "$WANT_TREE_SHA1" = "$UNPACKED_TREE_SHA1" ]] || {
