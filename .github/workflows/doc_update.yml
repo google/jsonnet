@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Setup Pages
+        if: ${{ github.repository == 'google/jsonnet' }}
         uses: actions/configure-pages@v5
       - name: Create Gemfile
         run: |
@@ -50,8 +51,16 @@ jobs:
         id: make-output-dir
         run: |
           WORKDIR="$(mktemp -d)"
-          git fetch origin gh-pages
-          git worktree add --no-checkout --detach "$WORKDIR"/work FETCH_HEAD
+          # If the workflow runs on a fork that doesn't have a gh-pages branch
+          # (which should be most forks) then we still want to be able to build
+          # the docs (so the repo owner can examine them), but we have no baseline.
+          # So we just build as though this is the first time.
+          if git fetch origin gh-pages; then
+            git worktree add --no-checkout --detach "$WORKDIR"/work FETCH_HEAD
+          else
+           echo "Repo has no gh-pages! Creating new orphan branch instead."
+            git worktree add --orphan -b gh-pages "$WORKDIR"/work
+          fi
           echo "doc_output_dir=$WORKDIR" >> "$GITHUB_OUTPUT"
       - name: Build website
         env:
@@ -61,7 +70,7 @@ jobs:
           bundler exec jekyll build -s doc -d "$WORKDIR"/work
           cd "$WORKDIR"/work
           # Keep existing libjsonnet.wasm.
-          git checkout HEAD -- js/libjsonnet.wasm
+          git checkout HEAD -- js/libjsonnet.wasm || echo "Could not find existing js/libjsonnet.wasm"
           # Want a .nojekyll file while we're still publishing by pushing to gh-pages branch.
           touch .nojekyll
           git add .
@@ -71,15 +80,24 @@ jobs:
           WORKDIR: ${{ steps.make-output-dir.outputs.doc_output_dir }}
         run: |
           cd "$WORKDIR"/work
-          git diff --cached --stat
-          git diff --cached
-          TREE_SHA1=$(git write-tree)
-          echo "git_tree_hash=$TREE_SHA1" >> "$GITHUB_OUTPUT"
-          if git diff-index --quiet HEAD; then
-            echo "diff_status=clean" >> "$GITHUB_OUTPUT"
+          if git rev-parse --quiet --verify HEAD > /dev/null; then
+            git diff --cached --stat
+            # Only show the first 5000 lines of the diff output, for sanity.
+            git diff --cached | head -n5000
+            if git diff-index --quiet HEAD; then
+              echo "Generated docs are identical to existing gh-pages branch."
+              echo "diff_status=clean" >> "$GITHUB_OUTPUT"
+            else
+              echo "Generated docs differ from existing gh-pages branch."
+              echo "diff_status=changed" >> "$GITHUB_OUTPUT"
+            fi
           else
+            echo "No HEAD revision; probably on an orphan branch. Skipping diff step."
             echo "diff_status=changed" >> "$GITHUB_OUTPUT"
           fi
+          TREE_SHA1=$(git write-tree)
+          echo "Computed sha1 for new gh-pages tree: $TREE_SHA1"
+          echo "git_tree_hash=$TREE_SHA1" >> "$GITHUB_OUTPUT"
           git archive --format=tar -o ../gh-pages-content.tar "$TREE_SHA1"
       - name: Upload full archive
         id: upload-full-archive
@@ -93,7 +111,7 @@ jobs:
           include-hidden-files: true
       - name: Upload Pages package
         id: upload-pages-package
-        if: ${{ steps.diff-generated.outputs.diff_status == 'changed' }}
+        if: ${{ github.repository == 'google/jsonnet' && steps.diff-generated.outputs.diff_status == 'changed' }}
         uses: actions/upload-pages-artifact@v4
         with:
           path: ${{ steps.make-output-dir.outputs.doc_output_dir }}/work/
@@ -101,7 +119,7 @@ jobs:
   push_pages_branch:
     name: Update gh-pages branch
     needs: build_website
-    if: ${{ contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
+    if: ${{ github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
     permissions:
       contents: write
     environment:
@@ -118,13 +136,13 @@ jobs:
           path: built
       - name: Extract and push
         env:
-          TREE_SHA1: ${{ needs.build_website.outputs.git_tree_hash }}
+          WANT_TREE_SHA1: ${{ needs.build_website.outputs.git_tree_hash }}
           GIT_AUTHOR_NAME: "github-actions[bot]"
           GIT_AUTHOR_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
           GIT_COMMITTER_NAME: "github-actions[bot]"
           GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
         run: |
-          [[ ! -z "$TREE_SHA1" ]] || {
+          [[ ! -z "$WANT_TREE_SHA1" ]] || {
             >&2 echo "did not get valid sha1 hash for expected git tree from builder job"
             exit 1
           }
@@ -136,10 +154,10 @@ jobs:
           tar -xf ../built/gh-pages-content.tar
           git add .
           git diff --cached --stat
-          git diff --cached
-          UNPACKED_TREE_SHA1=$(git write-tree)
+          UNPACKED_WANT_TREE_SHA1=$(git write-tree)
+          echo "Expect   tree SHA1: $WANT_TREE_SHA1 (computed in build step)"
           echo "Unpacked tree SHA1: $UNPACKED_TREE_SHA1"
-          [[ "$TREE_SHA1" = "$UNPACKED_TREE_SHA1" ]] || {
+          [[ "$WANT_TREE_SHA1" = "$UNPACKED_TREE_SHA1" ]] || {
             >&2 echo "builder-produced tree differs from extracted tree"
             exit 1
           }
@@ -150,7 +168,7 @@ jobs:
   publish_pages:
     name: Direct publish pages
     needs: build_website
-    if: ${{ false && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
+    if: ${{ false && github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
     permissions:
       pages: write
       id-token: write
