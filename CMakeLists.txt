@@ -308,9 +308,10 @@ if(BUILD_TESTS)
         add_executable(${TESTNAME} ${ARGN})
         target_link_libraries(${TESTNAME} ${JSONNET_LIB_TARGET} gtest gmock gtest_main)
         gtest_discover_tests(${TESTNAME}
-            # Test-data is in the source directory so that's where we run the test.
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-            PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            PROPERTIES
+                VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+                ENVIRONMENT "JSONNET_SOURCE_BASE=${PROJECT_SOURCE_DIR}"
         )
         set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
     endfunction()

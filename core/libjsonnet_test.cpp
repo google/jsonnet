@@ -18,12 +18,36 @@ extern "C" {
 #include "libjsonnet.h"
 }
 
+#include <cstdlib>
+#include <filesystem>
+
 #include "gtest/gtest.h"
 
 namespace jsonnet::internal {
 namespace {
 
-TEST(JsonnetTest, TestEvaluateSnippet)
+class TestInSourceDir : public testing::Test {
+    protected:
+        static void SetUpTestSuite() {
+            original_cwd_ = std::filesystem::current_path();
+            const char* source_base_env = std::getenv("JSONNET_SOURCE_BASE");
+            if (source_base_env) {
+                std::filesystem::path source_base{source_base_env};
+                std::filesystem::current_path(source_base);
+            }
+        }
+
+        static void TearDownTestSuite() {
+            std::filesystem::current_path(original_cwd_);
+        }
+
+    private:
+        static std::filesystem::path original_cwd_;
+};
+
+std::filesystem::path TestInSourceDir::original_cwd_;
+
+TEST_F(TestInSourceDir, TestEvaluateSnippet)
 {
     const char* snippet = "std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)";
     struct JsonnetVm* vm = jsonnet_make();
@@ -35,13 +59,12 @@ TEST(JsonnetTest, TestEvaluateSnippet)
     jsonnet_destroy(vm);
 }
 
-TEST(JsonnetTest, TestEvaluateFile)
+TEST_F(TestInSourceDir, TestEvaluateFile)
 {
-    const char* file_path = "test_suite/object.jsonnet";
     struct JsonnetVm *vm = jsonnet_make();
     ASSERT_FALSE(vm == nullptr);
     int error = 0;
-    char* output = jsonnet_evaluate_file(vm, file_path, &error);
+    char* output = jsonnet_evaluate_file(vm, "test_suite/object.jsonnet", &error);
     EXPECT_EQ(0, error);
     EXPECT_STREQ("true\n", output);
     jsonnet_realloc(vm, output, 0);

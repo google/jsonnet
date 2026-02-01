@@ -16,6 +16,8 @@ limitations under the License.
 
 #include "libjsonnet++.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <streambuf>
 #include <string>
@@ -23,17 +25,39 @@ limitations under the License.
 #include "gtest/gtest.h"
 
 namespace jsonnet {
-std::string readFile(const std::string& filename)
+
+class TestInSourceDir : public testing::Test {
+    protected:
+        static void SetUpTestSuite() {
+            original_cwd_ = std::filesystem::current_path();
+            const char* source_base_env = std::getenv("JSONNET_SOURCE_BASE");
+            if (source_base_env) {
+                std::filesystem::path source_base{source_base_env};
+                std::filesystem::current_path(source_base);
+            }
+        }
+
+        static void TearDownTestSuite() {
+            std::filesystem::current_path(original_cwd_);
+        }
+
+    private:
+        static std::filesystem::path original_cwd_;
+};
+
+std::filesystem::path TestInSourceDir::original_cwd_;
+
+std::string readFile(const std::string& path)
 {
-    std::ifstream in(filename);
+    std::ifstream in(path);
     if (!in.good()){
-        ADD_FAILURE() << "Could not open: " << filename;
+        ADD_FAILURE() << "Could not open: " << path;
         return "";
     }
     return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
-TEST(JsonnetTest, TestEvaluateSnippet)
+TEST_F(TestInSourceDir, TestEvaluateSnippet)
 {
     const std::string input = readFile("cpp/testdata/example.jsonnet");
     const std::string expected = readFile("cpp/testdata/example_golden.json");
@@ -46,7 +70,7 @@ TEST(JsonnetTest, TestEvaluateSnippet)
     EXPECT_EQ("", jsonnet.lastError());
 }
 
-TEST(JsonnetTest, TestEvaluateInvalidSnippet)
+TEST_F(TestInSourceDir, TestEvaluateInvalidSnippet)
 {
     const std::string input = readFile("cpp/testdata/invalid.jsonnet");
     const std::string error = readFile("cpp/testdata/invalid.out");
@@ -59,7 +83,7 @@ TEST(JsonnetTest, TestEvaluateInvalidSnippet)
     EXPECT_EQ(error, jsonnet.lastError());
 }
 
-TEST(JsonnetTest, TestEvaluateFile)
+TEST_F(TestInSourceDir, TestEvaluateFile)
 {
     const std::string expected = readFile("cpp/testdata/example_golden.json");
 
@@ -71,7 +95,7 @@ TEST(JsonnetTest, TestEvaluateFile)
     EXPECT_EQ("", jsonnet.lastError());
 }
 
-TEST(JsonnetTest, TestEvaluateInvalidFile)
+TEST_F(TestInSourceDir, TestEvaluateInvalidFile)
 {
     const std::string expected = readFile("cpp/testdata/invalid.out");
 
@@ -83,7 +107,7 @@ TEST(JsonnetTest, TestEvaluateInvalidFile)
     EXPECT_EQ(expected, jsonnet.lastError());
 }
 
-TEST(JsonnetTest, TestAddImportPath)
+TEST_F(TestInSourceDir, TestAddImportPath)
 {
     const std::string expected = readFile("cpp/testdata/importing_golden.json");
 
