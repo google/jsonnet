@@ -151,7 +151,7 @@ PUBLIC_HEADERS := \
 	include/libjsonnet++.h
 
 PLAIN_TEST_SRC := \
-	core/libjsonnet_test_file.c \
+	core/libjsonnet_file_test.c \
 	core/libjsonnet_native_callbacks_test.c
 GTEST_TEST_SRC := \
 	cpp/libjsonnet_locale_test.cpp \
@@ -257,7 +257,7 @@ core/%.jsonnet.h: stdlib/%.jsonnet .makebuild/stdlib/to_c_array
 	.makebuild/stdlib/to_c_array "$<" "$@"
 
 # Plain-C tests (link to libjsonnet.so); don't use GoogleTest (which is C++ only)
-libjsonnet_test_file libjsonnet_native_callbacks_test: %: .makebuild/core/%.c.o libjsonnet.so
+libjsonnet_file_test libjsonnet_native_callbacks_test: %: .makebuild/core/%.c.o libjsonnet.so
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(TEST_RPATH_FLAG)
 
 ###

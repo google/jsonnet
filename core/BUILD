@@ -89,3 +89,11 @@ cc_test(
     srcs = ["libjsonnet_native_callbacks_test.c"],
     deps = [":libjsonnet"],
 )
+
+cc_test(
+    name = "libjsonnet_file_test",
+    srcs = ["libjsonnet_file_test.c"],
+    args = ["$(rootpath //test_suite:test_input_for_core_test)"],
+    data = ["//test_suite:test_input_for_core_test"],
+    deps = [":libjsonnet"],
+)

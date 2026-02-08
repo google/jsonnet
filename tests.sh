@@ -9,8 +9,8 @@ printf "snippet output (should be true): "
 if [ -z "$DISABLE_LIB_TESTS" ]; then
     printf 'libjsonnet_native_callbacks_test: '
     ./libjsonnet_native_callbacks_test || FAIL=TRUE
-    printf 'libjsonnet_test_file: '
-    ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
+    printf 'libjsonnet_file_test: '
+    ./libjsonnet_file_test "test_suite/object.jsonnet" || FAIL=TRUE
 
     for gtest_bin in unicode_test lexer_test parser_test libjsonnet_test libjsonnet++_test; do
         if [[ -x "./${gtest_bin}" ]]; then

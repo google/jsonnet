@@ -333,6 +333,16 @@ if(BUILD_TESTS)
 
     jsonnet_add_raw_test(test_core_libjsonnet_native_callbacks jsonnet_lib_for_binaries core/libjsonnet_native_callbacks_test.c)
 
+    # core/libjsonnet_file_test needs an input file
+    add_executable(test_libjsonnet_file core/libjsonnet_file_test.c)
+    target_link_libraries(test_libjsonnet_file jsonnet_lib_for_binaries)
+    set_target_properties(test_libjsonnet_file PROPERTIES FOLDER tests)
+    add_test(
+        NAME test_libjsonnet_file
+        COMMAND test_libjsonnet_file "test_suite/object.jsonnet"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     add_subdirectory(test_suite)
 endif()  # if(BUILD_TESTS)
 

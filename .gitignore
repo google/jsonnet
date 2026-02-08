@@ -27,7 +27,7 @@ Makefile.depend
 Makefile.depend.bak
 bazel-*
 
-libjsonnet_test_file
+libjsonnet_file_test
 libjsonnet_native_callbacks_test
 libjsonnet_locale_test
 libjsonnet_test
