@@ -19,40 +19,69 @@
 # C/C++ compiler; to use Clang, build with `make CC=clang CXX=clang++`
 CXX ?= g++
 CC ?= gcc
-
-CP ?= cp
-OD ?= od
-
-OPT ?= -O3
-
-PREFIX ?= /usr/local
-
-CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -std=c++17 -fPIC
-CXXFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/
-CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -std=c99 -fPIC
-CFLAGS += -Iinclude
-MAKEDEPENDFLAGS += -Iinclude -Ithird_party/md5 -Ithird_party/json
-LDFLAGS ?=
-
-
-SHARED_LDFLAGS ?= -shared
-
-VERSION := $(shell grep '\#define.*LIB_JSONNET_VERSION' include/libjsonnet.h | head -n 1 | cut -f 2 -d '"' | sed 's/^v//g' )
-SOVERSION = 0
-
-# Define the help2man command with appropriate options
+# coreutils `install` command
+INSTALL ?= install
+# The `help2man` command
 HELP2MAN ?= help2man
 
+# Directories to place installed files.
+PREFIX ?= /usr/local
 MAN1_DIR ?= man/man1
+
+# Default optimisation level (override by passing OPT=... in the make invocation)
+OPT ?= -O3
+# Default flags (can be overriden by passing CXXFLAGS=... in the make invocation)
+CXXFLAGS ?= -g $(OPT) -Wall -Wextra -Woverloaded-virtual -pedantic -fPIC
+# Required flags (including -std=c++17)
+CXXFLAGS += -std=c++17 -Iinclude -Ithird_party/md5 -Ithird_party/json -Ithird_party/rapidyaml/
+# Default C compilation flags (can be overridden by passing CFLAGS=... in the make invocation)
+CFLAGS ?= -g $(OPT) -Wall -Wextra -pedantic -fPIC
+# Required C compilation flags (including -std=c99)
+CFLAGS += -std=c99 -Iinclude
+# Default flags for linking binaries
+LDFLAGS ?=
+# Default flags for linking .so shared objects
+SHARED_LDFLAGS ?= -shared
+
+###
+# GoogleTest library, from the system.
+#
+
+GTEST_PKG := gtest_main
+
+ifeq ($(shell pkg-config --exists $(GTEST_PKG) && echo 0),0)
+    GTEST_CXXFLAGS := $(shell pkg-config --cflags $(GTEST_PKG))
+    GTEST_LDFLAGS  := $(shell pkg-config --libs $(GTEST_PKG))
+else
+    $(warning "pkg-config could not find $(GTEST_PKG). Tests will not be buildable.")
+endif
+
+# --- End Google Test Integration ---
 
 ################################################################################
 # End of user-servicable parts
 ################################################################################
 
-RAPIDYAML_SRC = \
-	third_party/rapidyaml/rapidyaml.cpp
+# Disable all GNU Make builtin rules, we want to specify our own.
+.SUFFIXES:
 
-LIB_SRC = \
+# Single sed invocation that finds and extracts the version from the libjsonnet.h header.
+# Hash and Dollar characters use hex escapes to avoid angering the Makefile interpreter.
+EXTRACT_VERSION_SED := /^[ \t]*\x23[ \t]*define[ \t]+LIB_JSONNET_VERSION[ \t]+["]v([0-9.]+(-?[a-z][a-z0-9]*)?)["][ \t]*\x24/ { s//\1/p; q; }
+
+# Extract the library version from libjsonnet.h.
+VERSION := $(shell sed -nE '$(EXTRACT_VERSION_SED)' include/libjsonnet.h)
+SOVERSION := 0
+
+ifeq ($(shell uname -s),Darwin)
+	SONAME_FLAG := -install_name
+	TEST_RPATH_FLAG := -Wl,-rpath,'@executable_path'
+else
+	SONAME_FLAG := -soname
+	TEST_RPATH_FLAG := -Wl,-rpath,'$$ORIGIN'
+endif
+
+LIB_SRC := \
 	core/desugarer.cpp \
 	core/formatter.cpp \
 	core/lexer.cpp \
@@ -64,20 +93,27 @@ LIB_SRC = \
 	core/string_utils.cpp \
 	core/vm.cpp \
 	third_party/md5/md5.cpp \
-	$(RAPIDYAML_SRC)
+	third_party/rapidyaml/rapidyaml.cpp
 
-LIB_OBJ = $(LIB_SRC:.cpp=.o)
+LIB_OBJ := $(addprefix .makebuild/,$(addsuffix .o,$(LIB_SRC)))
 
-LIB_CPP_SRC = \
+LIB_CPP_SRC := \
 	cpp/libjsonnet++.cpp
 
-LIB_CPP_OBJ = $(LIB_OBJ) $(LIB_CPP_SRC:.cpp=.o)
+LIB_CPP_OBJ := $(LIB_OBJ) $(addprefix .makebuild/,$(addsuffix .o,$(LIB_CPP_SRC)))
 
-BINS = \
+BINS_SRC := \
+	cmd/utils.cpp \
+	cmd/jsonnetfmt.cpp \
+	cmd/jsonnet.cpp
+
+BINS := \
 	jsonnet \
 	jsonnetfmt
 
-LIBS = \
+MAN_PAGES := $(addprefix $(MAN1_DIR)/,$(addsuffix .1,$(BINS)))
+
+LIBS := \
 	libjsonnet.so \
 	libjsonnet.so.$(SOVERSION) \
 	libjsonnet.so.$(VERSION) \
@@ -85,154 +121,120 @@ LIBS = \
 	libjsonnet++.so.$(SOVERSION) \
 	libjsonnet++.so.$(VERSION) \
 
-ALL = \
-	libjsonnet_test_snippet \
-	libjsonnet_test_file \
-	$(BINS) \
-	$(LIBS) \
-	$(LIB_OBJ) \
-	$(LIB_CPP_OBJ)
-
-# public headers
-INCS = \
+PUBLIC_HEADERS := \
 	include/libjsonnet.h \
 	include/libjsonnet_fmt.h \
 	include/libjsonnet++.h
 
-ALL_HEADERS = \
-	core/ast.h \
-	core/desugarer.h \
-	core/formatter.h \
-	core/lexer.h \
-	core/parser.h \
-	core/state.h \
-	core/static_analysis.h \
-	core/static_error.h \
-	core/string_utils.h \
-	core/vm.h \
-	core/std.jsonnet.h \
-	third_party/md5/md5.h \
-	third_party/json/json.hpp \
-	third_party/rapidyaml/rapidyaml-0.10.0.hpp \
-	$(INCS)
+TEST_SRC := \
+	cpp/libjsonnet_test_locale.cpp \
+	cpp/libjsonnet++_test.cpp \
+	core/libjsonnet_test.cpp \
+	core/lexer_test.cpp \
+	core/unicode_test.cpp \
+	core/parser_test.cpp \
+	core/libjsonnet_test_file.c \
+	core/libjsonnet_test_snippet.c
 
+BIN_OBJ := $(addprefix .makebuild/,$(addsuffix .o,$(BINS_SRC) $(TEST_SRC)))
+TEST_BINS := $(basename $(notdir $(TEST_SRC)))
 
+DEPS_FILES := $(addprefix .makebuild/,$(addsuffix .d,$(LIB_SRC) $(LIB_CPP_SRC) $(BINS_SRC) $(TEST_SRC)))
+# Intermediate build output directories.
+BUILD_DIRS := $(sort $(dir $(DEPS_FILES)) .makebuild/stdlib/)
+
+################################################################################
+# Targets / Build rules
+################################################################################
+
+ALL := $(LIBS) $(BINS) $(MAN_PAGES) $(TEST_BINS)
+.PHONY: default bins libs man all install dist clean
 default: $(LIBS) $(BINS)
-
-bins: jsonnet jsonnetfmt
-libs: libjsonnet.so libjsonnet++.so
-
-SONAME = -soname
-ifeq ($(shell uname -s),Darwin)
-	SONAME = -install_name
-endif
-
-default: jsonnet jsonnetfmt man
-
-install: bins libs man
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp $(BINS) $(DESTDIR)$(PREFIX)/bin/
-	mkdir -p $(DESTDIR)$(PREFIX)/lib
-	cp $(LIBS) $(DESTDIR)$(PREFIX)/lib/
-	mkdir -p $(DESTDIR)$(PREFIX)/include
-	cp $(INCS) $(DESTDIR)$(PREFIX)/include/
-	mkdir -p $(DESTDIR)$(PREFIX)/share/$(MAN1_DIR)
-	install -Dm 644 $(addprefix $(MAN1_DIR)/, $(BINS:=.1)) $(DESTDIR)$(PREFIX)/share/$(MAN1_DIR)/
-
+bins: $(BINS)
+libs: $(LIBS)
+man: $(MAN_PAGES)
 all: $(ALL)
 
-test: jsonnet jsonnetfmt libjsonnet.so libjsonnet_test_snippet libjsonnet_test_file
+test: bins libs $(TEST_BINS)
 	./tests.sh
 
-reformat:
-	clang-format -i -style=file **/*.cpp **/*.h
+dist:
+	@{ >&2 echo "The dist target is no longer supported, please don't use it." ; exit 1 ; }
 
-test-formatting:
-	clang-format -Werror --dry-run -style=file **/*.cpp **/*.h
+clean:
+	{ \
+		rm -df \
+			$(BINS) $(LIBS) $(MAN_PAGES) $(TEST_BINS) \
+			stdlib/to_c_array core/std.jsonnet.h \
+		&& rm -rf .makebuild ;\
+	}
 
-MAKEDEPEND_SRCS = \
-	cmd/jsonnet.cpp \
-	cmd/jsonnetfmt.cpp \
-	core/libjsonnet_test_snippet.c \
-	core/libjsonnet_test_file.c
+install: bins libs man
+	{ \
+		$(INSTALL) -Dm 644 -t $(DESTDIR)$(PREFIX)/bin/ $(BINS) ;\
+		$(INSTALL) -Dm 644 -t $(DESTDIR)$(PREFIX)/lib/ $(LIBS) ;\
+		$(INSTALL) -Dm 644 -t $(DESTDIR)$(PREFIX)/include/ $(PUBLIC_HEADERS) ;\
+		$(INSTALL) -Dm 644 -t $(DESTDIR)$(PREFIX)/share/$(MAN1_DIR)/ $(MAN_PAGES) ;\
+	}
 
-depend: core/std.jsonnet.h
-	rm -f Makefile.depend
-	for FILE in $(LIB_SRC) $(MAKEDEPEND_SRCS) ; do $(CXX) -MM $(CXXFLAGS) $$FILE -MT $$(dirname $$FILE)/$$(basename $$FILE .cpp).o >> Makefile.depend ; done
+CC_DEPS_FLAGS = -MMD -MP -MF "$(addsuffix .d,$@)"
 
-core/desugarer.cpp: core/std.jsonnet.h
+.makebuild/%.cpp.o: %.cpp
+	mkdir -p $(@D) && $(CXX) $(CC_DEPS_FLAGS) $(CXXFLAGS) -o $@ -c $<
+.makebuild/%.c.o: %.c
+	mkdir -p $(@D) && $(CC) $(CC_DEPS_FLAGS) $(CFLAGS) -o $@ -c $<
 
-# Object files
-%.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+%.so.$(SOVERSION): %.so.$(VERSION)
+	ln -sf $< $@
+%.so: %.so.$(SOVERSION)
+	ln -sf $< $@
 
-# Target to generate the man page
-
-$(MAN1_DIR)/%.1: % | $(MAN1_DIR)
+$(MAN_PAGES): $(MAN1_DIR)/%.1: % | $(MAN1_DIR)
 	$(HELP2MAN) --no-info --output=$@ ./$<
-
-man: $(addprefix $(MAN1_DIR)/, $(BINS:=.1))
 
 $(MAN1_DIR):
 	mkdir -p $@
 
-# Commandline executable.
-jsonnet: cmd/jsonnet.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+jsonnet: .makebuild/cmd/jsonnet.cpp.o .makebuild/cmd/utils.cpp.o $(LIB_OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Commandline executable (reformatter).
-jsonnetfmt: cmd/jsonnetfmt.cpp cmd/utils.cpp $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< cmd/utils.cpp $(LIB_SRC:.cpp=.o) -o $@
+jsonnetfmt: .makebuild/cmd/jsonnetfmt.cpp.o .makebuild/cmd/utils.cpp.o $(LIB_OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# C binding.
 libjsonnet.so.$(VERSION): $(LIB_OBJ)
-	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME),libjsonnet.so.$(SOVERSION) -o $@
+	$(CXX) $(LDFLAGS) $(LIB_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME_FLAG),libjsonnet.so.$(SOVERSION) -o $@
 
 libjsonnet++.so.$(VERSION): $(LIB_CPP_OBJ)
-	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME),libjsonnet++.so.$(SOVERSION) -o $@
+	$(CXX) $(LDFLAGS) $(LIB_CPP_OBJ) $(SHARED_LDFLAGS) -Wl,$(SONAME_FLAG),libjsonnet++.so.$(SOVERSION) -o $@
 
-%.so.$(SOVERSION): %.so.$(VERSION)
-	ln -sf $< $@
-
-%.so: %.so.$(SOVERSION)
-	ln -sf $< $@
-
-# Tests for C binding.
-LIBJSONNET_TEST_SNIPPET_SRCS = \
-	core/libjsonnet_test_snippet.c \
-	libjsonnet.so \
-	include/libjsonnet.h
-
-libjsonnet_test_snippet: $(LIBJSONNET_TEST_SNIPPET_SRCS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
-
-LIBJSONNET_TEST_FILE_SRCS = \
-	core/libjsonnet_test_file.c \
-	libjsonnet.so \
-	include/libjsonnet.h
-
-libjsonnet_test_file: $(LIBJSONNET_TEST_FILE_SRCS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $< -L. -ljsonnet -o $@
+# std.jsonnet.h is a generated file so the first build will fail if it isn't
+# specified as an explicit dependency (after that, deps are known from compiler output)
+core/desugarer.cpp: core/std.jsonnet.h
 
 # Encode standard library for embedding in C
-core/%.jsonnet.h: stdlib/%.jsonnet
-	(($(OD) -v -Anone -t u1 $< \
-		| tr " " "\n" \
-		| grep -v "^$$" \
-		| tr "\n" "," ) && echo "0") > $@
-	echo >> $@
+.makebuild/stdlib/to_c_array: stdlib/to_c_array.cpp
+	mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -o "$@" $^
 
+core/%.jsonnet.h: stdlib/%.jsonnet .makebuild/stdlib/to_c_array
+	.makebuild/stdlib/to_c_array "$<" "$@"
 
-RELEASE_FILE = jsonnet-bin.tar.gz
+# C++ lib tests (links to libjsonnet++.so)
+libjsonnet_test_locale libjsonnet++_test: %: .makebuild/cpp/%.cpp.o libjsonnet++.so
+	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS) $(TEST_RPATH_FLAG)
 
-$(RELEASE_FILE): bins
-	tar czf $@ $(BINS)
+# Plain-C tests (link to libjsonnet.so); don't use GoogleTest (which is C++ only)
+libjsonnet_test_file libjsonnet_test_snippet: %: .makebuild/core/%.c.o libjsonnet.so
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(TEST_RPATH_FLAG)
+# C++ tests of the C API (link to libjsonnet.so)
+libjsonnet_test: %: .makebuild/core/%.cpp.o libjsonnet.so
+	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS) $(TEST_RPATH_FLAG)
 
-dist: $(RELEASE_FILE)
+# Core component unit tests (narrow deps)
+lexer_test: %: .makebuild/core/%.cpp.o .makebuild/core/lexer.cpp.o
+	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS)
+unicode_test: %: .makebuild/core/%.cpp.o
+	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS)
+parser_test: %: .makebuild/core/%.cpp.o .makebuild/core/parser.cpp.o .makebuild/core/lexer.cpp.o
+	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS)
 
-clean:
-	rm -rvf */*~ *~ .*~ */.*.swp .*.swp $(ALL) *.o core/*.jsonnet.h Makefile.depend *.so.* build jsonnet.egg-info $(RELEASE_FILE) man
-
--include Makefile.depend
-
-.PHONY: default all depend clean reformat test test-formatting
+-include $(DEPS_FILES)

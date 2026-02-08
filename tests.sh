@@ -8,10 +8,15 @@ printf "snippet: "
 
 if [ -z "$DISABLE_LIB_TESTS" ]; then
     printf 'libjsonnet_test_snippet: '
-    LD_LIBRARY_PATH=. ./libjsonnet_test_snippet "${TEST_SNIPPET}" || FAIL=TRUE
+    ./libjsonnet_test_snippet "${TEST_SNIPPET}" || FAIL=TRUE
     printf 'libjsonnet_test_file: '
-    LD_LIBRARY_PATH=. ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
+    ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
 fi
+./unicode_test || FAIL=TRUE
+./lexer_test || FAIL=TRUE
+./parser_test || FAIL=TRUE
+./libjsonnet_test || FAIL=TRUE
+./libjsonnet++_test || FAIL=TRUE
 examples/check.sh || FAIL=TRUE
 examples/terraform/check.sh || FAIL=TRUE
 test_cmd/run_cmd_tests.sh || FAIL=TRUE

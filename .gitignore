@@ -9,6 +9,7 @@
 **/*.a
 **/*.dylib
 *.dSYM
+.makebuild/
 
 jsonnet
 jsonnetfmt
@@ -17,16 +18,23 @@ libjsonnet.so
 libjsonnet.so.*
 libjsonnet++.so
 libjsonnet++.so.*
-libjsonnet_test_file
-libjsonnet_test_snippet
-libjsonnet_test_locale
 **/core.*
 **/vgcore
 **/vgcore.*
 core/std.jsonnet.h
+stdlib/to_c_array
 Makefile.depend
 Makefile.depend.bak
 bazel-*
+
+libjsonnet_test_file
+libjsonnet_test_snippet
+libjsonnet_test_locale
+libjsonnet_test
+libjsonnet++_test
+unicode_test
+lexer_test
+parser_test
 
 **/*.tfstate
 **/*.tfstate.backup
