@@ -34,6 +34,9 @@ jobs:
     runs-on: "ubuntu-22.04"
     steps:
       - uses: actions/checkout@v4
+      - name: Add system tools
+        run: |
+          sudo apt-get update && sudo apt-get install libgtest-dev help2man
       - name: Build (make all)
         run: |
           make all
