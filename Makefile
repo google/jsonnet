@@ -154,7 +154,7 @@ PLAIN_TEST_SRC := \
 	core/libjsonnet_test_file.c \
 	core/libjsonnet_native_callbacks_test.c
 GTEST_TEST_SRC := \
-	cpp/libjsonnet_test_locale.cpp \
+	cpp/libjsonnet_locale_test.cpp \
 	cpp/libjsonnet++_test.cpp \
 	core/libjsonnet_test.cpp \
 	core/lexer_test.cpp \
@@ -267,7 +267,7 @@ libjsonnet_test_file libjsonnet_native_callbacks_test: %: .makebuild/core/%.c.o 
 ifeq ($(GTEST_ENABLED),yes)
 
 # C++ lib tests (links to libjsonnet++.so)
-libjsonnet_test_locale libjsonnet++_test: %: .makebuild/cpp/%.cpp.o libjsonnet++.so
+libjsonnet_locale_test libjsonnet++_test: %: .makebuild/cpp/%.cpp.o libjsonnet++.so
 	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS) $(TEST_RPATH_FLAG)
 
 # C++ tests of the C API (link to libjsonnet.so)

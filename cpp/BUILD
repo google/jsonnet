@@ -25,7 +25,7 @@ cc_test(
 
 cc_test(
     name = "libjsonnet_locale_test",
-    srcs = ["libjsonnet_test_locale.cpp"],
+    srcs = ["libjsonnet_locale_test.cpp"],
     data = ["//cpp/testdata"],
     deps = [
         ":libjsonnet++",

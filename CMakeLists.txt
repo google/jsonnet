@@ -329,7 +329,7 @@ if(BUILD_TESTS)
     jsonnet_add_gtest(test_core_parser jsonnet_lib_for_binaries core/parser_test.cpp)
     jsonnet_add_gtest(test_core_libjsonnet jsonnet_lib_for_binaries core/libjsonnet_test.cpp)
     jsonnet_add_gtest(test_cpp_libjsonnet jsonnet_cpp_lib_for_binaries cpp/libjsonnet++_test.cpp)
-    jsonnet_add_gtest(test_cpp_libjsonnet_locale jsonnet_cpp_lib_for_binaries cpp/libjsonnet_test_locale.cpp)
+    jsonnet_add_gtest(test_cpp_libjsonnet_locale jsonnet_cpp_lib_for_binaries cpp/libjsonnet_locale_test.cpp)
 
     jsonnet_add_raw_test(test_core_libjsonnet_native_callbacks jsonnet_lib_for_binaries core/libjsonnet_native_callbacks_test.c)
 
