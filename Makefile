@@ -49,11 +49,26 @@ SHARED_LDFLAGS ?= -shared
 
 GTEST_PKG := gtest_main
 
-ifeq ($(shell pkg-config --exists $(GTEST_PKG) && echo 0),0)
-    GTEST_CXXFLAGS := $(shell pkg-config --cflags $(GTEST_PKG))
-    GTEST_LDFLAGS  := $(shell pkg-config --libs $(GTEST_PKG))
+GTEST_FOUND := $(shell pkg-config --exists '$(GTEST_PKG)' && echo yes || echo no)
+ifeq ($(GTEST_FOUND),yes)
+GTEST_CXXFLAGS := $(shell pkg-config --cflags '$(GTEST_PKG)')
+GTEST_LDFLAGS  := $(shell pkg-config --libs '$(GTEST_PKG)')
+endif
+
+ifeq ($(origin GTEST_ENABLED),undefined)
+GTEST_ENABLED := $(GTEST_FOUND)
+ifeq ($(GTEST_ENABLED),no)
+$(warning GoogleTest package was not found on the system, some tests will be skipped.)
+endif
+else ifeq ($(GTEST_ENABLED),$(GTEST_FOUND))
+# Desired state matches found state; we're fine.
+else ifeq ($(GTEST_ENABLED),no)
+# GoogleTest was explicitly disabled; that's fine.
+else ifeq ($(GTEST_ENABLED),yes)
+$(error GoogleTest was explicitly requested but is not found on the system.)
+override GTEST_ENABLED := no
 else
-    $(warning "pkg-config could not find $(GTEST_PKG). Tests will not be buildable.")
+$(error GTEST_ENABLED was set to some invalid value, it must be unset, 'yes', or 'no')
 endif
 
 # --- End Google Test Integration ---
@@ -74,12 +89,16 @@ VERSION := $(shell sed -nE '$(EXTRACT_VERSION_SED)' include/libjsonnet.h)
 SOVERSION := 0
 
 ifeq ($(shell uname -s),Darwin)
-	SONAME_FLAG := -install_name
-	TEST_RPATH_FLAG := -Wl,-rpath,'@executable_path'
-else
-	SONAME_FLAG := -soname
-	TEST_RPATH_FLAG := -Wl,-rpath,'$$ORIGIN'
-endif
+
+SONAME_FLAG := -install_name
+TEST_RPATH_FLAG := -Wl,-rpath,'@executable_path'
+
+else  # else assume Linux-like
+
+SONAME_FLAG := -soname
+TEST_RPATH_FLAG := -Wl,-rpath,'$$ORIGIN'
+
+endif  # platform switch
 
 LIB_SRC := \
 	core/desugarer.cpp \
@@ -126,28 +145,36 @@ PUBLIC_HEADERS := \
 	include/libjsonnet_fmt.h \
 	include/libjsonnet++.h
 
-TEST_SRC := \
+PLAIN_TEST_SRC := \
+	core/libjsonnet_test_file.c \
+	core/libjsonnet_test_snippet.c
+GTEST_TEST_SRC := \
 	cpp/libjsonnet_test_locale.cpp \
 	cpp/libjsonnet++_test.cpp \
 	core/libjsonnet_test.cpp \
 	core/lexer_test.cpp \
 	core/unicode_test.cpp \
-	core/parser_test.cpp \
-	core/libjsonnet_test_file.c \
-	core/libjsonnet_test_snippet.c
+	core/parser_test.cpp
 
-BIN_OBJ := $(addprefix .makebuild/,$(addsuffix .o,$(BINS_SRC) $(TEST_SRC)))
-TEST_BINS := $(basename $(notdir $(TEST_SRC)))
+PLAIN_TEST_BINS := $(basename $(notdir $(PLAIN_TEST_SRC)))
+GTEST_TEST_BINS := $(basename $(notdir $(GTEST_TEST_SRC)))
+ALL_TEST_BINS := $(PLAIN_TEST_BINS) $(GTEST_TEST_BINS)
 
 DEPS_FILES := $(addprefix .makebuild/,$(addsuffix .d,$(LIB_SRC) $(LIB_CPP_SRC) $(BINS_SRC) $(TEST_SRC)))
 # Intermediate build output directories.
 BUILD_DIRS := $(sort $(dir $(DEPS_FILES)) .makebuild/stdlib/)
 
+ifeq ($(GTEST_ENABLED),yes)
+ENABLED_TEST_BINS := $(ALL_TEST_BINS)
+else
+ENABLED_TEST_BINS := $(PLAIN_TEST_BINS)
+endif
+
 ################################################################################
 # Targets / Build rules
 ################################################################################
 
-ALL := $(LIBS) $(BINS) $(MAN_PAGES) $(TEST_BINS)
+ALL := $(LIBS) $(BINS) $(MAN_PAGES) $(ENABLED_TEST_BINS)
 .PHONY: default bins libs man all install dist clean
 default: $(LIBS) $(BINS)
 bins: $(BINS)
@@ -155,7 +182,7 @@ libs: $(LIBS)
 man: $(MAN_PAGES)
 all: $(ALL)
 
-test: bins libs $(TEST_BINS)
+test: bins libs $(ENABLED_TEST_BINS)
 	./tests.sh
 
 dist:
@@ -164,7 +191,7 @@ dist:
 clean:
 	{ \
 		rm -df \
-			$(BINS) $(LIBS) $(MAN_PAGES) $(TEST_BINS) \
+			$(BINS) $(LIBS) $(MAN_PAGES) $(ALL_TEST_BINS) \
 			stdlib/to_c_array core/std.jsonnet.h \
 		&& rm -rf .makebuild ;\
 	}
@@ -218,13 +245,20 @@ core/desugarer.cpp: core/std.jsonnet.h
 core/%.jsonnet.h: stdlib/%.jsonnet .makebuild/stdlib/to_c_array
 	.makebuild/stdlib/to_c_array "$<" "$@"
 
+# Plain-C tests (link to libjsonnet.so); don't use GoogleTest (which is C++ only)
+libjsonnet_test_file libjsonnet_test_snippet: %: .makebuild/core/%.c.o libjsonnet.so
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(TEST_RPATH_FLAG)
+
+###
+#  Tests that use GoogleTest
+#
+
+ifeq ($(GTEST_ENABLED),yes)
+
 # C++ lib tests (links to libjsonnet++.so)
 libjsonnet_test_locale libjsonnet++_test: %: .makebuild/cpp/%.cpp.o libjsonnet++.so
 	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS) $(TEST_RPATH_FLAG)
 
-# Plain-C tests (link to libjsonnet.so); don't use GoogleTest (which is C++ only)
-libjsonnet_test_file libjsonnet_test_snippet: %: .makebuild/core/%.c.o libjsonnet.so
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(TEST_RPATH_FLAG)
 # C++ tests of the C API (link to libjsonnet.so)
 libjsonnet_test: %: .makebuild/core/%.cpp.o libjsonnet.so
 	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS) $(TEST_RPATH_FLAG)
@@ -236,5 +270,10 @@ unicode_test: %: .makebuild/core/%.cpp.o
 	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS)
 parser_test: %: .makebuild/core/%.cpp.o .makebuild/core/parser.cpp.o .makebuild/core/lexer.cpp.o
 	$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $@ $^ $(LDFLAGS) $(GTEST_LDFLAGS)
+
+endif  # GTEST_ENABLED
+
+#
+###
 
 -include $(DEPS_FILES)

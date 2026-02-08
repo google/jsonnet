@@ -11,12 +11,13 @@ if [ -z "$DISABLE_LIB_TESTS" ]; then
     ./libjsonnet_test_snippet "${TEST_SNIPPET}" || FAIL=TRUE
     printf 'libjsonnet_test_file: '
     ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
+
+    for gtest_bin in unicode_test lexer_test parser_test libjsonnet_test libjsonnet++_test; do
+        if [[ -x "./${gtest_bin}" ]]; then
+            "./${gtest_bin}" || FAIL=true
+        fi
+    done
 fi
-./unicode_test || FAIL=TRUE
-./lexer_test || FAIL=TRUE
-./parser_test || FAIL=TRUE
-./libjsonnet_test || FAIL=TRUE
-./libjsonnet++_test || FAIL=TRUE
 examples/check.sh || FAIL=TRUE
 examples/terraform/check.sh || FAIL=TRUE
 test_cmd/run_cmd_tests.sh || FAIL=TRUE
