@@ -55,6 +55,11 @@ GTEST_CXXFLAGS := $(shell pkg-config --cflags '$(GTEST_PKG)')
 GTEST_LDFLAGS  := $(shell pkg-config --libs '$(GTEST_PKG)')
 endif
 
+HELP2MAN_FOUND := $(shell command -v '$(HELP2MAN)' > /dev/null 2>&1 && echo yes || echo no)
+ifneq ($(HELP2MAN_FOUND),yes)
+$(warning help2man was not found under the name $(HELP2MAN); manpages will not be built.)
+endif
+
 ifeq ($(origin GTEST_ENABLED),undefined)
 GTEST_ENABLED := $(GTEST_FOUND)
 ifeq ($(GTEST_ENABLED),no)
@@ -216,11 +221,17 @@ CC_DEPS_FLAGS = -MMD -MP -MF "$(addsuffix .d,$@)"
 %.so: %.so.$(SOVERSION)
 	ln -sf $< $@
 
+ifeq ($(HELP2MAN_FOUND),yes)
 $(MAN_PAGES): $(MAN1_DIR)/%.1: % | $(MAN1_DIR)
 	$(HELP2MAN) --no-info --output=$@ ./$<
 
 $(MAN1_DIR):
 	mkdir -p $@
+else
+.PHONY: $(MAN1_DIR) $(MAN_PAGES)
+$(MAN1_DIR) $(MAN_PAGES):
+	@{ >&2 echo "Skipping $@: Cannot build manpages, help2man was not found." ; }
+endif
 
 jsonnet: .makebuild/cmd/jsonnet.cpp.o .makebuild/cmd/utils.cpp.o $(LIB_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
