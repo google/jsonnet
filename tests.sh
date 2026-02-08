@@ -3,12 +3,12 @@ set -e
 
 JSONNET_BIN="${JSONNET_BIN:-./jsonnet}"
 TEST_SNIPPET="std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2)"
-printf "snippet: "
+printf "snippet output (should be true): "
 "$JSONNET_BIN" -e "${TEST_SNIPPET}" || FAIL=TRUE
 
 if [ -z "$DISABLE_LIB_TESTS" ]; then
-    printf 'libjsonnet_test_snippet: '
-    ./libjsonnet_test_snippet "${TEST_SNIPPET}" || FAIL=TRUE
+    printf 'libjsonnet_native_callbacks_test: '
+    ./libjsonnet_native_callbacks_test || FAIL=TRUE
     printf 'libjsonnet_test_file: '
     ./libjsonnet_test_file "test_suite/object.jsonnet" || FAIL=TRUE
 

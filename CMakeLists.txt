@@ -317,12 +317,21 @@ if(BUILD_TESTS)
         set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
     endfunction()
 
+    function(jsonnet_add_raw_test TESTNAME JSONNET_LIB_TARGET)
+        add_executable(${TESTNAME} ${ARGN})
+        target_link_libraries(${TESTNAME} ${JSONNET_LIB_TARGET})
+        set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
+        add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+    endfunction()
+
     jsonnet_add_gtest(test_core_unicode jsonnet_lib_for_binaries core/unicode_test.cpp)
     jsonnet_add_gtest(test_core_lexer jsonnet_lib_for_binaries core/lexer_test.cpp)
     jsonnet_add_gtest(test_core_parser jsonnet_lib_for_binaries core/parser_test.cpp)
     jsonnet_add_gtest(test_core_libjsonnet jsonnet_lib_for_binaries core/libjsonnet_test.cpp)
     jsonnet_add_gtest(test_cpp_libjsonnet jsonnet_cpp_lib_for_binaries cpp/libjsonnet++_test.cpp)
     jsonnet_add_gtest(test_cpp_libjsonnet_locale jsonnet_cpp_lib_for_binaries cpp/libjsonnet_test_locale.cpp)
+
+    jsonnet_add_raw_test(test_core_libjsonnet_native_callbacks jsonnet_lib_for_binaries core/libjsonnet_native_callbacks_test.c)
 
     add_subdirectory(test_suite)
 endif()  # if(BUILD_TESTS)
@@ -386,7 +395,7 @@ if(CMAKE_VERSION VERSION_GREATER "3.25")
                 jsonnetfmt
                 jsonnet-man
                 jsonnetfmt-man
-            PROPERTIES 
+            PROPERTIES
                 TYPE
                 C_STANDARD
                 CXX_STANDARD

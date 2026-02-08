@@ -83,3 +83,9 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "libjsonnet_native_callbacks_test",
+    srcs = ["libjsonnet_native_callbacks_test.c"],
+    deps = [":libjsonnet"],
+)
