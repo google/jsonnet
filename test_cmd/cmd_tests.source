@@ -23,49 +23,58 @@ FAILED=0
 JSONNET_BIN="${JSONNET_BIN:-../jsonnet}"
 JSONNETFMT_BIN="${JSONNETFMT_BIN:-../jsonnetfmt}"
 
-# Used to account for known differences in the two implementations.
-# Deprecated in favor of override dir.
-IMPLEMENTATION="${IMPLEMENTATION:-cpp}"
-
 OVERRIDE_DIR="${OVERRIDE_DIR:-.}"
 
 separator() {
     echo -e "\n-----------------------------\n"
 }
 
-check_file() {
-    TEST="$1"
-    RESULT_FILENAME="$2"
-    GOLDEN_FILENAME="$3"
-    if [ "$(< $RESULT_FILENAME)" != "$(< $GOLDEN_FILENAME)" ] ; then
+check_file_sed() {
+    local TEST="$1"
+    local RESULT_FILENAME="$2"
+    local GOLDEN_FILENAME="$3"
+    local SED_SCRIPT="$4"
+
+    local GOLDEN_CONTENT="$(< "$GOLDEN_FILENAME")"
+    local RESULT_CONTENT
+    if [[ -z "$SED_SCRIPT" ]]; then
+        RESULT_CONTENT="$(< "$RESULT_FILENAME")"
+    else
+        RESULT_CONTENT="$(sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME")"
+    fi
+    if [ "${RESULT_CONTENT}" != "${GOLDEN_CONTENT}" ] ; then
         FAILED=$((FAILED + 1))
-        if [ -z "$SUMMARY_ONLY" ]; then
-            printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m$TEST\033[0m\n"
+        if [ -z "${SUMMARY_ONLY:-}" ]; then
+            printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
             echo "Result output:"
-            cat "$RESULT_FILENAME"
+            echo "${RESULT_CONTENT}"
             echo "Expected output:"
-            cat "$GOLDEN_FILENAME"
+            echo "${GOLDEN_CONTENT}"
             echo "Diff:"
             # Using git diff for pretty format and pretty colors
-            git --no-pager diff --color --no-index "$GOLDEN_FILENAME" "$RESULT_FILENAME"
+            git --no-pager diff --color --no-index "$GOLDEN_FILENAME" <(echo "${RESULT_CONTENT}")
             # The output is often quite long, let's repeat the filename once more
             # to avoid wasting time on looking for it
-            printf "\nTEST ABOVE: \033[36m$TEST\033[0m\n"
+            printf "\nTEST ABOVE: \033[36m%s\033[0m\n" "$TEST"
             separator
         fi
         return 1
     fi
 }
 
+check_file() {
+    check_file_sed "$1" "$2" "$3" ""
+}
+
 do_test_aux() {
-    BINARY="$1"
-    TEST="$2"
-    EXPECTED_EXIT_CODE="$3"
+    local BINARY="$1"
+    local TEST="$2"
+    local EXPECTED_EXIT_CODE="$3"
     shift 3
 
-    STDIN="${TEST}.stdin"
-    GOLDEN_STDOUT="${TEST}.golden.stdout"
-    GOLDEN_STDERR="${TEST}.golden.stderr"
+    local STDIN="${TEST}.stdin"
+    local GOLDEN_STDOUT="${TEST}.golden.stdout"
+    local GOLDEN_STDERR="${TEST}.golden.stderr"
 
     if [ -r "${OVERRIDE_DIR}/${GOLDEN_STDOUT}" ] ; then
         GOLDEN_STDOUT="${OVERRIDE_DIR}/${GOLDEN_STDOUT}"
@@ -74,16 +83,9 @@ do_test_aux() {
         GOLDEN_STDERR="${OVERRIDE_DIR}/${GOLDEN_STDERR}"
     fi
 
-    if [ -r "${GOLDEN_STDOUT}.${IMPLEMENTATION}" ] ; then
-        GOLDEN_STDOUT="${GOLDEN_STDOUT}.${IMPLEMENTATION}"
-    fi
-    if [ -r "${GOLDEN_STDERR}.${IMPLEMENTATION}" ] ; then
-        GOLDEN_STDERR="${GOLDEN_STDERR}.${IMPLEMENTATION}"
-    fi
-
-    OUT_DIR="out/${TEST}"
-    STDOUT="${OUT_DIR}/stdout"
-    STDERR="${OUT_DIR}/stderr"
+    local CASE_OUT_DIR="${OUT_DIR}/${TEST}"
+    local STDOUT="${CASE_OUT_DIR}/stdout"
+    local STDERR="${CASE_OUT_DIR}/stderr"
 
     if [ ! -r "${STDIN}" ] ; then
         STDIN="/dev/null"
@@ -98,15 +100,15 @@ do_test_aux() {
     fi
 
 
-    mkdir -p "${OUT_DIR}"
-    "${BINARY}" "$@" >"${STDOUT}" 2>"${OUT_DIR}/stderr" <"${STDIN}"
-    TEST_EXIT_CODE="$?"
+    mkdir -p "${CASE_OUT_DIR}"
+    local TEST_EXIT_CODE=0
+    "${BINARY}" "$@" >"${STDOUT}" 2>"${STDERR}" <"${STDIN}" || TEST_EXIT_CODE="$?"
     EXECUTED=$((EXECUTED + 1))
 
     if [ "$TEST_EXIT_CODE" -ne "$EXPECTED_EXIT_CODE" ] ; then
         FAILED=$((FAILED + 1))
-        if [ -z "$SUMMARY_ONLY" ]; then
-            printf "\033[31;1mFAIL\033[0m \033[1m(exit code)\033[0m: \033[36m$TEST\033[0m\n"
+        if [ -z "${SUMMARY_ONLY:-}" ]; then
+            printf "\033[31;1mFAIL\033[0m \033[1m(exit code)\033[0m: \033[36m%s\033[0m\n" "$TEST"
             echo "This run's stdout:"
             cat "$STDOUT"
             echo "This run's stderr:"
@@ -117,26 +119,26 @@ do_test_aux() {
         return 1
     fi
 
-    if ! check_file "${TEST}" "${STDOUT}" "${GOLDEN_STDOUT}"; then
+    if ! check_file_sed "${TEST}" "${STDOUT}" "${GOLDEN_STDOUT}" "${SED_STDOUT:-}"; then
         return 1
     fi
 
-    if ! check_file "${TEST}" "${STDERR}" "${GOLDEN_STDERR}"; then
+    if ! check_file_sed "${TEST}" "${STDERR}" "${GOLDEN_STDERR}" "${SED_STDERR:-}"; then
         return 1
     fi
 }
 
 do_test() {
-    TEST="$1"
-    EXPECTED_EXIT_CODE="$2"
+    local TEST="$1"
+    local EXPECTED_EXIT_CODE="$2"
     shift 2
     do_test_aux "${JSONNET_BIN}" "$TEST" "$EXPECTED_EXIT_CODE" "$@"
     return $?
 }
 
 do_fmt_test() {
-    TEST="$1"
-    EXPECTED_EXIT_CODE="$2"
+    local TEST="$1"
+    local EXPECTED_EXIT_CODE="$2"
     shift 2
     do_test_aux "${JSONNETFMT_BIN}" "$TEST" "$EXPECTED_EXIT_CODE" "$@"
     return $?

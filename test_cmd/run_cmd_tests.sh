@@ -14,20 +14,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -uo pipefail
 DIR="$(dirname $0)"
 
 source "${DIR}/cmd_tests.source"
 
+OUT_DIR=$(mktemp -d)
+trap "rm -rf -- ${OUT_DIR}" EXIT INT TERM
+
 pushd "${DIR}"
 
-rm -rf out
+[[ -d "${OUT_DIR}" ]] || {
+    >&2 echo "OUT_DIR not set to a valid directory"
+    exit 1
+}
+[[ -x "${JSONNET_BIN}" ]] || {
+    >&2 echo "JSONNET_BIN does not point to an existing jsonnet binary"
+    exit 1
+}
+[[ -x "${JSONNETFMT_BIN}" ]] || {
+    >&2 echo "JSONNETFMT_BIN does not point to an existing jsonnet binary"
+    exit 1
+}
+
+unset SED_STDOUT SED_STDERR
 
 # And now the tests:
 
 # do_test <name> <exit_code> <args...>
 
 # Only check_file additional files if the test otherwise succeeded, to avoid double-counting
-# failures.  All tests must write into out/$NAME/ and nowhere else.
+# failures.  All tests must write into ${OUT_DIR}/${NAME}/ and nowhere else.
 
 do_test "no_args" 1
 do_test "help" 0 --help
@@ -38,12 +55,12 @@ do_test "simple1" 0 "test.jsonnet"
 do_test "simple3" 0 -
 do_test "simple4" 1 "nosuchfile.jsonnet"
 do_test "simple5" 1 "test.jsonnet" "test.jsonnet"
-if do_test "simple_out" 0 "test.jsonnet" -o "out/simple_out/custom_output"; then
-    check_file "simple_out" "out/simple_out/custom_output" "simple_out.golden.custom_output"
+if do_test "simple_out" 0 "test.jsonnet" -o "${OUT_DIR}/simple_out/custom_output"; then
+    check_file "simple_out" "${OUT_DIR}/simple_out/custom_output" "simple_out.golden.custom_output"
 fi
 do_test "exec1" 0 -e "{ a: 1, b: 2, c: 3 }"
-if do_test "exec_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/exec_out/custom_output"; then
-    check_file "exec_out" "out/exec_out/custom_output" "exec_out.golden.custom_output"
+if do_test "exec_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "${OUT_DIR}/exec_out/custom_output"; then
+    check_file "exec_out" "${OUT_DIR}/exec_out/custom_output" "exec_out.golden.custom_output"
 fi
 do_test "double_dash" 0 -e -- -1
 do_test "max_stack1" 1 -s 1 -e 'local x = 1; x'
@@ -84,24 +101,30 @@ do_test "max_trace2" 1 --max-trace 10 -e 'local f(n, c=0) = if n == 0 then error
 do_test "max_trace3" 1 -t 20 -e 'local f(n, c=0) = if n == 0 then error "whee" else f(n - 1, c + n); f(100)'
 do_test "max_trace4" 1 -t 0 -e 'local f(n, c=0) = if n == 0 then error "whee" else f(n - 1, c + n); f(100)'
 do_test "max_trace5" 1 -t -1 -e 'true'
-if do_test "multi1" 0 -m "out/multi1" -e '{ file1: "file1", file2: "file2" }'; then
-    check_file "multi1" "out/multi1/file1" "multi1.golden.file1"
-    check_file "multi1" "out/multi1/file2" "multi1.golden.file2"
+
+SED_REPLACE_OUT_DIR="s@^${OUT_DIR%/}@out@;p"
+SED_STDOUT="${SED_REPLACE_OUT_DIR}"
+if do_test "multi1" 0 -m "${OUT_DIR}/multi1" -e '{ file1: "file1", file2: "file2" }'; then
+    check_file "multi1" "${OUT_DIR}/multi1/file1" "multi1.golden.file1"
+    check_file "multi1" "${OUT_DIR}/multi1/file2" "multi1.golden.file2"
 fi
-if do_test "multi2" 0 --multi "out/multi2" -e '{ file1: "file1", file2: "file2" }'; then
-    check_file "multi2" "out/multi2/file1" "multi2.golden.file1"
-    check_file "multi2" "out/multi2/file2" "multi2.golden.file2"
+if do_test "multi2" 0 --multi "${OUT_DIR}/multi2" -e '{ file1: "file1", file2: "file2" }'; then
+    check_file "multi2" "${OUT_DIR}/multi2/file1" "multi2.golden.file1"
+    check_file "multi2" "${OUT_DIR}/multi2/file2" "multi2.golden.file2"
 fi
-if do_test "multi3" 0 -m "out/multi3" -o "out/multi3/list" -e '{ file1: "file1", file2: "file2" }'; then
-    check_file "multi3" "out/multi3/file1" "multi3.golden.file1"
-    check_file "multi3" "out/multi3/file2" "multi3.golden.file2"
-    check_file "multi3" "out/multi3/list" "multi3.golden.list"
+unset -v SED_STDOUT
+if do_test "multi3" 0 -m "${OUT_DIR}/multi3" -o "${OUT_DIR}/multi3/list" -e '{ file1: "file1", file2: "file2" }'; then
+    check_file "multi3" "${OUT_DIR}/multi3/file1" "multi3.golden.file1"
+    check_file "multi3" "${OUT_DIR}/multi3/file2" "multi3.golden.file2"
+    check_file_sed "multi3" "${OUT_DIR}/multi3/list" "multi3.golden.list" "${SED_REPLACE_OUT_DIR}"
 fi
+unset -v SED_REPLACE_OUT_DIR
+
 do_test "multi4" 1 -m -- -e 'null'
 do_test "yaml1" 0 -y -e '[1,2,3]'
 do_test "yaml2" 1 -y -e 'null'
-if do_test "yaml3" 0 -y -o "out/yaml3/stream" -e '[1,2,3]'; then
-    check_file "yaml3" "out/yaml3/stream" "yaml3.golden.stream"
+if do_test "yaml3" 0 -y -o "${OUT_DIR}/yaml3/stream" -e '[1,2,3]'; then
+    check_file "yaml3" "${OUT_DIR}/yaml3/stream" "yaml3.golden.stream"
 fi
 do_test "string1" 0 -S -e '"A long\nparagraph."'
 do_test "string2" 1 -S -e 'null'
@@ -111,7 +134,7 @@ do_test "jsonnet_path1" 0 -e '[importstr "shared.txt", importbin "shared.txt"]'
 export JSONNET_PATH=lib2:lib1
 do_test "jsonnet_path2" 0 -e '[importstr "shared.txt", importbin "shared.txt"]'
 
-if [ -z "$DISABLE_FMT_TESTS" ]; then
+if [ -z "${DISABLE_FMT_TESTS:-}" ]; then
 
 do_fmt_test "fmt_no_args" 1
 do_fmt_test "fmt_help" 0 --help
@@ -122,25 +145,25 @@ do_fmt_test "fmt_simple1" 0 "test.jsonnet"
 do_fmt_test "fmt_simple3" 0 -
 do_fmt_test "fmt_simple4" 1 "nosuchfile.jsonnet"
 do_fmt_test "fmt_simple5" 1 "test.jsonnet" "test.jsonnet"
-if do_fmt_test "fmt_simple_out" 0 "test.jsonnet" -o "out/fmt_simple_out/custom_output"; then
-    check_file "fmt_simple_out" "out/fmt_simple_out/custom_output" "fmt_simple_out.golden.custom_output"
+if do_fmt_test "fmt_simple_out" 0 "test.jsonnet" -o "${OUT_DIR}/fmt_simple_out/custom_output"; then
+    check_file "fmt_simple_out" "${OUT_DIR}/fmt_simple_out/custom_output" "fmt_simple_out.golden.custom_output"
 fi
 do_fmt_test "fmt1" 0 -e "{ a: 1, b: 2, c: 3 }"
-if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "out/fmt_out/custom_output"; then
-    check_file "fmt_out" "out/fmt_out/custom_output" "fmt_out.golden.custom_output"
+if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "${OUT_DIR}/fmt_out/custom_output"; then
+    check_file "fmt_out" "${OUT_DIR}/fmt_out/custom_output" "fmt_out.golden.custom_output"
 fi
 do_fmt_test "fmt_double_dash" 0 -e -- -1
 
-if mkdir -p "out/fmt_inplace" && cp "test.jsonnet" "out/fmt_inplace/test.jsonnet"; then
+if mkdir -p "${OUT_DIR}/fmt_inplace" && cp "test.jsonnet" "${OUT_DIR}/fmt_inplace/test.jsonnet"; then
     # Test jsonnetfmt in-place modifications
-    do_fmt_test "fmt_inplace" 0 -i "out/fmt_inplace/test.jsonnet"
-    check_file "fmt_inplace" "out/fmt_inplace/test.jsonnet" "fmt_simple_out.golden.custom_output"
+    do_fmt_test "fmt_inplace" 0 -i "${OUT_DIR}/fmt_inplace/test.jsonnet"
+    check_file "fmt_inplace" "${OUT_DIR}/fmt_inplace/test.jsonnet" "fmt_simple_out.golden.custom_output"
     # Verify that running jsonnetfmt on an already formatted file does not change timesetamps
-    touch -m -t 199108252057.08 "out/fmt_inplace/test.jsonnet"
-    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_before.txt"
-    do_fmt_test "fmt_inplace" 0 -i "out/fmt_inplace/test.jsonnet"
-    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_after.txt"
-    check_file "fmt_inplace" "out/fmt_inplace/stat_mod_time_before.txt" "out/fmt_inplace/stat_mod_time_after.txt"
+    touch -m -t 199108252057.08 "${OUT_DIR}/fmt_inplace/test.jsonnet"
+    stat -c '%y' "${OUT_DIR}/fmt_inplace/test.jsonnet" > "${OUT_DIR}/fmt_inplace/stat_mod_time_before.txt"
+    do_fmt_test "fmt_inplace" 0 -i "${OUT_DIR}/fmt_inplace/test.jsonnet"
+    stat -c '%y' "${OUT_DIR}/fmt_inplace/test.jsonnet" > "${OUT_DIR}/fmt_inplace/stat_mod_time_after.txt"
+    check_file "fmt_inplace" "${OUT_DIR}/fmt_inplace/stat_mod_time_before.txt" "${OUT_DIR}/fmt_inplace/stat_mod_time_after.txt"
 fi
 
 fi
