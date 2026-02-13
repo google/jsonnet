@@ -17,6 +17,11 @@
 set -uo pipefail
 DIR="$(dirname $0)"
 
+if [[ ! -z "${BAZEL_TEST:-}" ]]; then
+    export JSONNET_BIN=$(rlocation "${JSONNET_BIN}")
+    export JSONNETFMT_BIN=$(rlocation "${JSONNETFMT_BIN}")
+fi
+
 source "${DIR}/cmd_tests.source"
 
 OUT_DIR=$(mktemp -d)
