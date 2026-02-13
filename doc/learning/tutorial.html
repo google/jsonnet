@@ -771,11 +771,16 @@ title: Tutorial
     <div class="panel">
       <p>
         Let's make it more concrete by mixing deriving some cocktails that are quite similar from a
-        template that draws out their similarities.  The <code>+</code> operator is actually
-        implicit in these examples. In the common case where you write <code>foo + {
-        </code>...<code> }</code>, i.e. the <code>+</code> is immediately followed by a
-        <code>{</code>, then the <code>+</code> can be elided.  Try explicitly adding the + in the 4
-        cases, below.
+        template that draws out their similarities.  In these examples we use implicit object
+        composition: In the common case where you write <code>foo + {</code> ... <code>}</code>,
+        that is, you have a <code>+</code> operation with a variable on the left and an object
+        definition (something starting with <code>{</code>) on the right, then the <code>+</code>
+        can be elided. This also works if the left hand side is a field access (e.g.,
+        <code>a.b</code>, or <code>a[b]</code>), function call (e.g., <code>f(a)</code>),
+        or parenthesised expression.
+      </p>
+      <p>
+        Try explicitly adding the + in the 4 cases, below.
       </p>
     </div>
     <div style="clear: both"></div>
