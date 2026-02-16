@@ -666,6 +666,44 @@ local exampleDocMultiline(mid, ex) =
           ],
         },
         {
+          name: 'parseXmlJsonml',
+          params: ['str', 'preserveWhitespace=false'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Parses a XML string to <a href="http://www.jsonml.org/">JsonML</a>-encoded value. The XML should only contain 
+              one root node.
+            |||),
+            html.p({}, |||
+              By default, all the boundary whitespace would be trimmed. It could be preserved using <code>preserveWhitespace</code> 
+              argument of the function.
+            |||),
+          ],
+          examples: [
+            {
+              input: "std.parseXmlJsonml('<svg height=\"100\" width=\"100\"><circle cx=\"50\" cy=\"50\" fill=\"red\" r=\"40\" stroke=\"black\" stroke-width=\"3\"></circle></svg>')",
+              output: [
+                "svg",
+                {
+                    "height": "100",
+                    "width": "100"
+                },
+                [
+                    "circle",
+                    {
+                      "cx": "50",
+                      "cy": "50",
+                      "fill": "red",
+                      "r": "40",
+                      "stroke": "black",
+                      "stroke-width": "3"
+                    }
+                ]
+              ],
+            },
+          ],
+        },
+        {
           name: 'encodeUTF8',
           params: ['str'],
           availableSince: '0.13.0',
