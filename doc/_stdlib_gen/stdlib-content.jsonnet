@@ -666,6 +666,42 @@ local exampleDocMultiline(mid, ex) =
           ],
         },
         {
+          name: 'parseCsvWithHeader',
+          params: ['str', 'delimiter=","', 'overwrite_duplicate_headers=true'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({},|||
+              Parses a CSV string into JSON. The CSV string would use the passed <code>delimiter</code> to split the columns.
+            |||),
+            html.p({},|||
+              In case of duplicate headers, the value would be overwritten by default. <code>overwrite_duplicate_headers</code> 
+              provides an option handle duplicate headers by appending a sequence number at the end of header.
+              This example should make it clear:
+            |||),
+            html.pre({}, |||
+              std.parseCsvWithHeaders("head1,head1,head1\nvalue1,value2,value3", overwrite_duplicate_headers=false)
+            |||),
+            html.p({},|||
+              This would result in following output:
+            |||),
+            html.pre({}, |||
+              [
+                {
+                  "head1": "value1",
+                  "head1__1": "value2",
+                  "head1__2": "value3",
+                },
+              ],
+            |||),
+          ],
+          examples: [
+            {
+              input: "std.parseCsvWithHeader('id,name\n1,foo\n2,bar')",
+              output: std.parseCsvWithHeader('id,name\n1,foo\n2,bar'),
+            },
+          ],
+        },
+        {
           name: 'encodeUTF8',
           params: ['str'],
           availableSince: '0.13.0',
@@ -1012,6 +1048,45 @@ local exampleDocMultiline(mid, ex) =
             |||),
             html.p({}, |||
               The <code>c_document_end</code> param adds the optional terminating <code>...</code>.
+            |||),
+          ],
+        },
+        {
+          name: 'manifestCsv',
+          params: ['json', 'headers=null'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Convert the given csv compatible json to a CSV.
+            |||),
+            html.pre({}, |||
+              std.manifestCsv(
+                [
+                  {
+                    "id": 1,
+                    "name": "foo",
+                    "x": "baz",
+                  },
+                  {
+                    "id": 2,
+                    "name": "bar",
+                  },
+                ],
+                ["id", "name"],
+            |||),
+            html.p({}, |||
+              Yields a string containing this CSV:
+            |||),
+            html.pre({}, |||
+              id,name
+              1,foo
+              2,bar
+            |||),
+            html.p({}, |||
+              If <code>json</code> param is not a valid csv compatible object, it would be an error.
+            |||),
+            html.p({}, |||
+              The <code>headers</code> param adds is an optional which would default to all fields in the first object.
             |||),
           ],
         },
