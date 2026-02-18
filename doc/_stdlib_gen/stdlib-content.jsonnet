@@ -129,8 +129,8 @@ local exampleDocMultiline(mid, ex) =
               <ul><code>std.pow(x, n)</code></ul>
               <ul><code>std.exp(x)</code></ul>
               <ul><code>std.log(x)</code></ul>
-              <ul><code>std.log2(x)</code></ul>
-              <ul><code>std.log10(x)</code></ul>
+              <ul><code>std.log2(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.log10(x)</code> (available since 0.21.0)</ul>
               <ul><code>std.exponent(x)</code></ul>
               <ul><code>std.mantissa(x)</code></ul>
               <ul><code>std.floor(x)</code></ul>
@@ -142,18 +142,18 @@ local exampleDocMultiline(mid, ex) =
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
-              <ul><code>std.atan2(y, x)</code></ul>
-              <ul><code>std.deg2rad(x)</code></ul>
-              <ul><code>std.rad2deg(x)</code></ul>
-              <ul><code>std.hypot(a, b)</code></ul>
-              <ul><code>std.round(x)</code></ul>
-              <ul><code>std.isEven(x)</code></ul>
-              <ul><code>std.isOdd(x)</code></ul>
-              <ul><code>std.isInteger(x)</code></ul>
-              <ul><code>std.isDecimal(x)</code></ul>
+              <ul><code>std.atan2(y, x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.deg2rad(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.rad2deg(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.hypot(a, b)</code> (available since 0.21.0)</ul>
+              <ul><code>std.round(x)</code> (available since 0.20.0)</ul>
+              <ul><code>std.isEven(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.isOdd(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.isInteger(x)</code> (available since 0.21.0)</ul>
+              <ul><code>std.isDecimal(x)</code> (available since 0.21.0)</ul>
           </ul>
           <p>
-              The constant <code>std.pi</code> is also available.
+              The constant <code>std.pi</code> is also available (since 0.21.0).
           </p>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
@@ -1530,7 +1530,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'avg',
           params: ['arr'],
-          availableSince: '0.20.0',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Return average of all element in <code>arr</code>.
