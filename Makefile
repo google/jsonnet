@@ -247,7 +247,7 @@ libjsonnet++.so.$(VERSION): $(LIB_CPP_OBJ)
 
 # std.jsonnet.h is a generated file so the first build will fail if it isn't
 # specified as an explicit dependency (after that, deps are known from compiler output)
-core/desugarer.cpp: core/std.jsonnet.h
+.makebuild/core/desugarer.cpp.o: core/std.jsonnet.h
 
 # Encode standard library for embedding in C
 .makebuild/stdlib/to_c_array: stdlib/to_c_array.cpp
