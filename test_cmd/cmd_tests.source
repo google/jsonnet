@@ -36,29 +36,34 @@ check_file_sed() {
     local RESULT_FILENAME="$2"
     local GOLDEN_FILENAME="$3"
     local SED_SCRIPT="$4"
+    local HAS_DIFF
 
-    local GOLDEN_CONTENT="$(< "$GOLDEN_FILENAME")"
-    local RESULT_CONTENT
     if [[ -z "$SED_SCRIPT" ]]; then
-        RESULT_CONTENT="$(< "$RESULT_FILENAME")"
-    else
-        RESULT_CONTENT="$(sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME")"
+        SED_SCRIPT='p'
     fi
-    if [ "${RESULT_CONTENT}" != "${GOLDEN_CONTENT}" ] ; then
+    
+    cmp --quiet "$GOLDEN_FILENAME" <(sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME")
+    HAS_DIFF="$?"
+        
+    if [ "${HAS_DIFF}" -eq 2 ]; then
+        FAILED=$((FAILED + 1))
+        printf "\033[31;1mERROR\033[0m \033[1m(cmp failed)\033[0m: \033[36m%s\033[0m\n" "$TEST"
+        return 1
+    elif [ "${HAS_DIFF}" -ne 0 ] ; then
         if [[ "${UPDATE_GOLDENS}" -eq 1 ]]; then
             printf "\033[31;1mUPDATING\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
-            > "$GOLDEN_FILENAME" echo -n "${RESULT_CONTENT}"
+            > "${GOLDEN_FILENAME}" sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME"
         else
             FAILED=$((FAILED + 1))
             if [ -z "${SUMMARY_ONLY:-}" ]; then
                 printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
                 echo "Result output:"
-                echo "${RESULT_CONTENT}"
+                sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME"
                 echo "Expected output:"
-                echo "${GOLDEN_CONTENT}"
+                cat "${GOLDEN_FILENAME}"
                 echo "Diff:"
                 # Using git diff for pretty format and pretty colors
-                git --no-pager diff --color --no-index "$GOLDEN_FILENAME" <(echo "${RESULT_CONTENT}")
+                git --no-pager diff --color --no-index "$GOLDEN_FILENAME" <(sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME")
                 # The output is often quite long, let's repeat the filename once more
                 # to avoid wasting time on looking for it
                 printf "\nTEST ABOVE: \033[36m%s\033[0m\n" "$TEST"
