@@ -58,6 +58,11 @@ void Jsonnet::setStringOutput(bool string_output)
     ::jsonnet_string_output(vm_, string_output);
 }
 
+void Jsonnet::setTrailingNewline(bool enable)
+{
+    ::jsonnet_set_trailing_newline(vm_, enable);
+}
+
 void Jsonnet::addImportPath(const std::string& path)
 {
     ::jsonnet_jpath_add(vm_, path.c_str());

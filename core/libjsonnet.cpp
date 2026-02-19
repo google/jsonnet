@@ -218,6 +218,7 @@ struct JsonnetVm {
     VmNativeCallbackMap nativeCallbacks;
     void *importCallbackContext;
     bool stringOutput;
+    bool trailingNewline;
     std::vector<std::string> jpaths;
 
     FmtOpts fmtOpts;
@@ -231,6 +232,7 @@ struct JsonnetVm {
           importCallback(default_import_callback),
           importCallbackContext(this),
           stringOutput(false),
+          trailingNewline(true),
           fmtDebugDesugaring(false)
     {
         jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
@@ -366,6 +368,11 @@ void jsonnet_gc_growth_trigger(JsonnetVm *vm, double v)
 void jsonnet_string_output(struct JsonnetVm *vm, int v)
 {
     vm->stringOutput = bool(v);
+}
+
+void jsonnet_set_trailing_newline(struct JsonnetVm *vm, int enable)
+{
+    vm->trailingNewline = bool(enable);
 }
 
 void jsonnet_import_callback(struct JsonnetVm *vm, JsonnetImportCallback *cb, void *ctx)
@@ -562,7 +569,9 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                                                           vm->importCallback,
                                                           vm->importCallbackContext,
                                                           vm->stringOutput);
-                json_str += "\n";
+                if (vm->trailingNewline) {
+                    json_str += "\n";
+                }
                 *error = false;
                 return from_string(vm, json_str);
             } break;
@@ -593,8 +602,10 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                     i += pair.first.length() + 1;
                     memcpy(&buf[i], pair.second.c_str(), pair.second.length());
                     i += pair.second.length();
-                    buf[i] = '\n';
-                    i++;
+                    if (vm->trailingNewline) {
+                        buf[i] = '\n';
+                        i++;
+                    }
                     buf[i] = '\0';
                     i++;
                 }
@@ -604,6 +615,10 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
             } break;
 
             case STREAM: {
+                if (!vm->trailingNewline) {
+                    *error = true;
+                    return from_string(vm, "INTERNAL: trailing-newline is required for streamed output");
+                }
                 std::vector<std::string> documents =
                     jsonnet_vm_execute_stream(&alloc,
                                               expr,

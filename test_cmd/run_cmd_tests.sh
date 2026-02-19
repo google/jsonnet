@@ -43,6 +43,8 @@ pushd "${DIR}"
 }
 
 unset SED_STDOUT SED_STDERR
+# A sed command to replace the OUT_DIR at the start of the line.
+SED_REPLACE_OUT_DIR="s@^${OUT_DIR%/}@out@;p"
 
 # And now the tests:
 
@@ -107,7 +109,6 @@ do_test "max_trace3" 1 -t 20 -e 'local f(n, c=0) = if n == 0 then error "whee" e
 do_test "max_trace4" 1 -t 0 -e 'local f(n, c=0) = if n == 0 then error "whee" else f(n - 1, c + n); f(100)'
 do_test "max_trace5" 1 -t -1 -e 'true'
 
-SED_REPLACE_OUT_DIR="s@^${OUT_DIR%/}@out@;p"
 SED_STDOUT="${SED_REPLACE_OUT_DIR}"
 if do_test "multi1" 0 -m "${OUT_DIR}/multi1" -e '{ file1: "file1", file2: "file2" }'; then
     check_file "multi1" "${OUT_DIR}/multi1/file1" "multi1.golden.file1"
@@ -123,7 +124,21 @@ if do_test "multi3" 0 -m "${OUT_DIR}/multi3" -o "${OUT_DIR}/multi3/list" -e '{ f
     check_file "multi3" "${OUT_DIR}/multi3/file2" "multi3.golden.file2"
     check_file_sed "multi3" "${OUT_DIR}/multi3/list" "multi3.golden.list" "${SED_REPLACE_OUT_DIR}"
 fi
-unset -v SED_REPLACE_OUT_DIR
+
+do_test "nonewline1" 0 --no-trailing-newline -e '42'
+do_test "nonewline2" 0 --no-trailing-newline test.jsonnet
+do_test "nonewline3" 0 --no-trailing-newline --string -e '"hello"'
+SED_STDOUT="${SED_REPLACE_OUT_DIR}"
+if do_test "nonewline_multi1" 0 --no-trailing-newline --multi "${OUT_DIR}/nonewline_multi1" -e '{ file1: "file1", file2: "file2" }'; then
+    check_file "nonewline_multi1" "${OUT_DIR}/nonewline_multi1/file1" "nonewline_multi1.golden.file1"
+    check_file "nonewline_multi1" "${OUT_DIR}/nonewline_multi1/file2" "nonewline_multi1.golden.file2"
+fi
+if do_test "nonewline_multi2" 0 --no-trailing-newline --multi "${OUT_DIR}/nonewline_multi2" --string -e '{ file1: "file1", file2: "file2" }'; then
+    check_file "nonewline_multi2" "${OUT_DIR}/nonewline_multi2/file1" "nonewline_multi2.golden.file1"
+    check_file "nonewline_multi2" "${OUT_DIR}/nonewline_multi2/file2" "nonewline_multi2.golden.file2"
+fi
+unset -v SED_STDOUT
+do_test "nonewline_yaml1" 1 --no-trailing-newline --yaml-stream -e '[{a:1},{b:2},{c:3}]'
 
 do_test "multi4" 1 -m -- -e 'null'
 do_test "yaml1" 0 -y -e '[1,2,3]'

@@ -57,6 +57,9 @@ void jsonnet_gc_growth_trigger(struct JsonnetVm *vm, double v);
 /** Expect a string as output and don't JSON encode it. */
 void jsonnet_string_output(struct JsonnetVm *vm, int v);
 
+/** Enable/disable trailing newline in manifested/string output. */
+void jsonnet_set_trailing_newline(struct JsonnetVm *vm, int enable);
+
 /** Callback used to load imports.
  *
  * The returned char* should be allocated with jsonnet_realloc.  It will be cleaned up by

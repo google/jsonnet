@@ -58,6 +58,7 @@ void usage(std::ostream &o)
     o << "  -m / --multi <dir>      Write multiple files to the directory, list files on stdout\n";
     o << "  -y / --yaml-stream      Write output as a YAML stream of JSON documents\n";
     o << "  -S / --string           Expect a string, manifest as plain text\n";
+    o << "  --no-trailing-newline   Do not add a trailing newline to the output\n";
     o << "  -s / --max-stack <n>    Number of allowed stack frames\n";
     o << "  -t / --max-trace <n>    Max length of stack trace before cropping\n";
     o << "  --gc-min-objects <n>    Do not run garbage collector until this many\n";
@@ -167,6 +168,7 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
     std::vector<std::string> remaining_args;
 
     unsigned i = 0;
+    bool trailing_newline = true;
 
     for (; i < args.size(); ++i) {
         const std::string &arg = args[i];
@@ -323,12 +325,22 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
             config->evalStream = true;
         } else if (arg == "-S" || arg == "--string") {
             jsonnet_string_output(vm, 1);
+        } else if (arg == "--no-trailing-newline") {
+            // Keep track so we can check for mutually incompatible args.
+            trailing_newline = false;
+            jsonnet_set_trailing_newline(vm, 0);
         } else if (arg.length() > 1 && arg[0] == '-') {
             std::cerr << "ERROR: unrecognized argument: " << arg << std::endl;
             return ARG_FAILURE;
         } else {
             remaining_args.push_back(args[i]);
         }
+    }
+
+    if (config->evalStream && !trailing_newline) {
+        std::cerr << "ERROR: cannot use --no-trailing-newline with --yaml-stream" << std::endl;
+        usage(std::cerr);
+        return ARG_FAILURE;
     }
 
     const char *want = config->filenameIsCode ? "code" : "filename";

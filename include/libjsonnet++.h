@@ -60,6 +60,9 @@ class Jsonnet {
     /// Set whether to expect a string as output and don't JSON encode it.
     void setStringOutput(bool string_output);
 
+    /// Set whether to include a trailing newline in manifested/string output.
+    void setTrailingNewline(bool enable);
+
     /// Set the number of lines of stack trace to display (0 to display all).
     void setMaxTrace(uint32_t lines);
 
