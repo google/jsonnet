@@ -25,6 +25,8 @@ JSONNETFMT_BIN="${JSONNETFMT_BIN:-../jsonnetfmt}"
 
 OVERRIDE_DIR="${OVERRIDE_DIR:-.}"
 
+UPDATE_GOLDENS="${UPDATE_GOLDENS:-0}"
+
 separator() {
     echo -e "\n-----------------------------\n"
 }
@@ -43,22 +45,27 @@ check_file_sed() {
         RESULT_CONTENT="$(sed --silent -E -e "$SED_SCRIPT" "$RESULT_FILENAME")"
     fi
     if [ "${RESULT_CONTENT}" != "${GOLDEN_CONTENT}" ] ; then
-        FAILED=$((FAILED + 1))
-        if [ -z "${SUMMARY_ONLY:-}" ]; then
-            printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
-            echo "Result output:"
-            echo "${RESULT_CONTENT}"
-            echo "Expected output:"
-            echo "${GOLDEN_CONTENT}"
-            echo "Diff:"
-            # Using git diff for pretty format and pretty colors
-            git --no-pager diff --color --no-index "$GOLDEN_FILENAME" <(echo "${RESULT_CONTENT}")
-            # The output is often quite long, let's repeat the filename once more
-            # to avoid wasting time on looking for it
-            printf "\nTEST ABOVE: \033[36m%s\033[0m\n" "$TEST"
-            separator
+        if [[ "${UPDATE_GOLDENS}" -eq 1 ]]; then
+            printf "\033[31;1mUPDATING\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
+            > "$GOLDEN_FILENAME" echo -n "${RESULT_CONTENT}"
+        else
+            FAILED=$((FAILED + 1))
+            if [ -z "${SUMMARY_ONLY:-}" ]; then
+                printf "\033[31;1mFAIL\033[0m \033[1m(stdout mismatch)\033[0m: \033[36m%s\033[0m\n" "$TEST"
+                echo "Result output:"
+                echo "${RESULT_CONTENT}"
+                echo "Expected output:"
+                echo "${GOLDEN_CONTENT}"
+                echo "Diff:"
+                # Using git diff for pretty format and pretty colors
+                git --no-pager diff --color --no-index "$GOLDEN_FILENAME" <(echo "${RESULT_CONTENT}")
+                # The output is often quite long, let's repeat the filename once more
+                # to avoid wasting time on looking for it
+                printf "\nTEST ABOVE: \033[36m%s\033[0m\n" "$TEST"
+                separator
+            fi
+            return 1
         fi
-        return 1
     fi
 }
 
