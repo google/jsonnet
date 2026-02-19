@@ -108,3 +108,16 @@ jobs:
         run: |
           cd examples/bazel
           bazelisk build --lockfile_mode=off //...
+
+  cmake_example:
+    name: Build CMake example
+    runs-on: "ubuntu-22.04"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          cd examples/cmake
+          BUILD_DIR="$(mktemp -d)"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Debug -S . -B "${BUILD_DIR}" && \
+            cmake --build "${BUILD_DIR}" -- -v && \
+            ${BUILD_DIR}/jsonnet_cmake_example
