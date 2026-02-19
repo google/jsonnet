@@ -1,0 +1,4 @@
+RUNTIME ERROR: std.flatMap on strings, provided function must return a string, got number
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:(309:7)-(314:9)	function <anonymous>
+	error.flatMap_string_typecheck.jsonnet:1:1-49	

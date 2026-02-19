@@ -1,0 +1,3 @@
+RUNTIME ERROR: std.flatMap second param must be array / string, got object
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	error.flatMap_seq_typecheck.jsonnet:1:1-51	

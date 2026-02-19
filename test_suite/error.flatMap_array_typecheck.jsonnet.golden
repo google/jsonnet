@@ -1,0 +1,11 @@
+RUNTIME ERROR: std.flatMap on arrays, provided function must return an array, got string
+	std.jsonnet:<stdlib_position_redacted>	thunk <array_element>
+	std.jsonnet:<stdlib_position_redacted>	thunk <b>
+	std.jsonnet:<stdlib_position_redacted>	function <func>
+	std.jsonnet:<stdlib_position_redacted>	thunk <running>
+	std.jsonnet:<stdlib_position_redacted>	function <aux>
+	std.jsonnet:<stdlib_position_redacted>	function <aux>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	std.jsonnet:<stdlib_position_redacted>	function <anonymous>
+	std.jsonnet:(302:7)-(307:9)	function <anonymous>
+	error.flatMap_array_typecheck.jsonnet:1:1-44	
