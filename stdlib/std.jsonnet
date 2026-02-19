@@ -299,9 +299,19 @@ limitations under the License.
     if !std.isFunction(func) then
       error ('std.flatMap first param must be function, got ' + std.type(func))
     else if std.isArray(arr) then
-      std.flattenArrays(std.makeArray(std.length(arr), function(i) func(arr[i])))
+      std.flattenArrays(std.makeArray(
+        std.length(arr), function(i)
+          local o = func(arr[i]);
+          if std.isArray(o) then o else
+            error ('std.flatMap on arrays, provided function must return an array, got ' + std.type(o))
+      ))
     else if std.isString(arr) then
-      std.join('', std.makeArray(std.length(arr), function(i) func(arr[i])))
+      std.join('', std.makeArray(
+        std.length(arr), function(i)
+          local o = func(arr[i]);
+          if std.isString(o) then o else
+            error ('std.flatMap on strings, provided function must return a string, got ' + std.type(o))
+      ))
     else error ('std.flatMap second param must be array / string, got ' + std.type(arr)),
 
   join(sep, arr)::
