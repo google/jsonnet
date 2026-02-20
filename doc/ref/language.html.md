@@ -575,6 +575,23 @@ Object locals end with a comma, instead of semicolon (like fields). They are not
 
 Object locals can access `self` and `super` – they are "inside the object". As a consequence of this, **object locals are not available in Field Name Expressions**, because (in general) they depend on the object being already created, which requires the field names to be already known.
 
+#### Object Assertions
+
+Objects may contain assertions, which are boolean expressions that are checked when any of the object's fields are evaluated.
+
+```
+local base = {
+  assert self.a > 0 : "a must be positive",
+  a: self.x * self.y,
+};
+
+base + { x: 5, y: -5 }
+```
+
+When this expression is manifested, the assertion will be checked, and in this case fail (since `a` evaluates to `-25`), producing an error with the provided message.
+
+Note that object assertions are only checked if one or more of an object's fields are evaluated. Since Jsonnet is a lazy language (see [Rationale for Lazy Semantics](/articles/design.html#lazy)), an object might be defined but never evaluated if none of its fields are needed to produce the final output, and in this case the object's assertions are not checked. Listing an object's field names (for example, using the `std.objectFields` or `std.objectFieldsAll` standard library functions) does not evaluate the field values.
+
 #### Field Name Expressions
 
 Field names of Jsonnet objects can be arbitrary strings and can be calculated dynamically *when the object is created*.
