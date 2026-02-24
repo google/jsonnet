@@ -1,3 +1,18 @@
+[project]
+name = "jsonnet"
+description = "Python bindings for Jsonnet - The data templating language"
+readme = "README.md"
+# License is not really dynamic, but pyproject.toml schema changed in a backward-incompatible way
+# so we continue to specify the license in setup.py config otherwise we can't support both old
+# and new Python and setuptools versions.
+# See for example: https://github.com/osvenskan/posix_ipc/issues/68
+dynamic = ["license", "version"]
+authors = [{ name = "David Cunningham", email = "dcunnin@google.com" }]
+urls = { homepage = "https://jsonnet.org", source = "https://github.com/google/jsonnet" }
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 72.2"]

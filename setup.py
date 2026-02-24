@@ -101,15 +101,8 @@ class BuildJsonnetExt(BuildExt):
 
 setuptools.setup(
     name="jsonnet",
-    url="https://jsonnet.org",
-    project_urls={
-        "Source": "https://github.com/google/jsonnet",
-    },
-    description="Python bindings for Jsonnet - The data templating language ",
-    license="Apache License 2.0",
-    author="David Cunningham",
-    author_email="dcunnin@google.com",
     version=get_version(),
+    license="Apache-2.0",
     cmdclass={
         "build_ext": BuildJsonnetExt,
     },
