@@ -183,7 +183,7 @@
         }
 
         if (stream.match(/\$/)) return "keyword";
-        if (stream.match(/(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i)) return "number";
+        if (stream.match(/(?:0|[1-9]\d*(?:_\d+)*)(?:\.\d+(?:_\d+)*)?(?:e[+-]?\d+(?:_\d+)*)?/i)) return "number";
         if (stream.match(/[-+\/*=<>!&~^|$%]+/)) return "operator";
 
         // Identifiers and keywords that look like identifiers.
