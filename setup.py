@@ -14,6 +14,7 @@
 
 import os
 import re
+
 import setuptools
 from setuptools.command.build_ext import build_ext as BuildExt
 
@@ -115,6 +116,8 @@ setuptools.setup(
     ext_modules=[
         setuptools.Extension(
             "_jsonnet",
+            define_macros=[("Py_LIMITED_API", "0x030A0000")],
+            py_limited_api=True,
             sources=LIB_SOURCES,
             include_dirs=[
                 "include",
@@ -125,5 +128,6 @@ setuptools.setup(
             language="c++",
         )
     ],
+    options={"bdist_wheel": {"py_limited_api": "cp310"}},
     test_suite="python._jsonnet_test",
 )

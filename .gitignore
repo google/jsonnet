@@ -43,6 +43,7 @@ parser_test
 /external/
 /dist/
 /jsonnet.egg-info/
+/python/jsonnet.egg-info/
 /doc/.jekyll-cache/
 /production/
 /doc/production/
