@@ -16,6 +16,7 @@ limitations under the License.
 
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 
 #include <memory>
 #include <set>
@@ -2628,13 +2629,16 @@ class Interpreter {
                                     int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
 
-                                    // Additional safety check for left shifts to prevent undefined behavior
-                                    if (long_r >= 1 && long_l >= (1LL << (63 - long_r))) {
+                                    // Additional safety check for left shifts to prevent undefined behavior.
+                                    // Left-shift that would move the highest set bit into the sign bit position is undefined.
+                                    if (long_r >= 1 && abs(long_l) >= (1LL << (63 - long_r))) {
                                         throw makeError(ast.location,
-                                                      "numeric value outside safe integer range for bitwise operation.");
+                                            "numeric value outside safe integer range for bitwise operation.");
                                     }
 
-                                    scratch = makeNumber(long_l << long_r);
+                                    // Left-shift of a negative number is undefined until C++20.
+                                    // Perform the shift on unsigned int to avoid that.
+                                    scratch = makeNumber(static_cast<int64_t>(static_cast<uint64_t>(long_l) << long_r));
                                 } break;
 
                                 case BOP_SHIFT_R: {
