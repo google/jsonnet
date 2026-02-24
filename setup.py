@@ -122,5 +122,4 @@ setuptools.setup(
         )
     ],
     options={"bdist_wheel": {"py_limited_api": "cp310"}},
-    test_suite="python._jsonnet_test",
 )
