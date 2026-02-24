@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@ee63bf16da6cddfb925f542f2c7b59ad50e93969 # v2.22.0
+        uses: pypa/cibuildwheel@298ed2fb2c105540f5ed055e8a6ad78d82dd3a7e # v3.3.1
         env:
           # Skip PyPy, 32-bit Windows, 32-bit Linux, and CPython before 3.9.
           # See https://cibuildwheel.readthedocs.io/en/stable/options/#examples_1
@@ -101,7 +101,7 @@ jobs:
           find cibw-wheels/ -type f -name '*.whl' -exec mv '{}' ./dist/ ';'
           find sdist/ -type f -name '*.gz' -exec mv '{}' ./dist/ ';'
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           verbose: true
           print-hash: true
