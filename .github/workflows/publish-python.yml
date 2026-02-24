@@ -29,17 +29,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.8"
           cache: "pip"
-
       - run: pip install 'build==1.2.2'
-
       - name: Build sdist
         run: python3 -m build --sdist
-
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
@@ -63,9 +59,10 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@298ed2fb2c105540f5ed055e8a6ad78d82dd3a7e # v3.3.1
         env:
-          # Skip PyPy, 32-bit Windows, 32-bit Linux, and CPython before 3.9.
-          # See https://cibuildwheel.readthedocs.io/en/stable/options/#examples_1
-          CIBW_SKIP: "*-win32 pp* *-manylinux_i686 *-musllinux_i686 cp36-* cp37-* cp38-*"
+          # CIBuildWheel itself no longer supports earlier than Python 3.8, which is
+          # the earliest we try to support here. Also likely cibuildwheel will soon
+          # drop support for 3.8, see https://github.com/pypa/cibuildwheel/issues/2685
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux_i686"
           CIBW_TEST_COMMAND: >
             python {package}/python/_jsonnet_test.py
 
