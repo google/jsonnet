@@ -178,6 +178,7 @@ struct Frame {
           location(ast->location),
           tailCall(false),
           elementId(0),
+          first(false),
           context(NULL),
           self(NULL),
           offset(0)
@@ -192,6 +193,7 @@ struct Frame {
           location(location),
           tailCall(false),
           elementId(0),
+          first(false),
           context(NULL),
           self(NULL),
           offset(0)
