@@ -25,6 +25,54 @@ limitations under the License.
 #error "Python 2 is no longer supported."
 #endif
 
+struct StrRefAndObj {
+    /* Since Python 3.10, we have PyUnicode_AsUTF8AndSize
+     * which doesn't need its result to be deallocated, and
+     * therefore doesn't need to track the extra Bytes object. */
+#if Py_LIMITED_API < 0x030A0000
+    PyObject *bytes;
+#endif
+    const char *cstr;
+    Py_ssize_t len;
+};
+
+static struct StrRefAndObj get_py_utf8_string(PyObject *unicode_obj) {
+    Py_ssize_t len = 0;
+    struct StrRefAndObj ret = {0};
+
+    if (!unicode_obj) {
+        return ret;
+    }
+
+#if Py_LIMITED_API < 0x030A0000
+    PyObject *bytes = PyUnicode_AsUTF8String(unicode_obj);
+    if (!bytes) {
+        return ret;
+    }
+    char *s = 0;
+    if (PyBytes_AsStringAndSize(bytes, &s, &len)) {
+        // What to do if it fails??
+        Py_XDECREF(bytes);
+        return ret;
+    }
+    ret.bytes = bytes;
+#else
+    const char *s = PyUnicode_AsUTF8AndSize(unicode_obj, &len);
+#endif
+    ret.cstr = s;
+    ret.len = len;
+    return ret;
+}
+
+static void release_py_utf8_string(struct StrRefAndObj *utf8_obj) {
+#if Py_LIMITED_API < 0x030A0000
+    Py_XDECREF(utf8_obj->bytes);
+    utf8_obj->bytes = NULL;
+#endif
+    utf8_obj->cstr = NULL;
+    utf8_obj->len = 0;
+}
+
 static char *jsonnet_str(struct JsonnetVm *vm, const char *str)
 {
     size_t size = strlen(str) + 1;
@@ -41,12 +89,12 @@ static char *jsonnet_str_nonull(struct JsonnetVm *vm, const char *str, size_t *b
     return out;
 }
 
-static const char *exc_to_str(void)
+static struct StrRefAndObj exc_to_str(void)
 {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyObject *exc_str = PyObject_Str(pvalue);
-    return PyUnicode_AsUTF8AndSize(exc_str, NULL);
+    return get_py_utf8_string(exc_str);
 }
 
 struct NativeCtx {
@@ -61,10 +109,9 @@ static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyO
 {
     if (PyUnicode_Check(v)) {
         struct JsonnetJsonValue *r;
-        PyObject *str = PyUnicode_AsUTF8String(v);
-        const char *cstr = PyBytes_AsString(str);
-        r = jsonnet_json_make_string(vm, cstr);
-        Py_DECREF(str);
+        struct StrRefAndObj v_utf8 = get_py_utf8_string(v);
+        r = jsonnet_json_make_string(vm, v_utf8.cstr);
+        release_py_utf8_string(&v_utf8);
         return r;
     } else if (PyBool_Check(v)) {
         return jsonnet_json_make_bool(vm, PyObject_IsTrue(v));
@@ -101,18 +148,21 @@ static struct JsonnetJsonValue *python_to_jsonnet_json(struct JsonnetVm *vm, PyO
         obj = jsonnet_json_make_object(vm);
         while (PyDict_Next(v, &pos, &key, &val)) {
             struct JsonnetJsonValue *json_val;
-            const char *key_ = PyUnicode_AsUTF8AndSize(key, NULL);
-            if (key_ == NULL) {
+            struct StrRefAndObj key_utf8 = get_py_utf8_string(key);
+            if (!key_utf8.cstr) {
+                release_py_utf8_string(&key_utf8);
                 *err_msg = "Non-string key in dict returned from Python Jsonnet native extension.";
                 jsonnet_json_destroy(vm, obj);
                 return NULL;
             }
             json_val = python_to_jsonnet_json(vm, val, err_msg);
             if (json_val == NULL) {
+                release_py_utf8_string(&key_utf8);
                 jsonnet_json_destroy(vm, obj);
                 return NULL;
             }
-            jsonnet_json_object_append(vm, obj, key_, json_val);
+            jsonnet_json_object_append(vm, obj, key_utf8.cstr, json_val);
+            release_py_utf8_string(&key_utf8);
         }
         return obj;
     } else {
@@ -168,7 +218,9 @@ static struct JsonnetJsonValue *cpython_native_callback(
 
     if (result == NULL) {
         // Get string from exception.
-        struct JsonnetJsonValue *r = jsonnet_json_make_string(ctx->vm, exc_to_str());
+        struct StrRefAndObj err_utf8 = exc_to_str();
+        struct JsonnetJsonValue *r = jsonnet_json_make_string(ctx->vm, err_utf8.cstr);
+        release_py_utf8_string(&err_utf8);
         *succ = 0;
         PyErr_Clear();
         *ctx->py_thread = PyEval_SaveThread();
@@ -208,7 +260,9 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
 
     if (result == NULL) {
         // Get string from exception
-        *buf = jsonnet_str_nonull(ctx->vm, exc_to_str(), buflen);
+        struct StrRefAndObj err_utf8 = exc_to_str();
+        *buf = jsonnet_str_nonull(ctx->vm, err_utf8.cstr, buflen);
+        release_py_utf8_string(&err_utf8);
         PyErr_Clear();
         *ctx->py_thread = PyEval_SaveThread();
         return 1; // failure
@@ -229,9 +283,10 @@ static int cpython_import_callback(void *ctx_, const char *base, const char *rel
         } else {
             char *content_buf;
             Py_ssize_t content_len;
-            const char *found_here_cstr = PyUnicode_AsUTF8AndSize(file_name, NULL);
+            struct StrRefAndObj found_here_utf8 = get_py_utf8_string(file_name);
             PyBytes_AsStringAndSize(file_content, &content_buf, &content_len);
-            *found_here = jsonnet_str(ctx->vm, found_here_cstr);
+            *found_here = jsonnet_str(ctx->vm, found_here_utf8.cstr);
+            release_py_utf8_string(&found_here_utf8);
             *buflen = content_len;
             *buf = jsonnet_realloc(ctx->vm, NULL, *buflen);
             memcpy(*buf, content_buf, *buflen);
@@ -268,25 +323,30 @@ int handle_vars(struct JsonnetVm *vm, PyObject *map, int code, int tla)
     Py_ssize_t pos = 0;
 
     while (PyDict_Next(map, &pos, &key, &val)) {
-        const char *key_ = PyUnicode_AsUTF8AndSize(key, NULL);
-        if (key_ == NULL) {
+        struct StrRefAndObj key_utf8 = get_py_utf8_string(key);
+        if (!key_utf8.cstr) {
+            release_py_utf8_string(&key_utf8);
             jsonnet_destroy(vm);
             return 0;
         }
-        const char *val_ = PyUnicode_AsUTF8AndSize(val, NULL);
-        if (val_ == NULL) {
+        struct StrRefAndObj val_utf8 = get_py_utf8_string(val);
+        if (!val_utf8.cstr) {
+            release_py_utf8_string(&val_utf8);
+            release_py_utf8_string(&key_utf8);
             jsonnet_destroy(vm);
             return 0;
         }
         if (!tla && !code) {
-            jsonnet_ext_var(vm, key_, val_);
+            jsonnet_ext_var(vm, key_utf8.cstr, val_utf8.cstr);
         } else if (!tla && code) {
-            jsonnet_ext_code(vm, key_, val_);
+            jsonnet_ext_code(vm, key_utf8.cstr, val_utf8.cstr);
         } else if (tla && !code) {
-            jsonnet_tla_var(vm, key_, val_);
+            jsonnet_tla_var(vm, key_utf8.cstr, val_utf8.cstr);
         } else {
-            jsonnet_tla_code(vm, key_, val_);
+            jsonnet_tla_code(vm, key_utf8.cstr, val_utf8.cstr);
         }
+        release_py_utf8_string(&val_utf8);
+        release_py_utf8_string(&key_utf8);
     }
     return 1;
 }
@@ -332,8 +392,7 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         Py_ssize_t i;
         Py_ssize_t num_params;
         PyObject *params;
-        const char *key_ = PyUnicode_AsUTF8AndSize(key, NULL);
-        if (key_ == NULL) {
+        if (!PyUnicode_Check(key)) {
             PyErr_SetString(PyExc_TypeError, "native callback dict keys must be string");
             goto bad;
         }
@@ -384,21 +443,24 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         Py_ssize_t i;
         Py_ssize_t num_params;
         PyObject *params;
-        const char *key_ = PyUnicode_AsUTF8AndSize(key, NULL);
+        struct StrRefAndObj key_utf8 = get_py_utf8_string(key);
         params = PyTuple_GetItem(val, 0);
         num_params = PyTuple_Size(params);
         /* Include space for terminating NULL. */
         const char **params_c = malloc(sizeof(const char*) * (num_params + 1));
         for (i = 0; i < num_params ; ++i) {
-            params_c[i] = PyUnicode_AsUTF8AndSize(PyTuple_GetItem(params, i), NULL);
+            struct StrRefAndObj param_c_utf8 = get_py_utf8_string(PyTuple_GetItem(params, i));
+            params_c[i] = param_c_utf8.cstr;
+            release_py_utf8_string(&param_c_utf8);
         }
         params_c[num_params] = NULL;
         (*ctxs)[num_natives].vm = vm;
         (*ctxs)[num_natives].py_thread = py_thread;
         (*ctxs)[num_natives].callback = PyTuple_GetItem(val, 1);
         (*ctxs)[num_natives].argc = num_params;
-        jsonnet_native_callback(vm, key_, cpython_native_callback, &(*ctxs)[num_natives],
+        jsonnet_native_callback(vm, key_utf8.cstr, cpython_native_callback, &(*ctxs)[num_natives],
                                 params_c);
+        release_py_utf8_string(&key_utf8);
         free(params_c);
         num_natives++;
     }
@@ -411,7 +473,6 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
 {
     const char *filename;
     char *out;
-    const char *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
@@ -452,15 +513,17 @@ static PyObject* evaluate_file(PyObject* self, PyObject* args, PyObject *keywds)
     if (jpathdir != NULL) {
         // Support string for backward compatibility with <= 0.15.0
         if (PyUnicode_Check(jpathdir)) {
-            jpath_str = PyUnicode_AsUTF8AndSize(jpathdir, NULL);
-            jsonnet_jpath_add(vm, jpath_str);
+            struct StrRefAndObj jpath_utf8 = get_py_utf8_string(jpathdir);
+            jsonnet_jpath_add(vm, jpath_utf8.cstr);
+            release_py_utf8_string(&jpath_utf8);
         } else if (PyList_Check(jpathdir)) {
             num_jpathdir = PyList_Size(jpathdir);
             for (i = 0; i < num_jpathdir ; ++i) {
                 PyObject *jpath = PyList_GetItem(jpathdir, i);
                 if (PyUnicode_Check(jpath)) {
-                    jpath_str = PyUnicode_AsUTF8AndSize(jpath, NULL);
-                    jsonnet_jpath_add(vm, jpath_str);
+                    struct StrRefAndObj jpath_utf8 = get_py_utf8_string(jpath);
+                    jsonnet_jpath_add(vm, jpath_utf8.cstr);
+                    release_py_utf8_string(&jpath_utf8);
                 }
             }
         }
@@ -491,7 +554,6 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
 {
     const char *filename, *src;
     char *out;
-    const char *jpath_str;
     unsigned max_stack = 500, gc_min_objects = 1000, max_trace = 20;
     double gc_growth_trigger = 2;
     int error;
@@ -532,15 +594,17 @@ static PyObject* evaluate_snippet(PyObject* self, PyObject* args, PyObject *keyw
     if (jpathdir != NULL) {
         // Support string for backward compatibility with <= 0.15.0
         if (PyUnicode_Check(jpathdir)) {
-            jpath_str = PyUnicode_AsUTF8AndSize(jpathdir, NULL);
-            jsonnet_jpath_add(vm, jpath_str);
+            struct StrRefAndObj jpath_utf8 = get_py_utf8_string(jpathdir);
+            jsonnet_jpath_add(vm, jpath_utf8.cstr);
+            release_py_utf8_string(&jpath_utf8);
         } else if (PyList_Check(jpathdir)) {
             num_jpathdir = PyList_Size(jpathdir);
             for (i = 0; i < num_jpathdir ; ++i) {
                 PyObject *jpath = PyList_GetItem(jpathdir, i);
                 if (PyUnicode_Check(jpath)) {
-                    jpath_str = PyUnicode_AsUTF8AndSize(jpath, NULL);
-                    jsonnet_jpath_add(vm, jpath_str);
+                    struct StrRefAndObj jpath_utf8 = get_py_utf8_string(jpath);
+                    jsonnet_jpath_add(vm, jpath_utf8.cstr);
+                    release_py_utf8_string(&jpath_utf8);
                 }
             }
         }
