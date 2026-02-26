@@ -1478,6 +1478,9 @@ std.assertEqual(std.parseJson('12'), 12) &&
 std.assertEqual(std.parseJson('12.123'), 12.123) &&
 std.assertEqual(std.parseJson('{"a": {"b": ["c", 42]}}'), { a: { b: ['c', 42] } }) &&
 
+// Empty input evaluates to `null`.
+// Regression test for https://github.com/google/jsonnet/issues/1270
+std.assertEqual(std.parseYaml('   \n'), null) &&
 std.assertEqual(std.parseYaml('{}'), {}) &&
 std.assertEqual(std.parseYaml('[]'), []) &&
 std.assertEqual(

@@ -1703,6 +1703,9 @@ class Interpreter {
                     j.push_back(yamlTreeToJson(doc));
                 }
             }
+        } else if (tree.type(tree.root_id()).is_notype()) {
+            scratch = makeNull();
+            return nullptr;
         } else {
             j = yamlTreeToJson(tree);
         }
