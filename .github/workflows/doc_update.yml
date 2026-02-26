@@ -9,13 +9,65 @@ on:
     branches:
       - "master"
   workflow_dispatch:
+    inputs:
+      build_wasm:
+        description: "Rebuild libjsonnet.wasm from source"
+        default: false
+        type: boolean
+        required: false
+      build_wasm_from_branch:
+        description: "go-jsonnet branch, tag or SHA to build from"
+        default: "master"
+        type: string
+        required: false
 
 permissions:
   contents: read
 
 jobs:
+  build_libjsonnet_wasm:
+    name: Build libjsonnet.wasm for website
+    if: ${{ inputs.build_wasm }}
+    runs-on: "ubuntu-24.04"
+    outputs:
+      libjsonnet_wasm_sha256: ${{ steps.build.outputs.libjsonnet_wasm_sha256 }}
+      libjsonnet_wasm_artifact_id: ${{ steps.upload-wasm.outputs.artifact_id }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: google/go-jsonnet
+          ref: ${{ inputs.build_wasm_from_branch }}
+          submodules: false
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/bazel
+            ~/.cache/bazelisk
+          key: ${{ runner.os }}-bazel-cache
+      - id: build
+        run: |
+          bazelisk test --lockfile_mode=error //...
+          bazelisk build --lockfile_mode=error //cmd/wasm:libjsonnet.wasm
+          WHERE="$(bazelisk cquery //cmd/wasm:libjsonnet.wasm --output files)"
+          cp "${WHERE}" ./
+          { printf 'libjsonnet_wasm_sha256='; sha256sum --binary ./libjsonnet.wasm; } >> "$GITHUB_OUTPUT"
+      - name: Upload libjsonnet.wasm
+        id: upload-wasm
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./libjsonnet.wasm
+          name: libjsonnet-wasm
+          if-no-files-found: "error"
+          retention-days: 4
+          include-hidden-files: false
+
+
   build_website:
     name: Build website
+    # Ordering dependency - this must run after building libjsonnet.wasm.
+    needs: build_libjsonnet_wasm
+    # Don't run if libjsonnet.wasm build _failed_ or the workflow cancelled, but run if it was skipped.
+    if: always() && !failure() && !cancelled()
     runs-on: "ubuntu-24.04"
     outputs:
       diff_status: ${{ steps.diff-generated.outputs.diff_status }}
@@ -47,6 +99,12 @@ jobs:
         if: ${{ steps.cache-jsonnet-binary.outputs.cache-hit != 'true' }}
         run: |
           make jsonnet
+      - id: get_built_libjsonnet_wasm
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          artifact-ids: ${{ needs.build_libjsonnet_wasm.outputs.libjsonnet_wasm_artifact_id }}
+          path: built_libjsonnet_wasm
       - name: Set up output dir
         id: make-output-dir
         run: |
@@ -65,12 +123,21 @@ jobs:
       - name: Build website
         env:
           WORKDIR: ${{ steps.make-output-dir.outputs.doc_output_dir }}
+          WANT_BUILT_LIBJSONNET_WASM_PATH: ${{ steps.get_built_libjsonnet_wasm.outputs.download-path }}
+          WANT_BUILT_LIBJSONNET_WASM_SHA256: ${{ needs.build_libjsonnet_wasm.outputs.libjsonnet_wasm_sha256 }}
         run: |
           tools/scripts/update_web_content.sh
           bundler exec jekyll build -s doc -d "$WORKDIR"/work
           cd "$WORKDIR"/work
-          # Keep existing libjsonnet.wasm.
-          git checkout HEAD -- js/libjsonnet.wasm || echo "Could not find existing js/libjsonnet.wasm"
+          if [[ -z "${WANT_BUILT_LIBJSONNET_WASM_SHA256}" ]]; then
+            # Keep existing libjsonnet.wasm.
+            git checkout HEAD -- js/libjsonnet.wasm || echo "Could not find existing js/libjsonnet.wasm"
+          else
+            # Use a newly build libjsonnet.wasm.
+            cp "${WANT_BUILT_LIBJSONNET_WASM_PATH}"/libjsonnet.wasm ./js/libjsonnet.wasm
+            # Safety check - check that we transferred the file correctly.
+            echo "${WANT_BUILT_LIBJSONNET_WASM_SHA256}" | (cd ./js && sha256sum --check --strict)
+          fi
           # Want a .nojekyll file while we're still publishing by pushing to gh-pages branch.
           touch .nojekyll
           git add .
