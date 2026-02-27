@@ -1086,7 +1086,7 @@ local exampleDocMultiline(mid, ex) =
         },
         {
           name: 'manifestTomlEx',
-          params: ['toml', 'indent'],
+          params: ['value', 'indent'],
           availableSince: '0.18.0',
           description: |||
             Convert the given object to a TOML form. <code>indent</code> is a string containing
