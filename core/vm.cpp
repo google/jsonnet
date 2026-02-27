@@ -1686,39 +1686,27 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
-        ryml::Tree tree = treeFromString(value);
+        ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(value));
 
         json j;
-        if (tree.is_stream(tree.root_id())) {
-            // Split into individual yaml documents
-            std::stringstream ss;
-            ss << tree;
-            std::vector<std::string> v = split(ss.str(), "---\n");
-
-            // Convert yaml to json and push onto json array
-            ryml::Tree doc;
-            for (std::size_t i = 0; i < v.size(); ++i) {
-                if (!v[i].empty()) {
-                    doc = treeFromString(v[i]);
-                    j.push_back(yamlTreeToJson(doc));
-                }
-            }
-        } else if (tree.type(tree.root_id()).is_notype()) {
+        if (tree.type(tree.root_id()).is_notype()) {
             scratch = makeNull();
             return nullptr;
+        } else if (tree.is_stream(tree.root_id())) {
+            ryml::ConstNodeRef root = tree.crootref();
+            for (ryml::ConstNodeRef node : root.children()) {
+                std::ostringstream jsonText;
+                jsonText << ryml::as_json(node);
+                j.push_back(json::parse(jsonText.str()));
+            }
         } else {
-            j = yamlTreeToJson(tree);
+            std::ostringstream jsonText;
+            jsonText << ryml::as_json(tree);
+            j = json::parse(jsonText.str());
         }
-
-        bool filled;
-
-        otherJsonToHeap(j, filled, scratch);
-
+        bool filled_unused;
+        otherJsonToHeap(j, filled_unused, scratch);
         return nullptr;
-    }
-
-    const ryml::Tree treeFromString(const std::string& s) {
-        return ryml::parse_in_arena(ryml::to_csubstr(s));
     }
 
     const std::vector<std::string> split(const std::string& s, const std::string& delimiter) {
@@ -1734,12 +1722,6 @@ class Interpreter {
 
         res.push_back(s.substr(pos_start));
         return res;
-    }
-
-    const json yamlTreeToJson(const ryml::Tree& tree) {
-        std::ostringstream jsonStream;
-        jsonStream << ryml::as_json(tree);
-        return json::parse(jsonStream.str());
     }
 
     void otherJsonToHeap(const json &v, bool &filled, Value &attach) {
