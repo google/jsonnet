@@ -61,7 +61,6 @@ jobs:
           retention-days: 4
           include-hidden-files: false
 
-
   build_website:
     name: Build website
     # Ordering dependency - this must run after building libjsonnet.wasm.
@@ -186,7 +185,7 @@ jobs:
   push_pages_branch:
     name: Update gh-pages branch
     needs: build_website
-    if: ${{ github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
+    if: always() && github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.result == 'success' && needs.build_website.outputs.diff_status == 'changed'
     permissions:
       contents: write
     environment:
@@ -235,7 +234,7 @@ jobs:
   publish_pages:
     name: Direct publish pages
     needs: build_website
-    if: ${{ false && github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.outputs.diff_status == 'changed' }}
+    if: false && github.repository == 'google/jsonnet' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) && needs.build_website.result == 'success' && needs.build_website.outputs.diff_status == 'changed'
     permissions:
       pages: write
       id-token: write
