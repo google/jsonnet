@@ -1,0 +1,1 @@
+std.parseYaml('a: b:')

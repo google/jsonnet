@@ -1,0 +1,5 @@
+RUNTIME ERROR: YAML error: 1:6: ERROR: two colons on same line
+1:6: a: b:  (size=5)
+          ^  (cols 6-6)
+
+	error.std_parseYaml1.jsonnet:1:1-23	

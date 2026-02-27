@@ -21,6 +21,7 @@ limitations under the License.
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 
 #include "desugarer.h"
 #include "json.h"
@@ -51,6 +52,15 @@ namespace jsonnet::internal {
 using json = nlohmann::json;
 
 namespace {
+
+// Custom exception type thrown by RapidYAML error handling callback.
+// Should be caught and converted to a runtime error.
+struct RapidYamlError {
+    // Construct any way that std::string can be constructed.
+    template <typename... Args>
+    explicit RapidYamlError(Args&&... args): msg_(std::forward<Args>(args)...) {}
+    std::string msg_;
+};
 
 /** Stack frames.
  *
@@ -1683,26 +1693,31 @@ class Interpreter {
     const AST *builtinParseYaml(const LocationRange &loc, const std::vector<Value> &args)
     {
         validateBuiltinArgs(loc, "parseYaml", args, {Value::STRING});
-
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
-
-        ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(value));
-
         json j;
-        if (tree.type(tree.root_id()).is_notype()) {
-            scratch = makeNull();
-            return nullptr;
-        } else if (tree.is_stream(tree.root_id())) {
-            ryml::ConstNodeRef root = tree.crootref();
-            for (ryml::ConstNodeRef node : root.children()) {
+        try {
+            // Use a custom EventHandler so we can attach error handling.
+            ryml::EventHandlerTree et{ryml::Callbacks{
+                nullptr, nullptr, nullptr, &Interpreter::handleRapidYamlError
+            }};
+            ryml::Parser pe(&et);
+            ryml::Tree tree = ryml::parse_in_arena(&pe, ryml::to_csubstr(value));
+
+            if (tree.type(tree.root_id()).is_notype()) {
+                // Nothing to do; `j` is already null!
+            } else if (tree.is_stream(tree.root_id())) {
+                for (ryml::ConstNodeRef node : tree.crootref().children()) {
+                    std::ostringstream jsonText;
+                    jsonText << ryml::as_json(node);
+                    j.push_back(json::parse(jsonText.str()));
+                }
+            } else {
                 std::ostringstream jsonText;
-                jsonText << ryml::as_json(node);
-                j.push_back(json::parse(jsonText.str()));
+                jsonText << ryml::as_json(tree);
+                j = json::parse(jsonText.str());
             }
-        } else {
-            std::ostringstream jsonText;
-            jsonText << ryml::as_json(tree);
-            j = json::parse(jsonText.str());
+        } catch (const RapidYamlError& exc) {
+            throw makeError(loc, exc.msg_);
         }
         bool filled_unused;
         otherJsonToHeap(j, filled_unused, scratch);
@@ -3406,6 +3421,19 @@ class Interpreter {
             r.push_back(encode_utf8(element));
         }
         return r;
+    }
+
+    static void handleRapidYamlError(const char* inner_msg, size_t length, ryml::Location loc, void * /* unused: userdata */)
+    {
+        std::ostringstream msg;
+        msg << "YAML error: " << loc.line << ":";
+        if (loc.col) {
+            msg << loc.col << ":";
+        } else if (loc.offset) {
+            msg << loc.offset << ":";
+        }
+        msg << " " << std::string_view(inner_msg, length);
+        throw RapidYamlError(std::move(msg.str()));
     }
 };
 
