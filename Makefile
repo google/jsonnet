@@ -165,7 +165,7 @@ PLAIN_TEST_BINS := $(basename $(notdir $(PLAIN_TEST_SRC)))
 GTEST_TEST_BINS := $(basename $(notdir $(GTEST_TEST_SRC)))
 ALL_TEST_BINS := $(PLAIN_TEST_BINS) $(GTEST_TEST_BINS)
 
-DEPS_FILES := $(addprefix .makebuild/,$(addsuffix .d,$(LIB_SRC) $(LIB_CPP_SRC) $(BINS_SRC) $(TEST_SRC)))
+DEPS_FILES := $(addprefix .makebuild/,$(addsuffix .o.d,$(LIB_SRC) $(LIB_CPP_SRC) $(BINS_SRC) $(TEST_SRC)))
 # Intermediate build output directories.
 BUILD_DIRS := $(sort $(dir $(DEPS_FILES)) .makebuild/stdlib/)
 
