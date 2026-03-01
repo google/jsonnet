@@ -288,6 +288,8 @@ struct HeapClosure : public HeapEntity {
           builtinName(builtin_name)
     {
     }
+
+    bool isBuiltin() const { return !this->body; }
 };
 
 /** Stores a simple string on the heap. */

@@ -333,7 +333,7 @@ class Stack {
             }
         } else {
             const auto *func = static_cast<const HeapClosure *>(e);
-            if (func->body == nullptr) {
+            if (func->isBuiltin()) {
                 return "builtin function <" + func->builtinName + ">";
             }
             return "function <" + name + ">";
@@ -2347,7 +2347,7 @@ class Interpreter {
                         }
                         // Special case for builtin functions -- leave identifier blank for
                         // them in the thunk.  This removes the thunk frame from the stacktrace.
-                        const Identifier *name_ = func->body == nullptr ? nullptr : name;
+                        const Identifier *name_ = func->isBuiltin() ? nullptr : name;
                         HeapObject *self;
                         unsigned offset;
                         stack.getSelfBinding(self, offset);
@@ -2388,7 +2388,7 @@ class Interpreter {
 
                         // Special case for builtin functions -- leave identifier blank for
                         // them in the thunk.  This removes the thunk frame from the stacktrace.
-                        const Identifier *name_ = func->body == nullptr ? nullptr : param.id;
+                        const Identifier *name_ = func->isBuiltin() ? nullptr : param.id;
                         auto *thunk =
                             makeHeap<HeapThunk>(name_, func->self, func->offset, param.def);
                         f.thunks.push_back(thunk);
@@ -2410,7 +2410,7 @@ class Interpreter {
                     const AST *f_ast = f.ast;
                     stack.pop();
 
-                    if (func->body == nullptr) {
+                    if (func->isBuiltin()) {
                         // Built-in function.
                         // Give nullptr for self because no one looking at this frame will
                         // attempt to bind to self (it's native code).
