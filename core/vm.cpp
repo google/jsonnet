@@ -2125,6 +2125,30 @@ class Interpreter {
                 scratch = makeBuiltinFromAST(ast.body);
             } break;
 
+            case AST_BUILTIN_FUNCTION_BODY: {
+                // We can reach here if we end up evaluating a HeapThunk that was constructed
+                // from a built-in function. Synthesize a FRAME_BUILTIN_FORCE_THUNKS to call it.
+                assert(stack.top().isCall());
+                const auto fbody = static_cast<const BuiltinFunctionBody*>(ast_);
+
+                const BindingFrame up_values = stack.top().bindings;
+                std::vector<HeapThunk*> arg_thunks;
+                for (const auto &p : fbody->params) {
+                    const auto it = up_values.find(p);
+                    if (it != up_values.end()) {
+                        arg_thunks.push_back(it->second);
+                    } else {
+                        JSONNET_UNREACHABLE();
+                    }
+                }
+                const LocationRange &loc = stack.top().location;
+
+                stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, loc);
+                stack.top().bindings = up_values;
+                stack.top().thunks = arg_thunks;
+                stack.top().val = makeBuiltinFromAST(fbody);
+            } break;
+
             case AST_CONDITIONAL: {
                 const auto &ast = *static_cast<const Conditional *>(ast_);
                 stack.newFrame(FRAME_IF, ast_);
@@ -2780,6 +2804,7 @@ class Interpreter {
                         for (const auto &p : func->params) {
                             const auto it = f.bindings.find(p.id);
                             if (it != f.bindings.end()) {
+                                assert(it->second->filled);
                                 args.push_back(it->second->content);
                             } else {
                                 std::stringstream ss;
@@ -2863,6 +2888,9 @@ class Interpreter {
                             stack.newCall(ast.location, th, th->self, th->offset, th->upValues);
                             ast_ = th->body;
                             goto recurse;
+                        } else {
+                            // Otherwise loop back around to force the next thunk.
+                            goto replaceframe;
                         }
                     }
                 } break;
