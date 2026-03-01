@@ -91,6 +91,11 @@ enum FrameKind {
     FRAME_BUILTIN_JOIN_STRINGS, // When executing std.join over strings, used to hold intermediate state.
     FRAME_BUILTIN_JOIN_ARRAYS,  // When executing std.join over arrays, used to hold intermediate state.
     FRAME_BUILTIN_DECODE_UTF8,  // When executing std.decodeUTF8, used to hold intermediate state.
+
+    FRAME_TO_STRING, // Coerce scratch to a string (no-op if it's already a string).
+    FRAME_TO_JSON,   // Manifest scratch as JSON (ie, convert to string).
+    FRAME_ARRAY_TO_JSON, // Manifest an array (Frame.val) to JSON.
+    FRAME_OBJECT_TO_JSON, // Manifest an object (Frame.val) to JSON.
 };
 
 /** A frame on the stack.
@@ -153,6 +158,12 @@ struct Frame {
     UString str;
     bool first;
 
+    /** Used for manifesting an object to JSON. */
+    std::map<UString, const Identifier *> manifestFields;
+
+    /** Used for manifesting an objects and arrays to JSON. 0 = single-line. */
+    int indentLevel;
+
     /** Used for accumulating bytes */
     std::string bytes;
 
@@ -188,7 +199,8 @@ struct Frame {
           location(ast->location),
           tailCall(false),
           elementId(0),
-          first(false),
+          first(true),
+          indentLevel(0),
           context(NULL),
           self(NULL),
           offset(0)
@@ -203,7 +215,8 @@ struct Frame {
           location(location),
           tailCall(false),
           elementId(0),
-          first(false),
+          first(true),
+          indentLevel(0),
           context(NULL),
           self(NULL),
           offset(0)
@@ -323,8 +336,11 @@ class Stack {
 
         if (name == "")
             name = "anonymous";
+
         if (dynamic_cast<const HeapObject *>(e)) {
             return "object <" + name + ">";
+        } else if (dynamic_cast<const HeapArray *>(e)) {
+            return "array <" + name + ">";
         } else if (auto *thunk = dynamic_cast<const HeapThunk *>(e)) {
             if (thunk->name == nullptr) {
                 return "";  // Argument of builtin, or root (since top level functions).
@@ -332,6 +348,7 @@ class Stack {
                 return "thunk <" + encode_utf8(thunk->name->name) + ">";
             }
         } else {
+            assert(dynamic_cast<const HeapClosure *>(e));
             const auto *func = static_cast<const HeapClosure *>(e);
             if (func->body == nullptr) {
                 return "builtin function <" + func->builtinName + ">";
@@ -1956,11 +1973,6 @@ class Interpreter {
         }
     }
 
-    UString toString(const LocationRange &loc)
-    {
-        return manifestJson(loc, false, U"");
-    }
-
     /** Recursively collect an object's invariants.
      *
      * \param curr
@@ -2075,7 +2087,16 @@ class Interpreter {
      */
     void evaluate(const AST *ast_, unsigned initial_stack_size)
     {
+        // In some cases (when manifesting JSON), we want to run the JSON-conversion continuations,
+        // but we already have a value to operate on not an AST, so for this purpose we just
+        // skip the AST part entirely.
+        // This allows "extra" computation to be done by the VM machinery, without needing to
+        // describe that computation in terms of Jsonnet code (an AST).
+        if (ast_ == nullptr) {
+            goto exec_continuations;
+        }
     recurse:
+        assert(ast_ != nullptr);
 
         switch (ast_->type) {
             case AST_APPLY: {
@@ -2127,6 +2148,7 @@ class Interpreter {
             case AST_ERROR: {
                 const auto &ast = *static_cast<const Error *>(ast_);
                 stack.newFrame(FRAME_ERROR, ast_);
+                stack.newFrame(FRAME_TO_STRING, ast_);
                 ast_ = ast.expr;
                 goto recurse;
             } break;
@@ -2300,6 +2322,7 @@ class Interpreter {
                 std::abort();
         }
 
+    exec_continuations:
         // To evaluate another AST, set ast to it, then goto recurse.
         // To pop, exit the switch or goto popframe
         // To change the frame and re-enter the switch, goto replaceframe
@@ -2484,8 +2507,17 @@ class Interpreter {
                         if (ast.op == BOP_PLUS) {
                             // Handle co-ercions for string processing.
                             stack.top().kind = FRAME_STRING_CONCAT;
-                            stack.top().val2 = rhs;
-                            goto replaceframe;
+                            if (lhs.t != Value::STRING) {
+                                ast_ = ast.left;
+                                stack.newFrame(FRAME_TO_JSON, ast_->location);
+                                goto recurse;
+                            } else if (rhs.t != Value::STRING) {
+                                ast_ = ast.right;
+                                stack.newFrame(FRAME_TO_JSON, ast_->location);
+                                goto recurse;
+                            } else {
+                                goto replaceframe;
+                            }
                         }
                     }
                     switch (ast.op) {
@@ -2880,7 +2912,8 @@ class Interpreter {
                     if (scratch.t == Value::STRING) {
                         msg = static_cast<HeapString *>(scratch.v.h)->value;
                     } else {
-                        msg = toString(ast.location);
+                        std::cerr << "INTERNAL ERROR: value for FRAME_ERROR was not coerced to string" << std::endl;
+                        std::abort();
                     }
                     throw makeError(ast.location, encode_utf8(msg));
                 } break;
@@ -3156,21 +3189,21 @@ class Interpreter {
                 } break;
 
                 case FRAME_STRING_CONCAT: {
-                    const auto &ast = *static_cast<const Binary *>(f.ast);
                     const Value &lhs = stack.top().val;
+                    const Value &rhs = stack.top().val2;
+                    const HeapString *coerced = (lhs.t != Value::STRING || rhs.t != Value::STRING)
+                        ? static_cast<const HeapString *>(scratch.v.h)
+                        : nullptr;
                     UString output;
                     if (lhs.t == Value::STRING) {
                         output.append(static_cast<const HeapString *>(lhs.v.h)->value);
                     } else {
-                        scratch = lhs;
-                        output.append(toString(ast.left->location));
+                        output.append(coerced->value);
                     }
-                    const Value &rhs = stack.top().val2;
                     if (rhs.t == Value::STRING) {
                         output.append(static_cast<const HeapString *>(rhs.v.h)->value);
                     } else {
-                        scratch = rhs;
-                        output.append(toString(ast.right->location));
+                        output.append(coerced->value);
                     }
                     scratch = makeString(output);
                 } break;
@@ -3240,6 +3273,159 @@ class Interpreter {
                     }
                 } break;
 
+                case FRAME_TO_STRING: {
+                    if (scratch.t == Value::STRING) {
+                        break;
+                    }
+                } // Falls through.
+                case FRAME_TO_JSON: {
+                    switch (scratch.t) {
+                        case Value::NULL_TYPE: scratch = makeString(U"null"); break;
+                        case Value::BOOLEAN: scratch = makeString(scratch.v.b ? U"true" : U"false"); break;
+                        case Value::NUMBER:
+                            scratch = makeString(decode_utf8(jsonnet_unparse_number(scratch.v.d)));
+                            break;
+                        case Value::STRING:
+                            scratch = makeString(jsonnet_string_unparse(static_cast<HeapString *>(scratch.v.h)->value, false));
+                            break;
+                        case Value::FUNCTION:
+                            throw makeError(stack.top().location, "couldn't manifest function in JSON output.");
+                        case Value::ARRAY: {
+                            const auto arr = static_cast<const HeapArray *>(scratch.v.h);
+                            if (arr->elements.empty()) {
+                                scratch = makeString(U"[ ]");
+                            } else {
+                                f.kind = FRAME_ARRAY_TO_JSON;
+                                f.first = true;
+                                f.elementId = 0;
+                                f.val = scratch;
+                                f.str.clear();
+                                goto replaceframe;
+                            }
+                        } break;
+                        case Value::OBJECT:
+                            const auto obj = static_cast<HeapObject *>(scratch.v.h);
+                            const auto loc = f.location;
+
+                            f.kind = FRAME_OBJECT_TO_JSON;
+                            f.first = true;
+                            f.val = scratch;
+                            f.str.clear();
+                            std::map<UString, const Identifier *> fields;
+                            for (const auto &field : objectFields(obj, true)) {
+                                fields[field->name] = field;
+                            }
+                            std::swap(f.manifestFields, fields); // Swap instead of deep copy.
+
+                            // runInvariants re-enters evaluate() so it messes with the stack.
+                            // Hence we need to make sure that the FRAME_OBJECT_TO_JSON is set up _first_,
+                            // even if the object is "empty" (no fields to manifest).
+                            // TODO: Do this by constructing a FRAME_INVARIANT here?
+                            runInvariants(loc, obj);
+
+                            // fields was already cleared above, and `f` may have been invalidated
+                            // by the stack-manipulation inside runInvariants. So we need to explicitly
+                            // look at stack.top().manifestFields.
+                            if (stack.top().manifestFields.empty()) {
+                                scratch = makeString(U"{ }");
+                            } else {
+                                assert(stack.top().kind == FRAME_OBJECT_TO_JSON);
+                                goto replaceframe;
+                            }
+                            break;
+                    }
+                } break;
+                case FRAME_ARRAY_TO_JSON: {
+                    assert(f.val.t == Value::ARRAY);
+                    const auto arr = static_cast<HeapArray *>(stack.top().val.v.h);
+                    if (!f.first) {
+                        // We should have got here by coercing an array element to a string,
+                        // leaving the JSON representation in scratch.
+                        assert(scratch.t == Value::STRING);
+                        f.str.append(f.str.empty() ? U"[" : (f.indentLevel ? U"," : U", "));
+                        if (f.indentLevel) {
+                            f.str.append(U"\n");
+                            for (int i = 0; i < f.indentLevel; ++i) {
+                                f.str.append(U"   ");
+                            }
+                        }
+                        f.str.append(static_cast<HeapString *>(scratch.v.h)->value);
+                        ++f.elementId;
+                    }
+                    f.first = false;
+                    if (f.elementId < arr->elements.size()) {
+                        const auto thunk = arr->elements[f.elementId];
+                        const auto loc = f.location;
+                        const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
+                        const LocationRange tloc = thunk->body ? thunk->body->location : loc;
+                        // Add an explicit call frame for the JSON conversion, used to apply depth limit.
+                        stack.newCall(tloc, arr, nullptr, 0, BindingFrame{});
+                        stack.newFrame(FRAME_TO_JSON, tloc);
+                        stack.top().indentLevel = indentLevel;
+                        if (thunk->filled) {
+                            scratch = thunk->content;
+                            goto replaceframe;
+                        } else {
+                            stack.newCall(tloc, thunk, thunk->self, thunk->offset, thunk->upValues);
+                            ast_ = thunk->body;
+                            goto recurse;
+                        }
+                    } else {
+                        if (f.indentLevel) {
+                            f.str.append(U"\n");
+                            for (int i = 0; i < f.indentLevel - 1; ++i) {
+                                f.str.append(U"   ");
+                            }
+                        }
+                        f.str.append(U"]");
+                        scratch = makeString(f.str);
+                    }
+                } break;
+                case FRAME_OBJECT_TO_JSON: {
+                    assert(f.val.t == Value::OBJECT);
+                    const auto obj = static_cast<HeapObject *>(f.val.v.h);
+                    if (!f.first) {
+                        // We should have got here by coercing an object field value to a string,
+                        // leaving the JSON representation in scratch.
+                        assert(scratch.t == Value::STRING);
+                        const auto it = f.manifestFields.begin();
+                        f.str.append(f.str.empty() ? U"{" : (f.indentLevel ? U"," : U", "));
+                        if (f.indentLevel) {
+                            f.str.append(U"\n");
+                            for (int i = 0; i < f.indentLevel; ++i) {
+                                f.str.append(U"   ");
+                            }
+                        }
+                        f.str.append(jsonnet_string_unparse(it->first, false));
+                        f.str.append(U": ");
+                        f.str.append(static_cast<HeapString *>(scratch.v.h)->value);
+                        f.manifestFields.erase(it);
+                    }
+                    f.first = false;
+                    if (!f.manifestFields.empty()) {
+                        const Identifier *ident = f.manifestFields.begin()->second;
+                        const auto loc = f.location;
+                        const int indentLevel = (f.indentLevel == 0) ? 0 : f.indentLevel + 1;
+                        // pushes FRAME_CALL (note this also applies the stack depth limit)
+                        const AST *body = objectIndex(loc, obj, ident, 0);
+                        // Before returning from the objectIndex call, convert the result to a JSON string value.
+                        stack.newFrame(FRAME_TO_JSON, body->location);
+                        stack.top().indentLevel = indentLevel;
+                        // Replace the location up the stack for better traces.
+                        ast_ = body;
+                        goto recurse;
+                    } else {
+                        if (f.indentLevel) {
+                            f.str.append(U"\n");
+                            for (int i = 0; i < f.indentLevel - 1; ++i) {
+                                f.str.append(U"   ");
+                            }
+                        }
+                        f.str.append(U"}");
+                        scratch = makeString(f.str);
+                    }
+                } break;
+
                 default:
                     std::cerr << "INTERNAL ERROR: Unknown FrameKind:  " << f.kind << std::endl;
                     std::abort();
@@ -3260,91 +3446,13 @@ class Interpreter {
      *
      * \param multiline If true, will print objects and arrays in an indented fashion.
      */
-    UString manifestJson(const LocationRange &loc, bool multiline, const UString &indent)
+    UString manifestJson(const LocationRange &loc, bool multiline)
     {
-        // Printing fields means evaluating and binding them, which can trigger
-        // garbage collection.
-
-        UStringStream ss;
-        switch (scratch.t) {
-            case Value::ARRAY: {
-                HeapArray *arr = static_cast<HeapArray *>(scratch.v.h);
-                if (arr->elements.size() == 0) {
-                    ss << U"[ ]";
-                } else {
-                    const char32_t *prefix = multiline ? U"[\n" : U"[";
-                    UString indent2 = multiline ? indent + U"   " : indent;
-                    for (auto *thunk : arr->elements) {
-                        LocationRange tloc = thunk->body == nullptr ? loc : thunk->body->location;
-                        if (thunk->filled) {
-                            stack.newCall(loc, thunk, nullptr, 0, BindingFrame{});
-                            // Keep arr alive when scratch is overwritten
-                            stack.top().val = scratch;
-                            scratch = thunk->content;
-                        } else {
-                            stack.newCall(loc, thunk, thunk->self, thunk->offset, thunk->upValues);
-                            // Keep arr alive when scratch is overwritten
-                            stack.top().val = scratch;
-                            evaluate(thunk->body, stack.size());
-                        }
-                        auto element = manifestJson(tloc, multiline, indent2);
-                        // Restore scratch
-                        scratch = stack.top().val;
-                        stack.pop();
-                        ss << prefix << indent2 << element;
-                        prefix = multiline ? U",\n" : U", ";
-                    }
-                    ss << (multiline ? U"\n" : U"") << indent << U"]";
-                }
-            } break;
-
-            case Value::BOOLEAN: ss << (scratch.v.b ? U"true" : U"false"); break;
-
-            case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
-
-            case Value::FUNCTION:
-                throw makeError(loc, "couldn't manifest function in JSON output.");
-
-            case Value::NULL_TYPE: ss << U"null"; break;
-
-            case Value::OBJECT: {
-                auto *obj = static_cast<HeapObject *>(scratch.v.h);
-                runInvariants(loc, obj);
-                // Using std::map has the useful side-effect of ordering the fields
-                // alphabetically.
-                std::map<UString, const Identifier *> fields;
-                for (const auto &f : objectFields(obj, true)) {
-                    fields[f->name] = f;
-                }
-                if (fields.size() == 0) {
-                    ss << U"{ }";
-                } else {
-                    UString indent2 = multiline ? indent + U"   " : indent;
-                    const char32_t *prefix = multiline ? U"{\n" : U"{";
-                    for (const auto &f : fields) {
-                        // pushes FRAME_CALL
-                        const AST *body = objectIndex(loc, obj, f.second, 0);
-                        stack.top().val = scratch;
-                        evaluate(body, stack.size());
-                        auto vstr = manifestJson(body->location, multiline, indent2);
-                        // Reset scratch so that the object we're manifesting doesn't
-                        // get GC'd.
-                        scratch = stack.top().val;
-                        stack.pop();
-                        ss << prefix << indent2 << jsonnet_string_unparse(f.first, false) << U": "
-                           << vstr;
-                        prefix = multiline ? U",\n" : U", ";
-                    }
-                    ss << (multiline ? U"\n" : U"") << indent << U"}";
-                }
-            } break;
-
-            case Value::STRING: {
-                const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
-                ss << jsonnet_string_unparse(str, false);
-            } break;
-        }
-        return ss.str();
+        const unsigned initial_size = stack.size();
+        stack.newFrame(FRAME_TO_JSON, loc);
+        stack.top().indentLevel = multiline ? 1 : 0;
+        evaluate(nullptr, initial_size);
+        return manifestString(loc);
     }
 
     UString manifestString(const LocationRange &loc)
@@ -3380,7 +3488,7 @@ class Interpreter {
             stack.top().val = scratch;
             evaluate(body, stack.size());
             auto vstr =
-                string ? manifestString(body->location) : manifestJson(body->location, true, U"");
+                string ? manifestString(body->location) : manifestJson(body->location, true);
             // Reset scratch so that the object we're manifesting doesn't
             // get GC'd.
             scratch = stack.top().val;
@@ -3415,7 +3523,7 @@ class Interpreter {
                 stack.top().val = scratch;
                 evaluate(thunk->body, stack.size());
             }
-            UString element = string ? manifestString(tloc) : manifestJson(tloc, true, U"");
+            UString element = string ? manifestString(tloc) : manifestJson(tloc, true);
             scratch = stack.top().val;
             stack.pop();
             r.push_back(encode_utf8(element));
@@ -3457,7 +3565,7 @@ std::string jsonnet_vm_execute(Allocator *alloc, const AST *ast, const ExtMap &e
     if (string_output) {
         return encode_utf8(vm.manifestString(LocationRange("During manifestation")));
     } else {
-        return encode_utf8(vm.manifestJson(LocationRange("During manifestation"), true, U""));
+        return encode_utf8(vm.manifestJson(LocationRange("During manifestation"), true));
     }
 }
 
