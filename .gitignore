@@ -50,7 +50,7 @@ parser_test
 /doc/js/libjsonnet.wasm
 /man
 
-# Cmake
+# CMake
 **/CMakeCache.txt
 **/CMakeFiles
 **/cmake_install.cmake

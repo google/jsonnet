@@ -119,7 +119,7 @@ bazel-bin/cmd/jsonnetfmt
 ```
 
 
-### Cmake
+### CMake
 
 
 ```
