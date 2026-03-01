@@ -2423,6 +2423,8 @@ class Interpreter {
                         // Give nullptr for self because no one looking at this frame will
                         // attempt to bind to self (it's native code).
                         stack.newFrame(FRAME_BUILTIN_FORCE_THUNKS, f_ast);
+                        assert(func->upValues.empty());
+                        stack.top().bindings = up_values;
                         stack.top().thunks = thunks_copy;
                         stack.top().val = scratch;
                         goto replaceframe;
@@ -2775,9 +2777,18 @@ class Interpreter {
                         const LocationRange &loc = ast.location;
                         const std::string &builtin_name = func->builtinName;
                         std::vector<Value> args;
-                        for (auto *th : f.thunks) {
-                            args.push_back(th->content);
+                        for (const auto &p : func->params) {
+                            const auto it = f.bindings.find(p.id);
+                            if (it != f.bindings.end()) {
+                                args.push_back(it->second->content);
+                            } else {
+                                std::stringstream ss;
+                                ss << "function parameter " << encode_utf8(p.id->name)
+                                    << " not bound in call.";
+                                throw makeError(loc, ss.str());
+                            }
                         }
+
                         BuiltinMap::const_iterator bit = builtins.find(builtin_name);
                         if (bit != builtins.end()) {
                             const AST *new_ast = (this->*bit->second)(loc, args);
