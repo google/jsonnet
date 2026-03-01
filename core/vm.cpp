@@ -23,6 +23,7 @@ limitations under the License.
 #include <string>
 #include <string_view>
 
+#include "ast.h"
 #include "desugarer.h"
 #include "json.h"
 #include <nlohmann/json.hpp>
@@ -31,9 +32,11 @@ limitations under the License.
 #include "rapidyaml-0.10.0.hpp"
 #include "state.h"
 #include "static_analysis.h"
+#include "static_error.h"
 #include "string_utils.h"
 #include "vm.h"
 #include "path_utils.h"
+#include "unicode.h"
 
 namespace jsonnet::internal {
 
@@ -646,21 +649,15 @@ class Interpreter {
         return r;
     }
 
-    Value makeNativeBuiltin(const std::string &name, const std::vector<std::string> &params)
+    Value makeBuiltinFromAST(const BuiltinFunctionBody *body)
     {
         HeapClosure::Params hc_params;
-        for (const auto &p : params) {
-            hc_params.emplace_back(alloc->makeIdentifier(decode_utf8(p)), nullptr);
+        for (const auto p : body->params) {
+            hc_params.emplace_back(p, nullptr);
         }
-        return makeBuiltin(name, hc_params);
-    }
-
-    Value makeBuiltin(const std::string &name, const HeapClosure::Params &params)
-    {
-        AST *body = nullptr;
         Value r;
         r.t = Value::FUNCTION;
-        r.v.h = makeHeap<HeapClosure>(BindingFrame(), nullptr, 0, params, body, name);
+        r.v.h = makeHeap<HeapClosure>(BindingFrame(), nullptr, 0, hc_params, body, body->name);
         return r;
     }
 
@@ -951,53 +948,60 @@ class Interpreter {
           idEmpty(alloc->makeIdentifier(U"")),
           jsonObjVar(alloc->make<Var>(LocationRange(), Fodder{}, idJsonObjVar)),
           externalVars(ext_vars),
-          nativeCallbacks(native_callbacks),
           importCallback(import_callback),
           importCallbackContext(import_callback_context)
     {
         scratch = makeNull();
-        builtins["makeArray"] = &Interpreter::builtinMakeArray;
-        builtins["pow"] = &Interpreter::builtinPow;
-        builtins["floor"] = &Interpreter::builtinFloor;
-        builtins["ceil"] = &Interpreter::builtinCeil;
-        builtins["sqrt"] = &Interpreter::builtinSqrt;
-        builtins["sin"] = &Interpreter::builtinSin;
-        builtins["cos"] = &Interpreter::builtinCos;
-        builtins["tan"] = &Interpreter::builtinTan;
-        builtins["asin"] = &Interpreter::builtinAsin;
-        builtins["acos"] = &Interpreter::builtinAcos;
-        builtins["atan"] = &Interpreter::builtinAtan;
-        builtins["type"] = &Interpreter::builtinType;
-        builtins["filter"] = &Interpreter::builtinFilter;
-        builtins["objectHasEx"] = &Interpreter::builtinObjectHasEx;
-        builtins["length"] = &Interpreter::builtinLength;
-        builtins["objectFieldsEx"] = &Interpreter::builtinObjectFieldsEx;
-        builtins["objectRemoveKey"] = &Interpreter::builtinObjectRemoveKey;
-        builtins["codepoint"] = &Interpreter::builtinCodepoint;
-        builtins["char"] = &Interpreter::builtinChar;
-        builtins["log"] = &Interpreter::builtinLog;
-        builtins["exp"] = &Interpreter::builtinExp;
-        builtins["mantissa"] = &Interpreter::builtinMantissa;
-        builtins["exponent"] = &Interpreter::builtinExponent;
-        builtins["modulo"] = &Interpreter::builtinModulo;
-        builtins["extVar"] = &Interpreter::builtinExtVar;
-        builtins["primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
-        builtins["native"] = &Interpreter::builtinNative;
-        builtins["md5"] = &Interpreter::builtinMd5;
-        builtins["trace"] = &Interpreter::builtinTrace;
-        builtins["splitLimit"] = &Interpreter::builtinSplitLimit;
-        builtins["substr"] = &Interpreter::builtinSubstr;
-        builtins["range"] = &Interpreter::builtinRange;
-        builtins["strReplace"] = &Interpreter::builtinStrReplace;
-        builtins["asciiLower"] = &Interpreter::builtinAsciiLower;
-        builtins["asciiUpper"] = &Interpreter::builtinAsciiUpper;
-        builtins["join"] = &Interpreter::builtinJoin;
-        builtins["parseJson"] = &Interpreter::builtinParseJson;
-        builtins["parseYaml"] = &Interpreter::builtinParseYaml;
-        builtins["encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
-        builtins["decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
-        builtins["atan2"] = &Interpreter::builtinAtan2;
-        builtins["hypot"] = &Interpreter::builtinHypot;
+        // Add a prefix to avoid conflicting with names from `native_callbacks`.
+        builtins["std:makeArray"] = &Interpreter::builtinMakeArray;
+        builtins["std:pow"] = &Interpreter::builtinPow;
+        builtins["std:floor"] = &Interpreter::builtinFloor;
+        builtins["std:ceil"] = &Interpreter::builtinCeil;
+        builtins["std:sqrt"] = &Interpreter::builtinSqrt;
+        builtins["std:sin"] = &Interpreter::builtinSin;
+        builtins["std:cos"] = &Interpreter::builtinCos;
+        builtins["std:tan"] = &Interpreter::builtinTan;
+        builtins["std:asin"] = &Interpreter::builtinAsin;
+        builtins["std:acos"] = &Interpreter::builtinAcos;
+        builtins["std:atan"] = &Interpreter::builtinAtan;
+        builtins["std:type"] = &Interpreter::builtinType;
+        builtins["std:filter"] = &Interpreter::builtinFilter;
+        builtins["std:objectHasEx"] = &Interpreter::builtinObjectHasEx;
+        builtins["std:length"] = &Interpreter::builtinLength;
+        builtins["std:objectFieldsEx"] = &Interpreter::builtinObjectFieldsEx;
+        builtins["std:objectRemoveKey"] = &Interpreter::builtinObjectRemoveKey;
+        builtins["std:codepoint"] = &Interpreter::builtinCodepoint;
+        builtins["std:char"] = &Interpreter::builtinChar;
+        builtins["std:log"] = &Interpreter::builtinLog;
+        builtins["std:exp"] = &Interpreter::builtinExp;
+        builtins["std:mantissa"] = &Interpreter::builtinMantissa;
+        builtins["std:exponent"] = &Interpreter::builtinExponent;
+        builtins["std:modulo"] = &Interpreter::builtinModulo;
+        builtins["std:extVar"] = &Interpreter::builtinExtVar;
+        builtins["std:primitiveEquals"] = &Interpreter::builtinPrimitiveEquals;
+        builtins["std:native"] = &Interpreter::builtinNative;
+        builtins["std:md5"] = &Interpreter::builtinMd5;
+        builtins["std:trace"] = &Interpreter::builtinTrace;
+        builtins["std:splitLimit"] = &Interpreter::builtinSplitLimit;
+        builtins["std:substr"] = &Interpreter::builtinSubstr;
+        builtins["std:range"] = &Interpreter::builtinRange;
+        builtins["std:strReplace"] = &Interpreter::builtinStrReplace;
+        builtins["std:asciiLower"] = &Interpreter::builtinAsciiLower;
+        builtins["std:asciiUpper"] = &Interpreter::builtinAsciiUpper;
+        builtins["std:join"] = &Interpreter::builtinJoin;
+        builtins["std:parseJson"] = &Interpreter::builtinParseJson;
+        builtins["std:parseYaml"] = &Interpreter::builtinParseYaml;
+        builtins["std:encodeUTF8"] = &Interpreter::builtinEncodeUTF8;
+        builtins["std:decodeUTF8"] = &Interpreter::builtinDecodeUTF8;
+        builtins["std:atan2"] = &Interpreter::builtinAtan2;
+        builtins["std:hypot"] = &Interpreter::builtinHypot;
+
+        // Add a prefix `native:` to names of provided callbacks to ensure they can't clash with the builtins above.
+        // Although we have separate lookup tables for them, the HeapClosure and BuiltinFunctionBody types just hold
+        // function "name" as a std::string to identify the function.
+        for (const auto& [name, cb] : native_callbacks) {
+            nativeCallbacks.emplace("native:" + name, cb);
+        }
 
         DesugaredObject *stdlib = makeStdlibAST(alloc, "__internal__");
         jsonnet_static_analysis(stdlib);
@@ -1449,14 +1453,24 @@ class Interpreter {
     {
         validateBuiltinArgs(loc, "native", args, {Value::STRING});
 
-        std::string builtin_name = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
+        // Add a prefix to avoid conflicting with any name in `std`.
+        std::string builtin_name = "native:" + encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
         VmNativeCallbackMap::const_iterator nit = nativeCallbacks.find(builtin_name);
         if (nit == nativeCallbacks.end()) {
             scratch = makeNull();
         } else {
             const VmNativeCallback &cb = nit->second;
-            scratch = makeNativeBuiltin(builtin_name, cb.params);
+            const auto &params = cb.params;
+            const auto body = alloc->makeBuiltinBody(LocationRange{}, builtin_name,
+                [this, &params]()->Identifiers {
+                    Identifiers ids;
+                    for (const auto &name : params) {
+                        ids.emplace_back(this->alloc->makeIdentifier(decode_utf8(name)));
+                    }
+                    return ids;
+                });
+            scratch = makeBuiltinFromAST(body);
         }
         return nullptr;
     }
@@ -2108,13 +2122,7 @@ class Interpreter {
 
             case AST_BUILTIN_FUNCTION: {
                 const auto &ast = *static_cast<const BuiltinFunction *>(ast_);
-                HeapClosure::Params params;
-                params.reserve(ast.params.size());
-                for (const auto &p : ast.params) {
-                    // None of the builtins have default args.
-                    params.emplace_back(p, nullptr);
-                }
-                scratch = makeBuiltin(ast.name, params);
+                scratch = makeBuiltinFromAST(ast.body);
             } break;
 
             case AST_CONDITIONAL: {

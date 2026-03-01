@@ -933,15 +933,19 @@ class Desugarer {
         DesugaredObject::Fields &fields = std_obj->fields;
         for (unsigned long c = 0; c <= max_builtin; ++c) {
             const auto &decl = jsonnet_builtin_decl(c);
-            Identifiers params;
-            for (const auto &p : decl.params)
-                params.push_back(id(p));
             auto name = str(decl.name);
-            auto fn = make<BuiltinFunction>(E, encode_utf8(decl.name), params);
+            auto name_utf8 = "std:" + encode_utf8(decl.name);
+            auto fnbody = alloc->makeBuiltinBody(E, name_utf8, [this, &decl]()->Identifiers {
+                Identifiers params;
+                for (const auto &p : decl.params)
+                    params.push_back(this->id(p));
+                return params;
+            });
             auto field = std::find_if(fields.begin(), fields.end(),
                 [=](const DesugaredObject::Field& f) {
                     return static_cast<LiteralString*>(f.name)->value == decl.name;
                 });
+            auto fn = make<BuiltinFunction>(E, fnbody);
             if (field != fields.end()) {
                 field->body = fn;
             } else {

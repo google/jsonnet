@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef JSONNET_STATE_H
 #define JSONNET_STATE_H
 
+#include "ast.h"
 namespace jsonnet::internal {
 namespace {
 
@@ -289,7 +290,7 @@ struct HeapClosure : public HeapEntity {
     {
     }
 
-    bool isBuiltin() const { return !this->body; }
+    bool isBuiltin() const { return !this->body || this->body->type == AST_BUILTIN_FUNCTION_BODY; }
 };
 
 /** Stores a simple string on the heap. */

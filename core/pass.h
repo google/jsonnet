@@ -59,6 +59,8 @@ class CompilerPass {
 
     virtual void visit(BuiltinFunction *) {}
 
+    virtual void visit(BuiltinFunctionBody *) {}
+
     virtual void visit(Conditional *ast);
 
     virtual void visit(Dollar *) {}

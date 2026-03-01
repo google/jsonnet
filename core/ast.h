@@ -40,6 +40,7 @@ enum ASTType {
     AST_ASSERT,
     AST_BINARY,
     AST_BUILTIN_FUNCTION,
+    AST_BUILTIN_FUNCTION_BODY,
     AST_CONDITIONAL,
     AST_DESUGARED_OBJECT,
     AST_DOLLAR,
@@ -76,6 +77,7 @@ static inline std::string ASTTypeToString(ASTType type)
         case AST_ASSERT: return "AST_ASSERT";
         case AST_BINARY: return "AST_BINARY";
         case AST_BUILTIN_FUNCTION: return "AST_BUILTIN_FUNCTION";
+        case AST_BUILTIN_FUNCTION_BODY: return "AST_BUILTIN_FUNCTION_BODY";
         case AST_CONDITIONAL: return "AST_CONDITIONAL";
         case AST_DESUGARED_OBJECT: return "AST_DESUGARED_OBJECT";
         case AST_DOLLAR: return "AST_DOLLAR";
@@ -367,16 +369,30 @@ struct Binary : public AST {
     }
 };
 
+/** Represents the body of a built-in function.
+ *
+ * There is no parse rule to build this AST; it is generated during desugaring to represent
+ * the body of a built-in function.
+ */
+struct BuiltinFunctionBody : public AST {
+    std::string name;
+    // TODO: It would probably be cleaner if this a HeapClosure::Params value.
+    Identifiers params;
+    BuiltinFunctionBody(const LocationRange &lr, const std::string &name, const Identifiers &params)
+        : AST(lr, AST_BUILTIN_FUNCTION_BODY, Fodder{}), name(name), params(params)
+    {
+    }
+};
+
 /** Represents built-in functions.
  *
  * There is no parse rule to build this AST.  Instead, it is used to build the std object in the
  * interpreter.
  */
 struct BuiltinFunction : public AST {
-    std::string name;
-    Identifiers params;
-    BuiltinFunction(const LocationRange &lr, const std::string &name, const Identifiers &params)
-        : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), name(name), params(params)
+    const BuiltinFunctionBody *body;
+    BuiltinFunction(const LocationRange &lr, const BuiltinFunctionBody *body)
+        : AST(lr, AST_BUILTIN_FUNCTION, Fodder{}), body(body)
     {
     }
 };
@@ -955,6 +971,7 @@ struct Var : public AST {
  */
 class Allocator {
     std::map<UString, const Identifier *> internedIdentifiers;
+    std::map<std::string, const BuiltinFunctionBody *> internedBuiltins;
     ASTs allocated;
 
    public:
@@ -987,6 +1004,18 @@ class Allocator {
         internedIdentifiers[name] = r;
         return r;
     }
+    template <typename F>
+    const BuiltinFunctionBody *makeBuiltinBody(const LocationRange &loc, const std::string &name, F&& make_params)
+    {
+        auto it = internedBuiltins.find(name);
+        if (it != internedBuiltins.end()) {
+            return it->second;
+        }
+        const Identifiers params = make_params();
+        auto r = new BuiltinFunctionBody(loc, name, params);
+        internedBuiltins[name] = r;
+        return r;
+    }
     ~Allocator()
     {
         for (auto x : allocated) {
@@ -997,6 +1026,10 @@ class Allocator {
             delete x.second;
         }
         internedIdentifiers.clear();
+        for (const auto &x : internedBuiltins) {
+            delete x.second;
+        }
+        internedBuiltins.clear();
     }
 };
 

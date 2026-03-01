@@ -379,7 +379,7 @@ class Unparser {
             unparse(ast->right, true);
 
         } else if (auto *ast = dynamic_cast<const BuiltinFunction *>(ast_)) {
-            o << "/* builtin " << ast->name << " */ null";
+            o << "/* builtin " << ast->body->name << " */ null";
 
         } else if (auto *ast = dynamic_cast<const Conditional *>(ast_)) {
             o << "if";
@@ -1753,7 +1753,7 @@ class FixIndentation {
 
         } else if (auto *ast = dynamic_cast<BuiltinFunction *>(ast_)) {
             column += 11;  // "/* builtin "
-            column += ast->name.length();
+            column += ast->body->name.length();
             column += 8;  // " */ null"
 
         } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
