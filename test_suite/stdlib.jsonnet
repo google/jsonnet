@@ -61,6 +61,12 @@ local assertClose(a, b) =
   else
     true;
 
+// Regression test for https://github.com/google/jsonnet/issues/511
+std.assertEqual(
+  std.makeArray(10, std.sqrt),
+  std.makeArray(10, function(n) std.sqrt(n))
+) &&
+
 std.assertEqual(std.pow(3, 2), 9) &&
 std.assertEqual(std.floor(10), 10) &&
 std.assertEqual(std.floor(10.99999), 10) &&
