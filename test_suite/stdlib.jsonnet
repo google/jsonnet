@@ -67,6 +67,11 @@ std.assertEqual(
   std.makeArray(10, function(n) std.sqrt(n))
 ) &&
 
+// Regression test for https://github.com/google/jsonnet/issues/385
+std.assertEqual(std.makeArray(sz=3, func=function(i) i), [0, 1, 2]) &&
+std.assertEqual(std.pow(x=3, n=2), 9) &&
+std.assertEqual(std.pow(n=2, x=3), 9) &&
+
 std.assertEqual(std.pow(3, 2), 9) &&
 std.assertEqual(std.floor(10), 10) &&
 std.assertEqual(std.floor(10.99999), 10) &&
