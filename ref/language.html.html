@@ -270,6 +270,8 @@ In particular arrays can have null elements and objects can have null fields. Th
 
 <p>Integers can be safely represented as a Jsonnet number in the range [-2^53 + 1,2^53 - 1]. This is <a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">a direct consequence of IEEE754 spec</a>, with the requirements that a safe integer is representable exactly, and cannot be produced by rounding any other integer to fit the IEEE-754 representation. See also, the JavaScript <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER"><code>Number.MAX_SAFE_INTEGER</code></a>, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER"><code>Number.MIN_SAFE_INTEGER</code></a>, and <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger"><code>Number.isSafeInteger</code></a> definitions.</p>
 
+<p>Currently, the C++ and Go Jsonnet implementations restrict the arguments (inputs) to binary bitwise operations (the operators <code>&lt;&lt;</code>, <code>&gt;&gt;</code>, <code>&amp;</code>, <code>|</code>, and <code>^</code>) to the safe integer range.</p>
+
 <h3 id="function">Function</h3>
 
 <p>Functions in Jsonnet are functions in the mathematical sense. Each function has parameters and a body expression. The result of calling a function is equivalent to the result of evaluating its body with arguments introduced to the environment.</p>
