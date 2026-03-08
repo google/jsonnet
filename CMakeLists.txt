@@ -29,7 +29,6 @@ message(VERBOSE "Extracted version from include/libjsonnet.h: ${JSONNET_HEADER_V
 
 project(
     jsonnet
-    VERSION ${JSONNET_HEADER_VERSION}
     HOMEPAGE_URL "https://jsonnet.org/"
     LANGUAGES C CXX)
 
