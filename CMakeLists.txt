@@ -290,6 +290,7 @@ endif()
 if(BUILD_TESTS)
     enable_testing()
     include(GoogleTest)
+
     if(USE_SYSTEM_GTEST)
         find_package(GTest REQUIRED)
     else()
@@ -305,7 +306,10 @@ if(BUILD_TESTS)
         FetchContent_MakeAvailable(googletest)
     endif()
 
+    set(JSONNET_TEST_TARGETS)
+
     function(jsonnet_add_gtest TESTNAME JSONNET_LIB_TARGET)
+        set(JSONNET_TEST_TARGETS ${JSONNET_TEST_TARGETS} ${TESTNAME} PARENT_SCOPE)
         add_executable(${TESTNAME} ${ARGN})
         target_link_libraries(${TESTNAME} ${JSONNET_LIB_TARGET} gtest gmock gtest_main)
         gtest_discover_tests(${TESTNAME}
@@ -318,6 +322,7 @@ if(BUILD_TESTS)
     endfunction()
 
     function(jsonnet_add_raw_test TESTNAME JSONNET_LIB_TARGET)
+        set(JSONNET_TEST_TARGETS ${JSONNET_TEST_TARGETS} ${TESTNAME} PARENT_SCOPE)
         add_executable(${TESTNAME} ${ARGN})
         target_link_libraries(${TESTNAME} ${JSONNET_LIB_TARGET})
         set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
@@ -344,6 +349,12 @@ if(BUILD_TESTS)
     )
 
     add_subdirectory(test_suite)
+
+    # `run_tests` target builds and runs all tests
+    add_custom_target(run_tests COMMAND ${CMAKE_CTEST_COMMAND}
+        DEPENDS
+            jsonnet jsonnetfmt test_libjsonnet_file ${JSONNET_TEST_TARGETS}
+    )
 endif()  # if(BUILD_TESTS)
 
 #### Man pages
