@@ -27,8 +27,6 @@ source "${DIR}/cmd_tests.source"
 OUT_DIR=$(mktemp -d)
 trap "rm -rf -- ${OUT_DIR}" EXIT INT TERM
 
->&2 echo "output dir: ${OUT_DIR}"
-
 pushd "${DIR}"
 
 [[ -d "${OUT_DIR}" ]] || {
@@ -179,7 +177,9 @@ do_fmt_test "fmt_double_dash" 0 -e -- -1
 do_fmt_test "fmt_simple_test1" 0 --test "test.jsonnet"
 do_fmt_test "fmt_simple_test2" 2 --test -e "{a:1,b:2,c:3}"
 do_fmt_test "fmt_simple_test3" 0 --test -e $'42\n'
-do_fmt_test "fmt_simple_test4" 2 --test "test.jsonnet" "test_badfmt.jsonnet"
+do_fmt_test "fmt_simple_test4" 0 --test -
+do_fmt_test "fmt_simple_test5" 2 --test -
+do_fmt_test "fmt_simple_test6" 2 --test "test.jsonnet" "test_badfmt.jsonnet"
 
 SED_STDOUT="${SED_REPLACE_OUT_DIR}"
 if mkdir -p "${OUT_DIR}/fmt_inplace" && cp "test.jsonnet" "test_badfmt.jsonnet" "${OUT_DIR}/fmt_inplace/"; then

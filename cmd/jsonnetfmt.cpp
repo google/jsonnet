@@ -123,8 +123,8 @@ static ArgStatus process_args(int argc, const char **argv, JsonnetConfig *config
         } else if (arg == "--") {
             // All subsequent args are not options.
             while ((++i) < args.size())
-                remaining_args.push_back(args[i]);          
-            break;  
+                remaining_args.push_back(args[i]);
+            break;
         } else if (arg == "-i" || arg == "--in-place") {
             config->fmtInPlace = true;
         } else if (arg == "--test") {
@@ -234,10 +234,11 @@ int main(int argc, const char **argv)
             bool changed_files = false;
             assert(config.inputFiles.size() >= 1);
             for (std::string &inputFile : config.inputFiles) {
+                const bool input_stdin = inputFile == "-";
                 if (config.fmtInPlace) {
                     output_file = inputFile;
 
-                    if (inputFile == "-") {
+                    if (input_stdin) {
                         std::cerr << "ERROR: cannot use --in-place with stdin" << std::endl;
                         jsonnet_destroy(vm);
                         return EXIT_FAILURE;
@@ -265,31 +266,25 @@ int main(int argc, const char **argv)
                     return EXIT_FAILURE;
                 }
 
-                if (config.fmtTest) {
-                    // Check the output matches the input.
-                    bool ok = output == input;
+                // Write output Jsonnet only if there is a difference between input and output
+                bool different = output != input;
+                if (config.fmtInPlace && different) {
+                    bool successful = write_output_file(output, output_file);
                     jsonnet_realloc(vm, output, 0);
-                    if (!ok) {
-                        if (inputFile != "-" && !config.filenameIsCode) {
-                            std::cout << inputFile << std::endl;
-                        }
-                        changed_files = true;
+                    if (!successful) {
+                        jsonnet_destroy(vm);
+                        return EXIT_FAILURE;
                     }
                 } else {
-                    // Write output Jsonnet only if there is a difference between input and output
-                    bool different = output != input;
-                    if (different) {
-                        bool successful = write_output_file(output, output_file);
-                        jsonnet_realloc(vm, output, 0);
-                        if (!successful) {
-                            jsonnet_destroy(vm);
-                            return EXIT_FAILURE;
-                        }
-                        if (inputFile != "-" && !config.filenameIsCode) {
-                            std::cout << inputFile << std::endl;
-                        }
-                    } else {
-                        jsonnet_realloc(vm, output, 0);
+                    jsonnet_realloc(vm, output, 0);
+                }
+
+                // If we're not processing stdin or some other unnamed thing, then
+                // print the names of any changed or unclean files.
+                if (different) {
+                    changed_files = true;
+                    if (!input_stdin && !config.filenameIsCode) {
+                        std::cout << inputFile << std::endl;
                     }
                 }
             }
