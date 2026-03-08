@@ -92,7 +92,7 @@ local exampleDocMultiline(mid, ex) =
         {
           name: 'isNull',
           params: ['x'],
-          availableSince: 'upcoming',
+          availableSince: '0.22.0',
           description: |||
             Returns true if the given value is null, false otherwise.
           |||,
