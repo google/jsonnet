@@ -1,7 +1,7 @@
 [project]
 name = "jsonnet"
 description = "Python bindings for Jsonnet - The data templating language"
-readme = "README.md"
+readme = "PYTHON_README.md"
 # License is not really dynamic, but pyproject.toml schema changed in a backward-incompatible way
 # so we continue to specify the license in setup.py config otherwise we can't support both old
 # and new Python and setuptools versions.
