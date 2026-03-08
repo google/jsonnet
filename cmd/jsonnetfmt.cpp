@@ -231,6 +231,7 @@ int main(int argc, const char **argv)
         std::string output_file = config.outputFile;
 
         if (config.fmtInPlace || config.fmtTest) {
+            bool changed_files = false;
             assert(config.inputFiles.size() >= 1);
             for (std::string &inputFile : config.inputFiles) {
                 if (config.fmtInPlace) {
@@ -269,8 +270,10 @@ int main(int argc, const char **argv)
                     bool ok = output == input;
                     jsonnet_realloc(vm, output, 0);
                     if (!ok) {
-                        jsonnet_destroy(vm);
-                        return 2;
+                        if (inputFile != "-" && !config.filenameIsCode) {
+                            std::cout << inputFile << std::endl;
+                        }
+                        changed_files = true;
                     }
                 } else {
                     // Write output Jsonnet only if there is a difference between input and output
@@ -282,10 +285,18 @@ int main(int argc, const char **argv)
                             jsonnet_destroy(vm);
                             return EXIT_FAILURE;
                         }
+                        if (inputFile != "-" && !config.filenameIsCode) {
+                            std::cout << inputFile << std::endl;
+                        }
                     } else {
                         jsonnet_realloc(vm, output, 0);
                     }
                 }
+            }
+
+            if (config.fmtTest && changed_files) {
+                jsonnet_destroy(vm);
+                return 2;
             }
         } else {
             assert(config.inputFiles.size() == 1);

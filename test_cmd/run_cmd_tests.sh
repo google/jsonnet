@@ -27,6 +27,8 @@ source "${DIR}/cmd_tests.source"
 OUT_DIR=$(mktemp -d)
 trap "rm -rf -- ${OUT_DIR}" EXIT INT TERM
 
+>&2 echo "output dir: ${OUT_DIR}"
+
 pushd "${DIR}"
 
 [[ -d "${OUT_DIR}" ]] || {
@@ -174,17 +176,25 @@ if do_fmt_test "fmt_out" 0 -e "{ a: 1, b: 2, c: 3 }" -o "${OUT_DIR}/fmt_out/cust
 fi
 do_fmt_test "fmt_double_dash" 0 -e -- -1
 
-if mkdir -p "${OUT_DIR}/fmt_inplace" && cp "test.jsonnet" "${OUT_DIR}/fmt_inplace/test.jsonnet"; then
+do_fmt_test "fmt_simple_test1" 0 --test "test.jsonnet"
+do_fmt_test "fmt_simple_test2" 2 --test -e "{a:1,b:2,c:3}"
+do_fmt_test "fmt_simple_test3" 0 --test -e $'42\n'
+do_fmt_test "fmt_simple_test4" 2 --test "test.jsonnet" "test_badfmt.jsonnet"
+
+SED_STDOUT="${SED_REPLACE_OUT_DIR}"
+if mkdir -p "${OUT_DIR}/fmt_inplace" && cp "test.jsonnet" "test_badfmt.jsonnet" "${OUT_DIR}/fmt_inplace/"; then
     # Test jsonnetfmt in-place modifications
-    do_fmt_test "fmt_inplace" 0 -i "${OUT_DIR}/fmt_inplace/test.jsonnet"
     check_file "fmt_inplace" "${OUT_DIR}/fmt_inplace/test.jsonnet" "fmt_simple_out.golden.custom_output"
     # Verify that running jsonnetfmt on an already formatted file does not change timesetamps
     touch -m -t 199108252057.08 "${OUT_DIR}/fmt_inplace/test.jsonnet"
+    touch -m -t 199108252057.08 "${OUT_DIR}/fmt_inplace/test_badfmt.jsonnet"
     stat -c '%y' "${OUT_DIR}/fmt_inplace/test.jsonnet" > "${OUT_DIR}/fmt_inplace/stat_mod_time_before.txt"
-    do_fmt_test "fmt_inplace" 0 -i "${OUT_DIR}/fmt_inplace/test.jsonnet"
+    do_fmt_test "fmt_inplace" 0 -i \
+        "${OUT_DIR}/fmt_inplace/test.jsonnet" "${OUT_DIR}/fmt_inplace/test_badfmt.jsonnet"
     stat -c '%y' "${OUT_DIR}/fmt_inplace/test.jsonnet" > "${OUT_DIR}/fmt_inplace/stat_mod_time_after.txt"
     check_file "fmt_inplace" "${OUT_DIR}/fmt_inplace/stat_mod_time_before.txt" "${OUT_DIR}/fmt_inplace/stat_mod_time_after.txt"
 fi
+unset -v SED_STDOUT
 
 fi
 
