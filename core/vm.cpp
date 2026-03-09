@@ -29,7 +29,11 @@ limitations under the License.
 #include <nlohmann/json.hpp>
 #include "md5.h"
 #include "parser.h"
+#ifdef USE_SYSTEM_RAPIDYAML
+#include <ryml.hpp>
+#else
 #include "rapidyaml-0.10.0.hpp"
+#endif
 #include "state.h"
 #include "static_analysis.h"
 #include "static_error.h"

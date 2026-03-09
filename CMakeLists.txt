@@ -50,7 +50,7 @@ option(BUILD_SHARED_BINARIES "Link binaries to the shared libjsonnet instead of 
 option(BUILD_MAN_PAGES "Build manpages." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
-# TODO: Support using a system Rapid YAML install.
+option(USE_SYSTEM_RAPIDYAML "Use the system-provided rapidyaml library" OFF)
 
 #### Compute derived values from user-configurable state.
 #
@@ -67,6 +67,10 @@ endif()
 
 if(USE_SYSTEM_JSON)
     find_package(nlohmann_json 3.6.1 REQUIRED)
+endif()
+
+if(USE_SYSTEM_RAPIDYAML)
+    find_package(ryml REQUIRED VERSION 0.10.0)
 endif()
 
 #### Utility function to configure a target with our preferred C and C++ compilation flags.
@@ -107,9 +111,6 @@ function(configure_jsonnet_obj_target LIB_TARGET_NAME)
         PRIVATE
             third_party/md5/md5.h
             third_party/md5/md5.cpp
-
-            third_party/rapidyaml/rapidyaml-0.10.0.hpp
-            third_party/rapidyaml/rapidyaml.cpp
 
             core/static_error.h
             core/desugarer.h
@@ -155,13 +156,24 @@ function(configure_jsonnet_obj_target LIB_TARGET_NAME)
             SYSTEM PRIVATE third_party/json)
     endif()
 
+    if(USE_SYSTEM_RAPIDYAML)
+        target_link_libraries(${LIB_TARGET_NAME} PRIVATE ryml::ryml)
+        target_compile_definitions(${LIB_TARGET_NAME} PRIVATE USE_SYSTEM_RAPIDYAML)
+    else()
+        target_sources(${LIB_TARGET_NAME}
+            PRIVATE
+                third_party/rapidyaml/rapidyaml-0.10.0.hpp
+                third_party/rapidyaml/rapidyaml.cpp
+        )
+    endif()
+
     target_include_directories(${LIB_TARGET_NAME}
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>
         PRIVATE
             third_party/md5
-            third_party/rapidyaml
+            $<$<NOT:$<BOOL:${USE_SYSTEM_RAPIDYAML}>>:${CMAKE_CURRENT_SOURCE_DIR}/third_party/rapidyaml>
         )
 endfunction()
 
