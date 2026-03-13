@@ -2798,11 +2798,11 @@ class Interpreter {
                 } break;
 
                 case FRAME_BUILTIN_FORCE_THUNKS: {
-                    const auto &ast = *static_cast<const Apply *>(f.ast);
+                    const auto &location = f.location;
                     auto *func = static_cast<HeapClosure *>(f.val.v.h);
                     if (f.elementId == f.thunks.size()) {
                         // All thunks forced, now the builtin implementations.
-                        const LocationRange &loc = ast.location;
+                        const LocationRange &loc = location;
                         const std::string &builtin_name = func->builtinName;
                         std::vector<Value> args;
                         for (const auto &p : func->params) {
@@ -2855,7 +2855,7 @@ class Interpreter {
                                     break;
 
                                 default:
-                                    throw makeError(ast.location,
+                                    throw makeError(location,
                                                     "native extensions can only take primitives.");
                             }
                         }
@@ -2864,7 +2864,7 @@ class Interpreter {
                             args3.push_back(&args2[i]);
                         }
                         if (nit == nativeCallbacks.end()) {
-                            throw makeError(ast.location,
+                            throw makeError(location,
                                             "unrecognized builtin name: " + builtin_name);
                         }
                         const VmNativeCallback &cb = nit->second;
@@ -2878,18 +2878,18 @@ class Interpreter {
                         } else {
                             if (r->kind != JsonnetJsonValue::STRING) {
                                 throw makeError(
-                                    ast.location,
+                                    location,
                                     "native extension returned an error that was not a string.");
                             }
                             std::string rs = r->string;
-                            throw makeError(ast.location, rs);
+                            throw makeError(location, rs);
                         }
 
                     } else {
                         // Not all arguments forced yet.
                         HeapThunk *th = f.thunks[f.elementId++];
                         if (!th->filled) {
-                            stack.newCall(ast.location, th, th->self, th->offset, th->upValues);
+                            stack.newCall(location, th, th->self, th->offset, th->upValues);
                             ast_ = th->body;
                             goto recurse;
                         } else {
