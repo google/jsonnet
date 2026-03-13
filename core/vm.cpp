@@ -3484,7 +3484,7 @@ class Interpreter {
             msg << loc.offset << ":";
         }
         msg << " " << std::string_view(inner_msg, length);
-        throw RapidYamlError(std::move(msg.str()));
+        throw RapidYamlError(msg.str());
     }
 };
 
