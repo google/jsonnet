@@ -2802,7 +2802,6 @@ class Interpreter {
                     auto *func = static_cast<HeapClosure *>(f.val.v.h);
                     if (f.elementId == f.thunks.size()) {
                         // All thunks forced, now the builtin implementations.
-                        const LocationRange &loc = location;
                         const std::string &builtin_name = func->builtinName;
                         std::vector<Value> args;
                         for (const auto &p : func->params) {
@@ -2814,13 +2813,13 @@ class Interpreter {
                                 std::stringstream ss;
                                 ss << "function parameter " << encode_utf8(p.id->name)
                                     << " not bound in call.";
-                                throw makeError(loc, ss.str());
+                                throw makeError(location, ss.str());
                             }
                         }
 
                         BuiltinMap::const_iterator bit = builtins.find(builtin_name);
                         if (bit != builtins.end()) {
-                            const AST *new_ast = (this->*bit->second)(loc, args);
+                            const AST *new_ast = (this->*bit->second)(location, args);
                             if (new_ast != nullptr) {
                                 ast_ = new_ast;
                                 goto recurse;
