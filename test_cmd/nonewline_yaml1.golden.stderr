@@ -1,5 +1,5 @@
 ERROR: cannot use --no-trailing-newline with --yaml-stream
-Jsonnet commandline interpreter v0.22.0-rc1
+Jsonnet commandline interpreter v0.22.0
 
 jsonnet {<option>} <filename>
 
