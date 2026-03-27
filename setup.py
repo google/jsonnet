@@ -38,6 +38,17 @@ LIB_SOURCES = [
     "python/_jsonnet.c",
 ]
 
+# When set to any non-empty value, link dynamically against a pre-built
+# libjsonnet.so.0 rather than compiling the C++ sources into the extension.
+# This is the mode used when packaging against a system or Spack-provided
+# libjsonnet (e.g. in RPM builds).  The shared object must be on the linker
+# search path at both build and runtime.
+#
+# Usage:
+#   JSONNET_DYNAMIC_LINK=1 pip install .
+#   JSONNET_DYNAMIC_LINK=1 python setup.py build_ext --inplace
+_DYNAMIC_LINK = bool(os.environ.get("JSONNET_DYNAMIC_LINK", ""))
+
 
 def get_version():
     """
@@ -96,7 +107,12 @@ class BuildJsonnetExt(BuildExt):
         super().build_extensions()
 
     def run(self):
-        self._pack_std_jsonnet()
+        # std.jsonnet.h is generated from the bundled stdlib and is only
+        # needed when compiling the C++ sources into the extension.  In
+        # dynamic-link mode the pre-built shared library already contains
+        # the stdlib, so skip the generation step.
+        if not _DYNAMIC_LINK:
+            self._pack_std_jsonnet()
         super().run()
 
 
@@ -113,6 +129,19 @@ if not hasattr(sys, "_is_gil_enabled") or sys._is_gil_enabled():
         _PY_LIMITED_API = 0x03080000
         _bdist_limited_api_tag = "cp38"
 
+if _DYNAMIC_LINK:
+    print("setup.py: JSONNET_DYNAMIC_LINK set; linking dynamically against libjsonnet.so.0")
+    _ext_sources = ["python/_jsonnet.c"]
+    _ext_extra_include_dirs = []
+    _ext_extra_objects = ["libjsonnet.so.0"]
+else:
+    _ext_sources = LIB_SOURCES
+    _ext_extra_include_dirs = [
+        "third_party/md5",
+        "third_party/json",
+        "third_party/rapidyaml",
+    ]
+    _ext_extra_objects = []
 
 setuptools.setup(
     name="jsonnet",
@@ -130,13 +159,9 @@ setuptools.setup(
                 else []
             ),
             py_limited_api=(_PY_LIMITED_API is not None),
-            sources=LIB_SOURCES,
-            include_dirs=[
-                "include",
-                "third_party/md5",
-                "third_party/json",
-                "third_party/rapidyaml",
-            ],
+            sources=_ext_sources,
+            include_dirs=["include"] + _ext_extra_include_dirs,
+            extra_objects=_ext_extra_objects,
             language="c++",
         )
     ],
