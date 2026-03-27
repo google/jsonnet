@@ -105,7 +105,8 @@ TEST(Unicode, TestUTF8RoundTripExhaustive)
         size_t at = 0;
         char32_t y = decode_utf8(buffer, at);
         EXPECT_NE(y, JSONNET_CODEPOINT_ERROR) << "UTF-8 roundtrip failed for codepoint " << x << " decode rejects" << std::endl;
-        EXPECT_EQ(x, y) << "UTF-8 roundtrip failed for codepoint " << x << " converts to " << y << std::endl;
+        EXPECT_EQ(x, y) << "UTF-8 roundtrip failed for codepoint " << static_cast<uint32_t>(x)
+                        << " converts to " << static_cast<uint32_t>(y) << std::endl;
         EXPECT_EQ(at, buffer.size() - 1) << "UTF-8 roundtrip failed for codepoint " << x << " decodes incorrect length" << std::endl;
     }
 }
