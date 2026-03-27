@@ -70,7 +70,7 @@ if(USE_SYSTEM_JSON)
 endif()
 
 if(USE_SYSTEM_RAPIDYAML)
-    find_package(ryml REQUIRED VERSION 0.10.0)
+    find_package(ryml 0.10.0 REQUIRED)
 endif()
 
 #### Utility function to configure a target with our preferred C and C++ compilation flags.
