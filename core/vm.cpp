@@ -31,6 +31,7 @@ limitations under the License.
 #include "parser.h"
 #ifdef USE_SYSTEM_RAPIDYAML
 #include <ryml.hpp>
+#include <ryml_std.hpp>
 #else
 #include "rapidyaml-0.10.0.hpp"
 #endif
