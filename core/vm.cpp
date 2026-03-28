@@ -1715,9 +1715,9 @@ class Interpreter {
         json j;
         try {
             // Use a custom EventHandler so we can attach error handling.
-            ryml::EventHandlerTree et{ryml::Callbacks{
-                nullptr, nullptr, nullptr, &Interpreter::handleRapidYamlError
-            }};
+            ryml::Callbacks cb;
+            cb.set_error_basic(&Interpreter::handleRapidYamlError);
+            ryml::EventHandlerTree et{cb};
             ryml::Parser pe(&et);
             ryml::Tree tree = ryml::parse_in_arena(&pe, ryml::to_csubstr(value));
 
@@ -3473,16 +3473,16 @@ class Interpreter {
         return r;
     }
 
-    static void handleRapidYamlError(const char* inner_msg, size_t length, ryml::Location loc, void * /* unused: userdata */)
+    static void handleRapidYamlError(ryml::csubstr inner_msg, ryml::ErrorDataBasic const& errdata, void * /* unused: user_data */)
     {
         std::ostringstream msg;
-        msg << "YAML error: " << loc.line << ":";
-        if (loc.col) {
-            msg << loc.col << ":";
-        } else if (loc.offset) {
-            msg << loc.offset << ":";
+        msg << "YAML error: " << errdata.location.line << ":";
+        if (errdata.location.col) {
+            msg << errdata.location.col << ":";
+        } else if (errdata.location.offset) {
+            msg << errdata.location.offset << ":";
         }
-        msg << " " << std::string_view(inner_msg, length);
+        msg << " " << inner_msg;
         throw RapidYamlError(msg.str());
     }
 };
