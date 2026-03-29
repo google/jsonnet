@@ -10,7 +10,7 @@ cc_library(
         "rapidyaml.cpp",
     ],
     hdrs = [
-        "rapidyaml-0.10.0.hpp",
+        "rapidyaml-0.11.1.hpp",
     ],
     includes = ["."],
     visibility = ["//core:__pkg__"],

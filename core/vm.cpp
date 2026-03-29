@@ -32,7 +32,7 @@ limitations under the License.
 #ifdef USE_SYSTEM_RAPIDYAML
 #include <ryml.hpp>
 #else
-#include "rapidyaml-0.10.0.hpp"
+#include "rapidyaml-0.11.1.hpp"
 #endif
 #include "state.h"
 #include "static_analysis.h"
