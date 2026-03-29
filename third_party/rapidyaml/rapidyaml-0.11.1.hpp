@@ -193,10 +193,10 @@
 
 /** @file version.hpp */
 
-#define C4CORE_VERSION "0.2.7"
+#define C4CORE_VERSION "0.2.11"
 #define C4CORE_VERSION_MAJOR 0
 #define C4CORE_VERSION_MINOR 2
-#define C4CORE_VERSION_PATCH 7
+#define C4CORE_VERSION_PATCH 11
 
 // amalgamate: removed include of
 // c4/export.hpp
@@ -748,6 +748,7 @@ typedef long double max_align_t ;
 
 // Compilers:
 //      C4_MSVC
+//             Visual Studio 2026: MSVC++ 18, 1950
 //             Visual Studio 2022: MSVC++ 17, 1930
 //             Visual Studio 2019: MSVC++ 16, 1920
 //             Visual Studio 2017: MSVC++ 15
@@ -764,15 +765,19 @@ typedef long double max_align_t ;
 /** @see http://sourceforge.net/p/predef/wiki/Compilers/ for a list of compiler identifier macros */
 /** @see https://msdn.microsoft.com/en-us/library/b0084kay.aspx for VS2013 predefined macros */
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(_MSC_VER)
 #   define C4_MSVC
+#   define C4_MSVC_VERSION_2026 18
 #   define C4_MSVC_VERSION_2022 17
 #   define C4_MSVC_VERSION_2019 16
 #   define C4_MSVC_VERSION_2017 15
 #   define C4_MSVC_VERSION_2015 14
 #   define C4_MSVC_VERSION_2013 12
 #   define C4_MSVC_VERSION_2012 11
-#   if _MSC_VER >= 1930
+#   if _MSC_VER >= 1950
+#       define C4_MSVC_VERSION C4_MSVC_VERSION_2026  // visual studio 2026
+#       define C4_MSVC_2026
+#   elif _MSC_VER >= 1930
 #       define C4_MSVC_VERSION C4_MSVC_VERSION_2022  // visual studio 2022
 #       define C4_MSVC_2022
 #   elif _MSC_VER >= 1920
@@ -1123,6 +1128,11 @@ typedef long double max_align_t ;
 #   else
 #       define C4_NODISCARD
 #   endif
+#if C4_CPP >= 17
+#   define C4_MAYBE_UNUSED [[maybe_unused]]
+#else
+#   define C4_MAYBE_UNUSED
+#endif
 [[noreturn]] __forceinline void _c4_msvc_unreachable() { __assume(false); } ///< https://stackoverflow.com/questions/60802864/emulating-gccs-builtin-unreachable-in-visual-studio
 #   define C4_UNREACHABLE_AFTER_ERR() /* */
 #else
@@ -1153,6 +1163,11 @@ typedef long double max_align_t ;
 #   define C4_ATTR_FORMAT(...) //__attribute__((format (__VA_ARGS__))) ///< @see https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
 #   define C4_NORETURN __attribute__((noreturn))
 #   define C4_NODISCARD __attribute__((warn_unused_result))
+#if C4_CPP >= 17
+#   define C4_MAYBE_UNUSED [[maybe_unused]]
+#else
+#   define C4_MAYBE_UNUSED __attribute__((unused))
+#endif
 #   define C4_UNREACHABLE_AFTER_ERR() C4_UNREACHABLE()
 // C4_ASSUME
 // see https://stackoverflow.com/questions/63493968/reproducing-clangs-builtin-assume-for-gcc
@@ -1206,6 +1221,7 @@ typedef long double max_align_t ;
 #   define C4_PRETTY_FUNC __PRETTY_FUNCTION__
 #endif
 
+
 /** prevent compiler warnings about a specific var being unused */
 #define C4_UNUSED(var) (void)var
 
@@ -1216,11 +1232,12 @@ typedef long double max_align_t ;
 #endif
 #define C4_STATIC_ASSERT_MSG(cond, msg) static_assert((cond), #cond ": " msg)
 
-/** @def C4_DONT_OPTIMIZE idea lifted from GoogleBenchmark.
+
+/** @def C4_DONT_OPTIMIZE() idea taken from GoogleBenchmark.
  * @see https://github.com/google/benchmark/blob/master/include/benchmark/benchmark_api.h */
 namespace c4 {
 namespace detail {
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #   define C4_DONT_OPTIMIZE(var) c4::detail::dont_optimize(var)
 template< class T >
 C4_ALWAYS_INLINE void dont_optimize(T const& value) { asm volatile("" : : "g"(value) : "memory"); } // NOLINT
@@ -1231,17 +1248,19 @@ void use_char_pointer(char const volatile*);
 } // namespace detail
 } // namespace c4
 
-/** @def C4_KEEP_EMPTY_LOOP prevent an empty loop from being optimized out.
- * @see http://stackoverflow.com/a/7084193/5875572 */
+
+/** @def C4_KEEP_EMPTY_LOOP() prevent an empty loop from being optimized out.
+ * @see http://stackoverflow.com/a/7084193/5875572  */
 #if defined(_MSC_VER) && !defined(__clang__)
 #   define C4_KEEP_EMPTY_LOOP { char c; C4_DONT_OPTIMIZE(c); }
 #else
 #   define C4_KEEP_EMPTY_LOOP { asm(""); }
 #endif
 
+
+#if defined(__GNUC__) || defined(__DOXYGEN__)
 /** @def C4_VA_LIST_REUSE_MUST_COPY
  * @todo <jpmag> I strongly suspect that this is actually only in UNIX platforms. revisit this. */
-#ifdef __GNUC__
 #   define C4_VA_LIST_REUSE_MUST_COPY
 #endif
 
@@ -1687,12 +1706,12 @@ struct __repeat<integer_sequence<_Tp, _Np...>, _Extra...>
     using type = integer_sequence<_Tp,
                             _Np...,
                             sizeof...(_Np) + _Np...,
-                            2 * sizeof...(_Np) + _Np...,
-                            3 * sizeof...(_Np) + _Np...,
-                            4 * sizeof...(_Np) + _Np...,
-                            5 * sizeof...(_Np) + _Np...,
-                            6 * sizeof...(_Np) + _Np...,
-                            7 * sizeof...(_Np) + _Np...,
+                            (2 * sizeof...(_Np)) + _Np...,
+                            (3 * sizeof...(_Np)) + _Np...,
+                            (4 * sizeof...(_Np)) + _Np...,
+                            (5 * sizeof...(_Np)) + _Np...,
+                            (6 * sizeof...(_Np)) + _Np...,
+                            (7 * sizeof...(_Np)) + _Np...,
                             _Extra...>;
 };
 
@@ -1862,13 +1881,6 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
 #endif /* C4_LANGUAGE_HPP_ */
-
-// amalgamate: removed include of
-// c4/types.hpp
-//#include "c4/types.hpp"
-#if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
-#error "amalgamate: file c4/types.hpp must have been included at this point"
-#endif /* C4_TYPES_HPP_ */
 
 
 #endif // _C4_CONFIG_HPP_
@@ -2078,12 +2090,38 @@ __inline__ static void debug_break(void)
 
 /** @defgroup error_checking Error checking */
 
+//included above:
+//#include <stdint.h>
+//included above:
+//#include <stddef.h>
+
 // amalgamate: removed include of
 // c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
+
+// amalgamate: removed include of
+// c4/export.hpp
+//#include "c4/export.hpp"
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
+// amalgamate: removed include of
+// c4/compiler.hpp
+//#include "c4/compiler.hpp"
+#if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
+#error "amalgamate: file c4/compiler.hpp must have been included at this point"
+#endif /* C4_COMPILER_HPP_ */
+
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
 
 
 #ifdef _DOXYGEN_
@@ -2264,14 +2302,27 @@ struct ScopedErrorSettings // NOLINT(cppcoreguidelines-special-member-functions,
 //-----------------------------------------------------------------------------
 
 /** source location */
-struct srcloc;
+struct C4CORE_EXPORT srcloc
+{
+    const char *file;
+    const char *func;
+    int line;
+    srcloc(const char *file_="", const char *func_="", int line_=0) noexcept : file(file_), func(func_), line(line_) {}
+};
 
-// watchout: for VS the [[noreturn]] needs to come before other annotations like C4CORE_EXPORT
-[[noreturn]] C4CORE_EXPORT void handle_error(srcloc s, const char *fmt, ...);
-C4CORE_EXPORT void handle_warning(srcloc s, const char *fmt, ...);
+
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+#define C4_SRCLOC() c4::srcloc(__FILE__, C4_PRETTY_FUNC, __LINE__)
+#elif defined(C4_ERROR_SHOWS_FILELINE)
+#define C4_SRCLOC() c4::srcloc(__FILE__, "", __LINE__)
+#elif ! defined(C4_ERROR_SHOWS_FUNC)
+#define C4_SRCLOC() c4::srcloc{}
+#else
+#   error not implemented
+#endif
 
 
-#   define C4_ERROR(msg, ...)                               \
+#define C4_ERROR(msg, ...)                                  \
     do {                                                    \
         if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) \
         {                                                   \
@@ -2281,39 +2332,13 @@ C4CORE_EXPORT void handle_warning(srcloc s, const char *fmt, ...);
     } while(0)
 
 
-#   define C4_WARNING(msg, ...)                             \
+#define C4_WARNING(msg, ...)                                \
     c4::handle_warning(C4_SRCLOC(), msg, ## __VA_ARGS__)
 
 
-#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-
-struct srcloc
-{
-    const char *file = "";
-    const char *func = "";
-    int line = 0;
-};
-#define C4_SRCLOC() c4::srcloc{__FILE__, C4_PRETTY_FUNC, __LINE__}
-
-#elif defined(C4_ERROR_SHOWS_FILELINE)
-
-struct srcloc
-{
-    const char *file;
-    int line;
-};
-#define C4_SRCLOC() c4::srcloc{__FILE__, __LINE__}
-
-#elif ! defined(C4_ERROR_SHOWS_FUNC)
-
-struct srcloc
-{
-};
-#define C4_SRCLOC() c4::srcloc()
-
-#else
-#   error not implemented
-#endif
+// watchout: for VS the [[noreturn]] needs to come before other annotations like C4CORE_EXPORT
+[[noreturn]] C4CORE_EXPORT void handle_error(srcloc s, const char *fmt, ...);
+C4CORE_EXPORT void handle_warning(srcloc s, const char *fmt, ...);
 
 
 //-----------------------------------------------------------------------------
@@ -2339,6 +2364,7 @@ struct srcloc
 #   define C4_NOEXCEPT_A
 #endif // _DOXYGEN_
 
+
 #ifndef C4_USE_ASSERT
 #   ifdef NDEBUG
 #       define C4_USE_ASSERT 0
@@ -2346,6 +2372,7 @@ struct srcloc
 #       define C4_USE_ASSERT 1
 #   endif
 #endif
+
 
 #if C4_USE_ASSERT
 #   define C4_ASSERT(cond) C4_CHECK(cond)
@@ -2382,9 +2409,11 @@ struct srcloc
 #   define C4_NOEXCEPT_X
 #endif // _DOXYGEN_
 
+
 #ifndef C4_USE_XASSERT
 #   define C4_USE_XASSERT C4_USE_ASSERT
 #endif
+
 
 #if C4_USE_XASSERT
 #   define C4_XASSERT(cond) C4_CHECK(cond)
@@ -2452,7 +2481,7 @@ struct srcloc
 // TODO: add C4_MESSAGE() https://stackoverflow.com/questions/18252351/custom-preprocessor-macro-for-a-conditional-pragma-message-xxx?rq=1
 
 
-#ifdef C4_MSVC
+#if defined(C4_MSVC) && !defined(__clang__)
 #define C4_SUPPRESS_WARNING_MSVC_PUSH __pragma(warning(push))
 #define C4_SUPPRESS_WARNING_MSVC(w)  __pragma(warning(disable : w))
 #define C4_SUPPRESS_WARNING_MSVC_POP __pragma(warning(pop))
@@ -2463,7 +2492,7 @@ struct srcloc
 #endif // C4_MSVC
 
 
-#ifdef C4_CLANG
+#if defined(C4_CLANG) || defined(__clang__)
 #define C4_PRAGMA_TO_STR(x) _Pragma(#x)
 #define C4_SUPPRESS_WARNING_CLANG_PUSH _Pragma("clang diagnostic push")
 #define C4_SUPPRESS_WARNING_CLANG(w) C4_PRAGMA_TO_STR(clang diagnostic ignored w)
@@ -2566,6 +2595,8 @@ struct srcloc
 #error "amalgamate: file c4/cpu.hpp must have been included at this point"
 #endif /* C4_CPU_HPP_ */
 
+//included above:
+//#include <type_traits>
 #ifdef C4_MSVC
 #include <intrin.h>
 #endif
@@ -2662,7 +2693,7 @@ auto lsb(I v) noexcept
         // upcast to use the intrinsic, it's cheaper.
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanForward(&bit, (unsigned long)v);
                 return bit;
             #else
@@ -2689,7 +2720,7 @@ auto lsb(I v) noexcept
         // Then remember that the upcast makes it to 31bits
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanForward(&bit, (unsigned long)v);
                 return bit;
             #else
@@ -2714,7 +2745,7 @@ auto lsb(I v) noexcept
     #if _C4_USE_LSB_INTRINSIC(__builtin_ctz)
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanForward(&bit, v);
                 return bit;
             #else
@@ -2739,7 +2770,7 @@ auto lsb(I v) noexcept
     #if _C4_USE_LSB_INTRINSIC(__builtin_ctzl)
         #if defined(C4_MSVC)
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanForward64(&bit, v);
                 return bit;
             #else
@@ -2764,7 +2795,7 @@ auto lsb(I v) noexcept
     #if _C4_USE_LSB_INTRINSIC(__builtin_ctzll)
         #if defined(C4_MSVC)
             #if !defined(C4_CPU_X86) && !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanForward64(&bit, v);
                 return bit;
             #else
@@ -2871,7 +2902,7 @@ auto msb(I v) noexcept
         // Then remember that the upcast makes it to 31bits
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanReverse(&bit, (unsigned long)v);
                 return bit;
             #else
@@ -2898,7 +2929,7 @@ auto msb(I v) noexcept
         // Then remember that the upcast makes it to 31bits
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanReverse(&bit, (unsigned long)v);
                 return bit;
             #else
@@ -2923,7 +2954,7 @@ auto msb(I v) noexcept
     #if _C4_USE_MSB_INTRINSIC(__builtin_clz)
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanReverse(&bit, v);
                 return bit;
             #else
@@ -2948,7 +2979,7 @@ auto msb(I v) noexcept
     #if _C4_USE_MSB_INTRINSIC(__builtin_clzl)
         #ifdef C4_MSVC
             #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanReverse64(&bit, v);
                 return bit;
             #else
@@ -2973,7 +3004,7 @@ auto msb(I v) noexcept
     #if _C4_USE_MSB_INTRINSIC(__builtin_clzll)
         #ifdef C4_MSVC
             #if !defined(C4_CPU_X86) && !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
-                unsigned long bit;
+                unsigned long bit = {};
                 _BitScanReverse64(&bit, v);
                 return bit;
             #else
@@ -3371,18 +3402,18 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
  */
 
 // amalgamate: removed include of
-// c4/config.hpp
-//#include "c4/config.hpp"
-#if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
-#error "amalgamate: file c4/config.hpp must have been included at this point"
-#endif /* C4_CONFIG_HPP_ */
-
-// amalgamate: removed include of
 // c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
+
+// amalgamate: removed include of
+// c4/types.hpp
+//#include "c4/types.hpp"
+#if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
+#error "amalgamate: file c4/types.hpp must have been included at this point"
+#endif /* C4_TYPES_HPP_ */
 
 
 namespace c4 {
@@ -4795,7 +4826,7 @@ public:
         void *vmem;
         if(m_num + num_objs <= N)
         {
-            vmem = (m_arr + m_num * sizeof(T));
+            vmem = (m_arr + (m_num * sizeof(T)));
         }
         else
         {
@@ -5003,6 +5034,12 @@ struct literal_as<wchar_t>
 #endif /* C4_CONFIG_HPP_ */
 
 #include <climits>
+//included above:
+//#include <type_traits>
+//included above:
+//#include <stddef.h>
+//included above:
+//#include <stdint.h>
 
 /** @file hash.hpp */
 
@@ -5126,6 +5163,8 @@ C4_CONSTEXPR14 inline size_t hash_bytes(const char (&str)[N]) noexcept
 
 
 #include <limits>
+//included above:
+//#include <type_traits>
 
 namespace c4 {
 
@@ -5201,6 +5240,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_BLOB_HPP_
 
 // amalgamate: removed include of
+// c4/error.hpp
+//#include "c4/error.hpp"
+#if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
+#error "amalgamate: file c4/error.hpp must have been included at this point"
+#endif /* C4_ERROR_HPP_ */
+
+// amalgamate: removed include of
 // c4/types.hpp
 //#include "c4/types.hpp"
 #if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
@@ -5208,11 +5254,11 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* C4_TYPES_HPP_ */
 
 // amalgamate: removed include of
-// c4/error.hpp
-//#include "c4/error.hpp"
-#if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
-#error "amalgamate: file c4/error.hpp must have been included at this point"
-#endif /* C4_ERROR_HPP_ */
+// c4/memory_util.hpp
+//#include "c4/memory_util.hpp"
+#if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
+#error "amalgamate: file c4/memory_util.hpp must have been included at this point"
+#endif /* C4_MEMORY_UTIL_HPP_ */
 
 
 /** @file blob.hpp Mutable and immutable binary data blobs.
@@ -5295,20 +5341,14 @@ C4_MUST_BE_TRIVIAL_COPY(cblob);
 #ifndef _C4_SUBSTR_FWD_HPP_
 #define _C4_SUBSTR_FWD_HPP_
 
-// amalgamate: removed include of
-// c4/export.hpp
-//#include "c4/export.hpp"
-#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
-#error "amalgamate: file c4/export.hpp must have been included at this point"
-#endif /* C4_EXPORT_HPP_ */
-
-
 namespace c4 {
 
 #ifndef DOXYGEN
 template<class C> struct basic_substring;
-using csubstr = C4CORE_EXPORT basic_substring<const char>;
-using substr = C4CORE_EXPORT basic_substring<char>;
+using csubstr = basic_substring<const char>;
+using substr = basic_substring<char>;
+template<class T> struct is_string;
+template<class T> struct is_writeable_string;
 #endif // !DOXYGEN
 
 } // namespace c4
@@ -5339,11 +5379,18 @@ using substr = C4CORE_EXPORT basic_substring<char>;
 //#include <type_traits>
 
 // amalgamate: removed include of
-// c4/config.hpp
-//#include "c4/config.hpp"
-#if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
-#error "amalgamate: file c4/config.hpp must have been included at this point"
-#endif /* C4_CONFIG_HPP_ */
+// c4/export.hpp
+//#include "c4/export.hpp"
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
 
 // amalgamate: removed include of
 // c4/error.hpp
@@ -5580,8 +5627,11 @@ public:
             return -1;
     }
 
-    C4_PURE int compare(const char *C4_RESTRICT that, size_t sz) const noexcept
+    C4_PURE int compare(C const* C4_RESTRICT that, size_t sz) const noexcept
     {
+        #if defined(__GNUC__) && (__GNUC__ >= 6)
+        C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
+        #endif
         C4_XASSERT(that || sz  == 0);
         C4_XASSERT(str  || len == 0);
         if(C4_LIKELY(str && that))
@@ -5605,6 +5655,9 @@ public:
             return 0;
         }
         return len < sz ? -1 : 1;
+        #if defined(__GNUC__) && (__GNUC__ >= 6)
+        C4_SUPPRESS_WARNING_GCC_POP
+        #endif
     }
 
     C4_ALWAYS_INLINE C4_PURE int compare(ro_substr const that) const noexcept { return this->compare(that.str, that.len); }
@@ -6015,7 +6068,13 @@ public:
     /** true if the first character of the string is @p c */
     bool begins_with(const C c) const
     {
+        #if defined(__GNUC__) && (__GNUC__ >= 6)
+        C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
+        #endif
         return len > 0 ? str[0] == c : false;
+        #if defined(__GNUC__) && (__GNUC__ >= 6)
+        C4_SUPPRESS_WARNING_GCC_POP
+        #endif
     }
 
     /** true if the first @p num characters of the string are @p c */
@@ -7346,26 +7405,37 @@ public:
     C4_REQUIRE_RW(void) fill(C val)
     {
         for(size_t i = 0; i < len; ++i)
-        {
             str[i] = val;
-        }
     }
 
 public:
 
-    /** set the current substring to a copy of the given csubstr
+    /** copy a string to this substr, starting at 0
      * @note this method requires that the string memory is writeable and is SFINAEd out for const C */
-    C4_REQUIRE_RW(void) copy_from(ro_substr that, size_t ifirst=0, size_t num=npos)
+    C4_REQUIRE_RW(void) copy_from(ro_substr that)
+    {
+        C4_ASSERT(!overlaps(that));
+        size_t num = that.len <= len ? that.len : len;
+        // calling memcpy with zero len is undefined behavior
+        // and will wreak havoc in calling code's branches.
+        // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+        if(num)
+            memcpy(str, that.str, sizeof(C) * num);
+    }
+
+    /** copy a string to this substr, starting at a specified given position
+     * @note this method requires that the string memory is writeable and is SFINAEd out for const C */
+    C4_REQUIRE_RW(void) copy_from(ro_substr that, size_t ifirst, size_t num=npos)
     {
         C4_ASSERT(ifirst >= 0 && ifirst <= len);
         num = num != npos ? num : len - ifirst;
         num = num < that.len ? num : that.len;
         C4_ASSERT(ifirst + num >= 0 && ifirst + num <= len);
-        // calling memcpy with null strings is undefined behavior
+        // calling memcpy with zero len is undefined behavior
         // and will wreak havoc in calling code's branches.
         // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
         if(num)
-            memcpy(str + sizeof(C) * ifirst, that.str, sizeof(C) * num);
+            memcpy(str + (sizeof(C) * ifirst), that.str, sizeof(C) * num);
     }
 
 public:
@@ -7532,32 +7602,67 @@ public:
 /** neutral version for use in generic code */
 C4_ALWAYS_INLINE substr to_substr(substr s) noexcept { return s; }
 /** neutral version for use in generic code */
-C4_ALWAYS_INLINE csubstr to_csubstr(substr s) noexcept { return s; }
+C4_ALWAYS_INLINE csubstr to_csubstr(substr s) noexcept { return csubstr{s.str, s.len}; }
 /** neutral version for use in generic code */
 C4_ALWAYS_INLINE csubstr to_csubstr(csubstr s) noexcept { return s; }
 
 
-template<size_t N>
-C4_ALWAYS_INLINE substr
-to_substr(char (&s)[N]) noexcept { substr ss(s, N-1); return ss; }
-template<size_t N>
-C4_ALWAYS_INLINE csubstr
-to_csubstr(const char (&s)[N]) noexcept { csubstr ss(s, N-1); return ss; }
+template<size_t N> C4_ALWAYS_INLINE substr to_substr(char (&s)[N]) noexcept
+{
+    return substr(s, N-1);
+}
+template<size_t N> C4_ALWAYS_INLINE csubstr to_csubstr(const char (&s)[N]) noexcept
+{
+    return csubstr(s, N-1);
+}
 
 
 /** @note this overload uses SFINAE to prevent it from overriding the array overload
  * @see For a more detailed explanation on why the plain overloads cannot
  * coexist, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
-template<class U>
-C4_ALWAYS_INLINE typename std::enable_if<std::is_same<U, char*>::value, substr>::type
-to_substr(U s) noexcept { substr ss(s); return ss; }
+template<class U> C4_ALWAYS_INLINE auto to_substr(U s) noexcept
+    -> typename std::enable_if<std::is_same<U, char*>::value, substr>::type
+{
+    return substr(s);
+}
 /** @note this overload uses SFINAE to prevent it from overriding the array overload
  * @see For a more detailed explanation on why the plain overloads cannot
  * coexist, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
-template<class U>
-C4_ALWAYS_INLINE typename std::enable_if<std::is_same<U, const char*>::value || std::is_same<U, char*>::value, csubstr>::type
-to_csubstr(U s) noexcept { csubstr ss(s); return ss; }
+template<class U> C4_ALWAYS_INLINE auto to_csubstr(U s) noexcept
+    -> typename std::enable_if<std::is_same<U, const char*>::value || std::is_same<U, char*>::value, csubstr>::type
+{
+    return csubstr(s);
+}
 
+
+/** a traits class to mark a type as a string type
+ * (meaning @ref c4::to_csubstr() can be used directly). */
+template<class T> struct is_string : public std::false_type {};
+/** a traits class to mark a type as a writeable string type
+ * (meaning @ref c4::to_substr() can be used directly). */
+template<class T> struct is_writeable_string : public std::false_type {};
+
+template<typename C> struct is_string<basic_substring<C>> : public std::true_type {};
+template<> struct is_writeable_string<basic_substring<char>> : public std::true_type {};
+template<> struct is_writeable_string<basic_substring<const char>> : public std::false_type {};
+
+template<> struct is_string<const char*> : public std::true_type {};
+template<> struct is_writeable_string<const char*> : public std::false_type {};
+
+template<> struct is_string<char*> : public std::true_type {};
+template<> struct is_writeable_string<char*> : public std::true_type {};
+
+template<size_t N> struct is_string<const char (&)[N]> : public std::true_type {};
+template<size_t N> struct is_writeable_string<const char (&)[N]> : public std::false_type {};
+
+template<size_t N> struct is_string<char (&)[N]> : public std::true_type {};
+template<size_t N> struct is_writeable_string<char (&)[N]> : public std::true_type {};
+
+template<size_t N> struct is_string<const char[N]> : public std::true_type {};
+template<size_t N> struct is_writeable_string<const char[N]> : public std::false_type {};
+
+template<size_t N> struct is_string<char[N]> : public std::true_type {};
+template<size_t N> struct is_writeable_string<char[N]> : public std::true_type {};
 
 /** @} */
 
@@ -7654,6 +7759,7 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #   pragma warning(push)
+#   pragma warning(disable: 4127) // conditional expression is constant
 #   pragma warning(disable: 4365) // '=': conversion from 'const _Ty' to 'fast_float::limb', signed/unsigned mismatch
 #   pragma warning(disable: 4996) // snprintf/scanf: this function or variable may be unsafe
 #elif defined(__clang__) || defined(__APPLE_CC__) || defined(_LIBCPP_VERSION)
@@ -7753,6 +7859,12 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #define FASTFLOAT_HAS_IS_CONSTANT_EVALUATED 0
 #endif
 
+#if defined(__cpp_if_constexpr) && __cpp_if_constexpr >= 201606L
+#define FASTFLOAT_IF_CONSTEXPR17(x) if constexpr (x)
+#else
+#define FASTFLOAT_IF_CONSTEXPR17(x) if (x)
+#endif
+
 // Testing for relevant C++20 constexpr library features
 #if FASTFLOAT_HAS_IS_CONSTANT_EVALUATED && FASTFLOAT_HAS_BIT_CAST &&           \
     defined(__cpp_lib_constexpr_algorithms) &&                                 \
@@ -7777,6 +7889,8 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 
 #include <cfloat>
 //included above:
+//#include <cstddef>
+//included above:
 //#include <cstdint>
 #include <cassert>
 //included above:
@@ -7793,8 +7907,8 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #endif
 
 #define FASTFLOAT_VERSION_MAJOR 8
-#define FASTFLOAT_VERSION_MINOR 0
-#define FASTFLOAT_VERSION_PATCH 0
+#define FASTFLOAT_VERSION_MINOR 2
+#define FASTFLOAT_VERSION_PATCH 4
 
 #define FASTFLOAT_STRINGIZE_IMPL(x) #x
 #define FASTFLOAT_STRINGIZE(x) FASTFLOAT_STRINGIZE_IMPL(x)
@@ -7835,6 +7949,11 @@ enum class chars_format : uint64_t {
 template <typename UC> struct from_chars_result_t {
   UC const *ptr;
   std::errc ec;
+
+  // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2497r0.html
+  constexpr explicit operator bool() const noexcept {
+    return ec == std::errc();
+  }
 };
 
 using from_chars_result = from_chars_result_t<char>;
@@ -7865,11 +7984,12 @@ using parse_options = parse_options_t<char>;
      defined(__MINGW64__) || defined(__s390x__) ||                             \
      (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) ||      \
       defined(__PPC64LE__)) ||                                                 \
-     defined(__loongarch64))
+     defined(__loongarch64) || (defined(__riscv) && __riscv_xlen == 64))
 #define FASTFLOAT_64BIT 1
 #elif (defined(__i386) || defined(__i386__) || defined(_M_IX86) ||             \
        defined(__arm__) || defined(_M_ARM) || defined(__ppc__) ||              \
-       defined(__MINGW32__) || defined(__EMSCRIPTEN__))
+       defined(__MINGW32__) || defined(__EMSCRIPTEN__) ||                      \
+       (defined(__riscv) && __riscv_xlen == 32))
 #define FASTFLOAT_32BIT 1
 #else
   // Need to check incrementally, since SIZE_MAX is a size_t, avoid overflow.
@@ -8039,18 +8159,147 @@ struct is_supported_char_type
                              > {
 };
 
+template <typename UC>
+inline FASTFLOAT_CONSTEXPR14 bool
+fastfloat_strncasecmp3(UC const *actual_mixedcase,
+                       UC const *expected_lowercase) {
+  uint64_t mask{0};
+  FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 1) { mask = 0x2020202020202020; }
+  else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 2) {
+    mask = 0x0020002000200020;
+  }
+  else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 4) {
+    mask = 0x0000002000000020;
+  }
+  else {
+    return false;
+  }
+
+  uint64_t val1{0}, val2{0};
+  if (cpp20_and_in_constexpr()) {
+    for (size_t i = 0; i < 3; i++) {
+      if ((actual_mixedcase[i] | 32) != expected_lowercase[i]) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 1 || sizeof(UC) == 2) {
+      ::memcpy(&val1, actual_mixedcase, 3 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase, 3 * sizeof(UC));
+      val1 |= mask;
+      val2 |= mask;
+      return val1 == val2;
+    }
+    else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 4) {
+      ::memcpy(&val1, actual_mixedcase, 2 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase, 2 * sizeof(UC));
+      val1 |= mask;
+      if (val1 != val2) {
+        return false;
+      }
+      return (actual_mixedcase[2] | 32) == (expected_lowercase[2]);
+    }
+    else {
+      return false;
+    }
+  }
+}
+
+template <typename UC>
+inline FASTFLOAT_CONSTEXPR14 bool
+fastfloat_strncasecmp5(UC const *actual_mixedcase,
+                       UC const *expected_lowercase) {
+  uint64_t mask{0};
+  uint64_t val1{0}, val2{0};
+  if (cpp20_and_in_constexpr()) {
+    for (size_t i = 0; i < 5; i++) {
+      if ((actual_mixedcase[i] | 32) != expected_lowercase[i]) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 1) {
+      mask = 0x2020202020202020;
+      ::memcpy(&val1, actual_mixedcase, 5 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase, 5 * sizeof(UC));
+      val1 |= mask;
+      val2 |= mask;
+      return val1 == val2;
+    }
+    else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 2) {
+      mask = 0x0020002000200020;
+      ::memcpy(&val1, actual_mixedcase, 4 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase, 4 * sizeof(UC));
+      val1 |= mask;
+      if (val1 != val2) {
+        return false;
+      }
+      return (actual_mixedcase[4] | 32) == (expected_lowercase[4]);
+    }
+    else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 4) {
+      mask = 0x0000002000000020;
+      ::memcpy(&val1, actual_mixedcase, 2 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase, 2 * sizeof(UC));
+      val1 |= mask;
+      if (val1 != val2) {
+        return false;
+      }
+      ::memcpy(&val1, actual_mixedcase + 2, 2 * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase + 2, 2 * sizeof(UC));
+      val1 |= mask;
+      if (val1 != val2) {
+        return false;
+      }
+      return (actual_mixedcase[4] | 32) == (expected_lowercase[4]);
+    }
+    else {
+      return false;
+    }
+  }
+}
+
 // Compares two ASCII strings in a case insensitive manner.
 template <typename UC>
 inline FASTFLOAT_CONSTEXPR14 bool
 fastfloat_strncasecmp(UC const *actual_mixedcase, UC const *expected_lowercase,
                       size_t length) {
-  for (size_t i = 0; i < length; ++i) {
-    UC const actual = actual_mixedcase[i];
-    if ((actual < 256 ? actual | 32 : actual) != expected_lowercase[i]) {
-      return false;
-    }
+  uint64_t mask{0};
+  FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 1) { mask = 0x2020202020202020; }
+  else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 2) {
+    mask = 0x0020002000200020;
   }
-  return true;
+  else FASTFLOAT_IF_CONSTEXPR17(sizeof(UC) == 4) {
+    mask = 0x0000002000000020;
+  }
+  else {
+    return false;
+  }
+
+  if (cpp20_and_in_constexpr()) {
+    for (size_t i = 0; i < length; i++) {
+      if ((actual_mixedcase[i] | 32) != expected_lowercase[i]) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    uint64_t val1{0}, val2{0};
+    size_t sz{8 / (sizeof(UC))};
+    for (size_t i = 0; i < length; i += sz) {
+      val1 = val2 = 0;
+      sz = std::min(sz, length - i);
+      ::memcpy(&val1, actual_mixedcase + i, sz * sizeof(UC));
+      ::memcpy(&val2, expected_lowercase + i, sz * sizeof(UC));
+      val1 |= mask;
+      val2 |= mask;
+      if (val1 != val2) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 #ifndef FLT_EVAL_METHOD
@@ -8134,6 +8383,52 @@ leading_zeroes(uint64_t input_num) {
 #endif
 }
 
+/* Helper C++14 constexpr generic implementation of countr_zero for 32-bit */
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 int
+countr_zero_generic_32(uint32_t input_num) {
+  if (input_num == 0) {
+    return 32;
+  }
+  int last_bit = 0;
+  if (!(input_num & 0x0000FFFF)) {
+    input_num >>= 16;
+    last_bit |= 16;
+  }
+  if (!(input_num & 0x00FF)) {
+    input_num >>= 8;
+    last_bit |= 8;
+  }
+  if (!(input_num & 0x0F)) {
+    input_num >>= 4;
+    last_bit |= 4;
+  }
+  if (!(input_num & 0x3)) {
+    input_num >>= 2;
+    last_bit |= 2;
+  }
+  if (!(input_num & 0x1)) {
+    last_bit |= 1;
+  }
+  return last_bit;
+}
+
+/* count trailing zeroes for 32-bit integers */
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 int
+countr_zero_32(uint32_t input_num) {
+  if (cpp20_and_in_constexpr()) {
+    return countr_zero_generic_32(input_num);
+  }
+#ifdef FASTFLOAT_VISUAL_STUDIO
+  unsigned long trailing_zero = 0;
+  if (_BitScanForward(&trailing_zero, input_num)) {
+    return (int)trailing_zero;
+  }
+  return 32;
+#else
+  return input_num == 0 ? 32 : __builtin_ctz(input_num);
+#endif
+}
+
 // slow emulation routine for 32-bit
 fastfloat_really_inline constexpr uint64_t emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
@@ -8178,8 +8473,8 @@ full_multiplication(uint64_t a, uint64_t b) {
   // But MinGW on ARM64 doesn't have native support for 64-bit multiplications
   answer.high = __umulh(a, b);
   answer.low = a * b;
-#elif defined(FASTFLOAT_32BIT) ||                                              \
-    (defined(_WIN64) && !defined(__clang__) && !defined(_M_ARM64))
+#elif defined(FASTFLOAT_32BIT) || (defined(_WIN64) && !defined(__clang__) &&   \
+                                   !defined(_M_ARM64) && !defined(__GNUC__))
   answer.low = _umul128(a, b, &answer.high); // _umul128 not available on ARM64
 #elif defined(FASTFLOAT_64BIT) && defined(__SIZEOF_INT128__)
   __uint128_t r = ((__uint128_t)a) * b;
@@ -8904,7 +9199,12 @@ template <typename T> constexpr uint64_t int_luts<T>::min_safe_u64[];
 
 template <typename UC>
 fastfloat_really_inline constexpr uint8_t ch_to_digit(UC c) {
-  return int_luts<>::chdigit[static_cast<unsigned char>(c)];
+  // wchar_t and char can be signed, so we need to be careful.
+  using UnsignedUC = typename std::make_unsigned<UC>::type;
+  return int_luts<>::chdigit[static_cast<unsigned char>(
+      static_cast<UnsignedUC>(c) &
+      static_cast<UnsignedUC>(
+          -((static_cast<UnsignedUC>(c) & ~0xFFull) == 0)))];
 }
 
 fastfloat_really_inline constexpr size_t max_digits_u64(int base) {
@@ -8933,6 +9233,9 @@ static_assert(std::is_same<equiv_uint_t<std::float64_t>, uint64_t>::value,
 static_assert(
     std::numeric_limits<std::float64_t>::is_iec559,
     "std::float64_t must fulfill the requirements of IEC 559 (IEEE 754)");
+
+template <>
+struct binary_format<std::float64_t> : public binary_format<double> {};
 #endif // __STDCPP_FLOAT64_T__
 
 #ifdef __STDCPP_FLOAT32_T__
@@ -8941,6 +9244,9 @@ static_assert(std::is_same<equiv_uint_t<std::float32_t>, uint32_t>::value,
 static_assert(
     std::numeric_limits<std::float32_t>::is_iec559,
     "std::float32_t must fulfill the requirements of IEC 559 (IEEE 754)");
+
+template <>
+struct binary_format<std::float32_t> : public binary_format<float> {};
 #endif // __STDCPP_FLOAT32_T__
 
 #ifdef __STDCPP_FLOAT16_T__
@@ -9012,7 +9318,6 @@ constexpr chars_format adjust_for_feature_macros(chars_format fmt) {
       ;
 }
 } // namespace detail
-
 } // namespace fast_float
 
 #endif
@@ -9064,6 +9369,38 @@ from_chars_advanced(UC const *first, UC const *last, T &value,
                     parse_options_t<UC> options) noexcept;
 
 /**
+ * This function multiplies an integer number by a power of 10 and returns
+ * the result as a double precision floating-point value that is correctly
+ * rounded. The resulting floating-point value is the closest floating-point
+ * value, using the "round to nearest, tie to even" convention for values that
+ * would otherwise fall right in-between two values. That is, we provide exact
+ * conversion according to the IEEE standard.
+ *
+ * On overflow infinity is returned, on underflow 0 is returned.
+ *
+ * The implementation does not throw and does not allocate memory (e.g., with
+ * `new` or `malloc`).
+ */
+FASTFLOAT_CONSTEXPR20 inline double
+integer_times_pow10(uint64_t mantissa, int decimal_exponent) noexcept;
+FASTFLOAT_CONSTEXPR20 inline double
+integer_times_pow10(int64_t mantissa, int decimal_exponent) noexcept;
+
+/**
+ * This function is a template overload of `integer_times_pow10()`
+ * that returns a floating-point value of type `T` that is one of
+ * supported floating-point types (e.g. `double`, `float`).
+ */
+template <typename T>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value, T>::type
+    integer_times_pow10(uint64_t mantissa, int decimal_exponent) noexcept;
+template <typename T>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value, T>::type
+    integer_times_pow10(int64_t mantissa, int decimal_exponent) noexcept;
+
+/**
  * from_chars for integer types.
  */
 template <typename T, typename UC = char,
@@ -9113,7 +9450,7 @@ template <typename UC> fastfloat_really_inline constexpr bool has_simd_opt() {
 // able to optimize it well.
 template <typename UC>
 fastfloat_really_inline constexpr bool is_integer(UC c) noexcept {
-  return !(c > UC('9') || c < UC('0'));
+  return (unsigned)(c - UC('0')) <= 9u;
 }
 
 fastfloat_really_inline constexpr uint64_t byteswap(uint64_t val) {
@@ -9121,6 +9458,11 @@ fastfloat_really_inline constexpr uint64_t byteswap(uint64_t val) {
          (val & 0x0000FF0000000000) >> 24 | (val & 0x000000FF00000000) >> 8 |
          (val & 0x00000000FF000000) << 8 | (val & 0x0000000000FF0000) << 24 |
          (val & 0x000000000000FF00) << 40 | (val & 0x00000000000000FF) << 56;
+}
+
+fastfloat_really_inline constexpr uint32_t byteswap_32(uint32_t val) {
+  return (val >> 24) | ((val >> 8) & 0x0000FF00u) | ((val << 8) & 0x00FF0000u) |
+         (val << 24);
 }
 
 // Read 8 UC into a u64. Truncates UC if not char.
@@ -9144,6 +9486,25 @@ read8_to_u64(UC const *chars) {
   return val;
 }
 
+// Read 4 UC into a u32. Truncates UC if not char.
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint32_t
+read4_to_u32(UC const *chars) {
+  if (cpp20_and_in_constexpr() || !std::is_same<UC, char>::value) {
+    uint32_t val = 0;
+    for (int i = 0; i < 4; ++i) {
+      val |= uint32_t(uint8_t(*chars)) << (i * 8);
+      ++chars;
+    }
+    return val;
+  }
+  uint32_t val;
+  ::memcpy(&val, chars, sizeof(uint32_t));
+#if FASTFLOAT_IS_BIG_ENDIAN == 1
+  val = byteswap_32(val);
+#endif
+  return val;
+}
 #ifdef FASTFLOAT_SSE2
 
 fastfloat_really_inline uint64_t simd_read8_to_u64(__m128i const data) {
@@ -9223,6 +9584,18 @@ fastfloat_really_inline constexpr bool
 is_made_of_eight_digits_fast(uint64_t val) noexcept {
   return !((((val + 0x4646464646464646) | (val - 0x3030303030303030)) &
             0x8080808080808080));
+}
+
+fastfloat_really_inline constexpr bool
+is_made_of_four_digits_fast(uint32_t val) noexcept {
+  return !((((val + 0x46464646) | (val - 0x30303030)) & 0x80808080));
+}
+
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 uint32_t
+parse_four_digits_unrolled(uint32_t val) noexcept {
+  val -= 0x30303030;
+  val = (val * 10) + (val >> 8);
+  return (((val & 0x00FF00FF) * 0x00640001) >> 16) & 0xFFFF;
 }
 
 #ifdef FASTFLOAT_HAS_SIMD
@@ -9360,7 +9733,7 @@ report_parse_error(UC const *p, parse_error error) {
 
 // Assuming that you use no more than 19 digits, this will
 // parse an ASCII string.
-template <typename UC>
+template <bool basic_json_fmt, typename UC>
 fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
 parse_number_string(UC const *p, UC const *pend,
                     parse_options_t<UC> options) noexcept {
@@ -9373,20 +9746,20 @@ parse_number_string(UC const *p, UC const *pend,
   // assume p < pend, so dereference without checks;
   answer.negative = (*p == UC('-'));
   // C++17 20.19.3.(7.1) explicitly forbids '+' sign here
-  if ((*p == UC('-')) ||
-      (uint64_t(fmt & chars_format::allow_leading_plus) &&
-       !uint64_t(fmt & detail::basic_json_fmt) && *p == UC('+'))) {
+  if ((*p == UC('-')) || (uint64_t(fmt & chars_format::allow_leading_plus) &&
+                          !basic_json_fmt && *p == UC('+'))) {
     ++p;
     if (p == pend) {
       return report_parse_error<UC>(
           p, parse_error::missing_integer_or_dot_after_sign);
     }
-    if (uint64_t(fmt & detail::basic_json_fmt)) {
+    FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
       if (!is_integer(*p)) { // a sign must be followed by an integer
         return report_parse_error<UC>(p,
                                       parse_error::missing_integer_after_sign);
       }
-    } else {
+    }
+    else {
       if (!is_integer(*p) &&
           (*p !=
            decimal_point)) { // a sign must be followed by an integer or the dot
@@ -9410,7 +9783,7 @@ parse_number_string(UC const *p, UC const *pend,
   UC const *const end_of_integer_part = p;
   int64_t digit_count = int64_t(end_of_integer_part - start_digits);
   answer.integer = span<UC const>(start_digits, size_t(digit_count));
-  if (uint64_t(fmt & detail::basic_json_fmt)) {
+  FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
     // at least 1 digit in integer part, without leading zeros
     if (digit_count == 0) {
       return report_parse_error<UC>(p, parse_error::no_digits_in_integer_part);
@@ -9439,14 +9812,14 @@ parse_number_string(UC const *p, UC const *pend,
     answer.fraction = span<UC const>(before, size_t(p - before));
     digit_count -= exponent;
   }
-  if (uint64_t(fmt & detail::basic_json_fmt)) {
+  FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
     // at least 1 digit in fractional part
     if (has_decimal_point && exponent == 0) {
       return report_parse_error<UC>(p,
                                     parse_error::no_digits_in_fractional_part);
     }
-  } else if (digit_count ==
-             0) { // we must have encountered at least one integer!
+  }
+  else if (digit_count == 0) { // we must have encountered at least one integer!
     return report_parse_error<UC>(p, parse_error::no_digits_in_mantissa);
   }
   int64_t exp_number = 0; // explicit exponential part
@@ -9522,7 +9895,7 @@ parse_number_string(UC const *p, UC const *pend,
     if (digit_count > 19) {
       answer.too_many_digits = true;
       // Let us start again, this time, avoiding overflows.
-      // We don't need to check if is_integer, since we use the
+      // We don't need to call if is_integer, since we use the
       // pre-tokenized spans from above.
       i = 0;
       p = answer.integer.ptr;
@@ -9532,7 +9905,7 @@ parse_number_string(UC const *p, UC const *pend,
         i = i * 10 + uint64_t(*p - UC('0'));
         ++p;
       }
-      if (i >= minimal_nineteen_digit_integer) { // We have a big integers
+      if (i >= minimal_nineteen_digit_integer) { // We have a big integer
         exponent = end_of_integer_part - p + exp_number;
       } else { // We have a value with a fractional component.
         p = answer.fraction.ptr;
@@ -9589,6 +9962,148 @@ parse_int_string(UC const *p, UC const *pend, T &value,
   bool const has_leading_zeros = p > start_num;
 
   UC const *const start_digits = p;
+
+  FASTFLOAT_IF_CONSTEXPR17((std::is_same<T, std::uint8_t>::value)) {
+    if (base == 10) {
+      const size_t len = (size_t)(pend - p);
+      if (len == 0) {
+        if (has_leading_zeros) {
+          value = 0;
+          answer.ec = std::errc();
+          answer.ptr = p;
+        } else {
+          answer.ec = std::errc::invalid_argument;
+          answer.ptr = first;
+        }
+        return answer;
+      }
+
+      uint32_t digits;
+
+#if FASTFLOAT_HAS_IS_CONSTANT_EVALUATED && FASTFLOAT_HAS_BIT_CAST
+      if (std::is_constant_evaluated()) {
+        uint8_t str[4]{};
+        for (size_t j = 0; j < 4 && j < len; ++j) {
+          str[j] = static_cast<uint8_t>(p[j]);
+        }
+        digits = std::bit_cast<uint32_t>(str);
+#if FASTFLOAT_IS_BIG_ENDIAN
+        digits = byteswap_32(digits);
+#endif
+      }
+#else
+      if (false) {
+      }
+#endif
+      else if (len >= 4) {
+        ::memcpy(&digits, p, 4);
+#if FASTFLOAT_IS_BIG_ENDIAN
+        digits = byteswap_32(digits);
+#endif
+      } else {
+        uint32_t b0 = static_cast<uint8_t>(p[0]);
+        uint32_t b1 = (len > 1) ? static_cast<uint8_t>(p[1]) : 0xFFu;
+        uint32_t b2 = (len > 2) ? static_cast<uint8_t>(p[2]) : 0xFFu;
+        uint32_t b3 = 0xFFu;
+        digits = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+      }
+
+      uint32_t magic =
+          ((digits + 0x46464646u) | (digits - 0x30303030u)) & 0x80808080u;
+      uint32_t tz = (uint32_t)countr_zero_32(magic); // 7, 15, 23, 31, or 32
+      uint32_t nd = (tz == 32) ? 4 : (tz >> 3);
+      nd = (uint32_t)std::min((size_t)nd, len);
+      if (nd == 0) {
+        if (has_leading_zeros) {
+          value = 0;
+          answer.ec = std::errc();
+          answer.ptr = p;
+          return answer;
+        }
+        answer.ec = std::errc::invalid_argument;
+        answer.ptr = first;
+        return answer;
+      }
+      if (nd > 3) {
+        const UC *q = p + nd;
+        size_t rem = len - nd;
+        while (rem) {
+          if (*q < UC('0') || *q > UC('9'))
+            break;
+          ++q;
+          --rem;
+        }
+        answer.ec = std::errc::result_out_of_range;
+        answer.ptr = q;
+        return answer;
+      }
+
+      digits ^= 0x30303030u;
+      digits <<= ((4 - nd) * 8);
+
+      uint32_t check = ((digits >> 24) & 0xff) | ((digits >> 8) & 0xff00) |
+                       ((digits << 8) & 0xff0000);
+      if (check > 0x00020505) {
+        answer.ec = std::errc::result_out_of_range;
+        answer.ptr = p + nd;
+        return answer;
+      }
+      value = (uint8_t)((0x640a01 * digits) >> 24);
+      answer.ec = std::errc();
+      answer.ptr = p + nd;
+      return answer;
+    }
+  }
+
+  FASTFLOAT_IF_CONSTEXPR17((std::is_same<T, std::uint16_t>::value)) {
+    if (base == 10) {
+      const size_t len = size_t(pend - p);
+      if (len == 0) {
+        if (has_leading_zeros) {
+          value = 0;
+          answer.ec = std::errc();
+          answer.ptr = p;
+        } else {
+          answer.ec = std::errc::invalid_argument;
+          answer.ptr = first;
+        }
+        return answer;
+      }
+
+      if (len >= 4) {
+        uint32_t digits = read4_to_u32(p);
+        if (is_made_of_four_digits_fast(digits)) {
+          uint32_t v = parse_four_digits_unrolled(digits);
+          if (len >= 5 && is_integer(p[4])) {
+            v = v * 10 + uint32_t(p[4] - '0');
+            if (len >= 6 && is_integer(p[5])) {
+              answer.ec = std::errc::result_out_of_range;
+              const UC *q = p + 5;
+              while (q != pend && is_integer(*q)) {
+                q++;
+              }
+              answer.ptr = q;
+              return answer;
+            }
+            if (v > 65535) {
+              answer.ec = std::errc::result_out_of_range;
+              answer.ptr = p + 5;
+              return answer;
+            }
+            value = uint16_t(v);
+            answer.ec = std::errc();
+            answer.ptr = p + 5;
+            return answer;
+          }
+          // 4 digits
+          value = uint16_t(v);
+          answer.ec = std::errc();
+          answer.ptr = p + 4;
+          return answer;
+        }
+      }
+    }
+  }
 
   uint64_t i = 0;
   if (base == 10) {
@@ -11274,11 +11789,8 @@ constexpr static uint64_t powers_of_ten_uint64[] = {1UL,
 // this algorithm is not even close to optimized, but it has no practical
 // effect on performance: in order to have a faster algorithm, we'd need
 // to slow down performance for faster algorithms, and this is still fast.
-template <typename UC>
 fastfloat_really_inline FASTFLOAT_CONSTEXPR14 int32_t
-scientific_exponent(parsed_number_string_t<UC> &num) noexcept {
-  uint64_t mantissa = num.mantissa;
-  int32_t exponent = int32_t(num.exponent);
+scientific_exponent(uint64_t mantissa, int32_t exponent) noexcept {
   while (mantissa >= 10000) {
     mantissa /= 10000;
     exponent += 4;
@@ -11634,7 +12146,7 @@ inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa negative_digit_comp(
     FASTFLOAT_ASSERT(real_digits.pow2(uint32_t(-pow2_exp)));
   }
 
-  // compare digits, and use it to director rounding
+  // compare digits, and use it to direct rounding
   int ord = real_digits.compare(theor_digits);
   adjusted_mantissa answer = am;
   round<T>(answer, [ord](adjusted_mantissa &a, int32_t shift) {
@@ -11655,7 +12167,7 @@ inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa negative_digit_comp(
   return answer;
 }
 
-// parse the significant digits as a big integer to unambiguously round the
+// parse the significant digits as a big integer to unambiguously round
 // the significant digits. here, we are trying to determine how to round
 // an extended float representation close to `b+h`, halfway between `b`
 // (the float rounded-down) and `b+u`, the next positive float. this
@@ -11674,7 +12186,8 @@ digit_comp(parsed_number_string_t<UC> &num, adjusted_mantissa am) noexcept {
   // remove the invalid exponent bias
   am.power2 -= invalid_am_bias;
 
-  int32_t sci_exp = scientific_exponent(num);
+  int32_t sci_exp =
+      scientific_exponent(num.mantissa, static_cast<int32_t>(num.exponent));
   size_t max_digits = binary_format<T>::max_digits();
   size_t digits = 0;
   bigint bigmant;
@@ -11729,7 +12242,7 @@ from_chars_result_t<UC>
     ++first;
   }
   if (last - first >= 3) {
-    if (fastfloat_strncasecmp(first, str_const_nan<UC>(), 3)) {
+    if (fastfloat_strncasecmp3(first, str_const_nan<UC>())) {
       answer.ptr = (first += 3);
       value = minusSign ? -std::numeric_limits<T>::quiet_NaN()
                         : std::numeric_limits<T>::quiet_NaN();
@@ -11748,9 +12261,9 @@ from_chars_result_t<UC>
       }
       return answer;
     }
-    if (fastfloat_strncasecmp(first, str_const_inf<UC>(), 3)) {
+    if (fastfloat_strncasecmp3(first, str_const_inf<UC>())) {
       if ((last - first >= 8) &&
-          fastfloat_strncasecmp(first + 3, str_const_inf<UC>() + 3, 5)) {
+          fastfloat_strncasecmp5(first + 3, str_const_inf<UC>() + 3)) {
         answer.ptr = first + 8;
       } else {
         answer.ptr = first + 3;
@@ -11882,32 +12395,17 @@ from_chars(UC const *first, UC const *last, T &value,
                                     parse_options_t<UC>(fmt));
 }
 
-/**
- * This function overload takes parsed_number_string_t structure that is created
- * and populated either by from_chars_advanced function taking chars range and
- * parsing options or other parsing custom function implemented by user.
- */
-template <typename T, typename UC>
-FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
-from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
-
-  static_assert(is_supported_float_type<T>::value,
-                "only some floating-point types are supported");
-  static_assert(is_supported_char_type<UC>::value,
-                "only char, wchar_t, char16_t and char32_t are supported");
-
-  from_chars_result_t<UC> answer;
-
-  answer.ec = std::errc(); // be optimistic
-  answer.ptr = pns.lastmatch;
+template <typename T>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+clinger_fast_path_impl(uint64_t mantissa, int64_t exponent, bool is_negative,
+                       T &value) noexcept {
   // The implementation of the Clinger's fast path is convoluted because
   // we want round-to-nearest in all cases, irrespective of the rounding mode
   // selected on the thread.
   // We proceed optimistically, assuming that detail::rounds_to_nearest()
   // returns true.
-  if (binary_format<T>::min_exponent_fast_path() <= pns.exponent &&
-      pns.exponent <= binary_format<T>::max_exponent_fast_path() &&
-      !pns.too_many_digits) {
+  if (binary_format<T>::min_exponent_fast_path() <= exponent &&
+      exponent <= binary_format<T>::max_exponent_fast_path()) {
     // Unfortunately, the conventional Clinger's fast path is only possible
     // when the system rounds to the nearest float.
     //
@@ -11918,41 +12416,64 @@ from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
     if (!cpp20_and_in_constexpr() && detail::rounds_to_nearest()) {
       // We have that fegetround() == FE_TONEAREST.
       // Next is Clinger's fast path.
-      if (pns.mantissa <= binary_format<T>::max_mantissa_fast_path()) {
-        value = T(pns.mantissa);
-        if (pns.exponent < 0) {
-          value = value / binary_format<T>::exact_power_of_ten(-pns.exponent);
+      if (mantissa <= binary_format<T>::max_mantissa_fast_path()) {
+        value = T(mantissa);
+        if (exponent < 0) {
+          value = value / binary_format<T>::exact_power_of_ten(-exponent);
         } else {
-          value = value * binary_format<T>::exact_power_of_ten(pns.exponent);
+          value = value * binary_format<T>::exact_power_of_ten(exponent);
         }
-        if (pns.negative) {
+        if (is_negative) {
           value = -value;
         }
-        return answer;
+        return true;
       }
     } else {
       // We do not have that fegetround() == FE_TONEAREST.
       // Next is a modified Clinger's fast path, inspired by Jakub Jelínek's
       // proposal
-      if (pns.exponent >= 0 &&
-          pns.mantissa <=
-              binary_format<T>::max_mantissa_fast_path(pns.exponent)) {
+      if (exponent >= 0 &&
+          mantissa <= binary_format<T>::max_mantissa_fast_path(exponent)) {
 #if defined(__clang__) || defined(FASTFLOAT_32BIT)
         // Clang may map 0 to -0.0 when fegetround() == FE_DOWNWARD
-        if (pns.mantissa == 0) {
-          value = pns.negative ? T(-0.) : T(0.);
-          return answer;
+        if (mantissa == 0) {
+          value = is_negative ? T(-0.) : T(0.);
+          return true;
         }
 #endif
-        value = T(pns.mantissa) *
-                binary_format<T>::exact_power_of_ten(pns.exponent);
-        if (pns.negative) {
+        value = T(mantissa) * binary_format<T>::exact_power_of_ten(exponent);
+        if (is_negative) {
           value = -value;
         }
-        return answer;
+        return true;
       }
     }
   }
+  return false;
+}
+
+/**
+ * This function overload takes parsed_number_string_t structure that is created
+ * and populated either by from_chars_advanced function taking chars range and
+ * parsing options or other parsing custom function implemented by user.
+ */
+template <typename T, typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
+  static_assert(is_supported_float_type<T>::value,
+                "only some floating-point types are supported");
+  static_assert(is_supported_char_type<UC>::value,
+                "only char, wchar_t, char16_t and char32_t are supported");
+
+  from_chars_result_t<UC> answer;
+
+  answer.ec = std::errc(); // be optimistic
+  answer.ptr = pns.lastmatch;
+
+  if (!pns.too_many_digits &&
+      clinger_fast_path_impl(pns.mantissa, pns.exponent, pns.negative, value))
+    return answer;
+
   adjusted_mantissa am =
       compute_float<binary_format<T>>(pns.exponent, pns.mantissa);
   if (pns.too_many_digits && am.power2 >= 0) {
@@ -11976,7 +12497,7 @@ from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
 }
 
 template <typename T, typename UC>
-FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
 from_chars_float_advanced(UC const *first, UC const *last, T &value,
                           parse_options_t<UC> options) noexcept {
 
@@ -11999,7 +12520,9 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
     return answer;
   }
   parsed_number_string_t<UC> pns =
-      parse_number_string<UC>(first, last, options);
+      uint64_t(fmt & detail::basic_json_fmt)
+          ? parse_number_string<true, UC>(first, last, options)
+          : parse_number_string<false, UC>(first, last, options);
   if (!pns.valid) {
     if (uint64_t(fmt & chars_format::no_infnan)) {
       answer.ec = std::errc::invalid_argument;
@@ -12026,6 +12549,84 @@ from_chars(UC const *first, UC const *last, T &value, int base) noexcept {
   parse_options_t<UC> options;
   options.base = base;
   return from_chars_advanced(first, last, value, options);
+}
+
+template <typename T>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value, T>::type
+    integer_times_pow10(uint64_t mantissa, int decimal_exponent) noexcept {
+  T value;
+  if (clinger_fast_path_impl(mantissa, decimal_exponent, false, value))
+    return value;
+
+  adjusted_mantissa am =
+      compute_float<binary_format<T>>(decimal_exponent, mantissa);
+  to_float(false, am, value);
+  return value;
+}
+
+template <typename T>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value, T>::type
+    integer_times_pow10(int64_t mantissa, int decimal_exponent) noexcept {
+  const bool is_negative = mantissa < 0;
+  const uint64_t m = static_cast<uint64_t>(is_negative ? -mantissa : mantissa);
+
+  T value;
+  if (clinger_fast_path_impl(m, decimal_exponent, is_negative, value))
+    return value;
+
+  adjusted_mantissa am = compute_float<binary_format<T>>(decimal_exponent, m);
+  to_float(is_negative, am, value);
+  return value;
+}
+
+FASTFLOAT_CONSTEXPR20 inline double
+integer_times_pow10(uint64_t mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10<double>(mantissa, decimal_exponent);
+}
+
+FASTFLOAT_CONSTEXPR20 inline double
+integer_times_pow10(int64_t mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10<double>(mantissa, decimal_exponent);
+}
+
+// the following overloads are here to avoid surprising ambiguity for int,
+// unsigned, etc.
+template <typename T, typename Int>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value &&
+                                std::is_integral<Int>::value &&
+                                !std::is_signed<Int>::value,
+                            T>::type
+    integer_times_pow10(Int mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10<T>(static_cast<uint64_t>(mantissa),
+                                decimal_exponent);
+}
+
+template <typename T, typename Int>
+FASTFLOAT_CONSTEXPR20
+    typename std::enable_if<is_supported_float_type<T>::value &&
+                                std::is_integral<Int>::value &&
+                                std::is_signed<Int>::value,
+                            T>::type
+    integer_times_pow10(Int mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10<T>(static_cast<int64_t>(mantissa),
+                                decimal_exponent);
+}
+
+template <typename Int>
+FASTFLOAT_CONSTEXPR20 typename std::enable_if<
+    std::is_integral<Int>::value && !std::is_signed<Int>::value, double>::type
+integer_times_pow10(Int mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10(static_cast<uint64_t>(mantissa), decimal_exponent);
+}
+
+template <typename Int>
+FASTFLOAT_CONSTEXPR20 typename std::enable_if<
+    std::is_integral<Int>::value && std::is_signed<Int>::value, double>::type
+integer_times_pow10(Int mantissa, int decimal_exponent) noexcept {
+  return integer_times_pow10(static_cast<int64_t>(mantissa), decimal_exponent);
 }
 
 template <typename T, typename UC>
@@ -12062,6 +12663,7 @@ template <size_t TypeIx> struct from_chars_advanced_caller {
 
 template <> struct from_chars_advanced_caller<1> {
   template <typename T, typename UC>
+  fastfloat_really_inline
   FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
   call(UC const *first, UC const *last, T &value,
        parse_options_t<UC> options) noexcept {
@@ -12071,7 +12673,7 @@ template <> struct from_chars_advanced_caller<1> {
 
 template <> struct from_chars_advanced_caller<2> {
   template <typename T, typename UC>
-  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  fastfloat_really_inline FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
   call(UC const *first, UC const *last, T &value,
        parse_options_t<UC> options) noexcept {
     return from_chars_int_advanced(first, last, value, options);
@@ -12079,7 +12681,7 @@ template <> struct from_chars_advanced_caller<2> {
 };
 
 template <typename T, typename UC>
-FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
 from_chars_advanced(UC const *first, UC const *last, T &value,
                     parse_options_t<UC> options) noexcept {
   return from_chars_advanced_caller<
@@ -12198,6 +12800,112 @@ template<class Alloc> bool from_chars(c4::csubstr buf, std::vector<char, Alloc> 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/std/span_fwd.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_STD_SPAN_FWD_HPP_
+#define _C4_STD_SPAN_FWD_HPP_
+
+/** @file span_fwd.hpp */
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
+
+#endif
+
+
+#if (C4_CPP >= 20) || defined(__DOXYGEN__)
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/substr_fwd.hpp
+//#include "c4/substr_fwd.hpp"
+#if !defined(C4_SUBSTR_FWD_HPP_) && !defined(_C4_SUBSTR_FWD_HPP_)
+#error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
+#endif /* C4_SUBSTR_FWD_HPP_ */
+
+#endif
+
+#include <span> // AFAICT it's not possible to fwd-declare std::span
+
+
+namespace c4 {
+
+template<class T> struct is_string;
+template<class T> struct is_writeable_string;
+
+// mark std::span<const char> as a string type
+template<> struct is_string<std::span<const char>>;
+
+// mark std::span<char> as a string type
+template<> struct is_string<std::span<char>>;
+template<> struct is_writeable_string<std::span<char>>;
+
+
+//-----------------------------------------------------------------------------
+
+c4::csubstr to_csubstr(std::span<const char> s) noexcept;
+c4::csubstr to_csubstr(std::span<char> s) noexcept;
+c4::substr to_substr(std::span<char> s) noexcept;
+
+
+//-----------------------------------------------------------------------------
+
+bool operator== (c4::csubstr ss, std::span<char> s);
+bool operator!= (c4::csubstr ss, std::span<char> s);
+bool operator>= (c4::csubstr ss, std::span<char> s);
+bool operator>  (c4::csubstr ss, std::span<char> s);
+bool operator<= (c4::csubstr ss, std::span<char> s);
+bool operator<  (c4::csubstr ss, std::span<char> s);
+
+bool operator== (std::span<char> s, c4::csubstr ss);
+bool operator!= (std::span<char> s, c4::csubstr ss);
+bool operator<= (std::span<char> s, c4::csubstr ss);
+bool operator<  (std::span<char> s, c4::csubstr ss);
+bool operator>= (std::span<char> s, c4::csubstr ss);
+bool operator>  (std::span<char> s, c4::csubstr ss);
+
+
+bool operator== (c4::csubstr ss, std::span<const char> s);
+bool operator!= (c4::csubstr ss, std::span<const char> s);
+bool operator>= (c4::csubstr ss, std::span<const char> s);
+bool operator>  (c4::csubstr ss, std::span<const char> s);
+bool operator<= (c4::csubstr ss, std::span<const char> s);
+bool operator<  (c4::csubstr ss, std::span<const char> s);
+
+bool operator== (std::span<const char> s, c4::csubstr ss);
+bool operator!= (std::span<const char> s, c4::csubstr ss);
+bool operator<= (std::span<const char> s, c4::csubstr ss);
+bool operator<  (std::span<const char> s, c4::csubstr ss);
+bool operator>= (std::span<const char> s, c4::csubstr ss);
+bool operator>  (std::span<const char> s, c4::csubstr ss);
+
+
+//-----------------------------------------------------------------------------
+
+size_t to_chars(c4::substr buf, std::span<const char> s);
+size_t to_chars(c4::substr buf, std::span<char> s);
+bool from_chars(c4::csubstr buf, std::span<char> * s);
+
+} // namespace c4
+
+#endif // SPAN_AVAILABLE
+
+#endif // _C4_STD_SPAN_FWD_HPP_
+
+
+// (end src/c4/std/span_fwd.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/std/string_fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
@@ -12305,6 +13013,13 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #error "amalgamate: file c4/std/string_fwd.hpp must have been included at this point"
 #endif /* C4_STD_STRING_FWD_HPP_ */
 
+// amalgamate: removed include of
+// c4/std/span_fwd.hpp
+//#include "c4/std/span_fwd.hpp"
+#if !defined(C4_STD_SPAN_FWD_HPP_) && !defined(_C4_STD_SPAN_FWD_HPP_)
+#error "amalgamate: file c4/std/span_fwd.hpp must have been included at this point"
+#endif /* C4_STD_SPAN_FWD_HPP_ */
+
 //#include "c4/std/tuple_fwd.hpp"
 
 #endif // _C4_STD_STD_FWD_HPP_
@@ -12379,13 +13094,6 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
 #error "amalgamate: file c4/memory_util.hpp must have been included at this point"
 #endif /* C4_MEMORY_UTIL_HPP_ */
-
-// amalgamate: removed include of
-// c4/szconv.hpp
-//#include "c4/szconv.hpp"
-#if !defined(C4_SZCONV_HPP_) && !defined(_C4_SZCONV_HPP_)
-#error "amalgamate: file c4/szconv.hpp must have been included at this point"
-#endif /* C4_SZCONV_HPP_ */
 
 
 #ifndef C4CORE_NO_FAST_FLOAT
@@ -13248,7 +13956,7 @@ C4_ALWAYS_INLINE bool read_dec(csubstr s, I *C4_RESTRICT v) noexcept
     {
         if(C4_UNLIKELY(c < '0' || c > '9'))
             return false;
-        *v = (*v) * I(10) + (I(c) - I('0'));
+        *v = ((*v) * I(10)) + (I(c) - I('0'));
     }
     return true;
 }
@@ -13283,7 +13991,7 @@ C4_ALWAYS_INLINE bool read_hex(csubstr s, I *C4_RESTRICT v) noexcept
             cv = I(10) + (I(c) - I('A'));
         else
             return false;
-        *v = (*v) * I(16) + cv;
+        *v = ((*v) * I(16)) + cv;
     }
     return true;
 }
@@ -13341,7 +14049,7 @@ C4_ALWAYS_INLINE bool read_oct(csubstr s, I *C4_RESTRICT v) noexcept
     {
         if(C4_UNLIKELY(c < '0' || c > '7'))
             return false;
-        *v = (*v) * I(8) + (I(c) - I('0'));
+        *v = ((*v) * I(8)) + (I(c) - I('0'));
     }
     return true;
 }
@@ -13497,7 +14205,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v) noexcept
     // will overflow, so treat the min as a special case
     if(C4_LIKELY(v != std::numeric_limits<T>::min()))
     {
-        v = -v;
+        v = (T)-v;
         unsigned digits = digits_dec(v);
         if(C4_LIKELY(buf.len >= digits + 1u))
         {
@@ -13532,7 +14240,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix) noexcept
         unsigned pos = 0;
         if(v < 0)
         {
-            v = -v;
+            v = (T)-v;
             if(C4_LIKELY(buf.len > 0))
                 buf.str[pos] = '-';
             ++pos;
@@ -13609,7 +14317,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix, size_t num_digits) noexce
         unsigned pos = 0;
         if(v < 0)
         {
-            v = -v;
+            v = (T)-v;
             if(C4_LIKELY(buf.len > 0))
                 buf.str[pos] = '-';
             ++pos;
@@ -14355,11 +15063,11 @@ C4_ALWAYS_INLINE bool scan_rhex(csubstr s, T *C4_RESTRICT val) noexcept
     {
         const char c = s.str[pos];
         if(c >= '0' && c <= '9')
-            *val = *val * T(16) + T(c - '0');
+            *val = (*val * T(16)) + T(c - '0');
         else if(c >= 'a' && c <= 'f')
-            *val = *val * T(16) + T(c - 'a');
+            *val = (*val * T(16)) + T(c - 'a');
         else if(c >= 'A' && c <= 'F')
-            *val = *val * T(16) + T(c - 'A');
+            *val = (*val * T(16)) + T(c - 'A');
         else if(c == '.')
         {
             ++pos;
@@ -14560,7 +15268,11 @@ C4_ALWAYS_INLINE bool atod(csubstr str, double * C4_RESTRICT v) noexcept
     if(!(rem.len >= 2 && (rem.str[0] == '0' && (rem.str[1] == 'x' || rem.str[1] == 'X'))))
     {
         fast_float::from_chars_result result;
+        #ifndef CLANG_TIDY   // suppress a false-positive error (cannot be done with NOLINT: https://stackoverflow.com/questions/62838193/ )
         result = fast_float::from_chars(str.str, str.str + str.len, *v);
+        #else
+        result = {};
+        #endif
         return result.ec == std::errc();
     }
     else if(detail::scan_rhex(rem.sub(2), v))
@@ -15077,6 +15789,13 @@ inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 #error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
 #endif /* C4_SUBSTR_FWD_HPP_ */
 
+// amalgamate: removed include of
+// c4/export.hpp
+//#include "c4/export.hpp"
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
 //included above:
 //#include <stddef.h>
 //included above:
@@ -15119,7 +15838,7 @@ C4CORE_EXPORT size_t first_non_bom(csubstr s);
  * asserted), and must not have a null string.
  *
  * @param code_point: must have length in ]0,8], and must not begin
- * with any of `U+`,`\\x`,`\\u,`\\U`,`0` (asserted)
+ * with any of @verbatim `U+`,`\x`,`\u`,`\U`,`0` @endverbatim (asserted)
  *
  * @return the part of @p out that was written, which will always be
  * at most 4 bytes.
@@ -15135,7 +15854,7 @@ C4CORE_EXPORT substr decode_code_point(substr out, csubstr code_point);
  * @param buflen the length of the output string. must be at least 4
  *
  * @param code: the code point must have length in ]0,8], and must not begin
- * with any of `U+`,`\\x`,`\\u,`\\U`,`0` (asserted)
+ * with any of @verbatim `U+`,`\x`,`\u`,`\U`,`0` @endverbatim (asserted)
  *
  * @return the number of written characters, which will always be
  * at most 4 bytes.
@@ -16251,6 +16970,9 @@ retry:
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
 #endif /* C4_SUBSTR_HPP_ */
 
+//included above:
+//#include <utility> // for std::forward
+
 
 /** @file dump.hpp This file provides functions to dump several
  * arguments as strings to a user-provided function sink, for example
@@ -16259,7 +16981,7 @@ retry:
  * passed either by dynamic dispatching or by static dispatching (as a
  * template argument). There are analogs to @ref c4::cat() (@ref
  * c4::cat_dump() and @ref c4::cat_dump_resume()), @ref c4::catsep()
- * (@ref catsetp_dump() and @ref catsep_dump_resume()) and @ref
+ * (@ref c4::catsep_dump() and @ref c4::catsep_dump_resume()) and @ref
  * c4::format() (@ref c4::format_dump() and @ref
  * c4::format_dump_resume()). The analogs have two types: immediate
  * and resuming. An analog of immediate type cannot be retried when
@@ -16267,7 +16989,7 @@ retry:
  * the first (successful) arguments will be dumped again in the
  * subsequent attempt to call. An analog of resuming type will only
  * ever dump as-yet-undumped arguments, through the use of @ref
- * DumpResults return type. */
+ * c4::DumpResults return type. */
 
 namespace c4 {
 
@@ -16301,99 +17023,152 @@ C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 using SinkPfn = void (*)(csubstr str);
 
 
-/** a traits class to use in SFINAE with @ref c4::dump() to select if
- * a type is treated as string type (which is dumped directly to the
- * sink, using to_csubstr()), or if the type is treated as a value,
- * which is first serialized to a buffer using to_chars(), and then
- * the serialization serialized as */
-template<class T> struct dump_directly : public std::false_type {};
-template<> struct dump_directly<csubstr> : public std::true_type {};
-template<> struct dump_directly< substr> : public std::true_type {};
-template<> struct dump_directly<const char*> : public std::true_type {};
-template<> struct dump_directly<      char*> : public std::true_type {};
-template<size_t N> struct dump_directly<const char (&)[N]> : public std::true_type {};
-template<size_t N> struct dump_directly<      char (&)[N]> : public std::true_type {};
-template<size_t N> struct dump_directly<const char[N]> : public std::true_type {};
-template<size_t N> struct dump_directly<      char[N]> : public std::true_type {};
+template<class T> struct is_string; // fwd-decl
+
+/** a traits class used by @ref c4::dump() to decide whether a type is
+ * treated as a string type (which is dumped directly to the sink via
+ * to_csubstr()), or if the type is treated as a value, which is first
+ * serialized to the dump buffer using to_chars() prior to dumping it
+ * to the sink. This type defaults to @ref c4::is_string, but can be
+ * overriden independently. */
+template<class T> struct dump_directly : public is_string<T> {};
 
 
-/** Dump a string-type object to the (statically dispatched) sink. The
- * string is dumped directly, without any intermediate serialization.
+#if (C4_CPP >= 17) || defined(__DOXYGEN__)
+/** Dump a serializable object to the (statically dispatched)
+ * sink. Before dumping, the object may be serialized to a string if
+ * @ref c4::dump_directly<Arg> is a false type (the default if
+ * dump_directly does not have a specialization). Otherwise the object
+ * is considered a string object and is therefore dumped directly,
+ * without any intermediate serialization.
  *
  * @return the number of bytes needed to serialize the string-type
- * object, which is always 0 because there is no serialization
+ * object, which may be 0 when there is no serialization
  *
  * @note the argument is considered a value when @ref
- * dump_directly<Arg> is a false type, which is the default. To enable
+ * c4::dump_directly<Arg> is a false type, which is the default. To enable
  * the argument to be treated as a string type, which is dumped
  * directly to the sink without intermediate serialization, define
- * dump_directly<T> to a true type.
+ * @ref c4::dump_directly<T> to a true type.
  *
  * @warning the string passed to the sink may have zero length. If the
  * user sink uses memcpy(), the call to memcpy() should be defended
  * with a check for zero length (calling memcpy with zero length is
  * undefined behavior).
  *
- * @see dump_directly<T>
+ * @see @ref c4::dump_directly<T>
  */
+template<SinkPfn sinkfn, class Arg>
+size_t dump(substr buf, Arg const& a)
+{
+    if constexpr (dump_directly<Arg>::value)
+    {
+        C4_UNUSED(buf);
+        csubstr sa = to_csubstr(a);
+        C4_ASSERT(!buf.overlaps(sa));
+        // dump directly, no need to serialize to the buffer
+        sinkfn(sa);
+        return 0; // no space was used in the buffer
+    }
+    else
+    {
+        // serialize to the buffer
+        const size_t sz = to_chars(buf, a);
+        // dump the buffer to the sink
+        if(C4_LIKELY(sz <= buf.len))
+        {
+            // NOTE: don't do this:
+            //sinkfn(buf.first(sz));
+            // ... but do this instead:
+            sinkfn({buf.str, sz});
+            // ... this is needed because Release builds for armv5 and
+            // armv6 were failing for the first call, with the wrong
+            // buffer being passed into the function (!)
+        }
+        return sz;
+    }
+}
+
+/** Dump a serializable object to the (dynamically dispatched)
+ * sink. Before dumping, the object may be serialized to a string if
+ * @ref c4::dump_directly<Arg> is a false type (the default if
+ * dump_directly does not have a specialization). Otherwise the object
+ * is considered a string object is dumped directly, without any
+ * intermediate serialization.
+ *
+ * @return the number of bytes needed to serialize the string-type
+ * object, which may be 0 when there is no serialization
+ *
+ * @note the argument is considered a value when @ref
+ * c4::dump_directly<Arg> is a false type, which is the default. To enable
+ * the argument to be treated as a string type, which is dumped
+ * directly to the sink without intermediate serialization, define
+ * @ref c4::dump_directly<T> to a true type.
+ *
+ * @warning the string passed to the sink may have zero length. If the
+ * user sink uses memcpy(), the call to memcpy() should be defended
+ * with a check for zero length (calling memcpy with zero length is
+ * undefined behavior).
+ *
+ * @see @ref c4::dump_directly<T>
+ */
+template<class SinkFn, class Arg>
+size_t dump(SinkFn &&sinkfn, substr buf, Arg const& a)
+{
+    if constexpr (dump_directly<Arg>::value)
+    {
+        C4_UNUSED(buf);
+        csubstr sa = to_csubstr(a);
+        C4_ASSERT(!buf.overlaps(sa));
+        // dump directly, no need to serialize to the buffer
+        std::forward<SinkFn>(sinkfn)(sa);
+        return 0; // no space was used in the buffer
+    }
+    else
+    {
+        // serialize to the buffer
+        const size_t sz = to_chars(buf, a);
+        // dump the buffer to the sink
+        if(C4_LIKELY(sz <= buf.len))
+        {
+            // NOTE: don't do this:
+            //std::forward<SinkFn>(sinkfn)(buf.first(sz));
+            // ... but do this instead:
+            std::forward<SinkFn>(sinkfn)({buf.str, sz});
+            // ... this is needed because Release builds for armv5 and
+            // armv6 were failing for the first call, with the wrong
+            // buffer being passed into the function (!)
+        }
+        return sz;
+    }
+}
+
+#else // C4_CPP < 17
+
 template<SinkPfn sinkfn, class Arg>
 inline auto dump(substr buf, Arg const& a)
     -> typename std::enable_if<dump_directly<Arg>::value, size_t>::type
 {
-    C4_ASSERT(!buf.overlaps(a));
     C4_UNUSED(buf);
+    csubstr sa = to_csubstr(a);
+    C4_ASSERT(!buf.overlaps(sa));
     // dump directly, no need to serialize to the buffer
-    sinkfn(to_csubstr(a));
+    sinkfn(sa);
     return 0; // no space was used in the buffer
 }
-/** Dump a string-type object to the (dynamically dispatched)
- * sink. The string is dumped directly, without any intermediate
- * serialization to the buffer.
- *
- * @return the number of bytes needed to serialize the string-type
- * object, which is always 0 because there is no serialization
- *
- * @note the argument is considered a value when @ref
- * dump_directly<Arg> is a false type, which is the default. To enable
- * the argument to be treated as a string type, which is dumped
- * directly to the sink without intermediate serialization, define
- * dump_directly<T> to a true type.
- *
- * @warning the string passed to the sink may have zero length. If the
- * user sink uses memcpy(), the call to memcpy() should be defended
- * with a check for zero length (calling memcpy with zero length is
- * undefined behavior).
- *
- * @see dump_directly<T>
- * */
 template<class SinkFn, class Arg>
 inline auto dump(SinkFn &&sinkfn, substr buf, Arg const& a)
     -> typename std::enable_if<dump_directly<Arg>::value, size_t>::type
 {
     C4_UNUSED(buf);
-    C4_ASSERT(!buf.overlaps(a));
+    csubstr sa = to_csubstr(a);
+    C4_ASSERT(!buf.overlaps(sa));
     // dump directly, no need to serialize to the buffer
-    std::forward<SinkFn>(sinkfn)(to_csubstr(a));
+    std::forward<SinkFn>(sinkfn)(sa);
     return 0; // no space was used in the buffer
 }
 
 
-/** Dump a value to the sink. Given an argument @p a and a buffer @p
- * buf, serialize the argument to the buffer using @ref to_chars(),
- * and then dump the buffer to the (statically dispatched) sink
- * function passed as the template argument. If the buffer is too
- * small to serialize the argument, the sink function is not called.
- *
- * @note the argument is considered a value when @ref
- * dump_directly<Arg> is a false type, which is the default. To enable
- * the argument to be treated as a string type, which is dumped
- * directly to the sink without intermediate serialization, define
- * dump_directly<T> to a true type.
- *
- * @see dump_directly<T>
- *
- * @return the number of characters required to serialize the
- * argument. */
 template<SinkPfn sinkfn, class Arg>
 inline auto dump(substr buf, Arg const& a)
     -> typename std::enable_if<!dump_directly<Arg>::value, size_t>::type
@@ -16413,22 +17188,6 @@ inline auto dump(substr buf, Arg const& a)
     }
     return sz;
 }
-/** Dump a value to the sink. Given an argument @p a and a buffer @p
- * buf, serialize the argument to the buffer using @ref
- * c4::to_chars(), and then dump the buffer to the (dynamically
- * dispatched) sink function, passed as @p sinkfn. If the buffer is too
- * small to serialize the argument, the sink function is not called.
- *
- * @note the argument is considered a value when @ref
- * dump_directly<Arg> is a false type, which is the default. To enable
- * the argument to be treated as a string type, which is dumped
- * directly to the sink without intermediate serialization, define
- * dump_directly<T> to a true type.
- *
- * @see @ref dump_directly<T>
- *
- * @return the number of characters required to serialize the
- * argument. */
 template<class SinkFn, class Arg>
 inline auto dump(SinkFn &&sinkfn, substr buf, Arg const& a)
     -> typename std::enable_if<!dump_directly<Arg>::value, size_t>::type
@@ -16448,11 +17207,12 @@ inline auto dump(SinkFn &&sinkfn, substr buf, Arg const& a)
     }
     return sz;
 }
+#endif // C4_CPP < 17
 
 
 /** An opaque type used by resumeable dump functions like @ref
- * cat_dump_resume(), @ref catsep_dump_resume() or @ref
- * format_dump_resume(). */
+ * c4::cat_dump_resume(), @ref c4::catsep_dump_resume() or @ref
+ * c4::format_dump_resume(). */
 struct DumpResults
 {
     enum : size_t { noarg = (size_t)-1 };
@@ -17067,10 +17827,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
+
 //included above:
-//#include <cstddef>
+//#include <stddef.h>
 //included above:
 //#include <string.h>
+//included above:
+//#include <type_traits>
 
 /** @file enum.hpp utilities for enums: convert to/from string
  */
@@ -17089,7 +17852,7 @@ using is_scoped_enum = std::integral_constant<bool, std::is_enum<Enum>::value &&
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-typedef enum {
+typedef enum { // NOLINT(cert-int09-c,readability-enum-initial-value)
     EOFFS_NONE = 0,  ///< no offset
     EOFFS_CLS = 1,   ///< get the enum offset for the class name. @see eoffs_cls()
     EOFFS_PFX = 2,   ///< get the enum offset for the enum prefix. @see eoffs_pfx()
@@ -17736,6 +18499,13 @@ typename std::underlying_type<Enum>::type str2bm(const char *str)
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
+// c4/types.hpp
+//#include "c4/types.hpp"
+#if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
+#error "amalgamate: file c4/types.hpp must have been included at this point"
+#endif /* C4_TYPES_HPP_ */
+
+// amalgamate: removed include of
 // c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
@@ -17786,7 +18556,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
  * @see cspanrsl
  */
 template<class T, class I, class SpanImpl>
-class span_crtp
+class span_crtp // NOLINT(*crtp-constructor-accessibility)
 {
 // some utility defines, undefined at the end of this class
 #define _c4this  ((SpanImpl      *)this)
@@ -18318,8 +19088,7 @@ template<class T>
 C4_CONSTEXPR14 C4_ALWAYS_INLINE
 _c4t _c4tn()
 {
-    auto p = _c4t(C4_PRETTY_FUNC);
-    return p;
+    return _c4t(C4_PRETTY_FUNC);
 }
 /// @endcond
 
@@ -18344,17 +19113,17 @@ C4_CONSTEXPR14 cspan<char> type_name()
 
 #if defined(_MSC_VER)
 #   if defined(__clang__) // Visual Studio has the clang toolset
-#   if (_MSC_VER >= 1930) // do not use this: defined(C4_MSVC_2022)
+#       if (_MSC_VER >= 1930) // do not use this: defined(C4_MSVC_2022)
     // ..............................xxx.
     // _c4t __cdecl _c4tn(void) [T = int]
     enum : size_t { tstart = 30, tend = 1};
-#   else
+#       else
     // example:
     // ..........................xxx.
     // _c4t __cdecl _c4tn() [T = int]
     enum : size_t { tstart = 26, tend = 1};
-#   endif
-#   elif defined(C4_MSVC_2015) || defined(C4_MSVC_2017) || defined(C4_MSVC_2019) || defined(C4_MSVC_2022)
+#       endif
+#   elif (_MSC_VER >= 1900)
     // Note: subtract 7 at the end because the function terminates with ">(void)" in VS2015+
     cspan<char>::size_type tstart = 26, tend = 7;
 
@@ -18374,7 +19143,7 @@ C4_CONSTEXPR14 cspan<char> type_name()
     }
 
 #   else
-    C4_NOT_IMPLEMENTED();
+    #error unknown visual studio
 #   endif
 
 #elif defined(__ICC)
@@ -18442,11 +19211,11 @@ C4_CONSTEXPR14 C4_ALWAYS_INLINE cspan<char> type_name(T const&)
  * */
 
 // amalgamate: removed include of
-// c4/charconv.hpp
-//#include "c4/charconv.hpp"
-#if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
-#error "amalgamate: file c4/charconv.hpp must have been included at this point"
-#endif /* C4_CHARCONV_HPP_ */
+// c4/substr.hpp
+//#include "c4/substr.hpp"
+#if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
+#error "amalgamate: file c4/substr.hpp must have been included at this point"
+#endif /* C4_SUBSTR_HPP_ */
 
 // amalgamate: removed include of
 // c4/blob.hpp
@@ -18594,6 +19363,152 @@ inline size_t from_chars(csubstr buf, fmt::base64_wrapper *b)
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/std/span.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_STD_SPAN_HPP_
+#define _C4_STD_SPAN_HPP_
+
+/** @file span.hpp */
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
+
+#endif
+
+
+#if (C4_CPP >= 20) || defined(__DOXYGEN__)
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/substr.hpp
+//#include "c4/substr.hpp"
+#if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
+#error "amalgamate: file c4/substr.hpp must have been included at this point"
+#endif /* C4_SUBSTR_HPP_ */
+
+#endif
+
+//included above:
+//#include <span>
+
+
+namespace c4 {
+
+template<class T> struct is_string;
+template<class T> struct is_writeable_string;
+
+// mark std::span<const char> as a string type
+template<> struct is_string<std::span<const char>> : public std::true_type {};
+
+// mark std::span<char> as a string type
+template<> struct is_string<std::span<char>> : public std::true_type {};
+template<> struct is_writeable_string<std::span<char>> : public std::true_type {};
+
+
+//-----------------------------------------------------------------------------
+
+/** create a csubstr from an existing std::span<const char> */
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::span<const char> s) noexcept
+{
+    return c4::csubstr(s.data(), s.size());
+}
+
+/** create a csubstr from an existing std::span<char> */
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::span<char> s) noexcept
+{
+    return c4::csubstr(s.data(), s.size());
+}
+/** create a substr from an existing std::span<char> */
+C4_ALWAYS_INLINE c4::substr to_substr(std::span<char> s) noexcept
+{
+    return c4::substr(s.data(), s.size());
+}
+
+
+//-----------------------------------------------------------------------------
+
+C4_ALWAYS_INLINE bool operator== (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator>= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator>  (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator<= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator<  (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) <  0; }
+
+C4_ALWAYS_INLINE bool operator== (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator<= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator<  (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator>= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator>  (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <  0; }
+
+
+C4_ALWAYS_INLINE bool operator== (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator>= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator>  (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator<= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator<  (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) <  0; }
+
+C4_ALWAYS_INLINE bool operator== (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator<= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator<  (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator>= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator>  (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <  0; }
+
+
+//-----------------------------------------------------------------------------
+
+/** copy a std::span<const char> to a writeable substr */
+C4_ALWAYS_INLINE size_t to_chars(c4::substr buf, std::span<const char> s)
+{
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
+}
+
+/** copy a std::span<char> to a writeable substr */
+inline size_t to_chars(c4::substr buf, std::span<char> s)
+{
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
+}
+
+/** copy a csubstr to an existing std::span<char> */
+inline bool from_chars(c4::csubstr buf, std::span<char> * s)
+{
+    if(buf.len <= s->size())
+    {
+        substr(s->data(), buf.len).copy_from(buf);
+        *s = s->first(buf.len);
+        return true;
+    }
+    return false;
+}
+
+} // namespace c4
+
+#endif // SPAN_AVAILABLE
+
+#endif // _C4_STD_SPAN_HPP_
+
+
+// (end src/c4/std/span.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/std/string.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
@@ -18617,6 +19532,15 @@ inline size_t from_chars(csubstr buf, fmt::base64_wrapper *b)
 //#include <string>
 
 namespace c4 {
+
+// mark std::string as a string type
+template<class T> struct is_string;
+template<> struct is_string<std::string> : public std::true_type {};
+
+// mark std::string as a writeable string type
+template<class T> struct is_writeable_string;
+template<> struct is_writeable_string<std::string> : public std::true_type {};
+
 
 //-----------------------------------------------------------------------------
 
@@ -18666,36 +19590,20 @@ C4_ALWAYS_INLINE bool operator<  (std::string const& s, c4::csubstr ss) { return
 
 //-----------------------------------------------------------------------------
 
-/** copy an std::string to a writeable string view */
+/** copy a std::string to a writeable substr */
 inline size_t to_chars(c4::substr buf, std::string const& s)
 {
-    C4_ASSERT(!buf.overlaps(to_csubstr(s)));
-    size_t len = buf.len < s.size() ? buf.len : s.size();
-    // calling memcpy with null strings is undefined behavior
-    // and will wreak havoc in calling code's branches.
-    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
-    if(len)
-    {
-        C4_ASSERT(s.data() != nullptr);
-        C4_ASSERT(buf.str != nullptr);
-        memcpy(buf.str, s.data(), len);
-    }
-    return s.size(); // return the number of needed chars
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
 }
 
-/** copy a string view to an existing std::string */
+/** copy a csubstr to an existing std::string */
 inline bool from_chars(c4::csubstr buf, std::string * s)
 {
     s->resize(buf.len);
-    C4_ASSERT(!buf.overlaps(to_csubstr(*s)));
-    // calling memcpy with null strings is undefined behavior
-    // and will wreak havoc in calling code's branches.
-    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
-    if(buf.len)
-    {
-        C4_ASSERT(buf.str != nullptr);
-        memcpy(&(*s)[0], buf.str, buf.len); // NOLINT(readability-container-data-pointer)
-    }
+    substr(&(*s)[0], buf.len).copy_from(buf); // NOLINT
     return true;
 }
 
@@ -18746,6 +19654,11 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
 
 namespace c4 {
 
+// mark std::string_view as a string type
+template<class T> struct is_string;
+template<> struct is_string<std::string_view> : public std::true_type {};
+
+
 //-----------------------------------------------------------------------------
 
 /** create a csubstr from an existing std::string_view. */
@@ -18777,24 +19690,15 @@ C4_ALWAYS_INLINE bool operator>  (std::string_view s, c4::csubstr ss) { return s
 /** copy an std::string_view to a writeable substr */
 inline size_t to_chars(c4::substr buf, std::string_view s)
 {
-    C4_ASSERT(!buf.overlaps(to_csubstr(s)));
     size_t sz = s.size();
     size_t len = buf.len < sz ? buf.len : sz;
-    // calling memcpy with null strings is undefined behavior
-    // and will wreak havoc in calling code's branches.
-    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
-    if(len)
-    {
-        C4_ASSERT(s.data() != nullptr);
-        C4_ASSERT(buf.str != nullptr);
-        memcpy(buf.str, s.data(), len);
-    }
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
     return sz; // return the number of needed chars
 }
 
 } // namespace c4
 
-#endif // C4_STRING_VIEW_AVAILABLE
+#endif // STRING_VIEW_AVAILABLE
 
 #endif // _C4_STD_STRING_VIEW_HPP_
 
@@ -18827,9 +19731,24 @@ inline size_t to_chars(c4::substr buf, std::string_view s)
 
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
+#endif
 #include <vector>
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+C4_SUPPRESS_WARNING_GCC_POP
+#endif
 
 namespace c4 {
+
+// mark std::string as a string type
+template<class T> struct is_string;
+template<class Alloc> struct is_string<std::vector<char,Alloc>> : public std::true_type {};
+
+// mark std::string as a writeable string type
+template<class T> struct is_writeable_string;
+template<class Alloc> struct is_writeable_string<std::vector<char,Alloc>> : public std::true_type {};
+
 
 //-----------------------------------------------------------------------------
 
@@ -18849,6 +19768,7 @@ c4::csubstr to_csubstr(std::vector<char, Alloc> const& vec)
     return c4::csubstr(data, vec.size());
 }
 
+
 //-----------------------------------------------------------------------------
 // comparisons between substrings and std::vector<char>
 
@@ -18866,37 +19786,25 @@ template<class Alloc> C4_ALWAYS_INLINE bool operator>  (std::vector<char, Alloc>
 template<class Alloc> C4_ALWAYS_INLINE bool operator<= (std::vector<char, Alloc> const& s, c4::csubstr ss) { return ss >= to_csubstr(s); }
 template<class Alloc> C4_ALWAYS_INLINE bool operator<  (std::vector<char, Alloc> const& s, c4::csubstr ss) { return ss >  to_csubstr(s); }
 
+
 //-----------------------------------------------------------------------------
 
-/** copy a std::vector<char> to a writeable string view */
+/** copy a std::vector<char> to a substr */
 template<class Alloc>
 inline size_t to_chars(c4::substr buf, std::vector<char, Alloc> const& s)
 {
-    C4_ASSERT(!buf.overlaps(to_csubstr(s)));
-    size_t len = buf.len < s.size() ? buf.len : s.size();
-    // calling memcpy with null strings is undefined behavior
-    // and will wreak havoc in calling code's branches.
-    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
-    if(len > 0)
-    {
-        memcpy(buf.str, s.data(), len);
-    }
-    return s.size(); // return the number of needed chars
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
 }
 
-/** copy a string view to an existing std::vector<char> */
+/** copy a csubstr to an existing std::vector<char> */
 template<class Alloc>
 inline bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s)
 {
     s->resize(buf.len);
-    C4_ASSERT(!buf.overlaps(to_csubstr(*s)));
-    // calling memcpy with null strings is undefined behavior
-    // and will wreak havoc in calling code's branches.
-    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
-    if(buf.len > 0)
-    {
-        memcpy(&(*s)[0], buf.str, buf.len); // NOLINT(readability-container-data-pointer)
-    }
+    substr(s->data(), buf.len).copy_from(buf);
     return true;
 }
 
@@ -19770,7 +20678,8 @@ void use_char_pointer(char const volatile* v)
     C4_UNUSED(v);
 }
 #else
-void foo() {} // to avoid empty file warning from the linker
+// to avoid empty file warning from the linker
+C4_MAYBE_UNUSED void foo() {} // NOLINT(misc-use-internal-linkage)
 #endif
 
 } // namespace detail
@@ -19897,19 +20806,21 @@ namespace c4 {
 /** Fills 'dest' with the first 'pattern_size' bytes at 'pattern', 'num_times'. */
 void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num_times)
 {
+    C4_ASSERT( ! mem_overlaps(dest, pattern, num_times*pattern_size, pattern_size));
     if(C4_UNLIKELY(num_times == 0))
         return;
-    C4_ASSERT( ! mem_overlaps(dest, pattern, num_times*pattern_size, pattern_size));
-    char *begin = static_cast<char*>(dest);
-    char *end   = begin + num_times * pattern_size;
+    char *C4_RESTRICT begin = static_cast<char*>(dest);
+    char *C4_RESTRICT end   = begin + (num_times * pattern_size);
     // copy the pattern once
     ::memcpy(begin, pattern, pattern_size);
     // now copy from dest to itself, doubling up every time
     size_t n = pattern_size;
-    while(begin + 2*n < end)
+    size_t n2 = n * 2;
+    while(begin + n2 < end)
     {
         ::memcpy(begin + n, begin, n);
-        n <<= 1u; // double n
+        n = n2;
+        n2 *= 2u;
     }
     // copy the missing part
     if(begin + n < end)
@@ -20009,7 +20920,7 @@ arealloc_pfn s_arealloc = nullptr;
 #else
 
 
-void afree_impl(void *ptr)
+void afree_impl(void *ptr) // NOLINT(misc-use-internal-linkage)
 {
 #if defined(C4_WIN) || defined(C4_XBOX)
     ::_aligned_free(ptr);
@@ -20019,7 +20930,7 @@ void afree_impl(void *ptr)
 }
 
 
-void* aalloc_impl(size_t size, size_t alignment)
+void* aalloc_impl(size_t size, size_t alignment) // NOLINT(misc-use-internal-linkage)
 {
     // alignment must be nonzero and a power of 2
     C4_CHECK(alignment > 0 && (alignment & (alignment - 1u)) == 0);
@@ -20060,7 +20971,7 @@ void* aalloc_impl(size_t size, size_t alignment)
 }
 
 
-void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment)
+void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment) // NOLINT(misc-use-internal-linkage)
 {
     /** @todo make this more efficient
      * @see https://stackoverflow.com/questions/9078259/does-realloc-keep-the-memory-alignment-of-posix-memalign
@@ -20080,9 +20991,9 @@ void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment)
     return tmp;
 }
 
-aalloc_pfn s_aalloc = aalloc_impl;
-afree_pfn s_afree = afree_impl;
-arealloc_pfn s_arealloc = arealloc_impl;
+aalloc_pfn s_aalloc = aalloc_impl;       // NOLINT(misc-use-internal-linkage)
+afree_pfn s_afree = afree_impl;          // NOLINT(misc-use-internal-linkage)
+arealloc_pfn s_arealloc = arealloc_impl; // NOLINT(misc-use-internal-linkage)
 
 #endif // C4_NO_ALLOC_DEFAULTS
 
@@ -20561,7 +21472,7 @@ constexpr static const char base64_char_to_sextet_[128] = {
 };
 
 #ifndef NDEBUG
-void base64_test_tables()
+void base64_test_tables() // NOLINT(*use-internal-linkage*)
 {
     for(size_t i = 0; i < C4_COUNTOF(detail::base64_sextet_to_char_); ++i)
     {
@@ -20731,7 +21642,7 @@ size_t base64_decode(csubstr encoded, blob data)
 /** @file windows_push.hpp sets up macros to include windows header files
  * without pulling in all of <windows.h>
  *
- * @see #include windows_pop.hpp to undefine these macros
+ * @see windows_pop.hpp to undefine these macros
  *
  * @see https://aras-p.info/blog/2018/01/12/Minimizing-windows.h/ */
 
@@ -20934,6 +21845,13 @@ size_t base64_decode(csubstr encoded, blob data)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
+
 
 //included above:
 //#include <stdlib.h>
@@ -21043,6 +21961,7 @@ void handle_error(srcloc where, const char *fmt, ...)
 #elif defined(C4_ERROR_SHOWS_FILELINE)
         C4_LOGF_ERR("%s:%d: ERROR: %s\n", where.file, where.line, buf);
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
+        (void)where;
         C4_LOGF_ERR("ERROR: %s\n", buf);
 #endif
     }
@@ -21091,6 +22010,7 @@ void handle_warning(srcloc where, const char *fmt, ...)
 #elif defined(C4_ERROR_SHOWS_FILELINE)
     C4_LOGF_WARN("%s:%d: WARNING: %s\n", where.file, where.line, buf);
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
+    (void)where;
     C4_LOGF_WARN("WARNING: %s\n", buf);
 #endif
 }
@@ -21269,10 +22189,10 @@ using Parser = ParseEngine<EventHandlerTree>;
 
 /** @file version.hpp */
 
-#define RYML_VERSION "0.10.0"
+#define RYML_VERSION "0.11.1"
 #define RYML_VERSION_MAJOR 0
-#define RYML_VERSION_MINOR 10
-#define RYML_VERSION_PATCH 0
+#define RYML_VERSION_MINOR 11
+#define RYML_VERSION_PATCH 1
 
 // amalgamate: removed include of
 // c4/substr.hpp
@@ -21335,13 +22255,6 @@ RYML_EXPORT int version_patch();
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// c4/dump.hpp
-//#include <c4/dump.hpp>
-#if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
-#error "amalgamate: file c4/dump.hpp must have been included at this point"
-#endif /* C4_DUMP_HPP_ */
-
-// amalgamate: removed include of
 // c4/yml/export.hpp
 //#include <c4/yml/export.hpp>
 #if !defined(C4_YML_EXPORT_HPP_) && !defined(_C4_YML_EXPORT_HPP_)
@@ -21349,21 +22262,32 @@ RYML_EXPORT int version_patch();
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#if defined(C4_MSVC) || defined(C4_MINGW)
-//included above:
-//#include <malloc.h>
-#else
-#include <alloca.h>
+
+//-----------------------------------------------------------------------------
+
+#ifndef RYML_DEFAULT_TREE_CAPACITY
+/// default capacity for the tree when not set explicitly
+#define RYML_DEFAULT_TREE_CAPACITY (16)
+#endif
+
+#ifndef RYML_DEFAULT_TREE_ARENA_CAPACITY
+/// default capacity for the tree's arena when not set explicitly
+#define RYML_DEFAULT_TREE_ARENA_CAPACITY (0)
 #endif
 
 
+#ifndef RYML_LOCATIONS_SMALL_THRESHOLD
+/// threshold at which a location search will revert from linear to
+/// binary search.
+#define RYML_LOCATIONS_SMALL_THRESHOLD (30)
+#endif
 
-//-----------------------------------------------------------------------------
 
 #ifndef RYML_ERRMSG_SIZE
 /// size for the error message buffer
 #define RYML_ERRMSG_SIZE (1024)
 #endif
+
 
 #ifndef RYML_LOGBUF_SIZE
 /// size for the buffer used to format individual values to string
@@ -21374,6 +22298,18 @@ RYML_EXPORT int version_patch();
 #define RYML_LOGBUF_SIZE (256)
 #endif
 
+
+#ifndef RYML_LOGBUF_SIZE
+/// size for the buffer used to format individual values to string
+/// while preparing an error message. This is only used for formatting
+/// individual values in the message; final messages will be larger
+/// than this value (see @ref RYML_ERRMSG_SIZE). This size is also
+/// used for the detailed debug log messages when RYML_DBG is defined.
+#define RYML_LOGBUF_SIZE (256)
+#endif
+static_assert(RYML_LOGBUF_SIZE < RYML_ERRMSG_SIZE, "invalid size");
+
+
 #ifndef RYML_LOGBUF_SIZE_MAX
 /// size for the fallback larger log buffer. When @ref
 /// RYML_LOGBUF_SIZE is not large enough to convert a value to string,
@@ -21382,12 +22318,6 @@ RYML_EXPORT int version_patch();
 /// overflow. If the printed value requires more than
 /// RYML_LOGBUF_SIZE_MAX, the value is silently skipped.
 #define RYML_LOGBUF_SIZE_MAX (1024)
-#endif
-
-#ifndef RYML_LOCATIONS_SMALL_THRESHOLD
-/// threshold at which a location search will revert from linear to
-/// binary search.
-#define RYML_LOCATIONS_SMALL_THRESHOLD (30)
 #endif
 
 
@@ -21448,6 +22378,14 @@ RYML_EXPORT int version_patch();
  * @see sample::sample_tree_arena
  */
 
+/** @defgroup doc_error_handling Error handling
+ *
+ * Utilities to report handle errors, and to build and report error
+ * messages.
+ *
+ * @see sample::sample_error_handler
+ */
+
 /** @defgroup doc_callbacks Callbacks for errors and allocation
  *
  * Functions called by ryml to allocate/free memory and to report
@@ -21495,77 +22433,41 @@ RYML_EXPORT int version_patch();
 #   define RYML_USE_ASSERT
 
 /** (Undefined by default) Define this macro to disable ryml's default
- * implementation of the callback functions; see @ref c4::yml::Callbacks  */
+ * implementation of the callback functions. See @ref doc_callbacks.  */
 #   define RYML_NO_DEFAULT_CALLBACKS
 
 /** (Undefined by default) When this macro is defined (and
  * @ref RYML_NO_DEFAULT_CALLBACKS is not defined), the default error
- * handler will throw C++ exceptions of type `std::runtime_error`. */
+ * handler will throw exceptions. See @ref doc_error_handling. */
 #   define RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS
 
 /** Conditionally expands to `noexcept` when @ref RYML_USE_ASSERT is 0 and
  * is empty otherwise. The user is unable to override this macro. */
 #   define RYML_NOEXCEPT
 
+/** (Undefined by default) Use shorter error message from
+ * checks/asserts: do not show the check condition in the error
+ * message. */
+#   defined RYML_SHORT_CHECK_MSG
+
 #endif
 
 
 //-----------------------------------------------------------------------------
 
+/** @cond dev */
 
-/** @cond dev*/
 #ifndef RYML_USE_ASSERT
 #   define RYML_USE_ASSERT C4_USE_ASSERT
 #endif
 
 #if RYML_USE_ASSERT
-#   define RYML_ASSERT(cond) RYML_CHECK(cond)
-#   define RYML_ASSERT_MSG(cond, msg) RYML_CHECK_MSG(cond, msg)
-#   define _RYML_CB_ASSERT(cb, cond) _RYML_CB_CHECK((cb), (cond))
-#   define _RYML_CB_ASSERT_(cb, cond, loc) _RYML_CB_CHECK((cb), (cond), (loc))
 #   define RYML_NOEXCEPT
 #else
-#   define RYML_ASSERT(cond)
-#   define RYML_ASSERT_MSG(cond, msg)
-#   define _RYML_CB_ASSERT(cb, cond)
-#   define _RYML_CB_ASSERT_(cb, cond, loc)
 #   define RYML_NOEXCEPT noexcept
 #endif
 
 #define RYML_DEPRECATED(msg) C4_DEPRECATED(msg)
-
-#define RYML_CHECK(cond)                                                \
-    do {                                                                \
-        if(C4_UNLIKELY(!(cond)))                                        \
-        {                                                               \
-            RYML_DEBUG_BREAK();                                         \
-            c4::yml::error("check failed: " #cond, c4::yml::Location(__FILE__, __LINE__, 0)); \
-            C4_UNREACHABLE_AFTER_ERR();                                 \
-        }                                                               \
-    } while(0)
-
-#define RYML_CHECK_MSG(cond, msg)                                       \
-    do                                                                  \
-    {                                                                   \
-        if(C4_UNLIKELY(!(cond)))                                        \
-        {                                                               \
-            RYML_DEBUG_BREAK();                                         \
-            c4::yml::error(msg ": check failed: " #cond, c4::yml::Location(__FILE__, __LINE__, 0)); \
-            C4_UNREACHABLE_AFTER_ERR();                                 \
-        }                                                               \
-    } while(0)
-
-#if defined(RYML_DBG) && !defined(NDEBUG) && !defined(C4_NO_DEBUG_BREAK)
-#   define RYML_DEBUG_BREAK()                               \
-    do {                                                    \
-        if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) \
-        {                                                   \
-            C4_DEBUG_BREAK();                               \
-        }                                                   \
-    } while(0)
-#else
-#   define RYML_DEBUG_BREAK()
-#endif
 
 /** @endcond */
 
@@ -21578,6 +22480,8 @@ namespace c4 {
 namespace yml {
 
 C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
+
+class Tree;
 
 
 #ifndef RYML_ID_TYPE
@@ -21609,55 +22513,167 @@ enum : size_t {
 };
 
 
+typedef enum Encoding_ {
+    NOBOM,         //!< No Byte Order Mark was found
+    UTF8,          //!< UTF8
+    UTF16LE,       //!< UTF16, Little-Endian
+    UTF16BE,       //!< UTF16, Big-Endian
+    UTF32LE,       //!< UTF32, Little-Endian
+    UTF32BE,       //!< UTF32, Big-Endian
+} Encoding_e;
+
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-//! holds a position into a source buffer
-struct RYML_EXPORT LineCol
-{
-    //! number of bytes from the beginning of the source buffer
-    size_t offset;
-    //! line
-    size_t line;
-    //! column
-    size_t col;
 
-    LineCol() = default;
-    //! construct from line and column
-    LineCol(size_t l, size_t c) : offset(0), line(l), col(c) {}
-    //! construct from offset, line and column
-    LineCol(size_t o, size_t l, size_t c) : offset(o), line(l), col(c) {}
-};
-static_assert(std::is_trivially_copyable<LineCol>::value, "LineCol not trivially copyable");
-static_assert(std::is_trivially_default_constructible<LineCol>::value, "LineCol not trivially default constructible");
-static_assert(std::is_standard_layout<LineCol>::value, "Location not trivial");
-
-
-//! a source file position
+/** holds a source or yaml file position, for example when an error is
+ * detected; See also @ref location_format() and @ref
+ * location_format_with_context().
+ *
+ * @ingroup doc_error_handling */
 struct RYML_EXPORT Location
 {
-    //! number of bytes from the beginning of the source buffer
-    size_t offset;
-    //! line
-    size_t line;
-    //! column
-    size_t col;
-    //! file name
-    csubstr name;
+    size_t offset; ///< number of bytes from the beginning of the source buffer
+    size_t line;   ///< line
+    size_t col;    ///< column
+    csubstr name;  ///< name of the file
 
-    operator bool () const { return !name.empty() || line != 0 || offset != 0 || col != 0; }
-    operator LineCol const& () const { return reinterpret_cast<LineCol const&>(*this); } // NOLINT
+    operator bool () const noexcept { return !name.empty() || line != npos || offset != npos || col != npos; }
 
-    Location() = default;
-    Location(                         size_t l, size_t c) : offset( ), line(l), col(c), name( ) {}
-    Location(               size_t b, size_t l, size_t c) : offset(b), line(l), col(c), name( ) {}
-    Location(    csubstr n,           size_t l, size_t c) : offset( ), line(l), col(c), name(n) {}
-    Location(    csubstr n, size_t b, size_t l, size_t c) : offset(b), line(l), col(c), name(n) {}
-    Location(const char *n,           size_t l, size_t c) : offset( ), line(l), col(c), name(to_csubstr(n)) {}
-    Location(const char *n, size_t b, size_t l, size_t c) : offset(b), line(l), col(c), name(to_csubstr(n)) {}
+    C4_NO_INLINE Location() noexcept : offset(npos), line(npos), col(npos), name() {};
+    C4_NO_INLINE Location(                         size_t l          ) noexcept : offset(npos), line(l), col(npos), name() {}
+    C4_NO_INLINE Location(                         size_t l, size_t c) noexcept : offset(npos), line(l), col(c   ), name() {}
+    C4_NO_INLINE Location(               size_t b, size_t l, size_t c) noexcept : offset(b   ), line(l), col(c   ), name() {}
+    C4_NO_INLINE Location(    csubstr n,           size_t l          ) noexcept : offset(npos), line(l), col(npos), name(n) {}
+    C4_NO_INLINE Location(    csubstr n,           size_t l, size_t c) noexcept : offset(npos), line(l), col(c   ), name(n) {}
+    C4_NO_INLINE Location(    csubstr n, size_t b, size_t l, size_t c) noexcept : offset(b   ), line(l), col(c   ), name(n) {}
+    C4_NO_INLINE Location(const char *n,           size_t l          ) noexcept : offset(npos), line(l), col(npos), name(to_csubstr(n)) {}
+    C4_NO_INLINE Location(const char *n,           size_t l, size_t c) noexcept : offset(npos), line(l), col(c   ), name(to_csubstr(n)) {}
+    C4_NO_INLINE Location(const char *n, size_t b, size_t l, size_t c) noexcept : offset(b   ), line(l), col(c   ), name(to_csubstr(n)) {}
 };
 static_assert(std::is_standard_layout<Location>::value, "Location not trivial");
+
+/// @cond dev
+#define RYML_LOC_HERE() (::c4::yml::Location(__FILE__, static_cast<size_t>(__LINE__)))
+/// @endcond
+
+
+/** Data for a basic error.
+ * @ingroup doc_error_handling */
+struct RYML_EXPORT ErrorDataBasic
+{
+    Location location; ///< location where the error was detected (may be from YAML or C++ source code)
+    ErrorDataBasic() noexcept = default;
+    ErrorDataBasic(Location const& cpploc_) noexcept : location(cpploc_) {}
+};
+
+/** Data for a parse error.
+ * @ingroup doc_error_handling */
+struct RYML_EXPORT ErrorDataParse
+{
+    Location cpploc; ///< location in the C++ source file where the error was detected.
+    Location ymlloc; ///< location in the YAML source buffer where the error was detected.
+    ErrorDataParse() noexcept = default;
+    ErrorDataParse(Location const& cpploc_, Location const& ymlloc_) noexcept : cpploc(cpploc_), ymlloc(ymlloc_) {}
+};
+
+/** Data for a visit error.
+ * @ingroup doc_error_handling */
+struct RYML_EXPORT ErrorDataVisit
+{
+    Location cpploc;  ///< location in the C++ source file where the error was detected.
+    Tree const* tree; ///< tree where the error was detected
+    id_type node;     ///< node where the error was detected
+    ErrorDataVisit() noexcept = default;
+    ErrorDataVisit(Location const& cpploc_, Tree const *tree_ , id_type node_) noexcept : cpploc(cpploc_), tree(tree_), node(node_) {}
+};
+
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** Options to give to the parser to control its behavior. */
+struct RYML_EXPORT ParserOptions
+{
+private:
+
+    typedef enum : uint32_t {
+        SCALAR_FILTERING = (1u << 0u),
+        LOCATIONS = (1u << 1u),
+        DETECT_FLOW_ML = (1u << 2u),
+        DEFAULTS = SCALAR_FILTERING|DETECT_FLOW_ML,
+    } Flags_e;
+
+    uint32_t flags = DEFAULTS;
+
+public:
+
+    ParserOptions() = default;
+
+public:
+
+    /** @name source location tracking */
+    /** @{ */
+
+    /** enable/disable source location tracking */
+    ParserOptions& locations(bool enabled) noexcept
+    {
+        if(enabled)
+            flags |= LOCATIONS;
+        else
+            flags &= ~LOCATIONS;
+        return *this;
+    }
+    /** query source location tracking status */
+    C4_ALWAYS_INLINE bool locations() const noexcept { return (flags & LOCATIONS); }
+
+    /** @} */
+
+public:
+
+    /** @name detection of @ref FLOW_ML container style */
+    /** @{ */
+
+    /** enable/disable detection of @ref FLOW_ML container style. When
+     * enabled, the parser will set @ref FLOW_ML as the style of flow
+     * containers which have the terminating bracket on a line
+     * different from that of the opening bracket. */
+    ParserOptions& detect_flow_ml(bool enabled) noexcept
+    {
+        if(enabled)
+            flags |= DETECT_FLOW_ML;
+        else
+            flags &= ~DETECT_FLOW_ML;
+        return *this;
+    }
+    /** query status of detection of @ref FLOW_ML container style. */
+    C4_ALWAYS_INLINE bool detect_flow_ml() const noexcept { return (flags & DETECT_FLOW_ML); }
+
+    /** @} */
+
+public:
+
+    /** @name scalar filtering status (experimental; disable at your discretion) */
+    /** @{ */
+
+    /** enable/disable scalar filtering while parsing */
+    ParserOptions& scalar_filtering(bool enabled) noexcept
+    {
+        if(enabled)
+            flags |= SCALAR_FILTERING;
+        else
+            flags &= ~SCALAR_FILTERING;
+        return *this;
+    }
+    /** query scalar filtering status */
+    C4_ALWAYS_INLINE bool scalar_filtering() const noexcept { return (flags & SCALAR_FILTERING); }
+
+    /** @} */
+};
 
 
 //-----------------------------------------------------------------------------
@@ -21676,30 +22692,21 @@ struct Callbacks;
  * mandatory to call this function prior to using any other library
  * facility.
  *
- * @warning This function is NOT thread-safe.
- *
- * @warning the error callback must never return: see @ref pfn_error
- * for more details */
+ * @warning This function is NOT thread-safe, because it sets global static data
+ * */
 RYML_EXPORT void set_callbacks(Callbacks const& c);
 
 /** get the global callbacks
- * @warning This function is not thread-safe. */
+ *
+ * @warning This function is NOT thread-safe, because it reads global static data
+ * */
 RYML_EXPORT Callbacks const& get_callbacks();
 
-/** set the global callbacks back to their defaults ()
- * @warning This function is not thread-safe. */
-RYML_EXPORT void reset_callbacks();
-
-
-/** the type of the function used to report errors
+/** set the global callbacks back to their defaults.
  *
- * @warning When given by the user, this function MUST interrupt
- * execution, typically by either throwing an exception, or using
- * `std::longjmp()` ([see
- * documentation](https://en.cppreference.com/w/cpp/utility/program/setjmp))
- * or by calling `std::abort()`. If the function returned, the parser
- * would enter into an infinite loop, or the program may crash. */
-using pfn_error = void (*) (const char* msg, size_t msg_len, Location location, void *user_data);
+ * @warning This function is NOT thread-safe, because it sets global static data
+ * */
+RYML_EXPORT void reset_callbacks();
 
 
 /** the type of the function used to allocate memory; ryml will only
@@ -21712,41 +22719,99 @@ using pfn_allocate = void* (*)(size_t len, void* hint, void *user_data);
 using pfn_free = void (*)(void* mem, size_t size, void *user_data);
 
 
-/** a c-style callbacks class. Can be used globally by the library
- * and/or locally by @ref Tree and @ref Parser objects. */
+/** the type of the function used to report basic errors.
+ *
+ * @warning Must not return. When implemented by the user, this
+ * function MUST interrupt execution (and ideally be marked with
+ * `[[noreturn]]`). If the function returned, the caller could enter
+ * into an infinite loop, or the program may crash. It is up to the
+ * user to choose the interruption mechanism; typically by either
+ * throwing an exception, or using `std::longjmp()` ([see
+ * documentation](https://en.cppreference.com/w/cpp/utility/program/setjmp))
+ * or ultimately by calling `std::abort()`. */
+using pfn_error_basic = void (*) (csubstr msg, ErrorDataBasic const& errdata, void *user_data);
+/** the type of the function used to report parse errors.
+ *
+ * @warning Must not return. When implemented by the user, this
+ * function MUST interrupt execution (and ideally be marked with
+ * `[[noreturn]]`). If the function returned, the caller could enter
+ * into an infinite loop, or the program may crash. It is up to the
+ * user to choose the interruption mechanism; typically by either
+ * throwing an exception, or using `std::longjmp()` ([see
+ * documentation](https://en.cppreference.com/w/cpp/utility/program/setjmp))
+ * or ultimately by calling `std::abort()`. */
+using pfn_error_parse = void (*) (csubstr msg, ErrorDataParse const& errdata, void *user_data);
+/** the type of the function used to report visit errors.
+ *
+ * @warning Must not return. When implemented by the user, this
+ * function MUST interrupt execution (and ideally be marked with
+ * `[[noreturn]]`). If the function returned, the caller could enter
+ * into an infinite loop, or the program may crash. It is up to the
+ * user to choose the interruption mechanism; typically by either
+ * throwing an exception, or using `std::longjmp()` ([see
+ * documentation](https://en.cppreference.com/w/cpp/utility/program/setjmp))
+ * or ultimately by calling `std::abort()`. */
+using pfn_error_visit = void (*) (csubstr msg, ErrorDataVisit const& errdata, void *user_data);
+
+/// @cond dev
+using pfn_error RYML_DEPRECATED("use a more specific error type: `basic`, `parse` or `visit`") = void (*) (const char* msg, size_t msg_len, Location const& cpploc, void *user_data);
+/// @endcond
+
+
+/** A c-style callbacks class to customize behavior on errors or
+ * allocation. Can be used globally by the library and/or locally by
+ * @ref Tree and @ref Parser objects. */
 struct RYML_EXPORT Callbacks
 {
-    void *       m_user_data;
-    pfn_allocate m_allocate;
-    pfn_free     m_free;
-    pfn_error    m_error;
+    void *          m_user_data;   ///< data to be forwarded in every call to a callback
+    pfn_allocate    m_allocate;    ///< a pointer to an allocate handler function
+    pfn_free        m_free;        ///< a pointer to a free handler function
+    pfn_error_basic m_error_basic; ///< a pointer to a basic error handler function
+    pfn_error_parse m_error_parse; ///< a pointer to a parse error handler function
+    pfn_error_visit m_error_visit; ///< a pointer to a visit error handler function
+
+public:
 
     /** Construct an object with the default callbacks. If
-     * @ref RYML_NO_DEFAULT_CALLBACKS is defined, the object will have null
+     * @ref RYML_NO_DEFAULT_CALLBACKS is defined, the object will be set with null
      * members.*/
     Callbacks() noexcept;
 
-    /** Construct an object with the given callbacks.
-     *
-     * @param user_data Data to be forwarded in every call to a callback.
-     *
-     * @param alloc A pointer to an allocate function. Unless
-     *        @ref RYML_NO_DEFAULT_CALLBACKS is defined, when this
-     *        parameter is null, will fall back to ryml's default
-     *        alloc implementation.
-     *
-     * @param free A pointer to a free function. Unless
-     *        @ref RYML_NO_DEFAULT_CALLBACKS is defined, when this
-     *        parameter is null, will fall back to ryml's default free
-     *        implementation.
-     *
-     * @param error A pointer to an error function, which must never
-     *        return (see @ref pfn_error). Unless
-     *        @ref RYML_NO_DEFAULT_CALLBACKS is defined, when this
-     *        parameter is null, will fall back to ryml's default
-     *        error implementation.
-     */
-    Callbacks(void *user_data, pfn_allocate alloc, pfn_free free, pfn_error error);
+    RYML_DEPRECATED("use the default constructor, followed by the appropriate setters")
+    Callbacks(void *user_data, pfn_allocate alloc, pfn_free free, pfn_error_basic error_basic);
+
+public:
+
+    /** Set the user data. */
+    Callbacks& set_user_data(void* user_data);
+
+    /** Set or reset the allocate callback. When the parameter is
+     * null, m_allocate will fall back to ryml's default allocate
+     * implementation, unless @ref RYML_NO_DEFAULT_CALLBACKS is
+     * defined. */
+    Callbacks& set_allocate(pfn_allocate allocate=nullptr);
+
+    /** Set or reset the free callback. When the parameter is null,
+     * m_free will fall back to ryml's default free implementation,
+     * unless @ref RYML_NO_DEFAULT_CALLBACKS is defined. */
+    Callbacks& set_free(pfn_free free=nullptr);
+
+    /** Set or reset the error_basic callback. When the parameter is null,
+     * m_error_basic will fall back to ryml's default error_basic implementation,
+     * unless @ref RYML_NO_DEFAULT_CALLBACKS is defined. */
+    Callbacks& set_error_basic(pfn_error_basic error_basic=nullptr);
+
+    /** Set or reset the error_parse callback. When the parameter is null,
+     * m_error_parse will fall back to ryml's default error_parse implementation,
+     * unless @ref RYML_NO_DEFAULT_CALLBACKS is defined. */
+    Callbacks& set_error_parse(pfn_error_parse error_parse=nullptr);
+
+    /** Set or reset the error_visit callback. When the parameter is null,
+     * m_error_visit will fall back to ryml's default error_visit implementation,
+     * unless @ref RYML_NO_DEFAULT_CALLBACKS is defined. */
+    Callbacks& set_error_visit(pfn_error_visit error_visit=nullptr);
+
+public:
 
     bool operator!= (Callbacks const& that) const { return !operator==(that); }
     bool operator== (Callbacks const& that) const
@@ -21754,7 +22819,9 @@ struct RYML_EXPORT Callbacks
         return (m_user_data == that.m_user_data &&
                 m_allocate == that.m_allocate &&
                 m_free == that.m_free &&
-                m_error == that.m_error);
+                m_error_basic == that.m_error_basic &&
+                m_error_parse == that.m_error_parse &&
+                m_error_visit == that.m_error_visit);
     }
 };
 
@@ -21766,119 +22833,19 @@ struct RYML_EXPORT Callbacks
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-typedef enum {
-    NOBOM,
-    UTF8,
-    UTF16LE,
-    UTF16BE,
-    UTF32LE,
-    UTF32BE,
-} Encoding_e;
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 /// @cond dev
 
-// BEWARE! MSVC requires that [[noreturn]] appears before RYML_EXPORT
-[[noreturn]] RYML_EXPORT void error(Callbacks const& cb, const char *msg, size_t msg_len, Location loc);
-[[noreturn]] RYML_EXPORT void error(const char *msg, size_t msg_len, Location loc);
-
-[[noreturn]] inline void error(const char *msg, size_t msg_len)
-{
-    error(msg, msg_len, Location{});
-}
-template<size_t N>
-[[noreturn]] inline void error(const char (&msg)[N], Location loc)
-{
-    error(msg, N-1, loc);
-}
-template<size_t N>
-[[noreturn]] inline void error(const char (&msg)[N])
-{
-    error(msg, N-1, Location{});
-}
-
-#define _RYML_CB_ERR(cb, msg_literal)                                   \
-    _RYML_CB_ERR_(cb, msg_literal, c4::yml::Location(__FILE__, 0, __LINE__, 0))
-#define _RYML_CB_CHECK(cb, cond)                                        \
-    _RYML_CB_CHECK_(cb, cond, c4::yml::Location(__FILE__, 0, __LINE__, 0))
-#define _RYML_CB_ERR_(cb, msg_literal, loc)                             \
-do                                                                      \
-{                                                                       \
-    const char msg[] = msg_literal;                                     \
-    RYML_DEBUG_BREAK();                                                 \
-    c4::yml::error((cb), msg, sizeof(msg)-1, loc);                      \
-    C4_UNREACHABLE_AFTER_ERR();                                         \
-} while(0)
-#define _RYML_CB_CHECK_(cb, cond, loc)                                  \
-    do                                                                  \
-    {                                                                   \
-        if(C4_UNLIKELY(!(cond)))                                        \
-        {                                                               \
-            const char msg[] = "check failed: " #cond;                  \
-            RYML_DEBUG_BREAK();                                         \
-            c4::yml::error((cb), msg, sizeof(msg)-1, loc);              \
-            C4_UNREACHABLE_AFTER_ERR();                                 \
-        }                                                               \
-    } while(0)
 #define _RYML_CB_ALLOC_HINT(cb, T, num, hint) (T*) (cb).m_allocate((num) * sizeof(T), (hint), (cb).m_user_data)
 #define _RYML_CB_ALLOC(cb, T, num) _RYML_CB_ALLOC_HINT((cb), T, (num), nullptr)
 #define _RYML_CB_FREE(cb, buf, T, num)                              \
     do {                                                            \
         (cb).m_free((buf), (num) * sizeof(T), (cb).m_user_data);    \
         (buf) = nullptr;                                            \
-    } while(0)
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-typedef enum {
-    BLOCK_LITERAL, //!< keep newlines (|)
-    BLOCK_FOLD     //!< replace newline with single space (>)
-} BlockStyle_e;
-
-typedef enum {
-    CHOMP_CLIP,    //!< single newline at end (default)
-    CHOMP_STRIP,   //!< no newline at end     (-)
-    CHOMP_KEEP     //!< all newlines from end (+)
-} BlockChomp_e;
-
-
-/** Abstracts the fact that a scalar filter result may not fit in the
- * intended memory. */
-struct FilterResult
-{
-    C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
-    C4_ALWAYS_INLINE size_t required_len() const noexcept { return str.len; }
-    C4_ALWAYS_INLINE csubstr get() const { RYML_ASSERT(valid()); return str; }
-    csubstr str;
-};
-/** Abstracts the fact that a scalar filter result may not fit in the
- * intended memory. */
-struct FilterResultExtending
-{
-    C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
-    C4_ALWAYS_INLINE size_t required_len() const noexcept { return reqlen; }
-    C4_ALWAYS_INLINE csubstr get() const { RYML_ASSERT(valid()); return str; }
-    csubstr str;
-    size_t reqlen;
-};
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
+    } while(false)
 
 namespace detail {
-// is there a better way to do this?
 template<int8_t signedval, uint8_t unsignedval>
-struct _charconstant_t
+struct _charconstant_t // is there a better way to do this?
     : public std::conditional<std::is_signed<char>::value,
                               std::integral_constant<int8_t, static_cast<int8_t>(unsignedval)>,
                               std::integral_constant<uint8_t, unsignedval>>::type
@@ -21886,6 +22853,85 @@ struct _charconstant_t
 #define _RYML_CHCONST(signedval, unsignedval) ::c4::yml::detail::_charconstant_t<INT8_C(signedval), UINT8_C(unsignedval)>::value
 } // namespace detail
 
+inline csubstr _c4prc(const char &C4_RESTRICT c) // pass by reference!
+{
+    switch(c)
+    {
+    case '\n': return csubstr("\\n");
+    case '\t': return csubstr("\\t");
+    case '\0': return csubstr("\\0");
+    case '\r': return csubstr("\\r");
+    case '\f': return csubstr("\\f");
+    case '\b': return csubstr("\\b");
+    case '\v': return csubstr("\\v");
+    case '\a': return csubstr("\\a");
+    default: return csubstr(&c, 1);
+    }
+}
+
+/// @endcond
+
+C4_SUPPRESS_WARNING_GCC_POP
+
+} // namespace yml
+} // namespace c4
+
+#endif /* _C4_YML_COMMON_HPP_ */
+
+
+// (end src/c4/yml/common.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/yml/error.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_YML_ERROR_HPP_
+#define _C4_YML_ERROR_HPP_
+
+/** @file error.hpp Error utilities used by ryml. */
+
+#ifndef _C4_YML_COMMON_HPP_
+// amalgamate: removed include of
+// c4/yml/common.hpp
+//#include <c4/yml/common.hpp>
+#if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
+#error "amalgamate: file c4/yml/common.hpp must have been included at this point"
+#endif /* C4_YML_COMMON_HPP_ */
+
+#endif
+
+/// @cond dev
+#if (defined(C4_EXCEPTIONS) && (!defined(RYML_NO_DEFAULT_CALLBACKS) && defined(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS))) || defined(__DOXYGEN__)
+#define _RYML_WITH_EXCEPTIONS
+#endif
+#if defined(RYML_DBG) && !defined(NDEBUG) && !defined(C4_NO_DEBUG_BREAK)
+#   define RYML_DEBUG_BREAK()                               \
+    do {                                                    \
+        if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) \
+        {                                                   \
+            C4_DEBUG_BREAK();                               \
+        }                                                   \
+    } while(false)
+#else
+#   define RYML_DEBUG_BREAK()
+#endif
+/// @endcond
+
+#ifdef _RYML_WITH_EXCEPTIONS
+//included above:
+//#include <exception>
+#endif
+
+
+namespace c4 {
+namespace yml {
+
+
+/// @cond dev
 
 namespace detail {
 struct _SubstrWriter
@@ -21927,81 +22973,1321 @@ struct _SubstrWriter
 
     size_t advance(size_t more) { pos += more; return pos; }
 };
-} // namespace detail
 
 
-namespace detail {
+// truncate the result to the buffer, adding ellipsis if it
+// doesn't fit
+inline C4_NO_INLINE csubstr _maybe_add_ellipsis(substr buf, size_t len)
+{
+    if(C4_UNLIKELY(len > buf.len))
+    {
+        const size_t numdots = (buf.len > 3) ? 3 : buf.len;
+        buf.last(numdots).fill('.');
+        len = buf.len;
+    }
+    return buf.first(len);
+}
+
+
+template<class T> struct dump_directly_ : public std::false_type {};
+template<> struct dump_directly_<csubstr> : public std::true_type {};
+template<> struct dump_directly_< substr> : public std::true_type {};
+template<> struct dump_directly_<const char*> : public std::true_type {};
+template<> struct dump_directly_<      char*> : public std::true_type {};
+template<size_t N> struct dump_directly_<const char (&)[N]> : public std::true_type {};
+template<size_t N> struct dump_directly_<      char (&)[N]> : public std::true_type {};
+template<size_t N> struct dump_directly_<const char[N]> : public std::true_type {};
+template<size_t N> struct dump_directly_<      char[N]> : public std::true_type {};
+template<class T> using dump_directly = dump_directly_<typename std::remove_cv<typename std::remove_reference<T>::type>::type>;
+
+template<class T>
+C4_NO_INLINE auto _to_chars_limited(substr buf, T &&var)
+    -> typename std::enable_if< ! detail::dump_directly<T>::value, csubstr>::type
+{
+    size_t len = to_chars(buf, std::forward<T>(var));
+    return _maybe_add_ellipsis(buf, len);
+}
+template<class T>
+C4_NO_INLINE auto _to_chars_limited(substr, T &&var)
+    -> typename std::enable_if<detail::dump_directly<T>::value, csubstr>::type
+{
+    return to_csubstr(std::forward<T>(var)); // no need to convert to buf
+}
+
+
 // dumpfn is a function abstracting prints to terminal (or to string).
-template<class DumpFn, class ...Args>
-C4_NO_INLINE void _dump(DumpFn &&dumpfn, csubstr fmt, Args&& ...args)
+template<class DumpFn>
+C4_NO_INLINE void _dump(DumpFn &&dumpfn, substr, csubstr fmt)
 {
-    DumpResults results;
-    // try writing everything:
-    {
-        // buffer for converting individual arguments. it is defined
-        // in a child scope to free it in case the buffer is too small
-        // for any of the arguments.
-        char writebuf[RYML_LOGBUF_SIZE];
-        results = format_dump_resume(std::forward<DumpFn>(dumpfn), writebuf, fmt, std::forward<Args>(args)...);
-    }
-    // if any of the arguments failed to fit the buffer, allocate a
-    // larger buffer (up to a limit) and resume writing.
-    //
-    // results.bufsize is set to the size of the largest element
-    // serialized. Eg int(1) will require 1 byte.
-    if(C4_UNLIKELY(results.bufsize > RYML_LOGBUF_SIZE))
-    {
-        const size_t bufsize = results.bufsize <= RYML_LOGBUF_SIZE_MAX ? results.bufsize : RYML_LOGBUF_SIZE_MAX;
-        #ifdef C4_MSVC
-        substr largerbuf = {static_cast<char*>(_alloca(bufsize)), bufsize};
-        #else
-        substr largerbuf = {static_cast<char*>(alloca(bufsize)), bufsize};
-        #endif
-        results = format_dump_resume(std::forward<DumpFn>(dumpfn), results, largerbuf, fmt, std::forward<Args>(args)...);
-    }
+    std::forward<DumpFn>(dumpfn)(fmt);
 }
+template<class DumpFn, class Arg, class ...Args>
+C4_NO_INLINE void _dump(DumpFn &&dumpfn, substr argbuf, csubstr fmt, Arg const& arg, Args const& ...more)
+{
+    size_t pos = fmt.find("{}");
+    if(pos == csubstr::npos)
+        return std::forward<DumpFn>(dumpfn)(fmt);
+    std::forward<DumpFn>(dumpfn)(fmt.first(pos));
+    std::forward<DumpFn>(dumpfn)(_to_chars_limited(argbuf, arg));
+    _dump(std::forward<DumpFn>(dumpfn), argbuf, fmt.sub(pos + 2), more...);
+}
+
+
 template<class ...Args>
-C4_NORETURN C4_NO_INLINE void _report_err(Callbacks const& C4_RESTRICT callbacks, csubstr fmt, Args const& C4_RESTRICT ...args)
+C4_NO_INLINE csubstr _mk_err_msg(substr buf, csubstr fmt, Args const& ...args)
 {
-    char errmsg[RYML_ERRMSG_SIZE] = {0};
-    detail::_SubstrWriter writer(errmsg);
+    detail::_SubstrWriter writer(buf);
     auto dumpfn = [&writer](csubstr s){ writer.append(s); };
-    _dump(dumpfn, fmt, args...);
-    writer.append('\n');
-    const size_t len = writer.pos < RYML_ERRMSG_SIZE ? writer.pos : RYML_ERRMSG_SIZE;
-    callbacks.m_error(errmsg, len, {}, callbacks.m_user_data);
-    C4_UNREACHABLE_AFTER_ERR();
+    char writebuf[RYML_LOGBUF_SIZE];
+    _dump(dumpfn, writebuf, fmt, args...);
+    return _maybe_add_ellipsis(buf, writer.pos);
 }
+
+RYML_EXPORT csubstr _get_text_region(csubstr text, size_t pos, size_t num_lines_before, size_t num_lines_after);
+
 } // namespace detail
-
-
-inline csubstr _c4prc(const char &C4_RESTRICT c) // pass by reference!
-{
-    switch(c)
-    {
-    case '\n': return csubstr("\\n");
-    case '\t': return csubstr("\\t");
-    case '\0': return csubstr("\\0");
-    case '\r': return csubstr("\\r");
-    case '\f': return csubstr("\\f");
-    case '\b': return csubstr("\\b");
-    case '\v': return csubstr("\\v");
-    case '\a': return csubstr("\\a");
-    default: return csubstr(&c, 1);
-    }
-}
 
 /// @endcond
 
-C4_SUPPRESS_WARNING_GCC_POP
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** @addtogroup doc_error_handling
+ *
+ * @{ */
+
+
+/** generic formatting of a location
+ *
+ * @param dumpfn function taking a csubstr and abstracting a string
+ * concatenation operation, such as appending to a std::string or
+ * printing to terminal.
+ * @param loc the location to be formatted
+ *
+ * For example:
+ *
+ * ```c++
+ * /// to output to std::cerr:
+ * location_format([&s](csubstr s){
+ *     std::cerr.write(s.str, s.len);
+ * }, loc);
+ *
+ * /// to build a string:
+ * std::string msg;
+ * location_format([&s](csubstr s){
+ *     msg.append(s.str, s.len);
+ * }, loc);
+ * ```
+ */
+template<class DumpFn>
+C4_NO_INLINE size_t location_format(DumpFn &&dumpfn, Location const& loc);
+
+
+/** Generic formatting of a location, printing the source code buffer
+ * region around the location.
+ *
+ * @param dumpfn function taking a csubstr and abstracting a string
+ * concatenation operation, such as appending to a std::string or
+ * printing to terminal.
+ * @param location the location
+ * @param source_buffer the source buffer
+ * @param call a string with a call of attention to print in the
+ *        message (see examples below)
+ * @param num_lines_before how many source buffer lines to print
+ *        before the location line
+ * @param num_lines_after how many source buffer lines to print
+ *        after the location line
+ * @param first_col_highlight the first column to highlight
+ *        around the location line
+ * @param last_col_highlight the last column to highlight
+ *        around the location line
+ * @param maxlen the maximum number of columns to show in the error
+ *        message; source buffer lines will have at most this number
+ *        of columns shown; if the line is longer than this, the line
+ *        will be trimmed as needed at the end and/or beginning, and
+ *        only the relevant columns *around* the location are shown
+ *
+ * For example:
+ *
+ * ```c++
+ * std::string out;
+ * auto dumpfn = [&out](csubstr s){ out.append(s.str, s.len); };
+ * format_location_with_context(dumpfn, location, source, "error");
+ * ```
+ *
+ * will result in this string:
+ *
+ * ```
+ * file.yaml:3: col=3 (11B): error:
+ * error:
+ * error:     ccc
+ * error:        |
+ * error:        (here)
+ * error:
+ * error: see region:
+ * error:
+ * error:     aaa
+ * error:     bbb
+ * error:     ccc
+ * error:        |
+ * error:        (here)
+ * ```
+ *
+ * If an empty string is passed for the call of attention,
+ *
+ * ```c++
+ * format_location_with_context(dumpfn, location, source);
+ * ```
+ *
+ * the returned string becomes:
+ *
+ * ```
+ * file.yaml:3: col=3 (11B): ccc
+ *                             |
+ *                             (here)
+ * file.yaml:3: col=3 (11B): see region:
+ * aaa
+ * bbb
+ * ccc
+ *    |
+ *    (here)
+ * ```
+ */
+template<class DumpFn>
+C4_NO_INLINE void location_format_with_context(DumpFn &&dumpfn,
+                                               Location const &location,
+                                               csubstr source_buffer,
+                                               csubstr call = "",
+                                               size_t num_lines_before = 3,
+                                               size_t num_lines_after = 0,
+                                               size_t first_col_highlight = 0,
+                                               size_t last_col_highlight = 0,
+                                               size_t maxlen = 80u);
+
+
+//-----------------------------------------------------------------------------
+
+/** Given an error message and associated basic error data, format it fully as a basic error message.
+ *
+ * @param dumpfn function taking a csubstr and abstracting a string
+ * concatenation operation, such as appending to a std::string or
+ * printing to terminal.
+ * @param msg the error message
+ * @param errdata the error data
+ *
+ * For example:
+ *
+ * ```c++
+ * /// to output to cerr:
+ * err_basic_format([](csubstr s){
+ *     std::cerr.write(s.str, s.len);
+ * }, errmsg, errdata);
+ *
+ * /// to build a string:
+ * std::string msg;
+ * error_basic_format([&msg](csubstr s){
+ *     msg.append(s.str, s.len);
+ * }, errmsg, errdata);
+ * ```
+ */
+template<class DumpFn>
+C4_NO_INLINE void err_basic_format(DumpFn &&dumpfn, csubstr msg, ErrorDataBasic const& errdata);
+
+/** trigger a basic error to its respective handler, with a non-formatted error message. */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_basic(Callbacks const& callbacks, ErrorDataBasic const& errdata, const char* msg_);
+/** trigger a basic error to its respective handler, with a non-formatted error message. Like (1), but use the current global callbacks. */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_basic(ErrorDataBasic const& errdata, const char* msg);
+/** trigger a basic error to its respective handler, with a formatted error message. */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_basic(Callbacks const& callbacks, ErrorDataBasic const& errdata, const char *fmt, Args const& ...args)
+{
+    char errbuf[RYML_ERRMSG_SIZE];
+    csubstr msg = detail::_mk_err_msg(errbuf, to_csubstr(fmt), args...);
+    callbacks.m_error_basic(msg, errdata, callbacks.m_user_data);
+    abort(); // the call above should not return, but force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+/** trigger a basic error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_basic(ErrorDataBasic const& errdata, const char *fmt, Args const& ...args)
+{
+    err_basic(get_callbacks(), errdata, fmt, args...);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+/** Given an error message and associated parse error data, format it fully as a parse error message.
+ *
+ * @param dumpfn function taking a csubstr and abstracting a string
+ * concatenation operation, such as appending to a std::string or
+ * printing to terminal.
+ * @param msg the error message
+ * @param errdata the error data
+ *
+ * For example:
+ *
+ * ```c++
+ * /// to output to cerr:
+ * /// this is what err_parse_print() does
+ * err_parse_format([](csubstr s){
+ *     std::cerr.write(s.str, s.len);
+ * }, errmsg, errdata);
+ *
+ * /// to build a string:
+ * std::string msg;
+ * err_parse_format([](csubstr s){
+ *     s.append(s.str, s.len);
+ * }, errmsg, errdata);
+ * ```
+ *
+ * @note if the (preferably original) source buffer is kept, @ref
+ * location_format_with_context() can be used to also an additional
+ * rich error message showing the YAML source buffer region around
+ * that location.
+ */
+template<class DumpFn>
+C4_NO_INLINE void err_parse_format(DumpFn &&dumpfn, csubstr msg, ErrorDataParse const& errdata);
+
+/** trigger a parse error to its respective handler, with a non-formatted error message */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_parse(Callbacks const& callbacks, ErrorDataParse const& errdata, const char *msg);
+/** trigger a parse error to its respective handler, with a non-formatted error message. Like (1), but use the current global callbacks. */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_parse(ErrorDataParse const& errdata, const char *msg);
+/** trigger a parse error to its respective handler, with a formatted error message */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_parse(Callbacks const& callbacks, ErrorDataParse const& errdata, const char *fmt, Args const& ...args)
+{
+    char errbuf[RYML_ERRMSG_SIZE];
+    csubstr msg = detail::_mk_err_msg(errbuf, to_csubstr(fmt), args...);
+    if(callbacks.m_error_parse)
+        callbacks.m_error_parse(msg, errdata, callbacks.m_user_data);
+    // fall to basic error if there is no parse handler set, but use errdata.ymlloc instead of errdata.cpploc
+    else if(callbacks.m_error_basic)
+        callbacks.m_error_basic(msg, errdata.ymlloc, callbacks.m_user_data);
+    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+/** trigger a parse error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_parse(ErrorDataParse const& errdata, const char *fmt, Args const& ...args)
+{
+    err_parse(get_callbacks(), errdata, fmt, args...);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+/** Given an error message and associated visit error data, format it
+ * fully as a visit error message.
+ *
+ * @param dumpfn function taking a csubstr and abstracting a string
+ * concatenation operation, such as appending to a std::string or
+ * printing to terminal.
+ * @param msg the error message
+ * @param errdata the error data
+ *
+ * For example:
+ *
+ * ```c++
+ * /// to output to cerr:
+ * err_visit_format([](csubstr s){
+ *     std::cerr.write(s.str, s.len);
+ * }, errmsg, errdata);
+ *
+ * /// to build a string:
+ * std::string msg;
+ * err_visit_format([&msg](csubstr s){
+ *     msg.append(s.str, s.len);
+ * }, errmsg, errdata);
+ *
+ * @note under certain conditions, it is possible to obtain an
+ * associated location, and subsequently use @ref
+ * location_format_with_context() to also create a rich error message
+ * showing the YAML source buffer region around that location. This is
+ * possible if the (preferably original) source buffer is kept, and
+ * the node location can be retrieved from the parser.
+ * ```
+ */
+template<class DumpFn>
+C4_NO_INLINE void err_visit_format(DumpFn &&dumpfn, csubstr msg, ErrorDataVisit const& errdata);
+
+
+/** trigger a visit error to its respective handler, with a non-formatted error message */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_visit(Callbacks const& callbacks, ErrorDataVisit const& errdata, const char *msg);
+/** trigger a visit error to its respective handler, with a non-formatted error message. Like (1), but uses the current global callbacks. */
+C4_NORETURN RYML_EXPORT C4_NO_INLINE void err_visit(ErrorDataVisit const& errdata, const char *msg);
+/** trigger a visit error to its respective handler, with a formatted error message */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_visit(Callbacks const& callbacks, ErrorDataVisit const& errdata, const char *fmt, Args const& ...args)
+{
+    char errbuf[RYML_ERRMSG_SIZE];
+    csubstr msg = detail::_mk_err_msg(errbuf, to_csubstr(fmt), args...);
+    if(callbacks.m_error_visit)
+        callbacks.m_error_visit(msg, errdata, callbacks.m_user_data);
+    // fall to basic error if there is no visit handler set
+    else if(callbacks.m_error_basic)
+        callbacks.m_error_basic(msg, errdata.cpploc, callbacks.m_user_data);
+    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+/** trigger a visit error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void err_visit(ErrorDataVisit const& errdata, const char *fmt, Args const& ...args)
+{
+    err_visit(get_callbacks(), errdata, fmt, args...);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+//-----------------------------------------------------------------------------
+
+#if defined(_RYML_WITH_EXCEPTIONS) || defined(__DOXYGEN__)
+
+/** Exception thrown by the default basic error implementation. To
+ * obtain the full error message, use @ref err_basic_format(), or the
+ * helper @ref format_exc().
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined. */
+struct RYML_EXPORT ExceptionBasic : public std::exception
+{
+    ExceptionBasic(csubstr msg, ErrorDataBasic const& errdata_) noexcept;
+    const char* what() const noexcept override { return msg; }
+    ErrorDataBasic errdata_basic; ///< error data
+    char msg[RYML_ERRMSG_SIZE];   ///< the reported error message, without location indication.
+};
+
+
+/** Exception thrown by the default parse error implementation. To
+ * obtain the full error message containing context, use @ref
+ * err_parse_format(), or the helper @ref format_exc().
+ *
+ * @note This exception derives from @ref ExceptionBasic and can be
+ * catched using either type.
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined. */
+struct RYML_EXPORT ExceptionParse : public ExceptionBasic
+{
+    ExceptionParse(csubstr msg, ErrorDataParse const& errdata_) noexcept;
+    ErrorDataParse errdata_parse;
+};
+
+
+/** Exception thrown by the default visit error implementation. To
+ * obtain the full error message containing context, use @ref
+ * err_visit_format(), or the helper @ref format_exc().
+ *
+ * @note This exception derives from @ref ExceptionBasic and can be
+ * catched using either type.
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined. */
+struct RYML_EXPORT ExceptionVisit : public ExceptionBasic
+{
+    ExceptionVisit(csubstr msg, ErrorDataVisit const& errdata_) noexcept;
+    ErrorDataVisit errdata_visit;
+};
+
+
+/** Format a basic exception to an existing char container
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined.  */
+template<class CharContainer>
+void format_exc(CharContainer *out, ExceptionBasic const& exc)
+{
+    out->clear();
+    err_basic_format([out](csubstr s){
+        out->append(s.str, s.len);
+    }, csubstr{exc.msg, strlen(exc.msg)}, exc.errdata_basic);
+}
+/** Format a parse exception to an existing char container
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined.  */
+template<class CharContainer>
+void format_exc(CharContainer *out, ExceptionParse const& exc)
+{
+    out->clear();
+    err_parse_format([out](csubstr s){
+        out->append(s.str, s.len);
+    }, csubstr{exc.msg, strlen(exc.msg)}, exc.errdata_parse);
+}
+/** Format a visit exception to an existing char container
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined.  */
+template<class CharContainer>
+void format_exc(CharContainer *out, ExceptionVisit const& exc)
+{
+    out->clear();
+    err_visit_format([out](csubstr s){
+        out->append(s.str, s.len);
+    }, csubstr{exc.msg, strlen(exc.msg)}, exc.errdata_visit);
+}
+/** Format a parse exception, and return a newly-created char
+ * container
+ *
+ * @note Available only if @ref
+ * RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS is defined, and @ref
+ * RYML_NO_DEFAULT_CALLBACKS is NOT defined.  */
+template<class CharContainer, class ExceptionT>
+CharContainer format_exc(ExceptionT const& exc)
+{
+    CharContainer str;
+    format_exc(&str, exc);
+    return str;
+}
+
+#endif // _RYML_WITH_EXCEPTIONS
+
+/** @} */
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/// @cond dev
+
+
+#if RYML_USE_ASSERT
+#   define _RYML_ASSERT_BASIC(cond) _RYML_CHECK_BASIC(cond)
+#   define _RYML_ASSERT_BASIC_(cb, cond) _RYML_CHECK_BASIC_((cb), cond)
+#   define _RYML_ASSERT_BASIC_MSG(cond, ...) _RYML_CHECK_BASIC_MSG(cond, __VA_ARGS__)
+#   define _RYML_ASSERT_BASIC_MSG_(cb, cond, ...) _RYML_CHECK_BASIC_MSG_((cb), cond, __VA_ARGS__)
+#   define _RYML_ASSERT_PARSE(cond, ymlloc) _RYML_CHECK_PARSE(cond, (ymlloc))
+#   define _RYML_ASSERT_PARSE_(cb, cond, ymlloc) _RYML_CHECK_PARSE_((cb), cond, (ymlloc))
+#   define _RYML_ASSERT_PARSE_MSG(cond, ymlloc, ...) _RYML_CHECK_PARSE_MSG(cond, (ymlloc), __VA_ARGS__)
+#   define _RYML_ASSERT_PARSE_MSG_(cb, cond, ymlloc, ...) _RYML_CHECK_PARSE_MSG_((cb), cond, (ymlloc), __VA_ARGS__)
+#   define _RYML_ASSERT_VISIT(cond, tree, node) _RYML_CHECK_VISIT(cond, (tree), (node))
+#   define _RYML_ASSERT_VISIT_(cb, cond, tree, node) _RYML_CHECK_VISIT_((cb), cond, (tree), (node))
+#   define _RYML_ASSERT_VISIT_MSG(cond, tree, node, ...) _RYML_CHECK_VISIT_MSG(cond, (tree), (node), __VA_ARGS__)
+#   define _RYML_ASSERT_VISIT_MSG_(cb, cond, tree, node, ...) _RYML_CHECK_VISIT_MSG_((cb), cond, (tree), (node), __VA_ARGS__)
+#else
+#   define _RYML_ASSERT_BASIC(cond)
+#   define _RYML_ASSERT_BASIC_(cb, cond)
+#   define _RYML_ASSERT_BASIC_MSG(cond, ...)
+#   define _RYML_ASSERT_BASIC_MSG_(cb, cond, ...)
+#   define _RYML_ASSERT_PARSE(cond, ymlloc)
+#   define _RYML_ASSERT_PARSE_(cb, cond, ymlloc)
+#   define _RYML_ASSERT_PARSE_MSG(cond, ymlloc, ...)
+#   define _RYML_ASSERT_PARSE_MSG_(cb, cond, ymlloc, ...)
+#   define _RYML_ASSERT_VISIT(cont, tree, node)
+#   define _RYML_ASSERT_VISIT_(cb, cont, tree, node)
+#   define _RYML_ASSERT_VISIT_MSG(cont, tree, node, ...)
+#   define _RYML_ASSERT_VISIT_MSG_(cb, cont, tree, node, ...)
+#endif
+
+#define _RYML_ERR_BASIC(...)                                            \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_basic((::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+#define _RYML_ERR_PARSE(ymlloc, ...)                                    \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_parse((::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+#define _RYML_ERR_VISIT(tree, node, ...)                                \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_visit((::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+
+
+#define _RYML_ERR_BASIC_(cb, ...)                                       \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_basic((cb), (::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+#define _RYML_ERR_PARSE_(cb, ymlloc, ...)                               \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_parse((cb), (::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+#define _RYML_ERR_VISIT_(cb, tree, node, ...)                           \
+    do                                                                  \
+    {                                                                   \
+        RYML_DEBUG_BREAK();                                             \
+        ::c4::yml::err_visit((cb), (::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), __VA_ARGS__); \
+        C4_UNREACHABLE_AFTER_ERR();                                     \
+    } while(false)
+
+
+#ifndef RYML_SHORT_CHECK_MSG
+#define _RYML_MAYBE_MSG(cond) ": " #cond
+#define _RYML_MAYBE_MSG_(cond) ": " #cond ": "
+#else
+#define _RYML_MAYBE_MSG(cond)
+#define _RYML_MAYBE_MSG_(cond) ": "
+#endif
+
+#define _RYML_CHECK_BASIC(cond)                                         \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_basic((::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_PARSE(cond, ymlloc)                                 \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_parse((::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_VISIT(cond, tree, node)                             \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_visit((::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+
+
+#define _RYML_CHECK_BASIC_(cb, cond)                                    \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_basic((cb), (::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_PARSE_(cb, cond, ymlloc)                            \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_parse((cb), (::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_VISIT_(cb, cond, tree, node)                        \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_visit((cb), (::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), "check failed" _RYML_MAYBE_MSG(cond)); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+
+
+#define _RYML_CHECK_BASIC_MSG(cond, ...)                                \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_basic((::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_PARSE_MSG(cond, ymlloc, ...)                        \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_parse((::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_VISIT_MSG(cond, tree, node, ...)                    \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_visit((::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+
+
+#define _RYML_CHECK_BASIC_MSG_(cb, cond, ...)                           \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_basic((cb), (::c4::yml::ErrorDataBasic{RYML_LOC_HERE()}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_PARSE_MSG_(cb, cond, ymlloc, ...)                   \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_parse((cb), (::c4::yml::ErrorDataParse{RYML_LOC_HERE(), ymlloc}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+#define _RYML_CHECK_VISIT_MSG_(cb, cond, tree, node, ...)               \
+    do {                                                                \
+        if(C4_UNLIKELY(!(cond)))                                        \
+        {                                                               \
+            RYML_DEBUG_BREAK();                                         \
+            ::c4::yml::err_visit((cb), (::c4::yml::ErrorDataVisit{RYML_LOC_HERE(), tree, node}), "check failed" _RYML_MAYBE_MSG_(cond) __VA_ARGS__); \
+            C4_UNREACHABLE_AFTER_ERR();                                 \
+        }                                                               \
+    } while(false)
+
+/// @endcond
 
 } // namespace yml
 } // namespace c4
 
-#endif /* _C4_YML_COMMON_HPP_ */
+#endif /* _C4_YML_ERROR_HPP_ */
 
 
-// (end src/c4/yml/common.hpp)
+// (end src/c4/yml/error.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/yml/error.def.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_YML_ERROR_DEF_HPP_
+#define _C4_YML_ERROR_DEF_HPP_
+
+/** @file error.def.hpp Definitions of error utilities used by ryml. */
+
+#ifndef _C4_YML_ERROR_HPP_
+// amalgamate: removed include of
+// c4/yml/error.hpp
+//#include <c4/yml/error.hpp>
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
+
+#endif
+
+
+namespace c4 {
+namespace yml {
+
+template<class DumpFn>
+C4_NO_INLINE size_t location_format(DumpFn &&dumpfn, Location const& loc)
+{
+    if(!loc)
+        return 0;
+    char buf_[32];
+    substr buf(buf_);
+    size_t count = 0;
+    if(!loc.name.empty())
+    {
+        std::forward<DumpFn>(dumpfn)(loc.name);
+        std::forward<DumpFn>(dumpfn)(":");
+        count += loc.name.len + 1;
+    }
+    if(loc.line != npos)
+    {
+        csubstr val = detail::_to_chars_limited(buf, loc.line);
+        if(loc.name.empty())
+        {
+            std::forward<DumpFn>(dumpfn)("line=");
+            std::forward<DumpFn>(dumpfn)(val);
+            if(loc.col == npos)
+            {
+                std::forward<DumpFn>(dumpfn)(":");
+                ++count;
+            }
+            count += val.len + 5;
+        }
+        else
+        {
+            std::forward<DumpFn>(dumpfn)(val);
+            std::forward<DumpFn>(dumpfn)(":");
+            count += val.len + 1;
+        }
+    }
+    if(loc.col != npos)
+    {
+        csubstr val = detail::_to_chars_limited(buf, loc.col);
+        if(loc.line != npos || !loc.name.empty())
+        {
+            std::forward<DumpFn>(dumpfn)(" ");
+            ++count;
+        }
+        std::forward<DumpFn>(dumpfn)("col=");
+        std::forward<DumpFn>(dumpfn)(val);
+        count += val.len + 4;
+        if(loc.offset == npos)
+        {
+            std::forward<DumpFn>(dumpfn)(":");
+            ++count;
+        }
+    }
+    if(loc.offset != npos)
+    {
+        csubstr val = detail::_to_chars_limited(buf, loc.offset);
+        if(loc.line != npos || loc.col != npos || !loc.name.empty())
+        {
+            std::forward<DumpFn>(dumpfn)(" ");
+            ++count;
+        }
+        std::forward<DumpFn>(dumpfn)("(");
+        std::forward<DumpFn>(dumpfn)(val);
+        std::forward<DumpFn>(dumpfn)("B):");
+        count += val.len + 5;
+    }
+    return count;
+}
+
+template<class DumpFn>
+C4_NO_INLINE void location_format_with_context(DumpFn &&dumpfn,
+                                               Location const &location,
+                                               csubstr source_buffer,
+                                               csubstr call,
+                                               size_t num_lines_before,
+                                               size_t num_lines_after,
+                                               size_t first_col_highlight,
+                                               size_t last_col_highlight,
+                                               size_t maxlen)
+{
+    if(!location)
+        return;
+    char buf_[32];
+    substr buf(buf_);
+    auto pr = [&](csubstr s){ std::forward<DumpFn>(dumpfn)(s); };
+    auto prn = [&](csubstr s, size_t num_times){
+        for(size_t i = 0; i < num_times; ++i)
+            std::forward<DumpFn>(dumpfn)(s);
+    };
+    csubstr line = detail::_get_text_region(source_buffer, location.offset, 0, 0);
+    size_t target_col = location.col != npos ? location.col : (last_col_highlight > first_col_highlight ? first_col_highlight : npos);
+    size_t first_col_to_show = 0;
+    if(target_col != npos && target_col > maxlen)
+        first_col_to_show = target_col - maxlen + 1;
+    auto print_line_maybe_truncated = [&](csubstr contents){
+        if(contents.len <= maxlen)
+        {
+            if(first_col_to_show == 0)
+            {
+                pr(contents);
+            }
+            else if(first_col_to_show < contents.len)
+            {
+                csubstr show = contents.sub(first_col_to_show);
+                pr("[...]");
+                pr(show);
+                if(maxlen > show.len)
+                    prn(" ", maxlen - show.len + 5);
+                pr(" (showing columns ");
+                pr(detail::_to_chars_limited(buf, first_col_to_show));
+                pr("-");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr("/");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+            else
+            {
+                pr("[...]");
+                prn(" ", maxlen + 5);
+                pr(" (not showing, columns=");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+        }
+        else
+        {
+            if(first_col_to_show == 0)
+            {
+                csubstr show = contents.first(maxlen);
+                pr(show);
+                pr("[...] (showing columns 0-");
+                pr(detail::_to_chars_limited(buf, show.len));
+                pr("/");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+            else if(first_col_to_show < contents.len && first_col_to_show + maxlen <= contents.len)
+            {
+                csubstr show = contents.sub(first_col_to_show, maxlen);
+                pr("[...]");
+                pr(show);
+                pr("[...] (showing columns ");
+                pr(detail::_to_chars_limited(buf, first_col_to_show));
+                pr("-");
+                pr(detail::_to_chars_limited(buf, first_col_to_show + maxlen));
+                pr("/");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+            else if(first_col_to_show < contents.len)
+            {
+                csubstr show = contents.sub(first_col_to_show);
+                pr("[...]");
+                pr(show);
+                if(maxlen > show.len)
+                    prn(" ", maxlen - show.len + 5);
+                pr(" (showing columns ");
+                pr(detail::_to_chars_limited(buf, first_col_to_show));
+                pr("-");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr("/");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+            else
+            {
+                pr("[...]");
+                prn(" ", maxlen + 5);
+                pr(" (not showing, columns=");
+                pr(detail::_to_chars_limited(buf, contents.len));
+                pr(")");
+            }
+        }
+    };
+    // print the location, and compute how many cols it took
+    size_t locsize = location_format(pr, location);
+    // print line
+    if(locsize)
+    {
+        pr(" ");
+        //++locsize;
+    }
+    auto print_call = [&](csubstr after){
+        pr(call);
+        pr(":");
+        if(after.len)
+            pr(after);
+    };
+    size_t jump;
+    if(call.empty())
+    {
+        print_line_maybe_truncated(line);
+        pr("\n");
+        jump = locsize + location.col - first_col_to_show;
+    }
+    else
+    {
+        print_call("\n");
+        print_call("\n");
+        print_call(" ");
+        pr("    ");
+        print_line_maybe_truncated(line);
+        pr("\n");
+        jump = call.len + 2;
+    }
+    // when skipping to the first col, add 5 to adjust for the [...]
+    // leading the line as shown
+    const size_t first_col_jump = first_col_to_show == 0 ? 0 : 5;
+    // print a cursor pointing at the column on the previous printed line
+    auto print_cursor = [&](size_t nocall_jump){
+        if(location.offset == npos)
+            return;
+        if(call.empty())
+        {
+            if(nocall_jump != npos)
+            {
+                prn(" ", nocall_jump + first_col_jump);
+                pr("|\n");
+                prn(" ", nocall_jump + first_col_jump);
+                pr("(here)\n");
+            }
+        }
+        else if(location.col != npos)
+        {
+            print_call(" ");
+            pr("    ");
+            prn(" ", location.col - first_col_to_show + first_col_jump);
+            pr("|\n");
+            print_call(" ");
+            pr("    ");
+            prn(" ", location.col - first_col_to_show + first_col_jump);
+            pr("(here)\n");
+        }
+    };
+    // maybe highlighted zone
+    size_t firstcol = first_col_highlight < line.len ? first_col_highlight : line.len;
+    size_t lastcol = last_col_highlight < line.len ? last_col_highlight : line.len;
+    firstcol = firstcol < maxlen ? firstcol : maxlen;
+    lastcol = lastcol < maxlen ? lastcol : maxlen;
+    if(firstcol < lastcol)
+    {
+        if(!call.empty())
+        {
+            print_call(" ");
+            pr("    ");
+        }
+        else
+        {
+            for(size_t i = 0; i < locsize + firstcol; ++i)
+                pr(" ");
+        }
+        for(size_t i = locsize + firstcol; i < locsize + lastcol; ++i)
+            pr("~");
+        pr("  (cols ");
+        pr(detail::_to_chars_limited(buf, firstcol));
+        pr("-");
+        pr(detail::_to_chars_limited(buf, lastcol));
+        pr("/");
+        pr(detail::_to_chars_limited(buf, line.len));
+        pr(")\n");
+    }
+    if(location.col != npos)
+    {
+        print_cursor(jump);
+    }
+    // maybe print the region
+    if(num_lines_before || num_lines_after)
+    {
+        if(!call.empty())
+        {
+            print_call("\n");
+            print_call(" ");
+            pr("see region:\n");
+            print_call("\n");
+        }
+        else
+        {
+            if(location)
+            {
+                location_format(pr, location);
+                pr(" ");
+            }
+            pr("see region:\n");
+        }
+        csubstr region = detail::_get_text_region(source_buffer, location.offset, num_lines_before, num_lines_after);
+        for(csubstr contents : region.split('\n'))
+        {
+            if(!call.empty())
+            {
+                print_call("     ");
+            }
+            print_line_maybe_truncated(contents);
+            pr("\n");
+        }
+        assert(location.col == npos || location.col >= first_col_to_show);
+        print_cursor(location.col - first_col_to_show);
+    }
+}
+
+
+template<class DumpFn>
+C4_NO_INLINE void err_basic_format(DumpFn &&dumpfn, csubstr msg, ErrorDataBasic const& errdata)
+{
+    if(errdata.location)
+    {
+        location_format(dumpfn, errdata.location);
+        std::forward<DumpFn>(dumpfn)(" ");
+    }
+    std::forward<DumpFn>(dumpfn)("ERROR: [basic] ");
+    std::forward<DumpFn>(dumpfn)(msg);
+}
+
+
+template<class DumpFn>
+C4_NO_INLINE void err_parse_format(DumpFn &&dumpfn, csubstr msg, ErrorDataParse const& errdata)
+{
+    if(errdata.ymlloc)
+    {
+        location_format(std::forward<DumpFn>(dumpfn), errdata.ymlloc);
+        std::forward<DumpFn>(dumpfn)(" ");
+    }
+    std::forward<DumpFn>(dumpfn)("ERROR: [parse] ");
+    std::forward<DumpFn>(dumpfn)(msg);
+    if(errdata.cpploc)
+    {
+        std::forward<DumpFn>(dumpfn)("\n");
+        location_format(std::forward<DumpFn>(dumpfn), errdata.cpploc);
+        std::forward<DumpFn>(dumpfn)(" (detected here)");
+    }
+}
+
+
+template<class DumpFn>
+C4_NO_INLINE void err_visit_format(DumpFn &&dumpfn, csubstr msg, ErrorDataVisit const& errdata)
+{
+    char buf_[32];
+    substr buf(buf_);
+    if(errdata.cpploc)
+    {
+        location_format(dumpfn, errdata.cpploc);
+        std::forward<DumpFn>(dumpfn)(" ");
+    }
+    std::forward<DumpFn>(dumpfn)("ERROR: [visit] ");
+    std::forward<DumpFn>(dumpfn)(msg);
+    if(errdata.node != NONE && errdata.tree != nullptr)
+    {
+        if(errdata.cpploc)
+        {
+            std::forward<DumpFn>(dumpfn)("\n");
+            location_format(dumpfn, errdata.cpploc);
+            std::forward<DumpFn>(dumpfn)(" ");
+        }
+        std::forward<DumpFn>(dumpfn)("ERROR: (");
+        if(errdata.node != NONE)
+        {
+            std::forward<DumpFn>(dumpfn)("node=");
+            std::forward<DumpFn>(dumpfn)(detail::_to_chars_limited(buf, errdata.node));
+            if(errdata.tree != nullptr)
+                std::forward<DumpFn>(dumpfn)(" ");
+        }
+        if(errdata.tree != nullptr)
+        {
+            std::forward<DumpFn>(dumpfn)("tree=");
+            std::forward<DumpFn>(dumpfn)(detail::_to_chars_limited(buf, static_cast<void const*>(errdata.tree)));
+        }
+        std::forward<DumpFn>(dumpfn)(")");
+    }
+}
+
+} // namespace yml
+} // namespace c4
+
+#endif /* _C4_YML_ERROR_HPP_ */
+
+
+// (end src/c4/yml/error.def.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/yml/escape_scalar.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_YML_ESCAPE_SCALAR_HPP_
+#define _C4_YML_ESCAPE_SCALAR_HPP_
+
+#ifndef _C4_YML_COMMON_HPP_
+// amalgamate: removed include of
+// c4/yml/common.hpp
+//#include "c4/yml/common.hpp"
+#if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
+#error "amalgamate: file c4/yml/common.hpp must have been included at this point"
+#endif /* C4_YML_COMMON_HPP_ */
+
+#endif
+
+namespace c4 {
+namespace yml {
+
+
+/** Iterate through a scalar and escape special characters in it. This
+ * function takes a callback (which accepts a single parameter of
+ * csubstr type) and, while processing, calls this callback as
+ * appropriate, passing ranges of the scalar and/or escaped
+ * characters.
+ *
+ * @param fn a sink function receiving a csubstr
+ * @param scalar the scalar to be escaped
+ * @param keep_newlines when true, `\n` will be escaped as `\\n\n` instead of just `\\n`
+ *
+ * Example usage:
+ *
+ * ```c++
+ * // escape to stdout
+ * void escape_scalar(FILE *file, csubstr scalar)
+ * {
+ *     auto print_ = [](csubstr repl){
+ *         fwrite(repl.len, 1, repl.str, file);
+ *     };
+ *     escape_scalar_fn(std::ref(print_), scalar);
+ * }
+ *
+ * // escape to a different buffer and return the required buffer size
+ * size_t escape_scalar(substr buffer, csubstr scalar)
+ * {
+ *     C4_ASSERT(!buffer.overlaps(scalar));
+ *     size_t pos = 0;
+ *     auto _append = [&](csubstr repl){
+ *         if(repl.len && (pos + repl.len <= buffer.len))
+ *             memcpy(buffer.str + pos, repl.str, repl.len);
+ *         pos += repl.len;
+ *     };
+ *     escape_scalar_fn(std::ref(_append), scalar);
+ *     return pos;
+ * }
+ * ```
+ */
+template<class Fn>
+void escape_scalar_fn(Fn &&fn, csubstr scalar, bool keep_newlines=false)
+{
+    size_t prev = 0;   // the last position that was flushed
+    size_t skip = 0;   // how much to add to prev
+    csubstr repl;      // replacement string
+    bool newl = false; // to add a newline
+    // cast to u8 to avoid having to deal with negative
+    // signed chars (which are present some platforms)
+    uint8_t const* C4_RESTRICT s = reinterpret_cast<uint8_t const*>(scalar.str); // NOLINT(*-reinterpret-cast)
+    // NOLINTBEGIN(*-goto)
+    for(size_t i = 0; i < scalar.len; ++i)
+    {
+        switch(s[i])
+        {
+        case UINT8_C(0x0a): // \n
+            repl = "\\n";
+            skip = 1;
+            if(keep_newlines)
+                newl = true;
+            goto flush_now;
+        case UINT8_C(0x5c): // '\\'
+            repl = "\\\\";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x09): // \t
+            repl = "\\t";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x0d): // \r
+            repl = "\\r";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x00): // \0
+            repl = "\\0";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x0c): // \f (form feed)
+            repl = "\\f";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x08): // \b (backspace)
+            repl = "\\b";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x07): // \a (bell)
+            repl = "\\a";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x0b): // \v (vertical tab)
+            repl = "\\v";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0x1b): // \e (escape)
+            repl = "\\e";
+            skip = 1;
+            goto flush_now;
+        case UINT8_C(0xc2): // AKA -0x3e
+            if(i+1 < scalar.len)
+            {
+                if(s[i+1] == UINT8_C(0xa0)) // AKA -0x60
+                {
+                    repl = "\\_";
+                    skip = 2;
+                    goto flush_now;
+                }
+                else if(s[i+1] == UINT8_C(0x85)) // AKA -0x7b
+                {
+                    repl = "\\N";
+                    skip = 2;
+                    goto flush_now;
+                }
+            }
+            continue;
+        case UINT8_C(0xe2): // AKA -0x1e
+            if(i+2 < scalar.len)
+            {
+                if(s[i+1] == UINT8_C(0x80)) // AKA -0x80
+                {
+                    if(s[i+2] == UINT8_C(0xa8)) // AKA -0x58
+                    {
+                        repl = "\\L";
+                        skip = 3;
+                        goto flush_now;
+                    }
+                    else if(s[i+2] == UINT8_C(0xa9)) // AKA -0x57
+                    {
+                        repl = "\\P";
+                        skip = 3;
+                        goto flush_now;
+                    }
+                }
+            }
+            continue;
+        default:
+            continue;
+        }
+    flush_now:
+        std::forward<Fn>(fn)(scalar.range(prev, i));
+        std::forward<Fn>(fn)(repl);
+        if(newl)
+        {
+            std::forward<Fn>(fn)("\n");
+            newl = false;
+        }
+        prev = i + skip;
+    }
+    // flush the rest
+    if(scalar.len > prev)
+        std::forward<Fn>(fn)(scalar.sub(prev));
+    // NOLINTEND(*-goto)
+}
+
+
+C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wattributes")
+/** Escape a scalar to an existing buffer, using @ref escape_scalar_fn
+ *
+ * @note This is a utility/debugging functions, so it is provided in this
+ * (optional) header. For this reason, we inline it to obey to the
+ * One-Definition Rule. But then we set the noinline attribute to
+ * ensure they are not inlined in calling code. */
+inline C4_NO_INLINE size_t escape_scalar(substr buffer, csubstr scalar, bool keep_newlines=false)
+{
+    size_t pos = 0;
+    auto _append = [&pos, &buffer](csubstr repl){
+        if(repl.len && (pos + repl.len <= buffer.len))
+            memcpy(buffer.str + pos, repl.str, repl.len);
+        pos += repl.len;
+    };
+    escape_scalar_fn(_append, scalar, keep_newlines);
+    return pos;
+}
+C4_SUPPRESS_WARNING_GCC_POP
+
+
+/** formatting helper to escape a scalar with @ref escape_scalar()x */
+struct escaped_scalar
+{
+    escaped_scalar(csubstr s, bool keep_newl=false) : scalar(s), keep_newlines(keep_newl) {}
+    csubstr scalar;
+    bool keep_newlines;
+};
+
+/** formatting implementation to escape a scalar with @ref escape_scalar()x */
+inline size_t to_chars(substr buf, escaped_scalar e)
+{
+    return escape_scalar(buf, e.scalar, e.keep_newlines);
+}
+
+
+} // namespace yml
+} // namespace c4
+
+#endif /* _C4_YML_ESCAPE_SCALAR_HPP_ */
+
+
+// (end src/c4/yml/escape_scalar.hpp)
 
 
 
@@ -22076,7 +24362,7 @@ typedef enum : type_bits {
     // style flags:
     //
     FLOW_SL     = __(16), ///< mark container with single-line flow style (seqs as '[val1,val2], maps as '{key: val,key2: val2}')
-    FLOW_ML     = __(17), ///< (NOT IMPLEMENTED, work in progress) mark container with multi-line flow style (seqs as '[\n  val1,\n  val2\n], maps as '{\n  key: val,\n  key2: val2\n}')
+    FLOW_ML     = __(17), ///< mark container with multi-line flow style (seqs as '[\n  val1,\n  val2\n], maps as '{\n  key: val,\n  key2: val2\n}')
     BLOCK       = __(18), ///< mark container with block style (seqs as '- val\n', maps as 'key: val')
     KEY_LITERAL = __(19), ///< mark key scalar as multiline, block literal |
     VAL_LITERAL = __(20), ///< mark val scalar as multiline, block literal |
@@ -22289,7 +24575,6 @@ RYML_EXPORT inline C4_NO_INLINE bool scalar_is_null(csubstr s) noexcept
 
 /** @} */
 
-
 /** @} */
 
 } // namespace yml
@@ -22417,6 +24702,7 @@ struct RYML_EXPORT TagDirectiveRange
 
 /** @file tree.hpp */
 
+#ifndef _C4_ERROR_HPP_
 // amalgamate: removed include of
 // c4/error.hpp
 //#include "c4/error.hpp"
@@ -22424,6 +24710,8 @@ struct RYML_EXPORT TagDirectiveRange
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
+#endif
+#ifndef _C4_TYPES_HPP_
 // amalgamate: removed include of
 // c4/types.hpp
 //#include "c4/types.hpp"
@@ -22431,6 +24719,7 @@ struct RYML_EXPORT TagDirectiveRange
 #error "amalgamate: file c4/types.hpp must have been included at this point"
 #endif /* C4_TYPES_HPP_ */
 
+#endif
 #ifndef _C4_YML_FWD_HPP_
 // amalgamate: removed include of
 // c4/yml/fwd.hpp
@@ -22465,6 +24754,15 @@ struct RYML_EXPORT TagDirectiveRange
 #if !defined(C4_YML_TAG_HPP_) && !defined(_C4_YML_TAG_HPP_)
 #error "amalgamate: file c4/yml/tag.hpp must have been included at this point"
 #endif /* C4_YML_TAG_HPP_ */
+
+#endif
+#ifndef _C4_YML_ERROR_HPP_
+// amalgamate: removed include of
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
 
 #endif
 #ifndef _C4_CHARCONV_HPP_
@@ -22503,8 +24801,45 @@ template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, 
 template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_arithmetic<T>::value && !std::is_floating_point<T>::value, bool>::type;
 template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_floating_point<T>::value, bool>::type;
 
+
 template<class T> size_t to_chars_float(substr buf, T val);
 template<class T> bool from_chars_float(csubstr buf, T *C4_RESTRICT val);
+
+
+template<class T>
+C4_ALWAYS_INLINE auto serialize_scalar(substr buf, T const& C4_RESTRICT a)
+    -> typename std::enable_if<std::is_floating_point<T>::value, size_t>::type
+{
+    return to_chars_float(buf, a);
+}
+template<class T>
+C4_ALWAYS_INLINE auto serialize_scalar(substr buf, T const& C4_RESTRICT a)
+    -> typename std::enable_if< ! std::is_floating_point<T>::value, size_t>::type
+{
+    return to_chars(buf, a);
+}
+
+
+template<class T>
+csubstr serialize_to_arena(Tree * C4_RESTRICT tree, T const& C4_RESTRICT a);
+
+RYML_EXPORT csubstr serialize_to_arena(Tree * C4_RESTRICT tree, csubstr a);
+
+// these overloads are needed to ensure that these types are not
+// dispatched to the general template overload
+C4_ALWAYS_INLINE csubstr serialize_to_arena(Tree * C4_RESTRICT tree, substr a)
+{
+    return serialize_to_arena(tree, csubstr(a));
+}
+C4_ALWAYS_INLINE csubstr serialize_to_arena(Tree * C4_RESTRICT tree, const char *a)
+{
+    return serialize_to_arena(tree, to_csubstr(a));
+}
+C4_ALWAYS_INLINE csubstr serialize_to_arena(Tree * C4_RESTRICT, std::nullptr_t)
+{
+    return csubstr{};
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -22618,13 +24953,13 @@ public:
     bool _check() const
     {
         // key cannot be empty
-        RYML_ASSERT(key.scalar.empty() == ((type & KEY) == 0));
+        _RYML_ASSERT_BASIC(key.scalar.empty() == ((type & KEY) == 0));
         // key tag cannot be empty
-        RYML_ASSERT(key.tag.empty() == ((type & KEYTAG) == 0));
+        _RYML_ASSERT_BASIC(key.tag.empty() == ((type & KEYTAG) == 0));
         // val may be empty even though VAL is set. But when VAL is not set, val must be empty
-        RYML_ASSERT(((type & VAL) != 0) || val.scalar.empty());
+        _RYML_ASSERT_BASIC(((type & VAL) != 0) || val.scalar.empty());
         // val tag cannot be empty
-        RYML_ASSERT(val.tag.empty() == ((type & VALTAG) == 0));
+        _RYML_ASSERT_BASIC(val.tag.empty() == ((type & VALTAG) == 0));
         return true;
     }
 };
@@ -22664,7 +24999,7 @@ public:
 
     Tree() : Tree(get_callbacks()) {}
     Tree(Callbacks const& cb);
-    Tree(id_type node_capacity, size_t arena_capacity=0) : Tree(node_capacity, arena_capacity, get_callbacks()) {}
+    Tree(id_type node_capacity, size_t arena_capacity=RYML_DEFAULT_TREE_ARENA_CAPACITY) : Tree(node_capacity, arena_capacity, get_callbacks()) {}
     Tree(id_type node_capacity, size_t arena_capacity, Callbacks const& cb);
 
     ~Tree();
@@ -22682,7 +25017,7 @@ public:
     /** @name memory and sizing */
     /** @{ */
 
-    void reserve(id_type node_capacity);
+    void reserve(id_type node_capacity=RYML_DEFAULT_TREE_CAPACITY);
 
     /** clear the tree and zero every node
      * @note does NOT clear the arena
@@ -22694,7 +25029,7 @@ public:
 
     id_type size() const { return m_size; }
     id_type capacity() const { return m_cap; }
-    id_type slack() const { RYML_ASSERT(m_cap >= m_size); return m_cap - m_size; }
+    id_type slack() const { _RYML_ASSERT_BASIC(m_cap >= m_size); return m_cap - m_size; }
 
     Callbacks const& callbacks() const { return m_callbacks; }
     void callbacks(Callbacks const& cb) { m_callbacks = cb; }
@@ -22712,7 +25047,7 @@ public:
     {
         if( ! n)
             return NONE;
-        _RYML_CB_ASSERT(m_callbacks, n >= m_buf && n < m_buf + m_cap);
+        _RYML_ASSERT_VISIT_(m_callbacks, n >= m_buf && n < m_buf + m_cap, this, NONE);
         return static_cast<id_type>(n - m_buf);
     }
 
@@ -22722,7 +25057,7 @@ public:
     {
         if(node == NONE)
             return nullptr;
-        _RYML_CB_ASSERT(m_callbacks, node >= 0 && node < m_cap);
+        _RYML_ASSERT_VISIT_(m_callbacks, node >= 0 && node < m_cap, this, node);
         return m_buf + node;
     }
     //! get a pointer to a node's NodeData.
@@ -22731,21 +25066,19 @@ public:
     {
         if(node == NONE)
             return nullptr;
-        _RYML_CB_ASSERT(m_callbacks, node >= 0 && node < m_cap);
+        _RYML_ASSERT_VISIT_(m_callbacks, node >= 0 && node < m_cap, this, node);
         return m_buf + node;
     }
 
     //! An if-less form of get() that demands a valid node index.
     //! This function is implementation only; use at your own risk.
-    NodeData       * _p(id_type node)       { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; } // NOLINT(readability-make-member-function-const)
+    NodeData       * _p(id_type node)       { _RYML_ASSERT_VISIT_(m_callbacks, node != NONE && node >= 0 && node < m_cap, this, node); return m_buf + node; } // NOLINT(readability-make-member-function-const)
     //! An if-less form of get() that demands a valid node index.
     //! This function is implementation only; use at your own risk.
-    NodeData const * _p(id_type node) const { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; }
+    NodeData const * _p(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, node != NONE && node >= 0 && node < m_cap, this, node); return m_buf + node; }
 
-    //! Get the id of the root node
-    id_type root_id()       { if(m_cap == 0) { reserve(16); } _RYML_CB_ASSERT(m_callbacks, m_cap > 0 && m_size > 0); return 0; }
-    //! Get the id of the root node
-    id_type root_id() const {                                 _RYML_CB_ASSERT(m_callbacks, m_cap > 0 && m_size > 0); return 0; }
+    //! Get the id of the root node. The tree must not be empty.
+    id_type root_id() const { _RYML_ASSERT_VISIT_(m_callbacks, m_cap > 0 && m_size > 0, this, id_type(0)); return 0; }
 
     //! Get a NodeRef of a node by id
     NodeRef      ref(id_type node);
@@ -22771,17 +25104,17 @@ public:
     //! @note @p i is NOT the node id, but the doc position within the stream
     ConstNodeRef cdocref(id_type i) const;
 
-    //! find a root child by name, return it as a NodeRef
+    //! find a root child (ie child of root) by name, return it as a NodeRef
     //! @note requires the root to be a map.
     NodeRef      operator[] (csubstr key);
-    //! find a root child by name, return it as a NodeRef
+    //! find a root child (ie child of root) by name, return it as a NodeRef
     //! @note requires the root to be a map.
     ConstNodeRef operator[] (csubstr key) const;
 
-    //! find a root child by index: return the root node's @p i-th child as a NodeRef
+    //! find a root child (ie child of root) by index: return the root node's @p i-th child as a NodeRef
     //! @note @p i is NOT the node id, but the child's position
     NodeRef      operator[] (id_type i);
-    //! find a root child by index: return the root node's @p i-th child as a NodeRef
+    //! find a root child (ie child of root) by index: return the root node's @p i-th child as a NodeRef
     //! @note @p i is NOT the node id, but the child's position
     ConstNodeRef operator[] (id_type i) const;
 
@@ -22795,17 +25128,17 @@ public:
     NodeType type(id_type node) const { return _p(node)->m_type; }
     const char* type_str(id_type node) const { return NodeType::type_str(_p(node)->m_type); }
 
-    csubstr    const& key       (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); return _p(node)->m_key.scalar; }
-    csubstr    const& key_tag   (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key_tag(node)); return _p(node)->m_key.tag; }
-    csubstr    const& key_ref   (id_type node) const { _RYML_CB_ASSERT(m_callbacks, is_key_ref(node)); return _p(node)->m_key.anchor; }
-    csubstr    const& key_anchor(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key_anchor(node)); return _p(node)->m_key.anchor; }
-    NodeScalar const& keysc     (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); return _p(node)->m_key; }
+    csubstr    const& key       (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); return _p(node)->m_key.scalar; }
+    csubstr    const& key_tag   (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key_tag(node), this, node); return _p(node)->m_key.tag; }
+    csubstr    const& key_ref   (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, is_key_ref(node), this, node); return _p(node)->m_key.anchor; }
+    csubstr    const& key_anchor(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key_anchor(node), this, node); return _p(node)->m_key.anchor; }
+    NodeScalar const& keysc     (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); return _p(node)->m_key; }
 
-    csubstr    const& val       (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node)); return _p(node)->m_val.scalar; }
-    csubstr    const& val_tag   (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val_tag(node)); return _p(node)->m_val.tag; }
-    csubstr    const& val_ref   (id_type node) const { _RYML_CB_ASSERT(m_callbacks, is_val_ref(node)); return _p(node)->m_val.anchor; }
-    csubstr    const& val_anchor(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val_anchor(node)); return _p(node)->m_val.anchor; }
-    NodeScalar const& valsc     (id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node)); return _p(node)->m_val; }
+    csubstr    const& val       (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node), this, node); return _p(node)->m_val.scalar; }
+    csubstr    const& val_tag   (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val_tag(node), this, node); return _p(node)->m_val.tag; }
+    csubstr    const& val_ref   (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, is_val_ref(node), this, node); return _p(node)->m_val.anchor; }
+    csubstr    const& val_anchor(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val_anchor(node), this, node); return _p(node)->m_val.anchor; }
+    NodeScalar const& valsc     (id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node), this, node); return _p(node)->m_val; }
 
     /** @} */
 
@@ -22836,8 +25169,8 @@ public:
     C4_ALWAYS_INLINE bool is_val_ref(id_type node) const { return _p(node)->m_type.is_val_ref(); }
     C4_ALWAYS_INLINE bool is_ref(id_type node) const { return _p(node)->m_type.is_ref(); }
 
-    C4_ALWAYS_INLINE bool parent_is_seq(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_parent(node)); return is_seq(_p(node)->m_parent); }
-    C4_ALWAYS_INLINE bool parent_is_map(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_parent(node)); return is_map(_p(node)->m_parent); }
+    C4_ALWAYS_INLINE bool parent_is_seq(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_parent(node), this, node); return is_seq(_p(node)->m_parent); }
+    C4_ALWAYS_INLINE bool parent_is_map(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_parent(node), this, node); return is_map(_p(node)->m_parent); }
 
     /** true when the node has an anchor named a */
     C4_ALWAYS_INLINE bool has_anchor(id_type node, csubstr a) const { return _p(node)->m_key.anchor == a || _p(node)->m_val.anchor == a; }
@@ -22845,11 +25178,11 @@ public:
     /** true if the node key is empty, or its scalar verifies @ref scalar_is_null().
      * @warning the node must verify @ref Tree::has_key() (asserted) (ie must be a member of a map)
      * @see https://github.com/biojppm/rapidyaml/issues/413 */
-    C4_ALWAYS_INLINE bool key_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_key_quoted() && (n->m_type.key_is_null() || scalar_is_null(n->m_key.scalar)); }
+    C4_ALWAYS_INLINE bool key_is_null(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_key_quoted() && (n->m_type.key_is_null() || scalar_is_null(n->m_key.scalar)); }
     /** true if the node val is empty, or its scalar verifies @ref scalar_is_null().
      * @warning the node must verify @ref Tree::has_val() (asserted) (ie must be a scalar / must not be a container)
      * @see https://github.com/biojppm/rapidyaml/issues/413 */
-    C4_ALWAYS_INLINE bool val_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_val_quoted() && (n->m_type.val_is_null() || scalar_is_null(n->m_val.scalar)); }
+    C4_ALWAYS_INLINE bool val_is_null(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node), this, node); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_val_quoted() && (n->m_type.val_is_null() || scalar_is_null(n->m_val.scalar)); }
 
     /// true if the key was a scalar requiring filtering and was left
     /// unfiltered during the parsing (see ParserOptions)
@@ -22870,7 +25203,7 @@ public:
     /** @name hierarchy predicates */
     /** @{ */
 
-    bool is_root(id_type node) const { _RYML_CB_ASSERT(m_callbacks, _p(node)->m_parent != NONE || node == 0); return _p(node)->m_parent == NONE; }
+    bool is_root(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, _p(node)->m_parent != NONE || node == 0, this, node); return _p(node)->m_parent == NONE; }
 
     bool has_parent(id_type node) const { return _p(node)->m_parent != NONE; }
 
@@ -22929,14 +25262,14 @@ public:
     /** counts with this */
     id_type num_siblings(id_type node) const { return is_root(node) ? 1 : num_children(_p(node)->m_parent); }
     /** does not count with this */
-    id_type num_other_siblings(id_type node) const { id_type ns = num_siblings(node); _RYML_CB_ASSERT(m_callbacks, ns > 0); return ns-1; }
-    id_type sibling_pos(id_type node, id_type sib) const { _RYML_CB_ASSERT(m_callbacks,  ! is_root(node) || node == root_id()); return child_pos(_p(node)->m_parent, sib); }
+    id_type num_other_siblings(id_type node) const { id_type ns = num_siblings(node); _RYML_ASSERT_VISIT_(m_callbacks, ns > 0, this, node); return ns-1; }
+    id_type sibling_pos(id_type node, id_type sib) const { _RYML_ASSERT_VISIT_(m_callbacks,  ! is_root(node) || node == root_id(), this, node); return child_pos(_p(node)->m_parent, sib); }
     id_type first_sibling(id_type node) const { return is_root(node) ? node : _p(_p(node)->m_parent)->m_first_child; }
     id_type last_sibling(id_type node) const { return is_root(node) ? node : _p(_p(node)->m_parent)->m_last_child; }
     id_type sibling(id_type node, id_type pos) const { return child(_p(node)->m_parent, pos); }
     id_type find_sibling(id_type node, csubstr const& key) const { return find_child(_p(node)->m_parent, key); }
 
-    id_type doc(id_type i) const { id_type rid = root_id(); _RYML_CB_ASSERT(m_callbacks, is_stream(rid)); return child(rid, i); } //!< gets the @p i document node index. requires that the root node is a stream.
+    id_type doc(id_type i) const { id_type rid = root_id(); _RYML_ASSERT_VISIT_(m_callbacks, is_stream(rid), this, rid); return child(rid, i); } //!< gets the @p i document node index. requires that the root node is a stream.
 
     id_type depth_asc(id_type node) const; /**< O(log(num_tree_nodes)) get the ascending depth of the node: number of levels between root and node */
     id_type depth_desc(id_type node) const; /**< O(num_tree_nodes) get the descending depth of the node: number of levels between node and deepest child */
@@ -22970,12 +25303,12 @@ public:
     C4_ALWAYS_INLINE bool is_val_quoted(id_type node) const { return _p(node)->m_type.is_val_quoted(); }
     C4_ALWAYS_INLINE bool is_quoted(id_type node) const { return _p(node)->m_type.is_quoted(); }
 
-    C4_ALWAYS_INLINE NodeType key_style(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); return _p(node)->m_type.key_style(); }
-    C4_ALWAYS_INLINE NodeType val_style(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node) || is_root(node)); return _p(node)->m_type.val_style(); }
+    C4_ALWAYS_INLINE NodeType key_style(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); return _p(node)->m_type.key_style(); }
+    C4_ALWAYS_INLINE NodeType val_style(id_type node) const { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node) || is_root(node), this, node); return _p(node)->m_type.val_style(); }
 
-    C4_ALWAYS_INLINE void set_container_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, is_container(node)); _p(node)->m_type.set_container_style(style); }
-    C4_ALWAYS_INLINE void set_key_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, has_key(node)); _p(node)->m_type.set_key_style(style); }
-    C4_ALWAYS_INLINE void set_val_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, has_val(node)); _p(node)->m_type.set_val_style(style); }
+    C4_ALWAYS_INLINE void set_container_style(id_type node, NodeType_e style) { _RYML_ASSERT_VISIT_(m_callbacks, is_container(node), this, node); _p(node)->m_type.set_container_style(style); }
+    C4_ALWAYS_INLINE void set_key_style(id_type node, NodeType_e style) { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); _p(node)->m_type.set_key_style(style); }
+    C4_ALWAYS_INLINE void set_val_style(id_type node, NodeType_e style) { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node), this, node); _p(node)->m_type.set_val_style(style); }
 
     void clear_style(id_type node, bool recurse=false);
     void set_style_conditionally(id_type node,
@@ -22999,16 +25332,16 @@ public:
     void to_doc(id_type node, type_bits more_flags=0);
     void to_stream(id_type node, type_bits more_flags=0);
 
-    void set_key(id_type node, csubstr key) { _RYML_CB_ASSERT(m_callbacks, has_key(node)); _p(node)->m_key.scalar = key; }
-    void set_val(id_type node, csubstr val) { _RYML_CB_ASSERT(m_callbacks, has_val(node)); _p(node)->m_val.scalar = val; }
+    void set_key(id_type node, csubstr key) { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); _p(node)->m_key.scalar = key; }
+    void set_val(id_type node, csubstr val) { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node), this, node); _p(node)->m_val.scalar = val; }
 
-    void set_key_tag(id_type node, csubstr tag) { _RYML_CB_ASSERT(m_callbacks, has_key(node)); _p(node)->m_key.tag = tag; _add_flags(node, KEYTAG); }
-    void set_val_tag(id_type node, csubstr tag) { _RYML_CB_ASSERT(m_callbacks, has_val(node) || is_container(node)); _p(node)->m_val.tag = tag; _add_flags(node, VALTAG); }
+    void set_key_tag(id_type node, csubstr tag) { _RYML_ASSERT_VISIT_(m_callbacks, has_key(node), this, node); _p(node)->m_key.tag = tag; _add_flags(node, KEYTAG); }
+    void set_val_tag(id_type node, csubstr tag) { _RYML_ASSERT_VISIT_(m_callbacks, has_val(node) || is_container(node), this, node); _p(node)->m_val.tag = tag; _add_flags(node, VALTAG); }
 
-    void set_key_anchor(id_type node, csubstr anchor) { _RYML_CB_ASSERT(m_callbacks,  ! is_key_ref(node)); _p(node)->m_key.anchor = anchor.triml('&'); _add_flags(node, KEYANCH); }
-    void set_val_anchor(id_type node, csubstr anchor) { _RYML_CB_ASSERT(m_callbacks,  ! is_val_ref(node)); _p(node)->m_val.anchor = anchor.triml('&'); _add_flags(node, VALANCH); }
-    void set_key_ref   (id_type node, csubstr ref   ) { _RYML_CB_ASSERT(m_callbacks,  ! has_key_anchor(node)); NodeData* C4_RESTRICT n = _p(node); n->m_key.set_ref_maybe_replacing_scalar(ref, n->m_type.has_key()); _add_flags(node, KEY|KEYREF); }
-    void set_val_ref   (id_type node, csubstr ref   ) { _RYML_CB_ASSERT(m_callbacks,  ! has_val_anchor(node)); NodeData* C4_RESTRICT n = _p(node); n->m_val.set_ref_maybe_replacing_scalar(ref, n->m_type.has_val()); _add_flags(node, VAL|VALREF); }
+    void set_key_anchor(id_type node, csubstr anchor) { _RYML_ASSERT_VISIT_(m_callbacks,  ! is_key_ref(node), this, node); _p(node)->m_key.anchor = anchor.triml('&'); _add_flags(node, KEYANCH); }
+    void set_val_anchor(id_type node, csubstr anchor) { _RYML_ASSERT_VISIT_(m_callbacks,  ! is_val_ref(node), this, node); _p(node)->m_val.anchor = anchor.triml('&'); _add_flags(node, VALANCH); }
+    void set_key_ref   (id_type node, csubstr ref   ) { _RYML_ASSERT_VISIT_(m_callbacks,  ! has_key_anchor(node), this, node); NodeData* C4_RESTRICT n = _p(node); n->m_key.set_ref_maybe_replacing_scalar(ref, n->m_type.has_key()); _add_flags(node, KEY|KEYREF); }
+    void set_val_ref   (id_type node, csubstr ref   ) { _RYML_ASSERT_VISIT_(m_callbacks,  ! has_val_anchor(node), this, node); NodeData* C4_RESTRICT n = _p(node); n->m_val.set_ref_maybe_replacing_scalar(ref, n->m_type.has_val()); _add_flags(node, VAL|VALREF); }
 
     void rem_key_anchor(id_type node) { _p(node)->m_key.anchor.clear(); _rem_flags(node, KEYANCH); }
     void rem_val_anchor(id_type node) { _p(node)->m_val.anchor.clear(); _rem_flags(node, VALANCH); }
@@ -23091,9 +25424,9 @@ public:
      * first child, set after to NONE */
     C4_ALWAYS_INLINE id_type insert_child(id_type parent, id_type after)
     {
-        _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-        _RYML_CB_ASSERT(m_callbacks, is_container(parent) || is_root(parent));
-        _RYML_CB_ASSERT(m_callbacks, after == NONE || (_p(after)->m_parent == parent));
+        _RYML_ASSERT_VISIT_(m_callbacks, parent != NONE, this, parent);
+        _RYML_ASSERT_VISIT_(m_callbacks, is_container(parent) || is_root(parent), this, parent);
+        _RYML_ASSERT_VISIT_(m_callbacks, after == NONE || (_p(after)->m_parent == parent), this, parent);
         id_type child = _claim();
         _set_hierarchy(child, parent, after);
         return child;
@@ -23256,13 +25589,12 @@ public:
     /** @{ */
 
     /** get the current size of the tree's internal arena */
-    RYML_DEPRECATED("use arena_size() instead") size_t arena_pos() const { return m_arena_pos; }
-    /** get the current size of the tree's internal arena */
     size_t arena_size() const { return m_arena_pos; }
     /** get the current capacity of the tree's internal arena */
     size_t arena_capacity() const { return m_arena.len; }
     /** get the current slack of the tree's internal arena */
-    size_t arena_slack() const { _RYML_CB_ASSERT(m_callbacks, m_arena.len >= m_arena_pos); return m_arena.len - m_arena_pos; }
+    size_t arena_slack() const { _RYML_ASSERT_VISIT_(m_callbacks, m_arena.len >= m_arena_pos, this, NONE); return m_arena.len - m_arena_pos; }
+    RYML_DEPRECATED("use arena_size() instead") size_t arena_pos() const { return m_arena_pos; }
 
     /** get the current arena */
     csubstr arena() const { return m_arena.first(m_arena_pos); }
@@ -23270,13 +25602,19 @@ public:
     substr arena() { return m_arena.first(m_arena_pos); } // NOLINT(readability-make-member-function-const)
 
     /** return true if the given substring is part of the tree's string arena */
-    bool in_arena(csubstr s) const
+    C4_ALWAYS_INLINE bool in_arena(csubstr s) const
     {
         return m_arena.is_super(s);
     }
 
-    /** serialize the given floating-point variable to the tree's
+    /** serialize the given variable to the tree's
      * arena, growing it as needed to accomodate the serialization.
+     *
+     * @note To customize how the type gets serialized to a string,
+     * you can overload c4::to_chars(substr, T const&)
+     *
+     * @note To customize how the type gets serialized to the arena,
+     * you can overload @ref serialize_scalar()
      *
      * @note Growing the arena may cause relocation of the entire
      * existing arena, and thus change the contents of individual
@@ -23286,99 +25624,17 @@ public:
      *
      * @see alloc_arena() */
     template<class T>
-    auto to_arena(T const& C4_RESTRICT a)
-        -> typename std::enable_if<std::is_floating_point<T>::value, csubstr>::type
+    C4_ALWAYS_INLINE csubstr to_arena(T const& C4_RESTRICT a)
     {
-        substr rem(m_arena.sub(m_arena_pos));
-        size_t num = to_chars_float(rem, a);
-        if(num > rem.len)
-        {
-            rem = _grow_arena(num);
-            num = to_chars_float(rem, a);
-            _RYML_CB_ASSERT(m_callbacks, num <= rem.len);
-        }
-        rem = _request_span(num);
-        return rem;
+        return serialize_to_arena(this, a);
     }
 
-    /** serialize the given non-floating-point variable to the tree's
-     * arena, growing it as needed to accomodate the serialization.
+    /** copy the given string to the tree's arena, growing the arena
+     * by the required size.
      *
-     * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual
-     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
-     * cost, ensure that the arena is reserved to an appropriate size
-     * using @ref Tree::reserve_arena().
-     *
-     * @see alloc_arena() */
-    template<class T>
-    auto to_arena(T const& C4_RESTRICT a)
-        -> typename std::enable_if<!std::is_floating_point<T>::value, csubstr>::type
-    {
-        substr rem(m_arena.sub(m_arena_pos));
-        size_t num = to_chars(rem, a);
-        if(num > rem.len)
-        {
-            rem = _grow_arena(num);
-            num = to_chars(rem, a);
-            _RYML_CB_ASSERT(m_callbacks, num <= rem.len);
-        }
-        rem = _request_span(num);
-        return rem;
-    }
-
-    /** serialize the given csubstr to the tree's arena, growing the
-     * arena as needed to accomodate the serialization.
-     *
-     * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual
-     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
-     * cost, ensure that the arena is reserved to an appropriate size
-     * using @ref Tree::reserve_arena().
-     *
-     * @see alloc_arena() */
-    csubstr to_arena(csubstr a)
-    {
-        if(a.len > 0)
-        {
-            substr rem(m_arena.sub(m_arena_pos));
-            size_t num = to_chars(rem, a);
-            if(num > rem.len)
-            {
-                rem = _grow_arena(num);
-                num = to_chars(rem, a);
-                _RYML_CB_ASSERT(m_callbacks, num <= rem.len);
-            }
-            return _request_span(num);
-        }
-        else
-        {
-            if(a.str == nullptr)
-            {
-                return csubstr{};
-            }
-            else if(m_arena.str == nullptr)
-            {
-                // Arena is empty and we want to store a non-null
-                // zero-length string.
-                // Even though the string has zero length, we need
-                // some "memory" to store a non-nullptr string
-                _grow_arena(1);
-            }
-            return _request_span(0);
-        }
-    }
-    C4_ALWAYS_INLINE csubstr to_arena(const char *s)
-    {
-        return to_arena(to_csubstr(s));
-    }
-    C4_ALWAYS_INLINE static csubstr to_arena(std::nullptr_t)
-    {
-        return csubstr{};
-    }
-
-    /** copy the given substr to the tree's arena, growing it by the
-     * required size
+     * @note this method differs from @ref to_arena() in that it
+     * returns a mutable substr, and further it does not deal
+     * with some corner cases for null/empty strings
      *
      * @note Growing the arena may cause relocation of the entire
      * existing arena, and thus change the contents of individual
@@ -23391,9 +25647,10 @@ public:
      */
     substr copy_to_arena(csubstr s)
     {
+        _RYML_ASSERT_VISIT_(m_callbacks, !s.overlaps(m_arena), this, NONE);
         substr cp = alloc_arena(s.len);
-        _RYML_CB_ASSERT(m_callbacks, cp.len == s.len);
-        _RYML_CB_ASSERT(m_callbacks, !s.overlaps(cp));
+        _RYML_ASSERT_VISIT_(m_callbacks, cp.len == s.len, this, NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, !s.overlaps(cp), this, NONE);
         #if (!defined(__clang__)) && (defined(__GNUC__) && __GNUC__ >= 10)
         C4_SUPPRESS_WARNING_GCC_PUSH
         C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow=") // no need for terminating \0
@@ -23429,18 +25686,18 @@ public:
      * @warning This operation may be expensive, with a potential complexity of O(numNodes)+O(arenasize).
      * @warning Growing the arena may cause relocation of the entire
      * existing arena, and thus change the contents of individual nodes. */
-    void reserve_arena(size_t arena_cap)
+    void reserve_arena(size_t arena_cap=RYML_DEFAULT_TREE_ARENA_CAPACITY)
     {
         if(arena_cap > m_arena.len)
         {
             substr buf;
-            buf.str = (char*) m_callbacks.m_allocate(arena_cap, m_arena.str, m_callbacks.m_user_data);
+            buf.str = _RYML_CB_ALLOC(m_callbacks, char, arena_cap);
             buf.len = arena_cap;
             if(m_arena.str)
             {
-                _RYML_CB_ASSERT(m_callbacks, m_arena.len >= 0);
+                _RYML_ASSERT_VISIT_(m_callbacks, m_arena.len >= 0, this, NONE);
                 _relocate(buf); // does a memcpy and changes nodes using the arena
-                m_callbacks.m_free(m_arena.str, m_arena.len, m_callbacks.m_user_data);
+                _RYML_CB_FREE(m_callbacks, m_arena.str, char, m_arena.len);
             }
             m_arena = buf;
         }
@@ -23448,7 +25705,9 @@ public:
 
     /** @} */
 
-private:
+public:
+
+    /** @cond dev */
 
     substr _grow_arena(size_t more)
     {
@@ -23461,7 +25720,7 @@ private:
 
     substr _request_span(size_t sz)
     {
-        _RYML_CB_ASSERT(m_callbacks, m_arena_pos + sz <= m_arena.len);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_arena_pos + sz <= m_arena.len, this, NONE);
         substr s;
         s = m_arena.sub(m_arena_pos, sz);
         m_arena_pos += sz;
@@ -23470,14 +25729,16 @@ private:
 
     substr _relocated(csubstr s, substr next_arena) const
     {
-        _RYML_CB_ASSERT(m_callbacks, m_arena.is_super(s));
-        _RYML_CB_ASSERT(m_callbacks, m_arena.sub(0, m_arena_pos).is_super(s));
+        _RYML_ASSERT_VISIT_(m_callbacks, m_arena.is_super(s) || s.len == 0, this, NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_arena.sub(0, m_arena_pos).is_super(s) || s.len == 0, this, NONE);
         auto pos = (s.str - m_arena.str); // this is larger than 0 based on the assertions above
         substr r(next_arena.str + pos, s.len);
-        _RYML_CB_ASSERT(m_callbacks, r.str - next_arena.str == pos);
-        _RYML_CB_ASSERT(m_callbacks, next_arena.sub(0, m_arena_pos).is_super(r));
+        _RYML_ASSERT_VISIT_(m_callbacks, r.str - next_arena.str == pos, this, NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, next_arena.sub(0, m_arena_pos).is_super(r) || r.len == 0, this, NONE);
         return r;
     }
+
+    /** @endcond */
 
 public:
 
@@ -23566,28 +25827,28 @@ public:
         C4_UNUSED(o);
         if(f & MAP)
         {
-            RYML_ASSERT_MSG((f & SEQ) == 0, "cannot mark simultaneously as map and seq");
-            RYML_ASSERT_MSG((f & VAL) == 0, "cannot mark simultaneously as map and val");
-            RYML_ASSERT_MSG((o & SEQ) == 0, "cannot turn a seq into a map; clear first");
-            RYML_ASSERT_MSG((o & VAL) == 0, "cannot turn a val into a map; clear first");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (f & SEQ) == 0, this, node, "cannot mark simultaneously as map and seq");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (f & VAL) == 0, this, node, "cannot mark simultaneously as map and val");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (o & SEQ) == 0, this, node, "cannot turn a seq into a map; clear first");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (o & VAL) == 0, this, node, "cannot turn a val into a map; clear first");
         }
         else if(f & SEQ)
         {
-            RYML_ASSERT_MSG((f & MAP) == 0, "cannot mark simultaneously as seq and map");
-            RYML_ASSERT_MSG((f & VAL) == 0, "cannot mark simultaneously as seq and val");
-            RYML_ASSERT_MSG((o & MAP) == 0, "cannot turn a map into a seq; clear first");
-            RYML_ASSERT_MSG((o & VAL) == 0, "cannot turn a val into a seq; clear first");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (f & MAP) == 0, this, node, "cannot mark simultaneously as seq and map");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (f & VAL) == 0, this, node, "cannot mark simultaneously as seq and val");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (o & MAP) == 0, this, node, "cannot turn a map into a seq; clear first");
+            _RYML_ASSERT_VISIT_MSG_(m_callbacks, (o & VAL) == 0, this, node, "cannot turn a val into a seq; clear first");
         }
         if(f & KEY)
         {
-            _RYML_CB_ASSERT(m_callbacks, !is_root(node));
+            _RYML_ASSERT_VISIT_(m_callbacks, !is_root(node), this, node);
             auto pid = parent(node); C4_UNUSED(pid);
-            _RYML_CB_ASSERT(m_callbacks, is_map(pid));
+            _RYML_ASSERT_VISIT_(m_callbacks, is_map(pid), this, node);
         }
         if((f & VAL) && !is_root(node))
         {
             auto pid = parent(node); C4_UNUSED(pid);
-            _RYML_CB_ASSERT(m_callbacks, is_map(pid) || is_seq(pid));
+            _RYML_ASSERT_VISIT_(m_callbacks, is_map(pid) || is_seq(pid), this, node);
         }
     }
     #endif
@@ -23614,24 +25875,24 @@ public:
 
     void _set_val(id_type node, csubstr val, type_bits more_flags=0)
     {
-        _RYML_CB_ASSERT(m_callbacks, num_children(node) == 0);
-        _RYML_CB_ASSERT(m_callbacks, !is_seq(node) && !is_map(node));
+        _RYML_ASSERT_VISIT_(m_callbacks, num_children(node) == 0, this, node);
+        _RYML_ASSERT_VISIT_(m_callbacks, !is_seq(node) && !is_map(node), this, node);
         _p(node)->m_val.scalar = val;
         _add_flags(node, VAL|more_flags);
     }
     void _set_val(id_type node, NodeScalar const& val, type_bits more_flags=0)
     {
-        _RYML_CB_ASSERT(m_callbacks, num_children(node) == 0);
-        _RYML_CB_ASSERT(m_callbacks,  ! is_container(node));
+        _RYML_ASSERT_VISIT_(m_callbacks, num_children(node) == 0, this, node);
+        _RYML_ASSERT_VISIT_(m_callbacks,  ! is_container(node), this, node);
         _p(node)->m_val = val;
         _add_flags(node, VAL|more_flags);
     }
 
     void _set(id_type node, NodeInit const& i)
     {
-        _RYML_CB_ASSERT(m_callbacks, i._check());
+        _RYML_ASSERT_VISIT_(m_callbacks, i._check(), this, node);
         NodeData *n = _p(node);
-        _RYML_CB_ASSERT(m_callbacks, n->m_key.scalar.empty() || i.key.scalar.empty() || i.key.scalar == n->m_key.scalar);
+        _RYML_ASSERT_VISIT_(m_callbacks, n->m_key.scalar.empty() || i.key.scalar.empty() || i.key.scalar == n->m_key.scalar, this, node);
         _add_flags(node, i.type);
         if(n->m_key.scalar.empty())
         {
@@ -23669,7 +25930,7 @@ public:
 
     void _seq2map(id_type node)
     {
-        _RYML_CB_ASSERT(m_callbacks, is_seq(node));
+        _RYML_ASSERT_VISIT_(m_callbacks, is_seq(node), this, node);
         for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
         {
             NodeData *C4_RESTRICT ch = _p(i);
@@ -23702,8 +25963,8 @@ public:
 
     void _copy_props(id_type dst_, Tree const* that_tree, id_type src_)
     {
-        auto      & C4_RESTRICT dst = *_p(dst_);
-        auto const& C4_RESTRICT src = *that_tree->_p(src_);
+        NodeData      & C4_RESTRICT dst = *_p(dst_);
+        NodeData const& C4_RESTRICT src = *that_tree->_p(src_);
         dst.m_type = src.m_type;
         dst.m_key  = src.m_key;
         dst.m_val  = src.m_val;
@@ -23711,8 +25972,8 @@ public:
 
     void _copy_props(id_type dst_, Tree const* that_tree, id_type src_, type_bits src_mask)
     {
-        auto      & C4_RESTRICT dst = *_p(dst_);
-        auto const& C4_RESTRICT src = *that_tree->_p(src_);
+        NodeData      & C4_RESTRICT dst = *_p(dst_);
+        NodeData const& C4_RESTRICT src = *that_tree->_p(src_);
         dst.m_type = (src.m_type & src_mask) | (dst.m_type & ~src_mask);
         dst.m_key  = src.m_key;
         dst.m_val  = src.m_val;
@@ -23785,8 +26046,7 @@ public:
 
     NodeData *m_buf;
     id_type   m_cap;
-
-    id_type m_size;
+    id_type   m_size;
 
     id_type m_free_head;
     id_type m_free_tail;
@@ -23797,7 +26057,6 @@ public:
     Callbacks m_callbacks;
 
     TagDirective m_tag_directives[RYML_MAX_TAG_DIRECTIVES];
-
 };
 
 
@@ -24003,6 +26262,26 @@ inline readkey(Tree const* C4_RESTRICT tree, id_type id, T *v)
     return C4_LIKELY(!key.empty()) ? from_chars_float(key, v) : false;
 }
 
+
+//-----------------------------------------------------------------------------
+
+template<class T>
+csubstr serialize_to_arena(Tree * C4_RESTRICT tree, T const& C4_RESTRICT a)
+{
+    substr rem(tree->m_arena.sub(tree->m_arena_pos));
+    size_t num = serialize_scalar(rem, a);
+    if(num > rem.len)
+    {
+        rem = tree->_grow_arena(num);
+        num = serialize_scalar(rem, a);
+        _RYML_ASSERT_VISIT_(tree->m_callbacks, num <= rem.len, tree, NONE);
+    }
+    rem = tree->_request_span(num);
+    return rem;
+}
+
+
+
 /** @} */
 
 /** @} */
@@ -24126,14 +26405,14 @@ struct child_iterator
 
     child_iterator(tree_type * t, id_type id) : m_tree(t), m_child_id(id) {}
 
-    child_iterator& operator++ () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->next_sibling(m_child_id); return *this; }
-    child_iterator& operator-- () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->prev_sibling(m_child_id); return *this; }
+    child_iterator& operator++ () { _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_child_id != NONE, m_tree, NONE); m_child_id = m_tree->next_sibling(m_child_id); return *this; }
+    child_iterator& operator-- () { _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_child_id != NONE, m_tree, NONE); m_child_id = m_tree->prev_sibling(m_child_id); return *this; }
 
     NodeRefType operator*  () const { return NodeRefType(m_tree, m_child_id); }
     NodeRefType operator-> () const { return NodeRefType(m_tree, m_child_id); }
 
-    bool operator!= (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id != that.m_child_id; }
-    bool operator== (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id == that.m_child_id; }
+    bool operator!= (child_iterator that) const { _RYML_ASSERT_VISIT(m_tree == that.m_tree, m_tree, NONE); return m_child_id != that.m_child_id; }
+    bool operator== (child_iterator that) const { _RYML_ASSERT_VISIT(m_tree == that.m_tree, m_tree, NONE); return m_child_id == that.m_child_id; }
 };
 
 template<class NodeRefType>
@@ -24226,9 +26505,9 @@ struct RoNodeMethods
     // require readable: this is a precondition for reading from the
     // tree using this object.
     #define _C4RR()                                       \
-        RYML_ASSERT(tree_ != nullptr);                    \
-        _RYML_CB_ASSERT(tree_->m_callbacks, id_ != NONE); \
-        _RYML_CB_ASSERT(tree_->m_callbacks, (((Impl const* C4_RESTRICT)this)->readable()))
+        _RYML_ASSERT_BASIC(tree_ != nullptr);              \
+        _RYML_ASSERT_VISIT_(tree_->m_callbacks, id_ != NONE, tree_, id_); \
+        _RYML_ASSERT_VISIT_(tree_->m_callbacks, (((Impl const* C4_RESTRICT)this)->readable()), tree_, id_)
     // a SFINAE beautifier to enable a function only if the
     // implementation is mutable
     #define _C4_IF_MUTABLE(ty) typename std::enable_if<!std::is_same<U, ConstImpl>::value, ty>::type
@@ -24241,11 +26520,12 @@ public:
 
     /** returns the data or null when the id is NONE */
     C4_ALWAYS_INLINE NodeData const* get() const RYML_NOEXCEPT { return ((Impl const*)this)->readable() ? tree_->get(id_) : nullptr; }
+
     /** returns the data or null when the id is NONE */
     template<class U=Impl>
     C4_ALWAYS_INLINE auto get() RYML_NOEXCEPT -> _C4_IF_MUTABLE(NodeData*) { return ((Impl const*)this)->readable() ? tree__->get(id__) : nullptr; }
 
-    C4_ALWAYS_INLINE NodeType    type()     const RYML_NOEXCEPT { _C4RR(); return tree_->type(id_); }     /**< Forward to @ref Tree::type_str(). Node must be readable. */
+    C4_ALWAYS_INLINE NodeType    type()     const RYML_NOEXCEPT { _C4RR(); return tree_->type(id_); }     /**< Forward to @ref Tree::type(). Node must be readable. */
     C4_ALWAYS_INLINE const char* type_str() const RYML_NOEXCEPT { _C4RR(); return tree_->type_str(id_); } /**< Forward to @ref Tree::type_str(). Node must be readable. */
 
     C4_ALWAYS_INLINE csubstr key()        const RYML_NOEXCEPT { _C4RR(); return tree_->key(id_); }        /**< Forward to @ref Tree::key(). Node must be readable. */
@@ -24354,12 +26634,12 @@ public:
     C4_ALWAYS_INLINE bool has_child(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); return n.readable() ? tree_->has_child(id_, n.m_id) : false; } /**< Forward to @ref Tree::has_child(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_child(id_type node) const RYML_NOEXCEPT { _C4RR(); return tree_->has_child(id_, node); } /**< Forward to @ref Tree::has_child(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_child(csubstr name) const RYML_NOEXCEPT { _C4RR(); return tree_->has_child(id_, name); } /**< Forward to @ref Tree::has_child(). Node must be readable. */
-    C4_ALWAYS_INLINE bool has_children() const RYML_NOEXCEPT { _C4RR(); return tree_->has_children(id_); } /**< Forward to @ref Tree::has_child(). Node must be readable. */
+    C4_ALWAYS_INLINE bool has_children() const RYML_NOEXCEPT { _C4RR(); return tree_->has_children(id_); } /**< Forward to @ref Tree::has_children(). Node must be readable. */
 
     C4_ALWAYS_INLINE bool has_sibling(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); return n.readable() ? tree_->has_sibling(id_, n.m_id) : false; } /**< Forward to @ref Tree::has_sibling(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_sibling(id_type node) const RYML_NOEXCEPT { _C4RR(); return tree_->has_sibling(id_, node); } /**< Forward to @ref Tree::has_sibling(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_sibling(csubstr name) const RYML_NOEXCEPT { _C4RR(); return tree_->has_sibling(id_, name); } /**< Forward to @ref Tree::has_sibling(). Node must be readable. */
-    C4_ALWAYS_INLINE bool has_other_siblings() const RYML_NOEXCEPT { _C4RR(); return tree_->has_other_siblings(id_); }  /**< Forward to @ref Tree::has_sibling(). Node must be readable. */
+    C4_ALWAYS_INLINE bool has_other_siblings() const RYML_NOEXCEPT { _C4RR(); return tree_->has_other_siblings(id_); }  /**< Forward to @ref Tree::has_other_siblings(). Node must be readable. */
 
     RYML_DEPRECATED("use has_other_siblings()") bool has_siblings() const RYML_NOEXCEPT { _C4RR(); return tree_->has_siblings(id_); }
 
@@ -24373,8 +26653,8 @@ public:
     // documentation to the right -->
 
     template<class U=Impl>
-    C4_ALWAYS_INLINE auto doc(id_type i) RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { RYML_ASSERT(tree_); return {tree__, tree__->doc(i)}; } /**< Forward to @ref Tree::doc(). Node must be readable. */
-    C4_ALWAYS_INLINE ConstImpl doc(id_type i) const RYML_NOEXCEPT { RYML_ASSERT(tree_); return {tree_, tree_->doc(i)}; }                /**< Forward to @ref Tree::doc(). Node must be readable. succeeds even when the node may have invalid or seed id */
+    C4_ALWAYS_INLINE auto doc(id_type i) RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _RYML_ASSERT_BASIC(tree_); return {tree__, tree__->doc(i)}; } /**< Forward to @ref Tree::doc(). Node must be readable. */
+    C4_ALWAYS_INLINE ConstImpl doc(id_type i) const RYML_NOEXCEPT { _RYML_ASSERT_BASIC(tree_); return {tree_, tree_->doc(i)}; }                /**< Forward to @ref Tree::doc(). Node must be readable. succeeds even when the node may have invalid or seed id */
 
     template<class U=Impl>
     C4_ALWAYS_INLINE auto parent() RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _C4RR(); return {tree__, tree__->parent(id__)}; } /**< Forward to @ref Tree::parent(). Node must be readable. */
@@ -24393,8 +26673,8 @@ public:
     C4_ALWAYS_INLINE ConstImpl child(id_type pos) const RYML_NOEXCEPT { _C4RR(); return {tree_, tree_->child(id_, pos)}; }                  /**< Forward to @ref Tree::child(). Node must be readable. */
 
     template<class U=Impl>
-    C4_ALWAYS_INLINE auto find_child(csubstr name)  RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _C4RR(); return {tree__, tree__->find_child(id__, name)}; }  /**< Forward to @ref Tree::first_child(). Node must be readable. */
-    C4_ALWAYS_INLINE ConstImpl find_child(csubstr name) const RYML_NOEXCEPT { _C4RR(); return {tree_, tree_->find_child(id_, name)}; }                   /**< Forward to @ref Tree::first_child(). Node must be readable. */
+    C4_ALWAYS_INLINE auto find_child(csubstr name)  RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _C4RR(); return {tree__, tree__->find_child(id__, name)}; }  /**< Forward to @ref Tree::find_child(). Node must be readable. */
+    C4_ALWAYS_INLINE ConstImpl find_child(csubstr name) const RYML_NOEXCEPT { _C4RR(); return {tree_, tree_->find_child(id_, name)}; }                   /**< Forward to @ref Tree::find_child(). Node must be readable. */
 
     template<class U=Impl>
     C4_ALWAYS_INLINE auto prev_sibling() RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _C4RR(); return {tree__, tree__->prev_sibling(id__)}; }  /**< Forward to @ref Tree::prev_sibling(). Node must be readable. */
@@ -24423,8 +26703,8 @@ public:
     C4_ALWAYS_INLINE id_type num_children() const RYML_NOEXCEPT { _C4RR(); return tree_->num_children(id_); } /**< O(num_children). Forward to @ref Tree::num_children(). */
     C4_ALWAYS_INLINE id_type num_siblings() const RYML_NOEXCEPT { _C4RR(); return tree_->num_siblings(id_); } /**< O(num_children). Forward to @ref Tree::num_siblings(). */
     C4_ALWAYS_INLINE id_type num_other_siblings() const RYML_NOEXCEPT { _C4RR(); return tree_->num_other_siblings(id_); } /**< O(num_siblings). Forward to @ref Tree::num_other_siblings(). */
-    C4_ALWAYS_INLINE id_type child_pos(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); _RYML_CB_ASSERT(tree_->m_callbacks, n.readable()); return tree_->child_pos(id_, n.m_id); } /**< O(num_children). Forward to @ref Tree::child_pos(). */
-    C4_ALWAYS_INLINE id_type sibling_pos(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); _RYML_CB_ASSERT(tree_->callbacks(), n.readable()); return tree_->child_pos(tree_->parent(id_), n.m_id); } /**< O(num_siblings). Forward to @ref Tree::sibling_pos(). */
+    C4_ALWAYS_INLINE id_type child_pos(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); _RYML_ASSERT_VISIT_(tree_->m_callbacks, n.readable(), n.tree(), n.id()); return tree_->child_pos(id_, n.m_id); } /**< O(num_children). Forward to @ref Tree::child_pos(). */
+    C4_ALWAYS_INLINE id_type sibling_pos(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); _RYML_ASSERT_VISIT_(tree_->callbacks(), n.readable(), n.tree(), n.id()); return tree_->child_pos(tree_->parent(id_), n.m_id); } /**< O(num_siblings). Forward to @ref Tree::sibling_pos(). */
 
     C4_ALWAYS_INLINE id_type depth_asc() const RYML_NOEXCEPT { _C4RR(); return tree_->depth_asc(id_); } /** O(log(num_nodes)). Forward to Tree::depth_asc(). Node must be readable. */
     C4_ALWAYS_INLINE id_type depth_desc() const RYML_NOEXCEPT { _C4RR(); return tree_->depth_desc(id_); } /** O(num_nodes). Forward to Tree::depth_desc(). Node must be readable. */
@@ -24502,7 +26782,7 @@ public:
     {
         _C4RR();
         id_type ch = tree_->find_child(id_, key);
-        _RYML_CB_ASSERT(tree_->m_callbacks, ch != NONE);
+        _RYML_ASSERT_VISIT_(tree_->m_callbacks, ch != NONE, tree_, id_);
         return {tree_, ch};
     }
 
@@ -24519,7 +26799,7 @@ public:
     {
         _C4RR();
         id_type ch = tree_->child(id_, pos);
-        _RYML_CB_ASSERT(tree_->m_callbacks, ch != NONE);
+        _RYML_ASSERT_VISIT_(tree_->m_callbacks, ch != NONE, tree_, id_);
         return {tree_, ch};
     }
 
@@ -24565,10 +26845,10 @@ public:
     template<class U=Impl>
     C4_ALWAYS_INLINE auto at(csubstr key) -> _C4_IF_MUTABLE(Impl)
     {
-        RYML_CHECK(tree_ != nullptr);
-        _RYML_CB_CHECK(tree_->m_callbacks, (id_ >= 0 && id_ < tree_->capacity()));
-        _RYML_CB_CHECK(tree_->m_callbacks, ((Impl const*)this)->readable());
-        _RYML_CB_CHECK(tree_->m_callbacks, tree_->is_map(id_));
+        _RYML_CHECK_BASIC(tree_ != nullptr);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (id_ >= 0 && id_ < tree_->capacity()), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ((Impl const*)this)->readable(), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, tree_->is_map(id_), tree_, id_);
         id_type ch = tree__->find_child(id__, key);
         return ch != NONE ? Impl(tree__, ch) : Impl(tree__, id__, key);
     }
@@ -24601,12 +26881,12 @@ public:
     template<class U=Impl>
     C4_ALWAYS_INLINE auto at(id_type pos) -> _C4_IF_MUTABLE(Impl)
     {
-        RYML_CHECK(tree_ != nullptr);
+        _RYML_CHECK_BASIC(tree_ != nullptr);
         const id_type cap = tree_->capacity();
-        _RYML_CB_CHECK(tree_->m_callbacks, (id_ >= 0 && id_ < cap));
-        _RYML_CB_CHECK(tree_->m_callbacks, (pos >= 0 && pos < cap));
-        _RYML_CB_CHECK(tree_->m_callbacks, ((Impl const*)this)->readable());
-        _RYML_CB_CHECK(tree_->m_callbacks, tree_->is_container(id_));
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (id_ >= 0 && id_ < cap), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (pos >= 0 && pos < cap), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ((Impl const*)this)->readable(), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, tree_->is_container(id_), tree_, id_);
         id_type ch = tree__->child(id__, pos);
         return ch != NONE ? Impl(tree__, ch) : Impl(tree__, id__, pos);
     }
@@ -24622,12 +26902,12 @@ public:
      * callback instead of directly raising an exception. */
     ConstImpl at(csubstr key) const
     {
-        RYML_CHECK(tree_ != nullptr);
-        _RYML_CB_CHECK(tree_->m_callbacks, (id_ >= 0 && id_ < tree_->capacity()));
-        _RYML_CB_CHECK(tree_->m_callbacks, ((Impl const*)this)->readable());
-        _RYML_CB_CHECK(tree_->m_callbacks, tree_->is_map(id_));
+        _RYML_CHECK_BASIC(tree_ != nullptr);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (id_ >= 0 && id_ < tree_->capacity()), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ((Impl const*)this)->readable(), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, tree_->is_map(id_), tree_, id_);
         id_type ch = tree_->find_child(id_, key);
-        _RYML_CB_CHECK(tree_->m_callbacks, ch != NONE);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ch != NONE, tree_, id_);
         return {tree_, ch};
     }
 
@@ -24642,14 +26922,14 @@ public:
      * callback instead of directly raising an exception. */
     ConstImpl at(id_type pos) const
     {
-        RYML_CHECK(tree_ != nullptr);
+        _RYML_CHECK_BASIC(tree_ != nullptr);
         const id_type cap = tree_->capacity();
-        _RYML_CB_CHECK(tree_->m_callbacks, (id_ >= 0 && id_ < cap));
-        _RYML_CB_CHECK(tree_->m_callbacks, (pos >= 0 && pos < cap));
-        _RYML_CB_CHECK(tree_->m_callbacks, ((Impl const*)this)->readable());
-        _RYML_CB_CHECK(tree_->m_callbacks, tree_->is_container(id_));
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (id_ >= 0 && id_ < cap), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, (pos >= 0 && pos < cap), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ((Impl const*)this)->readable(), tree_, id_);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, tree_->is_container(id_), tree_, id_);
         const id_type ch = tree_->child(id_, pos);
-        _RYML_CB_CHECK(tree_->m_callbacks, ch != NONE);
+        _RYML_CHECK_VISIT_(tree_->m_callbacks, ch != NONE, tree_, id_);
         return {tree_, ch};
     }
 
@@ -24680,7 +26960,7 @@ public:
     {
         _C4RR();
         if( ! read((ConstImpl const&)*this, &v))
-            _RYML_CB_ERR(tree_->m_callbacks, "could not deserialize value");
+            _RYML_ERR_VISIT_(tree_->m_callbacks, tree_, id_, "could not deserialize value");
         return *((ConstImpl const*)this);
     }
 
@@ -24692,7 +26972,7 @@ public:
     {
         _C4RR();
         if( ! readkey((ConstImpl const&)*this, &v.k))
-            _RYML_CB_ERR(tree_->m_callbacks, "could not deserialize key");
+            _RYML_ERR_VISIT_(tree_->m_callbacks, tree_, id_, "could not deserialize key");
         return *((ConstImpl const*)this);
     }
 
@@ -24787,29 +27067,22 @@ public:
     using children_view = detail::children_view_<Impl>;
     using const_children_view = detail::children_view_<ConstImpl>;
 
-    /** get an iterator to the first child */
     template<class U=Impl>
-    C4_ALWAYS_INLINE auto begin() RYML_NOEXCEPT -> _C4_IF_MUTABLE(iterator) { _C4RR(); return iterator(tree__, tree__->first_child(id__)); }
-    /** get an iterator to the first child */
-    C4_ALWAYS_INLINE const_iterator begin() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, tree_->first_child(id_)); }
-    /** get an iterator to the first child */
-    C4_ALWAYS_INLINE const_iterator cbegin() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, tree_->first_child(id_)); }
+    C4_ALWAYS_INLINE auto begin() RYML_NOEXCEPT -> _C4_IF_MUTABLE(iterator) { _C4RR(); return iterator(tree__, tree__->first_child(id__)); }  /**< get a mutable iterator to the first child. NOT AVAILABLE for ConstNodeRef. */
+    C4_ALWAYS_INLINE const_iterator begin() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, tree_->first_child(id_)); } /**< get an iterator to the first child */
+    C4_ALWAYS_INLINE const_iterator cbegin() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, tree_->first_child(id_)); } /**< get an iterator to the first child */
 
-    /** get an iterator to after the last child */
     template<class U=Impl>
-    C4_ALWAYS_INLINE auto end() RYML_NOEXCEPT -> _C4_IF_MUTABLE(iterator) { _C4RR(); return iterator(tree__, NONE); }
+    C4_ALWAYS_INLINE auto end() RYML_NOEXCEPT -> _C4_IF_MUTABLE(iterator) { _C4RR(); return iterator(tree__, NONE); } /**< get an iterator to after the last child. NOT AVAILABLE for ConstNodeRef. */
     /** get an iterator to after the last child */
-    C4_ALWAYS_INLINE const_iterator end() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, NONE); }
+    C4_ALWAYS_INLINE const_iterator end() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, NONE); } /**< get an iterator to after the last child */
     /** get an iterator to after the last child */
-    C4_ALWAYS_INLINE const_iterator cend() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, tree_->first_child(id_)); }
+    C4_ALWAYS_INLINE const_iterator cend() const RYML_NOEXCEPT { _C4RR(); return const_iterator(tree_, NONE); } /**< get an iterator to after the last child */
 
-    /** get an iterable view over children */
     template<class U=Impl>
-    C4_ALWAYS_INLINE auto children() RYML_NOEXCEPT -> _C4_IF_MUTABLE(children_view) { _C4RR(); return children_view(begin(), end()); }
-    /** get an iterable view over children */
-    C4_ALWAYS_INLINE const_children_view children() const RYML_NOEXCEPT { _C4RR(); return const_children_view(begin(), end()); }
-    /** get an iterable view over children */
-    C4_ALWAYS_INLINE const_children_view cchildren() const RYML_NOEXCEPT { _C4RR(); return const_children_view(begin(), end()); }
+    C4_ALWAYS_INLINE auto children() RYML_NOEXCEPT -> _C4_IF_MUTABLE(children_view) { _C4RR(); return children_view(begin(), end()); } /**< get an iterable view over children. NOT AVAILABLE for ConstNodeRef. */
+    C4_ALWAYS_INLINE const_children_view children() const RYML_NOEXCEPT { _C4RR(); return const_children_view(begin(), end()); } /**< get an iterable view over children */
+    C4_ALWAYS_INLINE const_children_view cchildren() const RYML_NOEXCEPT { _C4RR(); return const_children_view(begin(), end()); } /**< get an iterable view over children */
 
     /** get an iterable view over all siblings (including the calling node) */
     template<class U=Impl>
@@ -24984,8 +27257,8 @@ public:
     RYML_DEPRECATED("use invalid()")  bool operator== (std::nullptr_t) const noexcept { return m_tree == nullptr || m_id == NONE; }
     RYML_DEPRECATED("use !invalid()") bool operator!= (std::nullptr_t) const noexcept { return !(m_tree == nullptr || m_id == NONE); }
 
-    RYML_DEPRECATED("use (this->val() == s)") bool operator== (csubstr s) const RYML_NOEXCEPT { RYML_ASSERT(m_tree); _RYML_CB_ASSERT(m_tree->m_callbacks, m_id != NONE); return m_tree->val(m_id) == s; }
-    RYML_DEPRECATED("use (this->val() != s)") bool operator!= (csubstr s) const RYML_NOEXCEPT { RYML_ASSERT(m_tree); _RYML_CB_ASSERT(m_tree->m_callbacks, m_id != NONE); return m_tree->val(m_id) != s; }
+    RYML_DEPRECATED("use (this->val() == s)") bool operator== (csubstr s) const RYML_NOEXCEPT { _RYML_ASSERT_BASIC(m_tree); _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_id != NONE, m_tree, NONE); return m_tree->val(m_id) == s; }
+    RYML_DEPRECATED("use (this->val() != s)") bool operator!= (csubstr s) const RYML_NOEXCEPT { _RYML_ASSERT_BASIC(m_tree); _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_id != NONE, m_tree, NONE); return m_tree->val(m_id) != s; }
     /** @endcond */
 
     /** @} */
@@ -25063,13 +27336,13 @@ private:
     friend struct detail::RoNodeMethods<NodeRef, ConstNodeRef>;
 
     // require valid: a helper macro, undefined at the end
-    #define _C4RR()                                                         \
-        RYML_ASSERT(m_tree != nullptr);                                     \
-        _RYML_CB_ASSERT(m_tree->m_callbacks, m_id != NONE && !is_seed())
+    #define _C4RR()                                                     \
+        _RYML_ASSERT_BASIC(m_tree != nullptr);                           \
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_id != NONE && !is_seed(), m_tree, m_id)
     // require id: a helper macro, undefined at the end
     #define _C4RID()                                                        \
-        RYML_ASSERT(m_tree != nullptr);                                     \
-        _RYML_CB_ASSERT(m_tree->m_callbacks, m_id != NONE)
+        _RYML_ASSERT_BASIC(m_tree != nullptr);                                     \
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_id != NONE, m_tree, m_id)
 
 public:
 
@@ -25149,8 +27422,8 @@ public:
     RYML_DEPRECATED("use !readable()") bool operator== (std::nullptr_t) const { return m_tree == nullptr || m_id == NONE || is_seed(); }
     RYML_DEPRECATED("use readable()")  bool operator!= (std::nullptr_t) const { return !(m_tree == nullptr || m_id == NONE || is_seed()); }
 
-    RYML_DEPRECATED("use `this->val() == s`") bool operator== (csubstr s) const { _C4RR(); _RYML_CB_ASSERT(m_tree->m_callbacks, has_val()); return m_tree->val(m_id) == s; }
-    RYML_DEPRECATED("use `this->val() != s`") bool operator!= (csubstr s) const { _C4RR(); _RYML_CB_ASSERT(m_tree->m_callbacks, has_val()); return m_tree->val(m_id) != s; }
+    RYML_DEPRECATED("use `this->val() == s`") bool operator== (csubstr s) const { _C4RR(); _RYML_ASSERT_VISIT_(m_tree->m_callbacks, has_val(), m_tree, m_id); return m_tree->val(m_id) == s; }
+    RYML_DEPRECATED("use `this->val() != s`") bool operator!= (csubstr s) const { _C4RR(); _RYML_ASSERT_VISIT_(m_tree->m_callbacks, has_val(), m_tree, m_id); return m_tree->val(m_id) != s; }
     /** @endcond */
 
 public:
@@ -25283,7 +27556,7 @@ public:
     template<class T>
     csubstr to_arena(T const& C4_RESTRICT s)
     {
-        RYML_ASSERT(m_tree); // no need for valid or readable
+        _RYML_ASSERT_BASIC(m_tree); // no need for valid or readable
         return m_tree->to_arena(s);
     }
 
@@ -25333,7 +27606,7 @@ public:
         // operator<< for writing a substr to a stream)
         _apply_seed();
         write(this, s);
-        _RYML_CB_ASSERT(m_tree->m_callbacks, val() == s);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, val() == s, m_tree, m_id);
         return *this;
     }
 
@@ -25391,14 +27664,14 @@ private:
         }
         else if(m_seed.len != (size_t)NONE) // we have a seed index: create a child at that position
         {
-            _RYML_CB_ASSERT(m_tree->m_callbacks, (size_t)m_tree->num_children(m_id) == m_seed.len);
+            _RYML_ASSERT_VISIT_(m_tree->m_callbacks, (size_t)m_tree->num_children(m_id) == m_seed.len, m_tree, m_id);
             m_id = m_tree->append_child(m_id);
             m_seed.str = nullptr;
             m_seed.len = (size_t)NONE;
         }
         else
         {
-            _RYML_CB_ASSERT(m_tree->m_callbacks, readable());
+            _RYML_ASSERT_VISIT_(m_tree->m_callbacks, readable(), m_tree, m_id);
         }
     }
 
@@ -25425,7 +27698,7 @@ public:
     NodeRef insert_child(NodeRef after)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, after.m_tree == m_tree, m_tree, m_id);
         NodeRef r(m_tree, m_tree->insert_child(m_id, after.m_id));
         return r;
     }
@@ -25433,7 +27706,7 @@ public:
     NodeRef insert_child(NodeInit const& i, NodeRef after)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, after.m_tree == m_tree, m_tree, m_id);
         NodeRef r(m_tree, m_tree->insert_child(m_id, after.m_id));
         r._apply(i);
         return r;
@@ -25472,7 +27745,7 @@ public:
     NodeRef insert_sibling(ConstNodeRef const& after)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, after.m_tree == m_tree, m_tree, m_id);
         NodeRef r(m_tree, m_tree->insert_sibling(m_id, after.m_id));
         return r;
     }
@@ -25480,7 +27753,7 @@ public:
     NodeRef insert_sibling(NodeInit const& i, ConstNodeRef const& after)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, after.m_tree == m_tree, m_tree, m_id);
         NodeRef r(m_tree, m_tree->insert_sibling(m_id, after.m_id));
         r._apply(i);
         return r;
@@ -25521,8 +27794,8 @@ public:
     void remove_child(NodeRef & child)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, has_child(child));
-        _RYML_CB_ASSERT(m_tree->m_callbacks, child.parent().id() == id());
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, has_child(child), m_tree, m_id);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, child.parent().id() == id(), m_tree, m_id);
         m_tree->remove(child.id());
         child.clear();
     }
@@ -25531,9 +27804,9 @@ public:
     void remove_child(id_type pos)
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, pos >= 0 && pos < num_children());
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, pos >= 0 && pos < num_children(), m_tree, m_id);
         id_type child = m_tree->child(m_id, pos);
-        _RYML_CB_ASSERT(m_tree->m_callbacks, child != NONE);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, child != NONE, m_tree, m_id);
         m_tree->remove(child);
     }
 
@@ -25542,7 +27815,7 @@ public:
     {
         _C4RR();
         id_type child = m_tree->find_child(m_id, key);
-        _RYML_CB_ASSERT(m_tree->m_callbacks, child != NONE);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, child != NONE, m_tree, m_id);
         m_tree->remove(child);
     }
 
@@ -25583,7 +27856,7 @@ public:
     NodeRef duplicate(ConstNodeRef const& after) const
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree == after.m_tree || after.m_id == NONE);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree == after.m_tree || after.m_id == NONE, m_tree, m_id);
         id_type dup = m_tree->duplicate(m_id, m_tree->parent(m_id), after.m_id);
         NodeRef r(m_tree, dup);
         return r;
@@ -25597,7 +27870,7 @@ public:
     NodeRef duplicate(NodeRef const& parent, ConstNodeRef const& after) const
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, parent.m_tree == after.m_tree || after.m_id == NONE);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, parent.m_tree == after.m_tree || after.m_id == NONE, m_tree, m_id);
         if(parent.m_tree == m_tree)
         {
             id_type dup = m_tree->duplicate(m_id, parent.m_id, after.m_id);
@@ -25615,7 +27888,7 @@ public:
     void duplicate_children(NodeRef const& parent, ConstNodeRef const& after) const
     {
         _C4RR();
-        _RYML_CB_ASSERT(m_tree->m_callbacks, parent.m_tree == after.m_tree);
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, parent.m_tree == after.m_tree, m_tree, m_id);
         if(parent.m_tree == m_tree)
         {
             m_tree->duplicate_children(m_id, parent.m_id, after.m_id);
@@ -25736,16 +28009,9 @@ C4_ALWAYS_INLINE bool readkey(NodeRef const& C4_RESTRICT n, T *v)
 #ifndef _C4_YML_WRITER_HPP_
 #define _C4_YML_WRITER_HPP_
 
-#ifndef _C4_YML_COMMON_HPP_
-#include "./common.hpp"
+#ifndef _C4_YML_ERROR_HPP_
+#include "./error.hpp"
 #endif
-
-// amalgamate: removed include of
-// c4/substr.hpp
-//#include <c4/substr.hpp>
-#if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
-#error "amalgamate: file c4/substr.hpp must have been included at this point"
-#endif /* C4_SUBSTR_HPP_ */
 
 //included above:
 //#include <stdio.h>  // fwrite(), fputc()
@@ -25885,7 +28151,7 @@ struct WriterBuf
         if(m_pos <= m_buf.len)
             return m_buf.first(m_pos);
         else if(error_on_excess)
-            c4::yml::error("not enough space in the given buffer");
+            c4::yml::err_basic(RYML_LOC_HERE(), "not enough space in the given buffer");
         substr sp;
         sp.str = nullptr;
         sp.len = m_pos;
@@ -25895,7 +28161,7 @@ struct WriterBuf
     template<size_t N>
     void _do_write(const char (&a)[N])
     {
-        RYML_ASSERT( ! m_buf.overlaps(a));
+        _RYML_ASSERT_BASIC( ! m_buf.overlaps(a));
         if(m_pos + N-1 <= m_buf.len)
             memcpy(&(m_buf[m_pos]), a, N-1);
         m_pos += N-1;
@@ -25905,7 +28171,7 @@ struct WriterBuf
     {
         if(sp.empty())
             return;
-        RYML_ASSERT( ! sp.overlaps(m_buf));
+        _RYML_ASSERT_BASIC( ! sp.overlaps(m_buf));
         if(m_pos + sp.len <= m_buf.len)
             memcpy(&(m_buf[m_pos]), sp.str, sp.len);
         m_pos += sp.len;
@@ -25951,15 +28217,6 @@ struct WriterBuf
 #ifndef _C4_YML_DETAIL_DBGPRINT_HPP_
 #define _C4_YML_DETAIL_DBGPRINT_HPP_
 
-#ifndef _C4_YML_COMMON_HPP_
-#include "../common.hpp"
-#endif
-
-#ifdef RYML_DBG
-//included above:
-//#include <cstdio>
-#endif
-
 
 //-----------------------------------------------------------------------------
 // debug prints
@@ -25974,112 +28231,125 @@ struct WriterBuf
 #   define _c4presc(...)
 #   define _c4prscalar(msg, scalar, keep_newlines)
 #else
-#   define _c4dbgt(fmt, ...)   do { if(_dbg_enabled()) {                \
-                               this->_dbg ("{}:{}: "   fmt     , __FILE__, __LINE__, __VA_ARGS__); } } while(0)
+#   define _c4dbgt(fmt, ...)   do {                                     \
+                                   if(_dbg_enabled()) {                 \
+                                       this->_dbg ("{}:{}: "   fmt     , __FILE__, __LINE__, __VA_ARGS__); \
+                                   }                                    \
+                               } while(0)
 #   define _c4dbgpf(fmt, ...)  _dbg_printf("{}:{}: "   fmt "\n", __FILE__, __LINE__, __VA_ARGS__)
 #   define _c4dbgpf_(fmt, ...) _dbg_printf("{}:{}: "   fmt     , __FILE__, __LINE__, __VA_ARGS__)
 #   define _c4dbgp(msg)        _dbg_printf("{}:{}: "   msg "\n", __FILE__, __LINE__             )
 #   define _c4dbgp_(msg)       _dbg_printf("{}:{}: "   msg     , __FILE__, __LINE__             )
 #   define _c4dbgq(msg)        _dbg_printf(msg "\n")
-#   define _c4presc(...)       do { if(_dbg_enabled()) __c4presc(__VA_ARGS__); } while(0)
+#   define _c4presc(...)       __c4presc(__VA_ARGS__)
 #   define _c4prscalar(msg, scalar, keep_newlines)                  \
     do {                                                            \
-        _c4dbgpf_("{}: [{}]~~~", msg, scalar.len);                  \
         if(_dbg_enabled()) {                                        \
-            __c4presc((scalar).str, (scalar).len, (keep_newlines)); \
+            _c4dbgpf_("{}: [{}]~~~", msg, scalar.len);              \
+            __c4presc((scalar), (keep_newlines));                   \
+            _c4dbgq("~~~");                                         \
         }                                                           \
-        _c4dbgq("~~~");                                             \
     } while(0)
-#endif // RYML_DBG
 
 
 //-----------------------------------------------------------------------------
+// implementation
 
-#ifdef RYML_DBG
+//included above:
+//#include <cstdio>
 
+#if defined(C4_MSVC) || defined(C4_MINGW)
+//included above:
+//#include <malloc.h>
+#elif (defined(__clang__) && defined(_MSC_VER)) || \
+      defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+//included above:
+//#include <stdlib.h>
+#else
+#include <alloca.h>
+#endif
+
+#ifndef _C4_YML_ESCAPE_SCALAR_HPP_
+// amalgamate: removed include of
+// c4/yml/escape_scalar.hpp
+//#include "c4/yml/escape_scalar.hpp"
+#if !defined(C4_YML_ESCAPE_SCALAR_HPP_) && !defined(_C4_YML_ESCAPE_SCALAR_HPP_)
+#error "amalgamate: file c4/yml/escape_scalar.hpp must have been included at this point"
+#endif /* C4_YML_ESCAPE_SCALAR_HPP_ */
+
+#endif
+
+#ifndef _C4_DUMP_HPP_
 // amalgamate: removed include of
 // c4/dump.hpp
-//#include <c4/dump.hpp>
+//#include "c4/dump.hpp"
 #if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
 #error "amalgamate: file c4/dump.hpp must have been included at this point"
 #endif /* C4_DUMP_HPP_ */
 
+#endif
+
+
+C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wattributes")
+
 namespace c4 {
+namespace yml {
 inline bool& _dbg_enabled() { static bool enabled = true; return enabled; }
-inline void _dbg_set_enabled(bool yes) { _dbg_enabled() = yes; }
-inline void _dbg_dumper(csubstr s)
+inline C4_NO_INLINE void _dbg_set_enabled(bool yes) { _dbg_enabled() = yes; }
+inline C4_NO_INLINE void _dbg_dumper(csubstr s)
 {
-    if(s.str)
+    _RYML_ASSERT_BASIC(s.str || !s.len);
+    if(s.len)
         fwrite(s.str, 1, s.len, stdout);
 }
-inline substr _dbg_buf() noexcept
+template<class DumpFn, class ...Args>
+C4_NO_INLINE void _dbg_dump(DumpFn &&dumpfn, csubstr fmt, Args&& ...args)
 {
-    static char writebuf[2048];
-    return substr{writebuf, sizeof(writebuf)}; // g++-5 has trouble with return writebuf;
+    DumpResults results;
+    // try writing everything:
+    {
+        // buffer for converting individual arguments. it is defined
+        // in a child scope to free it in case the buffer is too small
+        // for any of the arguments.
+        char writebuf[RYML_LOGBUF_SIZE];
+        results = format_dump_resume(std::forward<DumpFn>(dumpfn), writebuf, fmt, std::forward<Args>(args)...);
+    }
+    // if any of the arguments failed to fit the buffer, allocate a
+    // larger buffer (with alloca(), up to a limit) and resume writing.
+    //
+    // results.bufsize is set to the size of the largest element
+    // serialized. Eg int(1) will require 1 byte.
+    if(C4_UNLIKELY(results.bufsize > RYML_LOGBUF_SIZE))
+    {
+        const size_t bufsize = results.bufsize <= RYML_LOGBUF_SIZE_MAX ? results.bufsize : RYML_LOGBUF_SIZE_MAX;
+        #ifdef C4_MSVC
+        substr largerbuf = {static_cast<char*>(_alloca(bufsize)), bufsize};
+        #else
+        substr largerbuf = {static_cast<char*>(alloca(bufsize)), bufsize};
+        #endif
+        results = format_dump_resume(std::forward<DumpFn>(dumpfn), results, largerbuf, fmt, std::forward<Args>(args)...);
+    }
 }
 template<class ...Args>
-C4_NO_INLINE void _dbg_printf(c4::csubstr fmt, Args const& ...args)
+C4_NO_INLINE void _dbg_printf(csubstr fmt, Args const& ...args)
 {
     if(_dbg_enabled())
-    {
-        substr buf = _dbg_buf();
-        const size_t needed_size = c4::format_dump(&_dbg_dumper, buf, fmt, args...);
-        C4_CHECK(needed_size <= buf.len);
-    }
+        _dbg_dump(&_dbg_dumper, fmt, args...);
+}
+inline C4_NO_INLINE void __c4presc(csubstr s, bool keep_newlines=false)
+{
+    if(_dbg_enabled())
+        escape_scalar_fn(_dbg_dumper, s, keep_newlines);
 }
 inline C4_NO_INLINE void __c4presc(const char *s, size_t len, bool keep_newlines=false)
 {
-    RYML_ASSERT(s || !len);
-    size_t prev = 0;
-    for(size_t i = 0; i < len; ++i)
-    {
-        switch(s[i])
-        {
-        case '\n'  : _dbg_printf("{}{}{}", csubstr(s+prev, i-prev), csubstr("\\n"), csubstr(keep_newlines ? "\n":"")); prev = i+1; break;
-        case '\t'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\t")); prev = i+1; break;
-        case '\0'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\0")); prev = i+1; break;
-        case '\r'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\r")); prev = i+1; break;
-        case '\f'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\f")); prev = i+1; break;
-        case '\b'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\b")); prev = i+1; break;
-        case '\v'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\v")); prev = i+1; break;
-        case '\a'  : _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\a")); prev = i+1; break;
-        case '\x1b': _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\x1b")); prev = i+1; break;
-        case -0x3e/*0xc2u*/:
-            if(i+1 < len)
-            {
-                if(s[i+1] == -0x60/*0xa0u*/)
-                {
-                    _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\_")); prev = i+1;
-                }
-                else if(s[i+1] == -0x7b/*0x85u*/)
-                {
-                    _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\N")); prev = i+1;
-                }
-            }
-            break;
-        case -0x1e/*0xe2u*/:
-            if(i+2 < len && s[i+1] == -0x80/*0x80u*/)
-            {
-                if(s[i+2] == -0x58/*0xa8u*/)
-                {
-                    _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\L")); prev = i+1;
-                }
-                else if(s[i+2] == -0x57/*0xa9u*/)
-                {
-                    _dbg_printf("{}{}", csubstr(s+prev, i-prev), csubstr("\\P")); prev = i+1;
-                }
-            }
-            break;
-        }
-    }
-    if(len > prev)
-        _dbg_printf("{}", csubstr(s+prev, len-prev));
+    if(_dbg_enabled())
+        escape_scalar_fn(_dbg_dumper, csubstr(s, len), keep_newlines);
 }
-inline void __c4presc(csubstr s, bool keep_newlines=false)
-{
-    __c4presc(s.str, s.len, keep_newlines);
-}
+} // namespace yml
 } // namespace c4
+
+C4_SUPPRESS_WARNING_GCC_POP
 
 #endif // RYML_DBG
 
@@ -26138,10 +28408,6 @@ using EmitterOStream = Emitter<WriterOStream<OStream>>;
 using EmitterFile = Emitter<WriterFile>;
 using EmitterBuf  = Emitter<WriterBuf>;
 
-namespace detail {
-inline bool is_set_(ConstNodeRef n) { return n.tree() && (n.id() != NONE); }
-}
-
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -26150,7 +28416,7 @@ inline bool is_set_(ConstNodeRef n) { return n.tree() && (n.id() != NONE); }
 /** Specifies the type of content to emit */
 typedef enum {
     EMIT_YAML = 0, ///< emit YAML
-    EMIT_JSON = 1  ///< emit JSON
+    EMIT_JSON = 1, ///< emit JSON
 } EmitType_e;
 
 
@@ -26161,20 +28427,39 @@ typedef enum {
 /** A lightweight object containing options to be used when emitting. */
 struct EmitOptions
 {
+public:
+
+    /** @cond dev */
     typedef enum : uint32_t {
-        DEFAULT_FLAGS = 0u,
-        JSON_ERR_ON_TAG = 1u << 0u,
-        JSON_ERR_ON_ANCHOR = 1u << 1u,
+        EMIT_NONROOT_KEY = 1u << 0u,
+        EMIT_NONROOT_DASH = 1u << 1u,
+        EMIT_NONROOT_MARKUP = EMIT_NONROOT_KEY|EMIT_NONROOT_DASH,
+        INDENT_FLOW_ML = 1u << 2u,
+        JSON_ERR_ON_TAG = 1u << 3u,
+        JSON_ERR_ON_ANCHOR = 1u << 4u,
         _JSON_ERR_MASK = JSON_ERR_ON_TAG|JSON_ERR_ON_ANCHOR,
+        DEFAULT_FLAGS = EMIT_NONROOT_KEY|INDENT_FLOW_ML,
     } EmitOptionFlags_e;
+    /** @endcond */
 
 public:
 
     /** @name option flags
      *
      * @{ */
-    C4_ALWAYS_INLINE EmitOptionFlags_e json_error_flags() const noexcept { return m_option_flags; }
+
+    C4_ALWAYS_INLINE bool emit_nonroot_key() const noexcept { return (m_option_flags & EMIT_NONROOT_KEY) != 0; }
+    EmitOptions& emit_nonroot_key(bool enabled) noexcept { m_option_flags = (EmitOptionFlags_e)(enabled ? (m_option_flags | EMIT_NONROOT_KEY) : (m_option_flags & ~EMIT_NONROOT_KEY)); return *this; }
+
+    C4_ALWAYS_INLINE bool emit_nonroot_dash() const noexcept { return (m_option_flags & EMIT_NONROOT_DASH) != 0; }
+    EmitOptions& emit_nonroot_dash(bool enabled) noexcept { m_option_flags = (EmitOptionFlags_e)(enabled ? (m_option_flags | EMIT_NONROOT_DASH) : (m_option_flags & ~EMIT_NONROOT_DASH)); return *this; }
+
+    C4_ALWAYS_INLINE bool indent_flow_ml() const noexcept { return (m_option_flags & INDENT_FLOW_ML) != 0; }
+    EmitOptions& indent_flow_ml(bool enabled) noexcept { m_option_flags = (EmitOptionFlags_e)(enabled ? (m_option_flags | INDENT_FLOW_ML) : (m_option_flags & ~INDENT_FLOW_ML)); return *this; }
+
+    C4_ALWAYS_INLINE EmitOptionFlags_e json_error_flags() const noexcept { return (EmitOptionFlags_e)(m_option_flags & _JSON_ERR_MASK); }
     EmitOptions& json_error_flags(EmitOptionFlags_e d) noexcept { m_option_flags = (EmitOptionFlags_e)(d & _JSON_ERR_MASK); return *this; }
+
     /** @} */
 
 public:
@@ -26218,19 +28503,37 @@ class Emitter : public Writer
 {
 public:
 
-    /** Construct the emitter and its internal Writer state, using default emit options.
-     * @param args arguments to be forwarded to the constructor of the writer.
-     * */
-    template<class ...Args>
-    Emitter(Args &&...args) : Writer(std::forward<Args>(args)...), m_tree(), m_opts(), m_flow(false) {}
-
     /** Construct the emitter and its internal Writer state.
      *
-     * @param opts EmitOptions
+     * @param opts @ref EmitOptions
      * @param args arguments to be forwarded to the constructor of the writer.
-     * */
-    template<class ...Args>
-    Emitter(EmitOptions const& opts, Args &&...args) : Writer(std::forward<Args>(args)...), m_tree(), m_opts(opts), m_flow(false) {}
+     */
+    template<class ...WriterArgs>
+    Emitter(EmitOptions const& opts, WriterArgs &&...args)
+        : Writer(std::forward<WriterArgs>(args)...)
+        , m_tree()
+        , m_opts(opts)
+        , m_col()
+        , m_depth()
+        , m_ilevel()
+        , m_pws()
+    {}
+
+    /** Construct the emitter and its internal Writer state, using default emit options.
+     * @param args arguments to be forwarded to the constructor of the writer.
+     */
+    template<class ...WriterArgs>
+    Emitter(WriterArgs &&...args)
+        : Writer(std::forward<WriterArgs>(args)...)
+        , m_tree()
+        , m_opts()
+        , m_col()
+        , m_depth()
+        , m_ilevel()
+        , m_pws()
+    {}
+
+public:
 
     /** emit!
      *
@@ -26243,7 +28546,7 @@ public:
      * When writing to a file, the returned substr will be null, but its
      * length will be set to the number of bytes written.
      *
-     * @param type specify what to emit
+     * @param type specify what to emit (YAML or JSON)
      * @param t the tree to emit
      * @param id the id of the node to emit
      * @param error_on_excess when true, an error is raised when the
@@ -26260,9 +28563,8 @@ public:
     /** emit starting at the given node */
     substr emit_as(EmitType_e type, ConstNodeRef const& n, bool error_on_excess=true)
     {
-        if(!detail::is_set_(n))
+        if(!n.readable())
             return {};
-        _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
         return this->emit_as(type, *n.tree(), n.id(), error_on_excess);
     }
 
@@ -26270,6 +28572,8 @@ public:
 
     /** get the emit options for this object */
     EmitOptions const& options() const noexcept { return m_opts; }
+    /** set the emit options for this object */
+    void options(EmitOptions opts) noexcept { m_opts = opts; }
 
     /** set the max depth for emitted trees (to prevent a stack overflow) */
     void max_depth(id_type max_depth) noexcept { m_opts.max_depth(max_depth); }
@@ -26278,28 +28582,47 @@ public:
 
 private:
 
-    Tree const* C4_RESTRICT m_tree;
-    EmitOptions m_opts;
-    bool m_flow;
-
-private:
+    /** @cond dev */
 
     void _emit_yaml(id_type id);
-    void _do_visit_flow_sl(id_type id, id_type depth, id_type ilevel=0);
-    void _do_visit_flow_ml(id_type id, id_type depth, id_type ilevel=0, id_type do_indent=1);
-    void _do_visit_block(id_type id, id_type depth, id_type ilevel=0, id_type do_indent=1);
-    void _do_visit_block_container(id_type id, id_type depth, id_type next_level, bool do_indent);
-    void _do_visit_json(id_type id, id_type depth);
+
+    void _visit_stream(id_type id);
+    void _visit_doc(id_type id);
+    void _visit_doc_val(id_type id);
+    void _visit_blck_container(id_type id);
+    void _visit_flow_container(id_type id);
+
+    void _visit_flow_sl(id_type id);
+    void _visit_flow_sl_seq(id_type id);
+    void _visit_flow_sl_map(id_type id);
+
+    void _visit_flow_ml(id_type id);
+    void _visit_flow_ml_seq(id_type id);
+    void _visit_flow_ml_map(id_type id);
+
+    void _visit_blck(id_type id);
+    void _visit_blck_seq(id_type id);
+    void _visit_blck_map(id_type id);
+
+    void _top_open_entry(id_type id);
+    void _top_close_entry(id_type id);
+    void _blck_seq_open_entry(id_type id);
+    void _blck_map_open_entry(id_type id);
+    void _blck_close_entry(id_type id);
+    void _blck_write_qmrk(id_type id, csubstr key, type_bits type, bool has_qmrk_comments);
+    void _blck_write_scalar(csubstr str, type_bits type);
+
+    void _flow_seq_open_entry(id_type id);
+    void _flow_map_open_entry(id_type id);
+    void _flow_close_entry_sl(id_type id, id_type last_sibling);
+    void _flow_close_entry_ml(id_type id, id_type last_sibling);
+    void _flow_write_scalar(csubstr str, type_bits type);
 
 private:
 
-    void _write(NodeScalar const& C4_RESTRICT sc, NodeType flags, id_type level);
-    void _write_json(NodeScalar const& C4_RESTRICT sc, NodeType flags);
-
-    void _write_doc(id_type id);
-    void _write_scalar_json_dquo(csubstr s);
-    void _write_scalar_literal(csubstr s, id_type level, bool as_key);
-    void _write_scalar_folded(csubstr s, id_type level, bool as_key);
+    void _json_emit(id_type id);
+    void _write_scalar_literal(csubstr s, id_type level);
+    void _write_scalar_folded(csubstr s, id_type level);
     void _write_scalar_squo(csubstr s, id_type level);
     void _write_scalar_dquo(csubstr s, id_type level);
     void _write_scalar_plain(csubstr s, id_type level);
@@ -26307,36 +28630,141 @@ private:
     size_t _write_escaped_newlines(csubstr s, size_t i);
     size_t _write_indented_block(csubstr s, size_t i, id_type level);
 
+private:
+
+    void _json_visit_ml(id_type id, id_type depth);
+    void _json_visit_sl(id_type id, id_type depth);
+    bool _json_maybe_write_naninf(csubstr s);
+    void _json_writek(id_type id, NodeType ty);
+    void _json_writev(id_type id, NodeType ty);
+    void _json_write_scalar_dquo(csubstr s);
+    void _json_write_number(csubstr s);
+
+private:
+
     void _write_tag(csubstr tag)
     {
         if(!tag.begins_with('!'))
-            this->Writer::_do_write('!');
-        this->Writer::_do_write(tag);
+            _write('!');
+        _write(tag);
+    }
+    void _write_ref(csubstr ref)
+    {
+        if(ref != "<<")
+        {
+            if(!ref.begins_with('*'))
+                _write('*');
+            _write(ref);
+        }
     }
 
+private:
+
+    C4_ALWAYS_INLINE void _indent(id_type level)
+    {
+        size_t num = (size_t)(2u * level);
+        this->Writer::_do_write(' ', num);
+        m_col += num;
+    }
+
+    template<size_t N>
+    C4_ALWAYS_INLINE void _write(const char (&a)[N])
+    {
+        this->Writer::_do_write(std::forward<const char (&)[N]>(a));
+        m_col += N-1;
+    }
+    C4_ALWAYS_INLINE void _write(csubstr s)
+    {
+        this->Writer::_do_write(s);
+        m_col += s.len;
+    }
+    C4_ALWAYS_INLINE void _write(char c)
+    {
+        this->Writer::_do_write(c);
+        ++m_col;
+    }
+    C4_ALWAYS_INLINE void _write(char c, size_t num)
+    {
+        this->Writer::_do_write(c, num);
+        m_col += num;
+    }
+
+    /// write a newline and reset the column
+    C4_ALWAYS_INLINE void _newl()
+    {
+        this->Writer::_do_write('\n');
+        m_col = 0;
+    }
+
+private: // pending whitespace
+
+    /// pending whitespace
+    typedef enum : uint32_t { _PWS_NONE, _PWS_SPACE, _PWS_NEWL } Pws_e;
+
+    /// set pending whitespace, ignoring pending
+    C4_ALWAYS_INLINE void _pend_none() noexcept
+    {
+        m_pws = _PWS_NONE;
+    }
+    /// set pending whitespace, ignoring pending
+    C4_ALWAYS_INLINE void _pend_newl() noexcept
+    {
+        m_pws = _PWS_NEWL;
+    }
+    /// set pending whitespace, ignoring pending
+    C4_ALWAYS_INLINE void _pend_space() noexcept
+    {
+        m_pws = _PWS_SPACE;
+    }
+    /// write pending whitespace, and then set the next pending whitespace
+    C4_ALWAYS_INLINE void _write_pws_and_pend(Pws_e next=_PWS_NONE) noexcept
+    {
+        if(m_pws == _PWS_SPACE)
+        {
+            _write(' ');
+        }
+        else if(m_pws == _PWS_NEWL)
+        {
+            _newl();
+            _indent(m_ilevel);
+        }
+        m_pws = next;
+    }
+
+private:
+
+    Tree const* C4_RESTRICT m_tree;
+    EmitOptions m_opts;
+    size_t      m_col;
+    id_type     m_depth;
+    id_type     m_ilevel;
+    Pws_e       m_pws;
+
+private:
+
+    // g++-4.8 has problems with the operand types here...
+    #if defined(__GNUC__) && (__GNUC__ < 5) && (!defined(__clang__))
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wparentheses"
+    #endif
     enum : type_bits {
-        _keysc =  (KEY|KEYREF|KEYANCH|KEYQUO|KEY_STYLE) | ~(VAL|VALREF|VALANCH|VALQUO|VAL_STYLE) | CONTAINER_STYLE,
-        _valsc = ~(KEY|KEYREF|KEYANCH|KEYQUO|KEY_STYLE) |  (VAL|VALREF|VALANCH|VALQUO|VAL_STYLE) | CONTAINER_STYLE,
-        _keysc_json =  (KEY)  | ~(VAL),
-        _valsc_json = ~(KEY)  |  (VAL),
+        _styles_block_key = KEY_LITERAL|KEY_FOLDED,
+        _styles_block_val = VAL_LITERAL|VAL_FOLDED,
+        _styles_block     = ((type_bits)_styles_block_key) | ((type_bits)_styles_block_val),
+        _styles_flow_key  = KEY_STYLE & (~((type_bits)_styles_block_key)),
+        _styles_flow_val  = VAL_STYLE & (~((type_bits)_styles_block_val)),
+        _styles_flow      = ((type_bits)_styles_flow_key) | ((type_bits)_styles_flow_val),
+        _styles_squo      = KEY_SQUO|VAL_SQUO,
+        _styles_dquo      = KEY_DQUO|VAL_DQUO,
+        _styles_plain     = KEY_PLAIN|VAL_PLAIN,
+        _styles_literal   = KEY_LITERAL|VAL_LITERAL,
+        _styles_folded    = KEY_FOLDED|VAL_FOLDED,
     };
+    #if defined(__GNUC__) && (__GNUC__ < 5) && (!defined(__clang__))
+    #pragma GCC diagnostic pop
+    #endif
 
-    C4_ALWAYS_INLINE void _writek(id_type id, id_type level) { _write(m_tree->keysc(id), (m_tree->_p(id)->m_type.type & ~_valsc), level); }
-    C4_ALWAYS_INLINE void _writev(id_type id, id_type level) { _write(m_tree->valsc(id), (m_tree->_p(id)->m_type.type & ~_keysc), level); }
-
-    C4_ALWAYS_INLINE void _writek_json(id_type id) { _write_json(m_tree->keysc(id), m_tree->_p(id)->m_type.type & ~(VAL)); }
-    C4_ALWAYS_INLINE void _writev_json(id_type id) { _write_json(m_tree->valsc(id), m_tree->_p(id)->m_type.type & ~(KEY)); }
-
-    void _indent(id_type level, bool enabled)
-    {
-        if(enabled)
-            this->Writer::_do_write(' ', 2u * (size_t)level);
-    }
-    void _indent(id_type level)
-    {
-        if(!m_flow)
-            this->Writer::_do_write(' ', 2u * (size_t)level);
-    }
+    /** @endcond */
 };
 
 
@@ -26416,7 +28844,7 @@ inline size_t emit_json(Tree const& t, FILE *f=nullptr)
  * Return the number of bytes written. */
 inline size_t emit_yaml(ConstNodeRef const& r, EmitOptions const& opts, FILE *f=nullptr)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterFile em(opts, f);
     return em.emit_as(EMIT_YAML, r, /*error_on_excess*/true).len;
@@ -26424,7 +28852,7 @@ inline size_t emit_yaml(ConstNodeRef const& r, EmitOptions const& opts, FILE *f=
 /** (2) like (1), but use default emit options */
 inline size_t emit_yaml(ConstNodeRef const& r, FILE *f=nullptr)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterFile em(f);
     return em.emit_as(EMIT_YAML, r, /*error_on_excess*/true).len;
@@ -26433,7 +28861,7 @@ inline size_t emit_yaml(ConstNodeRef const& r, FILE *f=nullptr)
  * Return the number of bytes written. */
 inline size_t emit_json(ConstNodeRef const& r, EmitOptions const& opts, FILE *f=nullptr)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterFile em(opts, f);
     return em.emit_as(EMIT_JSON, r, /*error_on_excess*/true).len;
@@ -26441,7 +28869,7 @@ inline size_t emit_json(ConstNodeRef const& r, EmitOptions const& opts, FILE *f=
 /** (2) like (1), but use default emit options */
 inline size_t emit_json(ConstNodeRef const& r, FILE *f=nullptr)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterFile em(f);
     return em.emit_as(EMIT_JSON, r, /*error_on_excess*/true).len;
@@ -26471,7 +28899,7 @@ inline OStream& operator<< (OStream& s, Tree const& t)
 template<class OStream>
 inline OStream& operator<< (OStream& s, ConstNodeRef const& n)
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return s;
     EmitterOStream<OStream> em(s);
     em.emit_as(EMIT_YAML, n);
@@ -26492,10 +28920,10 @@ inline OStream& operator<< (OStream& s, ConstNodeRef const& n)
 struct as_json
 {
     Tree const* tree;
-    size_t node;
+    id_type node;
     EmitOptions options;
     as_json(Tree const& t, EmitOptions const& opts={}) : tree(&t), node(t.empty() ? NONE : t.root_id()), options(opts)  {}
-    as_json(Tree const& t, size_t id, EmitOptions const& opts={}) : tree(&t), node(id), options(opts)  {}
+    as_json(Tree const& t, id_type id, EmitOptions const& opts={}) : tree(&t), node(id), options(opts)  {}
     as_json(ConstNodeRef const& n, EmitOptions const& opts={}) : tree(n.tree()), node(n.id()), options(opts) {}
 };
 
@@ -26513,10 +28941,10 @@ struct as_json
 struct as_yaml
 {
     Tree const* tree;
-    size_t node;
+    id_type node;
     EmitOptions options;
     as_yaml(Tree const& t, EmitOptions const& opts={}) : tree(&t), node(t.empty() ? NONE : t.root_id()), options(opts)  {}
-    as_yaml(Tree const& t, size_t id, EmitOptions const& opts={}) : tree(&t), node(id), options(opts)  {}
+    as_yaml(Tree const& t, id_type id, EmitOptions const& opts={}) : tree(&t), node(id), options(opts)  {}
     as_yaml(ConstNodeRef const& n, EmitOptions const& opts={}) : tree(n.tree()), node(n.id()), options(opts) {}
 };
 
@@ -26524,10 +28952,10 @@ struct as_yaml
 template<class OStream>
 inline OStream& operator<< (OStream& s, as_json const& j)
 {
-    if(!j.tree || j.node == NONE)
+    if(!j.tree || j.tree->empty())
         return s;
     EmitterOStream<OStream> em(j.options, s);
-    em.emit_as(EMIT_JSON, *j.tree, j.node, true);
+    em.emit_as(EMIT_JSON, *j.tree, j.node != NONE ? j.node : j.tree->root_id(), true);
     return s;
 }
 
@@ -26535,10 +28963,10 @@ inline OStream& operator<< (OStream& s, as_json const& j)
 template<class OStream>
 inline OStream& operator<< (OStream& s, as_yaml const& y)
 {
-    if(!y.tree || y.node == NONE)
+    if(!y.tree || y.tree->empty())
         return s;
     EmitterOStream<OStream> em(y.options, s);
-    em.emit_as(EMIT_YAML, *y.tree, y.node, true);
+    em.emit_as(EMIT_YAML, *y.tree, y.node != NONE ? y.node : y.tree->root_id(), true);
     return s;
 }
 
@@ -26650,7 +29078,7 @@ inline substr emit_json(Tree const& t, substr buf, bool error_on_excess=true)
  * result will be set to null, and the length will report the required buffer size. */
 inline substr emit_yaml(ConstNodeRef const& r, EmitOptions const& opts, substr buf, bool error_on_excess=true)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterBuf em(opts, buf);
     return em.emit_as(EMIT_YAML, r, error_on_excess);
@@ -26658,7 +29086,7 @@ inline substr emit_yaml(ConstNodeRef const& r, EmitOptions const& opts, substr b
 /** (2) like (1), but use default emit options */
 inline substr emit_yaml(ConstNodeRef const& r, substr buf, bool error_on_excess=true)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterBuf em(buf);
     return em.emit_as(EMIT_YAML, r, error_on_excess);
@@ -26673,7 +29101,7 @@ inline substr emit_yaml(ConstNodeRef const& r, substr buf, bool error_on_excess=
  * result will be set to null, and the length will report the required buffer size. */
 inline substr emit_json(ConstNodeRef const& r, EmitOptions const& opts, substr buf, bool error_on_excess=true)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterBuf em(opts, buf);
     return em.emit_as(EMIT_JSON, r, error_on_excess);
@@ -26681,7 +29109,7 @@ inline substr emit_json(ConstNodeRef const& r, EmitOptions const& opts, substr b
 /** (2) like (1), but use default emit options */
 inline substr emit_json(ConstNodeRef const& r, substr buf, bool error_on_excess=true)
 {
-    if(!detail::is_set_(r))
+    if(!r.readable())
         return {};
     EmitterBuf em(buf);
     return em.emit_as(EMIT_JSON, r, error_on_excess);
@@ -26849,18 +29277,16 @@ CharOwningContainer emitrs_json(Tree const& t, EmitOptions const& opts={})
 template<class CharOwningContainer>
 substr emitrs_yaml(ConstNodeRef const& n, EmitOptions const& opts, CharOwningContainer * cont, bool append=false)
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     return emitrs_yaml(*n.tree(), n.id(), opts, cont, append);
 }
 /** (2) like (1), but use default emit options */
 template<class CharOwningContainer>
 substr emitrs_yaml(ConstNodeRef const& n, CharOwningContainer * cont, bool append=false)
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     return emitrs_yaml(*n.tree(), n.id(), EmitOptions{}, cont, append);
 }
 /** (1) emit+resize: JSON to the given `std::string`/`std::vector`-like container,
@@ -26869,18 +29295,16 @@ substr emitrs_yaml(ConstNodeRef const& n, CharOwningContainer * cont, bool appen
 template<class CharOwningContainer>
 substr emitrs_json(ConstNodeRef const& n, EmitOptions const& opts, CharOwningContainer * cont, bool append=false)
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     return emitrs_json(*n.tree(), n.id(), opts, cont, append);
 }
 /** (2) like (1), but use default emit options */
 template<class CharOwningContainer>
 substr emitrs_json(ConstNodeRef const& n, CharOwningContainer * cont, bool append=false)
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     return emitrs_json(*n.tree(), n.id(), EmitOptions{}, cont, append);
 }
 
@@ -26889,9 +29313,8 @@ substr emitrs_json(ConstNodeRef const& n, CharOwningContainer * cont, bool appen
 template<class CharOwningContainer>
 CharOwningContainer emitrs_yaml(ConstNodeRef const& n, EmitOptions const& opts={})
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     CharOwningContainer c;
     emitrs_yaml(*n.tree(), n.id(), opts, &c);
     return c;
@@ -26900,9 +29323,8 @@ CharOwningContainer emitrs_yaml(ConstNodeRef const& n, EmitOptions const& opts={
 template<class CharOwningContainer>
 CharOwningContainer emitrs_json(ConstNodeRef const& n, EmitOptions const& opts={})
 {
-    if(!detail::is_set_(n))
+    if(!n.readable())
         return {};
-    _RYML_CB_CHECK(n.tree()->callbacks(), n.readable());
     CharOwningContainer c;
     emitrs_json(*n.tree(), n.id(), opts, &c);
     return c;
@@ -27049,68 +29471,134 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #endif
 
+C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
+
 namespace c4 {
 namespace yml {
 
 template<class Writer>
-substr Emitter<Writer>::emit_as(EmitType_e type, Tree const& t, id_type id, bool error_on_excess)
+substr Emitter<Writer>::emit_as(EmitType_e type, Tree const& tree, id_type id, bool error_on_excess)
 {
-    if(t.empty())
+    if(tree.empty())
     {
-        _RYML_CB_ASSERT(t.callbacks(), id == NONE);
+        _RYML_ASSERT_BASIC_(tree.callbacks(), id == NONE);
         return {};
     }
     if(id == NONE)
-        id = t.root_id();
-    _RYML_CB_CHECK(t.callbacks(), id < t.capacity());
-    m_tree = &t;
-    m_flow = false;
+        id = tree.root_id();
+    _RYML_CHECK_VISIT_(tree.callbacks(), id < tree.capacity(), &tree, id);
+    m_tree = &tree;
+    m_col = 0;
+    m_depth = 0;
+    m_ilevel = 0;
+    m_pws = _PWS_NONE;
     if(type == EMIT_YAML)
         _emit_yaml(id);
     else if(type == EMIT_JSON)
-        _do_visit_json(id, 0);
+        _json_emit(id);
     else
-        _RYML_CB_ERR(m_tree->callbacks(), "unknown emit type");
+        _RYML_ERR_BASIC_(m_tree->callbacks(), "unknown emit type"); // LCOV_EXCL_LINE
     m_tree = nullptr;
     return this->Writer::_get(error_on_excess);
+}
+
+/** @cond dev */
+
+//-----------------------------------------------------------------------------
+
+
+// The startup logic is made complicated from it having to accept
+// initial non-root nodes, and having to deal with tricky tokens like
+// doc separators, anchors, tags, optional keys or dashes, and
+// comments.
+//
+// This function kickstarts the tree descent by handling all the
+// initial and final logic at the top-level scope, thus avoiding
+// top-level kickstart branches in the recursive descending code
+// (which should be oblivious of such logic). This makes the recursive
+// descending code a lot simpler.
+template<class Writer>
+void Emitter<Writer>::_emit_yaml(id_type id)
+{
+    const NodeType ty = m_tree->type(id);
+
+    // emit leading tokens, such as keys or comments
+    const bool has_parent = !m_tree->is_root(id);
+    const bool emit_key = has_parent && ty.has_key() && m_opts.emit_nonroot_key();
+    const bool emit_dash = has_parent && !ty.has_key() && !ty.is_doc() && m_opts.emit_nonroot_dash();
+    _RYML_ASSERT_VISIT_(m_tree->m_callbacks, !(emit_key && emit_dash), m_tree, id);
+
+    // emit opening tokens (such as tags, anchors or comments)
+    if(emit_key)
+    {
+        _blck_map_open_entry(id);
+        ++m_ilevel;
+    }
+    else if(emit_dash)
+    {
+        _blck_seq_open_entry(id);
+        ++m_ilevel;
+    }
+    else
+    {
+        _top_open_entry(id);
+    }
+
+    // emit the payload
+    if(ty.is_stream())
+    {
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_ilevel == 0, m_tree, id);
+        _visit_stream(id);
+    }
+    else if(ty.is_doc())
+    {
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_ilevel == 0, m_tree, id);
+        _visit_doc(id);
+    }
+    else if(ty.is_container())
+    {
+        _visit_blck_container(id);
+    }
+    else if(ty.has_val())
+    {
+        _visit_doc_val(id);
+    }
+
+    // emit closing tokens (such as comments)
+    if(emit_key)
+    {
+        --m_ilevel;
+        _blck_close_entry(id);
+    }
+    else if(emit_dash)
+    {
+        --m_ilevel;
+        _blck_close_entry(id);
+    }
+    else
+    {
+        _top_close_entry(id);
+    }
+
+    if(ty.is_flow_ml())
+    {
+        _newl();
+    }
+    else if(m_tree->is_root(id)
+       || emit_dash || emit_key
+       || !ty.is_val()
+       || !ty.is_val_plain())
+    {
+        _write_pws_and_pend(_PWS_NONE);
+    }
 }
 
 
 //-----------------------------------------------------------------------------
 
 template<class Writer>
-void Emitter<Writer>::_emit_yaml(id_type id)
+void Emitter<Writer>::_visit_stream(id_type id)
 {
-    // save branches in the visitor by doing the initial stream/doc
-    // logic here, sparing the need to check stream/val/keyval inside
-    // the visitor functions
-    auto dispatch = [this](id_type node){
-        NodeType ty = m_tree->type(node);
-        if(ty.is_flow_sl())
-            _do_visit_flow_sl(node, 0);
-        else if(ty.is_flow_ml())
-            _do_visit_flow_ml(node, 0);
-        else
-        {
-            _do_visit_block(node, 0);
-        }
-    };
-    if(!m_tree->is_root(id))
-    {
-        if(m_tree->is_container(id) && !m_tree->type(id).is_flow())
-        {
-            id_type ilevel = 0;
-            if(m_tree->has_key(id))
-            {
-                this->Writer::_do_write(m_tree->key(id));
-                this->Writer::_do_write(":\n");
-                ++ilevel;
-            }
-            _do_visit_block_container(id, 0, ilevel, ilevel);
-            return;
-        }
-    }
-
     TagDirectiveRange tagds = m_tree->tag_directives();
     auto write_tag_directives = [&tagds, this](const id_type next_node){
         TagDirective const* C4_RESTRICT end = tagds.b;
@@ -27124,611 +29612,792 @@ void Emitter<Writer>::_emit_yaml(id_type id)
         for( ; tagds.b != end; ++tagds.b)
         {
             if(next_node != m_tree->first_child(parent))
-                this->Writer::_do_write("...\n");
-            this->Writer::_do_write("%TAG ");
-            this->Writer::_do_write(tagds.b->handle);
-            this->Writer::_do_write(' ');
-            this->Writer::_do_write(tagds.b->prefix);
-            this->Writer::_do_write('\n');
+            {
+                _write_pws_and_pend(_PWS_NEWL);
+                _write("...");
+            }
+            _write_pws_and_pend(_PWS_NONE);
+            _write("%TAG ");
+            _write(tagds.b->handle);
+            _write(' ');
+            _write(tagds.b->prefix);
+            _pend_newl();
         }
     };
-    if(m_tree->is_stream(id))
+    const id_type first_child = m_tree->first_child(id);
+    if(first_child != NONE)
+        write_tag_directives(first_child);
+    ++m_depth;
+    for(id_type child = first_child; child != NONE; child = m_tree->next_sibling(child))
     {
-        const id_type first_child = m_tree->first_child(id);
-        if(first_child != NONE)
-            write_tag_directives(first_child);
-        for(id_type child = first_child; child != NONE; child = m_tree->next_sibling(child))
+        m_ilevel = 0;
+        _write_pws_and_pend(_PWS_NONE);
+        _top_open_entry(child);
+        _visit_doc(child);
+        _top_close_entry(child);
+        if(m_tree->is_val(child))
         {
-            dispatch(child);
-            if(m_tree->is_doc(child) && m_tree->type(child).is_flow_sl())
-                this->Writer::_do_write('\n');
-            if(m_tree->next_sibling(child) != NONE)
-                write_tag_directives(m_tree->next_sibling(child));
+            if(m_tree->type(child) & VALNIL)
+                _pend_newl();
+        }
+        else if(m_tree->is_container(child))
+        {
+            if(m_tree->is_flow(child))
+                _pend_newl();
+        }
+        if(m_tree->next_sibling(child) != NONE)
+        {
+            write_tag_directives(m_tree->next_sibling(child));
         }
     }
-    else if(m_tree->is_container(id))
+    --m_depth;
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_blck_container(id_type id)
+{
+    NodeType ty = m_tree->type(id);
+    if(!(ty & CONTAINER_STYLE))
+        ty |= (m_tree->empty(id) ? FLOW_SL : BLOCK);
+    _write_pws_and_pend(_PWS_NONE);
+    if(ty.is_flow_sl())
+        _visit_flow_sl(id);
+    else if(ty.is_flow_ml())
+        _visit_flow_ml(id);
+    else
+        _visit_blck(id);
+}
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_container(id_type id)
+{
+    NodeType ty = m_tree->type(id);
+    if(!(ty & CONTAINER_STYLE))
+        ty |= FLOW_SL;
+    _write_pws_and_pend(_PWS_NONE);
+    if(ty.is_flow_ml())
+        _visit_flow_ml(id);
+    else // if(ty.is_flow_sl())
+        _visit_flow_sl(id);
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_doc_val(id_type id)
+{
+    // some plain scalars such as '...' and '---' must not
+    // appear at 0-indentation
+    NodeType ty = m_tree->type(id);
+    const csubstr val = m_tree->val(id);
+    const type_bits val_style = ty & VAL_STYLE;
+    const bool is_ambiguous = ((ty & VAL_PLAIN) || !val_style)
+        && (val.begins_with("...") || val.begins_with("---"));
+    if(is_ambiguous)
     {
-        dispatch(id);
+        ++m_ilevel;
+        if(m_pws != _PWS_NONE)
+            _pend_newl();
+        else
+            _indent(m_ilevel);
     }
-    else if(m_tree->is_doc(id))
+    _write_pws_and_pend(_PWS_NONE);
+    if(m_tree->is_val_ref(id))
     {
-        _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->is_container(id)); // checked above
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_val(id)); // so it must be a val
-        _write_doc(id);
-    }
-    else if(m_tree->is_keyval(id))
-    {
-        _writek(id, 0);
-        this->Writer::_do_write(": ");
-        _writev(id, 0);
-        if(!m_tree->type(id).is_flow())
-            this->Writer::_do_write('\n');
-    }
-    else if(m_tree->is_val(id))
-    {
-        //this->Writer::_do_write("- ");
-        _writev(id, 0);
-        if(!m_tree->type(id).is_flow())
-            this->Writer::_do_write('\n');
-    }
-    else if(m_tree->type(id) == NOTYPE)
-    {
-        ;
+        _write_ref(val);
     }
     else
     {
-        _RYML_CB_ERR(m_tree->callbacks(), "unknown type");
+        if(!val_style)
+            ty = scalar_style_choose(val);
+        _blck_write_scalar(val, val_style);
+    }
+    if(is_ambiguous)
+    {
+        --m_ilevel;
     }
 }
 
-#define _rymlindent_nextline() this->_indent(ilevel + 1);
+
+//-----------------------------------------------------------------------------
 
 template<class Writer>
-void Emitter<Writer>::_write_doc(id_type id)
+void Emitter<Writer>::_visit_doc(id_type id)
 {
     const NodeType ty = m_tree->type(id);
-    RYML_ASSERT(ty.is_doc());
-    RYML_ASSERT(!ty.has_key());
-    if(!m_tree->is_root(id))
+    _RYML_ASSERT_VISIT_(m_tree->m_callbacks, ty.is_doc(), m_tree, id);
+    _RYML_ASSERT_VISIT_(m_tree->m_callbacks, !ty.has_key(), m_tree, id);
+    if(ty.is_container()) // this is more frequent
     {
-        RYML_ASSERT(m_tree->is_stream(m_tree->parent(id)));
-        this->Writer::_do_write("---");
+        _visit_blck_container(id);
     }
-    //
-    if(!ty.has_val()) // this is more frequent
+    else if(ty.is_val())
     {
-        const bool tag = ty.has_val_tag();
-        const bool anchor = ty.has_val_anchor();
-        if(!tag && !anchor)
-        {
-            ;
-        }
-        else if(!tag && anchor)
-        {
-            if(!m_tree->is_root(id))
-                this->Writer::_do_write(' ');
-            this->Writer::_do_write('&');
-            this->Writer::_do_write(m_tree->val_anchor(id));
-            #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
-            if(m_tree->has_children(id) && m_tree->is_root(id))
-                this->Writer::_do_write('\n');
-            #endif
-        }
-        else if(tag && !anchor)
-        {
-            if(!m_tree->is_root(id))
-                this->Writer::_do_write(' ');
-            _write_tag(m_tree->val_tag(id));
-            #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
-            if(m_tree->has_children(id) && m_tree->is_root(id))
-                this->Writer::_do_write('\n');
-            #endif
-        }
-        else // tag && anchor
-        {
-            if(!m_tree->is_root(id))
-                this->Writer::_do_write(' ');
-            _write_tag(m_tree->val_tag(id));
-            this->Writer::_do_write(" &");
-            this->Writer::_do_write(m_tree->val_anchor(id));
-            #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
-            if(m_tree->has_children(id) && m_tree->is_root(id))
-                this->Writer::_do_write('\n');
-            #endif
-        }
+        _visit_doc_val(id);
     }
-    else // docval
-    {
-        _RYML_CB_ASSERT(m_tree->callbacks(), ty.has_val());
-        // some plain scalars such as '...' and '---' must not
-        // appear at 0-indentation
-        const csubstr val = m_tree->val(id);
-        const bool preceded_by_3_dashes = !m_tree->is_root(id);
-        const type_bits style_marks = ty & VAL_STYLE;
-        const bool is_plain = ty.is_val_plain();
-        const bool is_ambiguous = (is_plain || !style_marks)
-            && ((val.begins_with("...") || val.begins_with("---"))
-                ||
-                (val.find('\n') != npos));
-        if(preceded_by_3_dashes)
-        {
-            if(is_plain && val.len == 0 && !ty.has_val_anchor() && !ty.has_val_tag())
-            {
-                this->Writer::_do_write('\n');
-                return;
-            }
-            else if(val.len && is_ambiguous)
-            {
-                this->Writer::_do_write('\n');
-            }
-            else
-            {
-                this->Writer::_do_write(' ');
-            }
-        }
-        id_type ilevel = 0u;
-        if(is_ambiguous)
-        {
-            _rymlindent_nextline();
-            ++ilevel;
-        }
-        _writev(id, ilevel);
-        if(val.len && m_tree->is_root(id))
-            this->Writer::_do_write('\n');
-    }
-    if(!m_tree->is_root(id))
-        this->Writer::_do_write('\n');
 }
 
+
+//-----------------------------------------------------------------------------
+
+// to be called only at top level
 template<class Writer>
-void Emitter<Writer>::_do_visit_flow_sl(id_type node, id_type depth, id_type ilevel)
+void Emitter<Writer>::_top_open_entry(id_type node)
 {
-    const bool prev_flow = m_flow;
-    m_flow = true;
-    _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->is_stream(node));
-    _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_container(node) || m_tree->is_doc(node));
-    _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_root(node) || (m_tree->parent_is_map(node) || m_tree->parent_is_seq(node)));
-    if(C4_UNLIKELY(depth > m_opts.max_depth()))
-        _RYML_CB_ERR(m_tree->callbacks(), "max depth exceeded");
-
-    if(m_tree->is_doc(node))
+    NodeType ty = m_tree->type(node);
+    if(ty.is_doc() && !m_tree->is_root(node))
     {
-        _write_doc(node);
-        #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
-        if(!m_tree->has_children(node))
-            return;
-        else
-        #endif
-        {
-            if(m_tree->is_map(node))
-            {
-                this->Writer::_do_write('{');
-            }
-            else
-            {
-                _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_seq(node));
-                this->Writer::_do_write('[');
-            }
-        }
+        _write("---");
+        _pend_space();
     }
-    else if(m_tree->is_container(node))
+    if(ty.has_val_anchor())
     {
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_map(node) || m_tree->is_seq(node));
-
-        bool spc = false; // write a space
-
-        if(m_tree->has_key(node))
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->val_anchor(node));
+    }
+    if(ty.has_val_tag())
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->val_tag(node));
+    }
+    if(m_pws == _PWS_SPACE)
+    {
+        if(ty.has_val())
         {
-            _writek(node, ilevel);
-            this->Writer::_do_write(':');
-            spc = true;
-        }
-
-        if(m_tree->has_val_tag(node))
-        {
-            if(spc)
-                this->Writer::_do_write(' ');
-            _write_tag(m_tree->val_tag(node));
-            spc = true;
-        }
-
-        if(m_tree->has_val_anchor(node))
-        {
-            if(spc)
-                this->Writer::_do_write(' ');
-            this->Writer::_do_write('&');
-            this->Writer::_do_write(m_tree->val_anchor(node));
-            spc = true;
-        }
-
-        if(spc)
-            this->Writer::_do_write(' ');
-
-        if(m_tree->is_map(node))
-        {
-            this->Writer::_do_write('{');
+            if(ty.is_val_plain() && !m_tree->val(node).len)
+                _pend_none();
         }
         else
         {
-            _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_seq(node));
-            this->Writer::_do_write('[');
-        }
-    } // container
-
-    for(id_type child = m_tree->first_child(node), count = 0; child != NONE; child = m_tree->next_sibling(child))
-    {
-        if(count++)
-            this->Writer::_do_write(',');
-        if(m_tree->is_keyval(child))
-        {
-            _writek(child, ilevel);
-            this->Writer::_do_write(": ");
-            _writev(child, ilevel);
-        }
-        else if(m_tree->is_val(child))
-        {
-            _writev(child, ilevel);
-        }
-        else
-        {
-            // with single-line flow, we can never go back to block
-            _do_visit_flow_sl(child, depth + 1, ilevel + 1);
+            _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_container(), m_tree, node);
+            if(!ty.is_flow())
+                _pend_newl();
         }
     }
-
-    if(m_tree->is_map(node))
-    {
-        this->Writer::_do_write('}');
-    }
-    else if(m_tree->is_seq(node))
-    {
-        this->Writer::_do_write(']');
-    }
-    m_flow = prev_flow;
 }
 
-C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4702) // unreachable error, triggered by flow_ml not implemented
+
+//-----------------------------------------------------------------------------
 
 template<class Writer>
-void Emitter<Writer>::_do_visit_flow_ml(id_type id, id_type depth, id_type ilevel, id_type do_indent)
+void Emitter<Writer>::_top_close_entry(id_type node)
 {
-    C4_UNUSED(id);
-    C4_UNUSED(depth);
-    C4_UNUSED(ilevel);
-    C4_UNUSED(do_indent);
-    c4::yml::error("not implemented");
-    #ifdef THIS_IS_A_WORK_IN_PROGRESS
-    if(C4_UNLIKELY(depth > m_opts.max_depth()))
-        _RYML_CB_ERR(m_tree->callbacks(), "max depth exceeded");
-    const bool prev_flow = m_flow;
-    m_flow = true;
-    // do it...
-    m_flow = prev_flow;
-    #endif
+    if(m_tree->is_val(node) && !(m_tree->type(node) & VALNIL))
+    {
+        _pend_newl();
+    }
 }
 
+
+//-----------------------------------------------------------------------------
+
 template<class Writer>
-void Emitter<Writer>::_do_visit_block_container(id_type node, id_type depth, id_type level, bool do_indent)
+void Emitter<Writer>::_flow_seq_open_entry(id_type node)
 {
-    if(m_tree->is_seq(node))
+    NodeType ty = m_tree->type(node);
+    _write_pws_and_pend(_PWS_NONE);
+    if(ty & VALANCH)
     {
-        for(id_type child = m_tree->first_child(node); child != NONE; child = m_tree->next_sibling(child))
-        {
-            _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->has_key(child));
-            if(m_tree->is_val(child))
-            {
-                _indent(level, do_indent);
-                this->Writer::_do_write("- ");
-                _writev(child, level);
-                this->Writer::_do_write('\n');
-            }
-            else
-            {
-                _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_container(child));
-                NodeType ty = m_tree->type(child);
-                if(ty.is_flow_sl())
-                {
-                    _indent(level, do_indent);
-                    this->Writer::_do_write("- ");
-                    _do_visit_flow_sl(child, depth+1, 0u);
-                    this->Writer::_do_write('\n');
-                }
-                else if(ty.is_flow_ml())
-                {
-                    _indent(level, do_indent);
-                    this->Writer::_do_write("- ");
-                    _do_visit_flow_ml(child, depth+1, 0u, do_indent);
-                    this->Writer::_do_write('\n');
-                }
-                else
-                {
-                    _do_visit_block(child, depth+1, level, do_indent); // same indentation level
-                }
-            }
-            do_indent = true;
-        }
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->val_anchor(node));
     }
-    else // map
+    if(ty & VALTAG)
     {
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_map(node));
-        for(id_type ich = m_tree->first_child(node); ich != NONE; ich = m_tree->next_sibling(ich))
-        {
-            _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->has_key(ich));
-            if(m_tree->is_keyval(ich))
-            {
-                _indent(level, do_indent);
-                _writek(ich, level);
-                this->Writer::_do_write(": ");
-                _writev(ich, level);
-                this->Writer::_do_write('\n');
-            }
-            else
-            {
-                _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_container(ich));
-                NodeType ty = m_tree->type(ich);
-                if(ty.is_flow_sl())
-                {
-                    _indent(level, do_indent);
-                    _do_visit_flow_sl(ich, depth+1, 0u);
-                    this->Writer::_do_write('\n');
-                }
-                else if(ty.is_flow_ml())
-                {
-                    _indent(level, do_indent);
-                    _do_visit_flow_ml(ich, depth+1, 0u);
-                    this->Writer::_do_write('\n');
-                }
-                else
-                {
-                    _do_visit_block(ich, depth+1, level, do_indent); // same level!
-                }
-            } // keyval vs container
-            do_indent = true;
-        } // for children
-    } // seq vs map
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->val_tag(node));
+    }
 }
 
-template<class Writer>
-void Emitter<Writer>::_do_visit_block(id_type node, id_type depth, id_type ilevel, id_type do_indent)
-{
-    _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->is_stream(node));
-    _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_container(node) || m_tree->is_doc(node));
-    _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_root(node) || (m_tree->parent_is_map(node) || m_tree->parent_is_seq(node)));
-    if(C4_UNLIKELY(depth > m_opts.max_depth()))
-        _RYML_CB_ERR(m_tree->callbacks(), "max depth exceeded");
-    if(m_tree->is_doc(node))
-    {
-        _write_doc(node);
-        if(!m_tree->has_children(node))
-            return;
-    }
-    else if(m_tree->is_container(node))
-    {
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_map(node) || m_tree->is_seq(node));
-        bool spc = false; // write a space
-        bool nl = false;  // write a newline
-        if(m_tree->has_key(node))
-        {
-            _indent(ilevel, do_indent);
-            _writek(node, ilevel);
-            this->Writer::_do_write(':');
-            spc = true;
-        }
-        else if(!m_tree->is_root(node))
-        {
-            _indent(ilevel, do_indent);
-            this->Writer::_do_write('-');
-            spc = true;
-        }
 
-        if(m_tree->has_val_tag(node))
-        {
-            if(spc)
-                this->Writer::_do_write(' ');
-            _write_tag(m_tree->val_tag(node));
-            spc = true;
-            nl = true;
-        }
-
-        if(m_tree->has_val_anchor(node))
-        {
-            if(spc)
-                this->Writer::_do_write(' ');
-            this->Writer::_do_write('&');
-            this->Writer::_do_write(m_tree->val_anchor(node));
-            spc = true;
-            nl = true;
-        }
-
-        if(m_tree->has_children(node))
-        {
-            if(m_tree->has_key(node))
-                nl = true;
-            else
-                if(!m_tree->is_root(node) && !nl)
-                    spc = true;
-        }
-        else
-        {
-            if(m_tree->is_seq(node))
-                this->Writer::_do_write(" []\n");
-            else if(m_tree->is_map(node))
-                this->Writer::_do_write(" {}\n");
-            return;
-        }
-
-        if(spc && !nl)
-            this->Writer::_do_write(' ');
-
-        do_indent = 0;
-        if(nl)
-        {
-            this->Writer::_do_write('\n');
-            do_indent = 1;
-        }
-    } // container
-
-    id_type next_level = ilevel + 1;
-    if(m_tree->is_root(node) || m_tree->is_doc(node))
-        next_level = ilevel; // do not indent at top level
-
-    _do_visit_block_container(node, depth, next_level, do_indent);
-}
-
-C4_SUPPRESS_WARNING_MSVC_POP
-
+//-----------------------------------------------------------------------------
 
 template<class Writer>
-void Emitter<Writer>::_do_visit_json(id_type id, id_type depth)
+void Emitter<Writer>::_flow_map_open_entry(id_type node)
 {
-    _RYML_CB_CHECK(m_tree->callbacks(), !m_tree->is_stream(id)); // JSON does not have streams
-    if(C4_UNLIKELY(depth > m_opts.max_depth()))
-        _RYML_CB_ERR(m_tree->callbacks(), "max depth exceeded");
-    if(m_tree->is_keyval(id))
+    NodeType ty = m_tree->type(node);
+    _write_pws_and_pend(_PWS_NONE);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.has_key(), m_tree, node);
+    if(ty & KEYANCH)
     {
-        _writek_json(id);
-        this->Writer::_do_write(": ");
-        _writev_json(id);
+        _write_pws_and_pend(_PWS_SPACE);
+        _write("&");
+        _write(m_tree->key_anchor(node));
     }
-    else if(m_tree->is_val(id))
+    if(ty & KEYTAG)
     {
-        _writev_json(id);
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->key_tag(node));
     }
-    else if(m_tree->is_container(id))
+    if(ty & KEYREF)
     {
-        if(m_tree->has_key(id))
-        {
-            _writek_json(id);
-            this->Writer::_do_write(": ");
-        }
-        if(m_tree->is_seq(id))
-            this->Writer::_do_write('[');
-        else if(m_tree->is_map(id))
-            this->Writer::_do_write('{');
-    }  // container
-
-    for(id_type ich = m_tree->first_child(id); ich != NONE; ich = m_tree->next_sibling(ich))
-    {
-        if(ich != m_tree->first_child(id))
-            this->Writer::_do_write(',');
-        _do_visit_json(ich, depth+1);
-    }
-
-    if(m_tree->is_seq(id))
-        this->Writer::_do_write(']');
-    else if(m_tree->is_map(id))
-        this->Writer::_do_write('}');
-}
-
-template<class Writer>
-void Emitter<Writer>::_write(NodeScalar const& C4_RESTRICT sc, NodeType flags, id_type ilevel)
-{
-    if( ! sc.tag.empty())
-    {
-        _write_tag(sc.tag);
-        this->Writer::_do_write(' ');
-    }
-    if(flags.has_anchor())
-    {
-        RYML_ASSERT(flags.is_ref() != flags.has_anchor());
-        RYML_ASSERT( ! sc.anchor.empty());
-        this->Writer::_do_write('&');
-        this->Writer::_do_write(sc.anchor);
-        this->Writer::_do_write(' ');
-    }
-    else if(flags.is_ref())
-    {
-        if(sc.anchor != "<<")
-            this->Writer::_do_write('*');
-        this->Writer::_do_write(sc.anchor);
-        if(flags.is_key_ref())
-            this->Writer::_do_write(' ');
-        return;
-    }
-
-    // ensure the style flags only have one of KEY or VAL
-    _RYML_CB_ASSERT(m_tree->callbacks(), ((flags & SCALAR_STYLE) == 0) || (((flags & KEY_STYLE) == 0) != ((flags & VAL_STYLE) == 0)));
-    type_bits style_marks = flags & SCALAR_STYLE;
-    if(!style_marks)
-        style_marks = scalar_style_choose(sc.scalar);
-    if(style_marks & (KEY_LITERAL|VAL_LITERAL))
-    {
-        _write_scalar_literal(sc.scalar, ilevel, flags.has_key());
-    }
-    else if(style_marks & (KEY_FOLDED|VAL_FOLDED))
-    {
-        _write_scalar_folded(sc.scalar, ilevel, flags.has_key());
-    }
-    else if(style_marks & (KEY_SQUO|VAL_SQUO))
-    {
-        _write_scalar_squo(sc.scalar, ilevel);
-    }
-    else if(style_marks & (KEY_DQUO|VAL_DQUO))
-    {
-        _write_scalar_dquo(sc.scalar, ilevel);
-    }
-    else if(style_marks & (KEY_PLAIN|VAL_PLAIN))
-    {
-        if(C4_LIKELY(!(sc.scalar.begins_with(": ") || sc.scalar.begins_with(":\t"))))
-            _write_scalar_plain(sc.scalar, ilevel);
-        else
-            _write_scalar_squo(sc.scalar, ilevel);
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_ref(m_tree->key(node));
     }
     else
     {
-        _RYML_CB_ERR(m_tree->callbacks(), "not implemented");
+        _write_pws_and_pend(_PWS_NONE);
+        csubstr key = m_tree->key(node);
+        if(!(ty & (NodeType_e)_styles_flow_key))
+            ty |= scalar_style_choose(key) & (NodeType_e)_styles_flow_key;
+        _flow_write_scalar(key, ty & (NodeType_e)_styles_flow_key);
+    }
+    _write_pws_and_pend(_PWS_SPACE);
+    _write(':');
+    if(ty & VALANCH)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->val_anchor(node));
+    }
+    if(ty & VALTAG)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->val_tag(node));
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_flow_close_entry_sl(id_type node, id_type last_sibling)
+{
+    if(node != last_sibling)
+    {
+        _write_pws_and_pend(_PWS_NONE);
+        _write(',');
     }
 }
 
 template<class Writer>
-void Emitter<Writer>::_write_json(NodeScalar const& C4_RESTRICT sc, NodeType flags)
+void Emitter<Writer>::_flow_close_entry_ml(id_type node, id_type last_sibling)
 {
-    if(flags & (KEYTAG|VALTAG))
-        if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_TAG)
-            _RYML_CB_ERR(m_tree->callbacks(), "JSON does not have tags");
-    if(C4_UNLIKELY(flags.has_anchor()))
-        if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_ANCHOR)
-            _RYML_CB_ERR(m_tree->callbacks(), "JSON does not have anchors");
-    if(sc.scalar.len)
+    if(node != last_sibling)
     {
-        // use double quoted style...
-        // if it is a key (mandatory in JSON)
-        // if the style is marked quoted
-        bool dquoted = ((flags & (KEY|VALQUO))
-                        || (scalar_style_json_choose(sc.scalar) & SCALAR_DQUO)); // choose the style
-        if(dquoted)
-            _write_scalar_json_dquo(sc.scalar);
-        else
-            this->Writer::_do_write(sc.scalar);
+        _write_pws_and_pend(_PWS_NONE);
+        _write(',');
+    }
+    _pend_newl();
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_blck_seq_open_entry(id_type node)
+{
+    NodeType ty = m_tree->type(node);
+    _write_pws_and_pend(_PWS_NONE);
+    _write_pws_and_pend(_PWS_SPACE); // pend the space after the following dash
+    _write('-');
+    bool has_tag_or_anchor = false;
+    if(ty & VALANCH)
+    {
+        has_tag_or_anchor = true;
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->val_anchor(node));
+    }
+    if(ty & VALTAG)
+    {
+        has_tag_or_anchor = true;
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->val_tag(node));
+    }
+    if(has_tag_or_anchor && ty.is_container())
+    {
+        if(!(ty & CONTAINER_STYLE))
+            ty |= BLOCK;
+        if((ty & BLOCK) && m_tree->has_children(node))
+            _pend_newl();
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_blck_write_qmrk(id_type node, csubstr key, type_bits ty, bool has_qmrk_comments)
+{
+    (void)node;
+    (void)key;
+    (void)ty;
+    (void)has_qmrk_comments;
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_blck_map_open_entry(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->has_key(node), m_tree, node);
+    NodeType ty = m_tree->type(node);
+    csubstr key = m_tree->key(node);
+    if(!(ty & (KEY_STYLE|KEYREF)))
+        ty |= (scalar_style_choose(key) & KEY_STYLE);
+    _write_pws_and_pend(_PWS_NONE);
+    if(ty & KEYANCH)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->key_anchor(node));
+    }
+    if(ty & KEYTAG)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->key_tag(node));
+    }
+    if(ty & KEYREF)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_ref(key);
     }
     else
     {
-        if(sc.scalar.str || (flags & (KEY|VALQUO|KEYTAG|VALTAG)))
-            this->Writer::_do_write("\"\"");
+        _write_pws_and_pend(_PWS_NONE);
+        type_bits use_qmrk = ty & (NodeType_e)_styles_block_key;
+        if(!use_qmrk)
+        {
+            _blck_write_scalar(key, ty & KEY_STYLE);
+        }
         else
-            this->Writer::_do_write("null");
+        {
+            _write("? ");
+            _blck_write_scalar(key, ty & KEY_STYLE);
+            _pend_newl();
+        }
+    }
+    _write_pws_and_pend(_PWS_SPACE); // pend the space after the colon
+    _write(':');
+    if(ty & VALANCH)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write('&');
+        _write(m_tree->val_anchor(node));
+    }
+    if(ty & VALTAG)
+    {
+        _write_pws_and_pend(_PWS_SPACE);
+        _write_tag(m_tree->val_tag(node));
+    }
+    if(ty.is_container() && m_tree->has_children(node))
+    {
+        if(!(ty & CONTAINER_STYLE))
+            ty |= BLOCK;
+        if(ty.is_block())
+            _pend_newl();
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_blck_close_entry(id_type node)
+{
+    (void)node;
+    _pend_newl();
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_blck_seq(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_seq(node), m_tree, node);
+    bool empty = true;
+    for(id_type child = m_tree->first_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        empty = false;
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_val() || ty.is_container() || ty == NOTYPE, m_tree, node);
+        _blck_seq_open_entry(child);
+        if(ty.is_val())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & VAL_STYLE))
+                    ty |= (scalar_style_choose(val) & VAL_STYLE);
+                _blck_write_scalar(val, ty & VAL_STYLE);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            ++m_ilevel;
+            _visit_blck_container(child);
+            --m_depth;
+            --m_ilevel;
+        }
+        _blck_close_entry(child);
+    }
+    if(empty)
+    {
+        _write_pws_and_pend(_PWS_NONE);
+        _write("[]");
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_blck_map(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_map(node), m_tree, node);
+    bool empty = true;
+    for(id_type child = m_tree->first_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        empty = false;
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_keyval() || ty.is_container() || ty == NOTYPE, m_tree, node);
+        _blck_map_open_entry(child); // also writes the key
+        if(ty.is_keyval())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & VAL_STYLE))
+                    ty |= (scalar_style_choose(val) & VAL_STYLE);
+                _blck_write_scalar(val, ty & VAL_STYLE);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            ++m_ilevel;
+            _visit_blck_container(child);
+            --m_depth;
+            --m_ilevel;
+        }
+        _blck_close_entry(child);
+    }
+    if(empty)
+    {
+        _write_pws_and_pend(_PWS_NONE);
+        _write("{}");
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_sl_seq(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_seq(node), m_tree, node);
+    _write('[');
+    for(id_type child = m_tree->first_child(node), last = m_tree->last_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_val() || ty.is_container() || ty == NOTYPE, m_tree, node);
+        _flow_seq_open_entry(child);
+        if(ty.is_val())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & (NodeType_e)_styles_flow_val))
+                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            _visit_flow_container(child);
+            --m_depth;
+        }
+        _flow_close_entry_sl(child, last);
+    }
+    _write(']');
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_ml_seq(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_seq(node), m_tree, node);
+    _write('[');
+    _pend_newl();
+    if(m_opts.indent_flow_ml()) ++m_ilevel;
+    for(id_type child = m_tree->first_child(node), last = m_tree->last_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_val() || ty.is_container() || ty == NOTYPE, m_tree, node);
+        _flow_seq_open_entry(child);
+        if(ty.is_val())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & (NodeType_e)_styles_flow_val))
+                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            _visit_flow_container(child);
+            --m_depth;
+        }
+        _flow_close_entry_ml(child, last);
+    }
+    if(m_opts.indent_flow_ml()) --m_ilevel;
+    _write_pws_and_pend(_PWS_NONE);
+    _write(']');
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_sl_map(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_map(node), m_tree, node);
+    _write('{');
+    for(id_type child = m_tree->first_child(node), last = m_tree->last_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.has_key() && (ty.has_val() || ty.is_container() || ty == NOTYPE), m_tree, node);
+        _flow_map_open_entry(child);
+        if(ty.has_val())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & (NodeType_e)_styles_flow_val))
+                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            _visit_flow_container(child);
+            --m_depth;
+        }
+        _flow_close_entry_sl(child, last);
+    }
+    _write_pws_and_pend(_PWS_NONE);
+    _write('}');
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_ml_map(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_map(node), m_tree, node);
+    _write('{');
+    _pend_newl();
+    if(m_opts.indent_flow_ml()) ++m_ilevel;
+    for(id_type child = m_tree->first_child(node), last = m_tree->last_child(node); child != NONE; child = m_tree->next_sibling(child))
+    {
+        NodeType ty = m_tree->type(child);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.has_key() && (ty.has_val() || ty.is_container() || ty == NOTYPE), m_tree, node);
+        _flow_map_open_entry(child);
+        if(ty.has_val())
+        {
+            _write_pws_and_pend(_PWS_NONE);
+            csubstr val = m_tree->val(child);
+            if(!ty.is_val_ref())
+            {
+                if(!(ty & (NodeType_e)_styles_flow_val))
+                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
+            }
+            else
+            {
+                _write_ref(val);
+            }
+        }
+        else if(ty.is_container())
+        {
+            ++m_depth;
+            _visit_flow_container(child);
+            --m_depth;
+        }
+        _flow_close_entry_ml(child, last);
+    }
+    if(m_opts.indent_flow_ml()) --m_ilevel;
+    _write_pws_and_pend(_PWS_NONE);
+    _write('}');
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_blck(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), !m_tree->is_stream(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_container(node) || m_tree->is_doc(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_root(node) || (m_tree->parent_is_map(node) || m_tree->parent_is_seq(node)), m_tree, node);
+    if(C4_UNLIKELY(m_depth > m_opts.max_depth()))
+        _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, node, "max depth exceeded");
+    const NodeType ty = m_tree->type(node);
+    if(ty.is_seq())
+    {
+        _visit_blck_seq(node);
+    }
+    else
+    {
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_map(), m_tree, node);
+        _visit_blck_map(node);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_sl(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), !m_tree->is_stream(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_container(node) || m_tree->is_doc(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_root(node) || (m_tree->parent_is_map(node) || m_tree->parent_is_seq(node)), m_tree, node);
+    if(C4_UNLIKELY(m_depth > m_opts.max_depth()))
+        _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, node, "max depth exceeded");
+    const NodeType ty = m_tree->type(node);
+    if(ty.is_seq())
+    {
+        _visit_flow_sl_seq(node);
+    }
+    else
+    {
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_map(), m_tree, node);
+        _visit_flow_sl_map(node);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_visit_flow_ml(id_type node)
+{
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), !m_tree->is_stream(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_container(node) || m_tree->is_doc(node), m_tree, node);
+    _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_root(node) || (m_tree->parent_is_map(node) || m_tree->parent_is_seq(node)), m_tree, node);
+    if(C4_UNLIKELY(m_depth > m_opts.max_depth()))
+        _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, node, "max depth exceeded");
+    const NodeType ty = m_tree->type(node);
+    if(ty.is_seq())
+    {
+        _visit_flow_ml_seq(node);
+    }
+    else if(ty.is_map())
+    {
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), ty.is_map(), m_tree, node);
+        _visit_flow_ml_map(node);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template<class Writer>
+void Emitter<Writer>::_flow_write_scalar(csubstr str, type_bits ty)
+{
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), !(ty & _styles_block));
+    if((ty & _styles_plain) || !(ty & SCALAR_STYLE))
+    {
+        _write_scalar_plain(str, m_ilevel);
+    }
+    else if(ty & _styles_squo)
+    {
+        _write_scalar_squo(str, m_ilevel);
+    }
+    else // if(ty & _styles_dquo)
+    {
+        _write_scalar_dquo(str, m_ilevel);
+    }
+}
+
+template<class Writer>
+void Emitter<Writer>::_blck_write_scalar(csubstr str, type_bits ty)
+{
+    if((ty & _styles_plain) || !(ty & SCALAR_STYLE))
+    {
+        _write_scalar_plain(str, m_ilevel);
+    }
+    else if(ty & _styles_squo)
+    {
+        _write_scalar_squo(str, m_ilevel);
+    }
+    else if(ty & _styles_dquo)
+    {
+        _write_scalar_dquo(str, m_ilevel);
+    }
+    else if(ty & _styles_literal)
+    {
+        _write_scalar_literal(str, m_ilevel);
+    }
+    else // if(ty & _styles_folded)
+    {
+        _write_scalar_folded(str, m_ilevel);
     }
 }
 
 template<class Writer>
 size_t Emitter<Writer>::_write_escaped_newlines(csubstr s, size_t i)
 {
-    RYML_ASSERT(s.len > i);
-    RYML_ASSERT(s.str[i] == '\n');
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.len > i);
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.str[i] == '\n');
     //_c4dbgpf("nl@i={} rem=[{}]~~~{}~~~", i, s.sub(i).len, s.sub(i));
     // add an extra newline for each sequence of consecutive
     // newline/whitespace
-    this->Writer::_do_write('\n');
+    _newl();
     do
     {
-        this->Writer::_do_write('\n'); // write the newline again
+        _newl(); // write the newline again
         ++i; // increase the outer loop counter!
     } while(i < s.len && s.str[i] == '\n');
-    _RYML_CB_ASSERT(m_tree->callbacks(), i > 0);
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), i > 0);
     --i;
-    _RYML_CB_ASSERT(m_tree->callbacks(), s.str[i] == '\n');
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.str[i] == '\n');
     return i;
 }
+
 
 inline bool _is_indented_block(csubstr s, size_t prev, size_t i) noexcept
 {
@@ -27738,14 +30407,15 @@ inline bool _is_indented_block(csubstr s, size_t prev, size_t i) noexcept
     return (pos != npos) && (s.str[pos] == ' ' || s.str[pos] == '\t');
 }
 
+
 template<class Writer>
 size_t Emitter<Writer>::_write_indented_block(csubstr s, size_t i, id_type ilevel)
 {
     //_c4dbgpf("indblock@i={} rem=[{}]~~~\n{}~~~", i, s.sub(i).len, s.sub(i));
-    _RYML_CB_ASSERT(m_tree->callbacks(), i > 0);
-    _RYML_CB_ASSERT(m_tree->callbacks(), s.str[i-1] == '\n');
-    _RYML_CB_ASSERT(m_tree->callbacks(), i < s.len);
-    _RYML_CB_ASSERT(m_tree->callbacks(), s.str[i] == ' ' || s.str[i] == '\t' || s.str[i] == '\n');
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), i > 0);
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.str[i-1] == '\n');
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), i < s.len);
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.str[i] == ' ' || s.str[i] == '\t' || s.str[i] == '\n');
 again:
     size_t pos = s.find("\n ", i);
     if(pos == npos)
@@ -27754,8 +30424,8 @@ again:
     {
         ++pos;
         //_c4dbgpf("indblock line@i={} rem=[{}]~~~\n{}~~~", i, s.range(i, pos).len, s.range(i, pos));
-        _rymlindent_nextline();
-        this->Writer::_do_write(s.range(i, pos));
+        _indent(ilevel + 1);
+        _write(s.range(i, pos));
         i = pos;
         goto again; // NOLINT
     }
@@ -27767,36 +30437,34 @@ again:
         const size_t pos2 = s.first_not_of('\n', pos);
         pos = (pos2 != npos) ? pos2 : pos;
         //_c4dbgpf("indblock line@i={} rem=[{}]~~~\n{}~~~", i, s.range(i, pos).len, s.range(i, pos));
-        _rymlindent_nextline();
-        this->Writer::_do_write(s.range(i, pos));
+        _indent(ilevel + 1);
+        _write(s.range(i, pos));
         i = pos;
     }
     return i;
 }
 
 template<class Writer>
-void Emitter<Writer>::_write_scalar_literal(csubstr s, id_type ilevel, bool explicit_key)
+void Emitter<Writer>::_write_scalar_literal(csubstr s, id_type ilevel)
 {
-    _RYML_CB_ASSERT(m_tree->callbacks(), s.find("\r") == csubstr::npos);
-    if(explicit_key)
-        this->Writer::_do_write("? ");
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.find("\r") == csubstr::npos);
     csubstr trimmed = s.trimr('\n');
     const size_t numnewlines_at_end = s.len - trimmed.len;
     const bool is_newline_only = (trimmed.len == 0 && (s.len > 0));
     const bool explicit_indentation = s.triml("\n\r").begins_with_any(" \t");
     //
-    this->Writer::_do_write('|');
+    _write('|');
     if(explicit_indentation)
-        this->Writer::_do_write('2');
+        _write('2');
     //
     if(numnewlines_at_end > 1 || is_newline_only)
-        this->Writer::_do_write('+');
+        _write('+');
     else if(numnewlines_at_end == 0)
-        this->Writer::_do_write('-');
+        _write('-');
     //
     if(trimmed.len)
     {
-        this->Writer::_do_write('\n');
+        _newl();
         size_t pos = 0; // tracks the last character that was already written
         for(size_t i = 0; i < trimmed.len; ++i)
         {
@@ -27804,48 +30472,41 @@ void Emitter<Writer>::_write_scalar_literal(csubstr s, id_type ilevel, bool expl
                 continue;
             // write everything up to this point
             csubstr since_pos = trimmed.range(pos, i+1); // include the newline
-            _rymlindent_nextline()
-            this->Writer::_do_write(since_pos);
+            _indent(ilevel + 1);
+            _write(since_pos);
             pos = i+1; // already written
         }
         if(pos < trimmed.len)
         {
-            _rymlindent_nextline()
-            this->Writer::_do_write(trimmed.sub(pos));
+            _indent(ilevel + 1);
+            _write(trimmed.sub(pos));
         }
     }
     for(size_t i = !is_newline_only; i < numnewlines_at_end; ++i)
-        this->Writer::_do_write('\n');
-    if(explicit_key)
-    {
-        this->Writer::_do_write('\n');
-        this->_indent(ilevel);
-    }
+        _newl();
 }
 
 template<class Writer>
-void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool explicit_key)
+void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel)
 {
-    if(explicit_key)
-        this->Writer::_do_write("? ");
-    _RYML_CB_ASSERT(m_tree->callbacks(), s.find("\r") == csubstr::npos);
+    _RYML_ASSERT_BASIC_(m_tree->callbacks(), s.find("\r") == csubstr::npos);
     csubstr trimmed = s.trimr('\n');
     const size_t numnewlines_at_end = s.len - trimmed.len;
     const bool is_newline_only = (trimmed.len == 0 && (s.len > 0));
     const bool explicit_indentation = s.triml("\n\r").begins_with_any(" \t");
     //
-    this->Writer::_do_write('>');
+    _write('>');
     if(explicit_indentation)
-        this->Writer::_do_write('2');
+        _write('2');
     //
     if(numnewlines_at_end == 0)
-        this->Writer::_do_write('-');
+        _write('-');
     else if(numnewlines_at_end > 1 || is_newline_only)
-        this->Writer::_do_write('+');
+        _write('+');
     //
     if(trimmed.len)
     {
-        this->Writer::_do_write('\n');
+        _newl();
         size_t pos = 0; // tracks the last character that was already written
         for(size_t i = 0; i < trimmed.len; ++i)
         {
@@ -27856,10 +30517,10 @@ void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool expli
             {
                 if(pos < i)
                 {
-                    _rymlindent_nextline()
-                    this->Writer::_do_write(s.range(pos, i));
+                    _indent(ilevel + 1);
+                    _write(s.range(pos, i));
                     i = _write_escaped_newlines(s, i);
-                    pos = i+1;
+                    pos = i + 1;
                 }
                 else
                 {
@@ -27873,7 +30534,7 @@ void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool expli
                         }
                         else
                         {
-                            this->Writer::_do_write('\n');
+                            _newl();
                             pos = i+1;
                         }
                     }
@@ -27882,8 +30543,8 @@ void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool expli
             else // do not escape newlines in indented blocks
             {
                 ++i;
-                _rymlindent_nextline()
-                this->Writer::_do_write(s.range(pos, i));
+                _indent(ilevel + 1);
+                _write(s.range(pos, i));
                 if(pos > 0 || !s.begins_with_any(" \t"))
                     i = _write_indented_block(s, i, ilevel);
                 pos = i;
@@ -27891,56 +30552,51 @@ void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool expli
         }
         if(pos < trimmed.len)
         {
-            _rymlindent_nextline()
-            this->Writer::_do_write(trimmed.sub(pos));
+            _indent(ilevel + 1);
+            _write(trimmed.sub(pos));
         }
     }
     for(size_t i = !is_newline_only; i < numnewlines_at_end; ++i)
-        this->Writer::_do_write('\n');
-    if(explicit_key)
-    {
-        this->Writer::_do_write('\n');
-        this->_indent(ilevel);
-    }
+        _newl();
 }
 
 template<class Writer>
 void Emitter<Writer>::_write_scalar_squo(csubstr s, id_type ilevel)
 {
     size_t pos = 0; // tracks the last character that was already written
-    this->Writer::_do_write('\'');
+    _write('\'');
     for(size_t i = 0; i < s.len; ++i)
     {
         if(s[i] == '\n')
         {
-            this->Writer::_do_write(s.range(pos, i));  // write everything up to (excluding) this char
+            _write(s.range(pos, i));  // write everything up to (excluding) this char
             //_c4dbgpf("newline at {}. writing ~~~{}~~~", i, s.range(pos, i));
             i = _write_escaped_newlines(s, i);
             //_c4dbgpf("newline --> {}", i);
             if(i < s.len)
-                _rymlindent_nextline()
+                _indent(ilevel + 1);
             pos = i+1;
         }
         else if(s[i] == '\'')
         {
             csubstr sub = s.range(pos, i+1);
             //_c4dbgpf("squote at {}. writing ~~~{}~~~", i, sub);
-            this->Writer::_do_write(sub); // write everything up to (including) this squote
-            this->Writer::_do_write('\''); // write the squote again
+            _write(sub); // write everything up to (including) this squote
+            _write('\''); // write the squote again
             pos = i+1;
         }
     }
-    // write missing characters at the end of the string
+    // write remaining characters at the end of the string
     if(pos < s.len)
-        this->Writer::_do_write(s.sub(pos));
-    this->Writer::_do_write('\'');
+        _write(s.sub(pos));
+    _write('\'');
 }
 
 template<class Writer>
 void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
 {
     size_t pos = 0; // tracks the last character that was already written
-    this->Writer::_do_write('"');
+    _write('"');
     for(size_t i = 0; i < s.len; ++i)
     {
         const char curr = s.str[i];
@@ -27950,9 +30606,9 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
         case '\\':
         {
             csubstr sub = s.range(pos, i);
-            this->Writer::_do_write(sub);  // write everything up to (excluding) this char
-            this->Writer::_do_write('\\'); // write the escape
-            this->Writer::_do_write(curr); // write the char
+            _write(sub);  // write everything up to (excluding) this char
+            _write('\\'); // write the escape
+            _write(curr); // write the char
             pos = i+1;
             break;
         }
@@ -27960,8 +30616,8 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
         case '\n':
         {
             csubstr sub = s.range(pos, i);
-            this->Writer::_do_write(sub);   // write everything up to (excluding) this char
-            this->Writer::_do_write("\\n"); // write the escape
+            _write(sub);   // write everything up to (excluding) this char
+            _write("\\n"); // write the escape
             pos = i+1;
             (void)ilevel;
             break;
@@ -27971,24 +30627,24 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
         {
             // write everything up to (excluding) this newline
             //_c4dbgpf("nl@i={} rem=[{}]~~~{}~~~", i, s.sub(i).len, s.sub(i));
-            this->Writer::_do_write(s.range(pos, i));
+            _write(s.range(pos, i));
             i = _write_escaped_newlines(s, i);
             ++i;
             pos = i;
             // as for the next line...
             if(i < s.len)
             {
-                _rymlindent_nextline() // indent the next line
+                _indent(ilevel + 1); // indent the next line
                 // escape leading whitespace, and flush it
                 size_t first = s.first_not_of(" \t", i);
-                _c4dbgpf("@i={} first={} rem=[{}]~~~{}~~~", i, first, s.sub(i).len, s.sub(i));
+                //_c4dbgpf("@i={} first={} rem=[{}]~~~{}~~~", i, first, s.sub(i).len, s.sub(i));
                 if(first > i)
                 {
                     if(first == npos)
                         first = s.len;
-                    this->Writer::_do_write('\\');
-                    this->Writer::_do_write(s.range(i, first));
-                    this->Writer::_do_write('\\');
+                    _write('\\');
+                    _write(s.range(i, first));
+                    _write('\\');
                     i = first-1;
                     pos = first;
                 }
@@ -28003,8 +30659,8 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
             if(next != npos && s.str[next] == '\n')
             {
                 csubstr sub = s.range(pos, i);
-                this->Writer::_do_write(sub);  // write everything up to (excluding) this char
-                this->Writer::_do_write('\\'); // escape the whitespace
+                _write(sub);  // write everything up to (excluding) this char
+                _write('\\'); // escape the whitespace
                 pos = i;
             }
             break;
@@ -28013,25 +30669,25 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
         case '\r':
         {
             csubstr sub = s.range(pos, i);
-            this->Writer::_do_write(sub);  // write everything up to (excluding) this char
-            this->Writer::_do_write("\\r"); // write the escaped char
+            _write(sub);  // write everything up to (excluding) this char
+            _write("\\r"); // write the escaped char
             pos = i+1;
             break;
         }
         case '\b':
         {
             csubstr sub = s.range(pos, i);
-            this->Writer::_do_write(sub);  // write everything up to (excluding) this char
-            this->Writer::_do_write("\\b"); // write the escaped char
+            _write(sub);  // write everything up to (excluding) this char
+            _write("\\b"); // write the escaped char
             pos = i+1;
             break;
         }
         }
     }
-    // write missing characters at the end of the string
+    // write remaining characters at the end of the string
     if(pos < s.len)
-        this->Writer::_do_write(s.sub(pos));
-    this->Writer::_do_write('"');
+        _write(s.sub(pos));
+    _write('"');
 }
 
 template<class Writer>
@@ -28039,7 +30695,7 @@ void Emitter<Writer>::_write_scalar_plain(csubstr s, id_type ilevel)
 {
     if(C4_UNLIKELY(ilevel == 0 && (s.begins_with("...") || s.begins_with("---"))))
     {
-        _rymlindent_nextline()     // indent the next line
+        _indent(ilevel + 1); // indent the next line
         ++ilevel;
     }
     size_t pos = 0; // tracks the last character that was already written
@@ -28049,62 +30705,259 @@ void Emitter<Writer>::_write_scalar_plain(csubstr s, id_type ilevel)
         if(curr == '\n')
         {
             csubstr sub = s.range(pos, i);
-            this->Writer::_do_write(sub);  // write everything up to (including) this newline
+            _write(sub);  // write everything up to (including) this newline
             i = _write_escaped_newlines(s, i);
             pos = i+1;
             if(pos < s.len)
-                _rymlindent_nextline()     // indent the next line
+                _indent(ilevel + 1); // indent the next line
         }
     }
-    // write missing characters at the end of the string
+    // write remaining characters at the end of the string
     if(pos < s.len)
-        this->Writer::_do_write(s.sub(pos));
+        _write(s.sub(pos));
 }
 
-#undef _rymlindent_nextline
+
+//-----------------------------------------------------------------------------
 
 template<class Writer>
-void Emitter<Writer>::_write_scalar_json_dquo(csubstr s)
+void Emitter<Writer>::_json_emit(id_type id)
+{
+    NodeType ty = m_tree->type(id);
+    if(ty.is_flow_sl() || !(ty & CONTAINER_STYLE))
+    {
+        _json_visit_sl(id, 0);
+    }
+    else
+    {
+        _json_visit_ml(id, 0);
+        _newl();
+    }
+}
+
+template<class Writer>
+void Emitter<Writer>::_json_visit_sl(id_type id, id_type depth)
+{
+    _RYML_CHECK_VISIT_(m_tree->callbacks(), !m_tree->is_stream(id), m_tree, id); // JSON does not have streams
+    if(C4_UNLIKELY(depth > m_opts.max_depth()))
+        _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "max depth exceeded");
+    NodeType ty = m_tree->type(id);
+    if(ty.is_keyval())
+    {
+        _json_writek(id, ty);
+        _write(": ");
+        _json_writev(id, ty);
+    }
+    else if(ty.is_val())
+    {
+        _json_writev(id, ty);
+    }
+    else if(ty.is_container())
+    {
+        if(ty.has_key())
+        {
+            _json_writek(id, ty);
+            _write(": ");
+        }
+        if(ty.is_seq())
+            _write('[');
+        else if(ty.is_map())
+            _write('{');
+    }  // container
+
+    for(id_type child = m_tree->first_child(id); child != NONE; child = m_tree->next_sibling(child))
+    {
+        if(child != m_tree->first_child(id))
+            _write(',');
+        _json_visit_sl(child, depth+1);
+    }
+
+    if(ty.is_seq())
+        _write(']');
+    else if(ty.is_map())
+        _write('}');
+}
+
+template<class Writer>
+void Emitter<Writer>::_json_visit_ml(id_type id, id_type depth)
+{
+    _RYML_CHECK_VISIT_(m_tree->callbacks(), !m_tree->is_stream(id), m_tree, id); // JSON does not have streams
+    if(C4_UNLIKELY(depth > m_opts.max_depth()))
+        _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "max depth exceeded");
+    NodeType ty = m_tree->type(id);
+    if(ty.is_keyval())
+    {
+        _json_writek(id, ty);
+        _write(": ");
+        _json_writev(id, ty);
+    }
+    else if(ty.is_val())
+    {
+        _json_writev(id, ty);
+    }
+    else if(ty.is_container())
+    {
+        if(ty.has_key())
+        {
+            _json_writek(id, ty);
+            _write(": ");
+        }
+        if(ty.is_seq())
+            _write('[');
+        else if(ty.is_map())
+            _write('{');
+    }  // container
+
+    if(m_tree->has_children(id))
+    {
+        ++depth;
+        if(m_opts.indent_flow_ml()) ++m_ilevel;
+        const id_type first = m_tree->first_child(id);
+        const id_type last = m_tree->last_child(id);
+        for(id_type child = first; child != NONE; child = m_tree->next_sibling(child))
+        {
+            _newl();
+            _indent(m_ilevel);
+            NodeType chty = m_tree->type(child);
+            if(chty.is_flow_sl() || !(chty & CONTAINER_STYLE))
+                _json_visit_sl(child, depth);
+            else
+                _json_visit_ml(child, depth);
+            if(child != last)
+                _write(',');
+        }
+        if(m_opts.indent_flow_ml()) --m_ilevel;
+        --depth;
+        _newl();
+        _indent(m_ilevel);
+    }
+
+    if(ty.is_seq())
+        _write(']');
+    else if(ty.is_map())
+        _write('}');
+}
+
+template<class Writer>
+bool Emitter<Writer>::_json_maybe_write_naninf(csubstr s)
+{
+    if(s == "nan" || s == ".nan" || s == ".NaN" || s == ".NAN")
+    {
+        _write("\".nan\"");
+        return true;
+    }
+    else if(s == "inf" || s == ".inf" || s == ".Inf" || s == ".INF" || s == "infinity")
+    {
+        _write("\".inf\"");
+        return true;
+    }
+    else if(s == "-inf" || s == "-.inf" || s == "-.Inf" || s == "-.INF" || s == "-infinity")
+    {
+        _write("\"-.inf\"");
+        return true;
+    }
+    return false;
+}
+
+template<class Writer>
+void Emitter<Writer>::_json_writek(id_type id, NodeType ty)
+{
+    if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_TAG)
+        if(C4_UNLIKELY(ty.has_key_tag()))
+            _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "JSON does not have tags");
+    if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_ANCHOR)
+        if(C4_UNLIKELY(ty.has_key_anchor()))
+            _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "JSON does not have anchors");
+    csubstr key = m_tree->key(id);
+    if(key.len)
+    {
+        if(_json_maybe_write_naninf(key))
+            ;
+        else
+            _json_write_scalar_dquo(key);
+    }
+    else
+    {
+        _write("\"\"");
+    }
+}
+
+template<class Writer>
+void Emitter<Writer>::_json_writev(id_type id, NodeType ty)
+{
+    if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_TAG)
+        if(C4_UNLIKELY(ty.has_val_tag()))
+            _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "JSON does not have tags");
+    if(m_opts.json_error_flags() & EmitOptions::JSON_ERR_ON_ANCHOR)
+        if(C4_UNLIKELY(ty.has_val_anchor()))
+            _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, id, "JSON does not have anchors");
+    csubstr val = m_tree->val(id);
+    if(val.len)
+    {
+        // use double quoted style if the style is marked quoted
+        bool dquoted = ((ty & VALQUO)
+                        || (scalar_style_json_choose(val) & SCALAR_DQUO)); // choose the style
+        if(dquoted)
+            _json_write_scalar_dquo(val);
+        else if(_json_maybe_write_naninf(val))
+            ;
+        else if(val.is_number())
+            _json_write_number(val);
+        else
+            _write(val);
+    }
+    else
+    {
+        if(val.str || (ty & (VALQUO|VALTAG)))
+            _write("\"\"");
+        else
+            _write("null");
+    }
+}
+
+
+template<class Writer>
+void Emitter<Writer>::_json_write_scalar_dquo(csubstr s)
 {
     size_t pos = 0;
-    this->Writer::_do_write('"');
+    _write('"');
     for(size_t i = 0; i < s.len; ++i)
     {
         switch(s.str[i])
         {
         case '"':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\\"");
+            _write(s.range(pos, i));
+            _write("\\\"");
             pos = i + 1;
             break;
         case '\n':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\n");
+            _write(s.range(pos, i));
+            _write("\\n");
             pos = i + 1;
             break;
         case '\t':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\t");
+            _write(s.range(pos, i));
+            _write("\\t");
             pos = i + 1;
             break;
         case '\\':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\\\");
+            _write(s.range(pos, i));
+            _write("\\\\");
             pos = i + 1;
             break;
         case '\r':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\r");
+            _write(s.range(pos, i));
+            _write("\\r");
             pos = i + 1;
             break;
         case '\b':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\b");
+            _write(s.range(pos, i));
+            _write("\\b");
             pos = i + 1;
             break;
         case '\f':
-            this->Writer ::_do_write(s.range(pos, i));
-            this->Writer ::_do_write("\\f");
+            _write(s.range(pos, i));
+            _write("\\f");
             pos = i + 1;
             break;
         }
@@ -28112,13 +30965,61 @@ void Emitter<Writer>::_write_scalar_json_dquo(csubstr s)
     if(pos < s.len)
     {
         csubstr sub = s.sub(pos);
-        this->Writer::_do_write(sub);
+        _write(sub);
     }
-    this->Writer::_do_write('"');
+    _write('"');
 }
+
+template<class Writer>
+void Emitter<Writer>::_json_write_number(csubstr s)
+{
+    if(s.is_integer())
+    {
+        _write(s);
+    }
+    else
+    {
+        if(s.begins_with('-') && s.len > 1)
+        {
+            csubstr rest = s.sub(1);
+            if(rest.begins_with('.'))
+            {
+                _write("-0");
+                _write(rest);
+            }
+            else if(rest.ends_with('.'))
+            {
+                _write(s);
+                _write('0');
+            }
+            else
+            {
+                _write(s);
+            }
+        }
+        else if(s.begins_with('.'))
+        {
+            _write('0');
+            _write(s);
+        }
+        else if(s.ends_with('.'))
+        {
+            _write(s);
+            _write('0');
+        }
+        else
+        {
+            _write(s);
+        }
+    }
+}
+
+/** @endcond */
 
 } // namespace yml
 } // namespace c4
+
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #endif /* _C4_YML_EMIT_DEF_HPP_ */
 
@@ -28137,8 +31038,10 @@ void Emitter<Writer>::_write_scalar_json_dquo(csubstr s)
 #define _C4_YML_DETAIL_STACK_HPP_
 
 #ifndef _C4_YML_COMMON_HPP_
-//included above:
-//#include "../common.hpp"
+#include "../common.hpp"
+#endif
+#ifndef _C4_YML_ERROR_HPP_
+#include "../error.hpp"
 #endif
 
 #ifdef RYML_DBG
@@ -28180,7 +31083,7 @@ public:
 
 public:
 
-    constexpr static bool is_contiguous() { return true; }
+    constexpr static bool is_contiguous() noexcept { return true; }
 
     stack(Callbacks const& cb)
         : m_buf()
@@ -28244,7 +31147,7 @@ public:
 
     void push(T const& C4_RESTRICT n)
     {
-        _RYML_CB_ASSERT(m_callbacks, (const char*)&n + sizeof(T) < (const char*)m_stack || &n > m_stack + m_capacity);
+        _RYML_ASSERT_BASIC_(m_callbacks, !csubstr((const char*)&n, sizeof(T)).overlaps(csubstr((const char*)m_stack, m_capacity * sizeof(T))));
         if(m_size == m_capacity)
         {
             id_type cap = m_capacity == 0 ? N : 2 * m_capacity;
@@ -28256,7 +31159,7 @@ public:
 
     void push_top()
     {
-        _RYML_CB_ASSERT(m_callbacks, m_size > 0);
+        _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0);
         if(m_size == m_capacity)
         {
             id_type cap = m_capacity == 0 ? N : 2 * m_capacity;
@@ -28268,25 +31171,25 @@ public:
 
     T const& C4_RESTRICT pop()
     {
-        _RYML_CB_ASSERT(m_callbacks, m_size > 0);
+        _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0);
         --m_size;
         return m_stack[m_size];
     }
 
-    C4_ALWAYS_INLINE T const& C4_RESTRICT top() const { _RYML_CB_ASSERT(m_callbacks, m_size > 0); return m_stack[m_size - 1]; }
-    C4_ALWAYS_INLINE T      & C4_RESTRICT top()       { _RYML_CB_ASSERT(m_callbacks, m_size > 0); return m_stack[m_size - 1]; }
+    C4_ALWAYS_INLINE T const& C4_RESTRICT top() const { _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0); return m_stack[m_size - 1]; }
+    C4_ALWAYS_INLINE T      & C4_RESTRICT top()       { _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0); return m_stack[m_size - 1]; }
 
-    C4_ALWAYS_INLINE T const& C4_RESTRICT bottom() const { _RYML_CB_ASSERT(m_callbacks, m_size > 0); return m_stack[0]; }
-    C4_ALWAYS_INLINE T      & C4_RESTRICT bottom()       { _RYML_CB_ASSERT(m_callbacks, m_size > 0); return m_stack[0]; }
+    C4_ALWAYS_INLINE T const& C4_RESTRICT bottom() const { _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0); return m_stack[0]; }
+    C4_ALWAYS_INLINE T      & C4_RESTRICT bottom()       { _RYML_ASSERT_BASIC_(m_callbacks, m_size > 0); return m_stack[0]; }
 
-    C4_ALWAYS_INLINE T const& C4_RESTRICT top(id_type i) const { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[m_size - 1 - i]; }
-    C4_ALWAYS_INLINE T      & C4_RESTRICT top(id_type i)       { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[m_size - 1 - i]; }
+    C4_ALWAYS_INLINE T const& C4_RESTRICT top(id_type i) const { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[m_size - 1 - i]; }
+    C4_ALWAYS_INLINE T      & C4_RESTRICT top(id_type i)       { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[m_size - 1 - i]; }
 
-    C4_ALWAYS_INLINE T const& C4_RESTRICT bottom(id_type i) const { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[i]; }
-    C4_ALWAYS_INLINE T      & C4_RESTRICT bottom(id_type i)       { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[i]; }
+    C4_ALWAYS_INLINE T const& C4_RESTRICT bottom(id_type i) const { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[i]; }
+    C4_ALWAYS_INLINE T      & C4_RESTRICT bottom(id_type i)       { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[i]; }
 
-    C4_ALWAYS_INLINE T const& C4_RESTRICT operator[](id_type i) const { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[i]; }
-    C4_ALWAYS_INLINE T      & C4_RESTRICT operator[](id_type i)       { _RYML_CB_ASSERT(m_callbacks, i < m_size); return m_stack[i]; }
+    C4_ALWAYS_INLINE T const& C4_RESTRICT operator[](id_type i) const { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[i]; }
+    C4_ALWAYS_INLINE T      & C4_RESTRICT operator[](id_type i)       { _RYML_ASSERT_BASIC_(m_callbacks, i < m_size); return m_stack[i]; }
 
 public:
 
@@ -28325,7 +31228,7 @@ void stack<T, N>::reserve(id_type sz)
         return;
     }
     T *buf = (T*) m_callbacks.m_allocate((size_t)sz * sizeof(T), m_stack, m_callbacks.m_user_data);
-    _RYML_CB_ASSERT(m_callbacks, ((uintptr_t)buf % alignof(T)) == 0u);
+    _RYML_ASSERT_BASIC_(m_callbacks, ((uintptr_t)buf % alignof(T)) == 0u);
     memcpy(buf, m_stack, (size_t)m_size * sizeof(T));
     if(m_stack != m_buf)
     {
@@ -28341,7 +31244,7 @@ void stack<T, N>::reserve(id_type sz)
 template<class T, id_type N>
 void stack<T, N>::_free()
 {
-    _RYML_CB_ASSERT(m_callbacks, m_stack != nullptr); // this structure cannot be memset() to zero
+    _RYML_ASSERT_BASIC_(m_callbacks, m_stack != nullptr); // this structure cannot be memset() to zero
     if(m_stack != m_buf)
     {
         m_callbacks.m_free(m_stack, (size_t)m_capacity * sizeof(T), m_callbacks.m_user_data);
@@ -28351,7 +31254,7 @@ void stack<T, N>::_free()
     }
     else
     {
-        _RYML_CB_ASSERT(m_callbacks, m_capacity == N);
+        _RYML_ASSERT_BASIC_(m_callbacks, m_capacity == N);
     }
 }
 
@@ -28363,13 +31266,13 @@ void stack<T, N>::_cp(stack const* C4_RESTRICT that)
 {
     if(that->m_stack != that->m_buf)
     {
-        _RYML_CB_ASSERT(m_callbacks, that->m_capacity > N);
-        _RYML_CB_ASSERT(m_callbacks, that->m_size <= that->m_capacity);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_capacity > N);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_size <= that->m_capacity);
     }
     else
     {
-        _RYML_CB_ASSERT(m_callbacks, that->m_capacity <= N);
-        _RYML_CB_ASSERT(m_callbacks, that->m_size <= that->m_capacity);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_capacity <= N);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_size <= that->m_capacity);
     }
     memcpy(m_stack, that->m_stack, that->m_size * sizeof(T));
     m_size = that->m_size;
@@ -28385,14 +31288,14 @@ void stack<T, N>::_mv(stack * that)
 {
     if(that->m_stack != that->m_buf)
     {
-        _RYML_CB_ASSERT(m_callbacks, that->m_capacity > N);
-        _RYML_CB_ASSERT(m_callbacks, that->m_size <= that->m_capacity);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_capacity > N);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_size <= that->m_capacity);
         m_stack = that->m_stack;
     }
     else
     {
-        _RYML_CB_ASSERT(m_callbacks, that->m_capacity <= N);
-        _RYML_CB_ASSERT(m_callbacks, that->m_size <= that->m_capacity);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_capacity <= N);
+        _RYML_ASSERT_BASIC_(m_callbacks, that->m_size <= that->m_capacity);
         memcpy(m_buf, that->m_buf, that->m_size * sizeof(T));
         m_stack = m_buf;
     }
@@ -28400,7 +31303,7 @@ void stack<T, N>::_mv(stack * that)
     m_capacity = that->m_capacity;
     m_callbacks = that->m_callbacks;
     // make sure no deallocation happens on destruction
-    _RYML_CB_ASSERT(m_callbacks, that->m_stack != m_buf);
+    _RYML_ASSERT_BASIC_(m_callbacks, that->m_stack != m_buf);
     that->m_stack = that->m_buf;
     that->m_capacity = N;
     that->m_size = 0;
@@ -28442,13 +31345,10 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #ifndef _C4_YML_FILTER_PROCESSOR_HPP_
 #define _C4_YML_FILTER_PROCESSOR_HPP_
 
-// amalgamate: removed include of
-// c4/yml/common.hpp
-//#include "c4/yml/common.hpp"
-#if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
-#error "amalgamate: file c4/yml/common.hpp must have been included at this point"
-#endif /* C4_YML_COMMON_HPP_ */
-
+#ifndef _C4_YML_ERROR_HPP_
+//included above:
+//#include "./error.hpp"
+#endif
 
 #ifdef RYML_DBG
 // amalgamate: removed include of
@@ -28472,12 +31372,38 @@ namespace yml {
 
 /** @defgroup doc_filter_processors Scalar filter processors
  *
- * These are internal classes used by @ref ParseEngine to parse the
+ * These are internal utilities used by @ref ParseEngine to parse the
  * scalars; normally there is no reason for a user to be manually
  * using these classes.
  *
  * @ingroup doc_parse */
 /** @{ */
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** Abstracts the fact that a scalar filter result may not fit in the
+ * intended memory. */
+struct FilterResult
+{
+    C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
+    C4_ALWAYS_INLINE size_t required_len() const noexcept { return str.len; }
+    C4_ALWAYS_INLINE csubstr get() const { _RYML_ASSERT_BASIC(valid()); return str; }
+    csubstr str;
+};
+/** Abstracts the fact that a scalar filter result may not fit in the
+ * intended memory. */
+struct FilterResultExtending
+{
+    C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
+    C4_ALWAYS_INLINE size_t required_len() const noexcept { return reqlen; }
+    C4_ALWAYS_INLINE csubstr get() const { _RYML_ASSERT_BASIC(valid()); return str; }
+    csubstr str;
+    size_t reqlen;
+};
+
 
 //-----------------------------------------------------------------------------
 
@@ -28495,7 +31421,7 @@ struct FilterProcessorSrcDst
         , rpos(0)
         , wpos(0)
     {
-        RYML_ASSERT(!dst.overlaps(src));
+        _RYML_ASSERT_BASIC(!dst.overlaps(src));
     }
 
     C4_ALWAYS_INLINE void setwpos(size_t wpos_) noexcept { wpos = wpos_; }
@@ -28503,7 +31429,7 @@ struct FilterProcessorSrcDst
     C4_ALWAYS_INLINE void set_at_end() noexcept { skip(src.len - rpos); }
 
     C4_ALWAYS_INLINE bool has_more_chars() const noexcept { return rpos < src.len; }
-    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { RYML_ASSERT(maxpos <= src.len); return rpos < maxpos; }
+    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { _RYML_ASSERT_BASIC(maxpos <= src.len); return rpos < maxpos; }
 
     C4_ALWAYS_INLINE csubstr rem() const noexcept { return src.sub(rpos); }
     C4_ALWAYS_INLINE csubstr sofar() const noexcept { return csubstr(dst.str, wpos <= dst.len ? wpos : dst.len); }
@@ -28515,7 +31441,7 @@ struct FilterProcessorSrcDst
         return ret;
     }
 
-    C4_ALWAYS_INLINE char curr() const noexcept { RYML_ASSERT(rpos < src.len); return src[rpos]; }
+    C4_ALWAYS_INLINE char curr() const noexcept { _RYML_ASSERT_BASIC(rpos < src.len); return src[rpos]; }
     C4_ALWAYS_INLINE char next() const noexcept { return rpos+1 < src.len ? src[rpos+1] : '\0'; }
     C4_ALWAYS_INLINE bool skipped_chars() const noexcept { return wpos != rpos; }
 
@@ -28524,7 +31450,7 @@ struct FilterProcessorSrcDst
 
     C4_ALWAYS_INLINE void set_at(size_t pos, char c) noexcept // NOLINT(readability-make-member-function-const)
     {
-        RYML_ASSERT(pos < wpos);
+        _RYML_ASSERT_BASIC(pos < wpos);
         dst.str[pos] = c;
     }
     C4_ALWAYS_INLINE void set(char c) noexcept
@@ -28535,7 +31461,7 @@ struct FilterProcessorSrcDst
     }
     C4_ALWAYS_INLINE void set(char c, size_t num) noexcept
     {
-        RYML_ASSERT(num > 0);
+        _RYML_ASSERT_BASIC(num > 0);
         if(wpos + num <= dst.len)
             memset(dst.str + wpos, c, num);
         wpos += num;
@@ -28543,7 +31469,7 @@ struct FilterProcessorSrcDst
 
     C4_ALWAYS_INLINE void copy() noexcept
     {
-        RYML_ASSERT(rpos < src.len);
+        _RYML_ASSERT_BASIC(rpos < src.len);
         if(wpos < dst.len)
             dst.str[wpos] = src.str[rpos];
         ++wpos;
@@ -28551,8 +31477,8 @@ struct FilterProcessorSrcDst
     }
     C4_ALWAYS_INLINE void copy(size_t num) noexcept
     {
-        RYML_ASSERT(num);
-        RYML_ASSERT(rpos+num <= src.len);
+        _RYML_ASSERT_BASIC(num);
+        _RYML_ASSERT_BASIC(rpos+num <= src.len);
         if(wpos + num <= dst.len)
             memcpy(dst.str + wpos, src.str + rpos, num);
         wpos += num;
@@ -28568,9 +31494,9 @@ struct FilterProcessorSrcDst
     }
     C4_ALWAYS_INLINE void translate_esc_bulk(const char *C4_RESTRICT s, size_t nw, size_t nr) noexcept
     {
-        RYML_ASSERT(nw > 0);
-        RYML_ASSERT(nr > 0);
-        RYML_ASSERT(rpos+nr <= src.len);
+        _RYML_ASSERT_BASIC(nw > 0);
+        _RYML_ASSERT_BASIC(nr > 0);
+        _RYML_ASSERT_BASIC(rpos+nr <= src.len);
         if(wpos+nw <= dst.len)
             memcpy(dst.str + wpos, s, nw);
         wpos += nw;
@@ -28613,7 +31539,7 @@ struct FilterProcessorInplaceEndExtending
         , rpos(0)
         , wpos(0)
     {
-        RYML_ASSERT(wcap >= src.len);
+        _RYML_ASSERT_BASIC(wcap >= src.len);
     }
 
     C4_ALWAYS_INLINE void setwpos(size_t wpos_) noexcept { wpos = wpos_; }
@@ -28621,7 +31547,7 @@ struct FilterProcessorInplaceEndExtending
     C4_ALWAYS_INLINE void set_at_end() noexcept { skip(src.len - rpos); }
 
     C4_ALWAYS_INLINE bool has_more_chars() const noexcept { return rpos < src.len; }
-    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { RYML_ASSERT(maxpos <= src.len); return rpos < maxpos; }
+    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { _RYML_ASSERT_BASIC(maxpos <= src.len); return rpos < maxpos; }
 
     C4_ALWAYS_INLINE FilterResult result() const noexcept
     {
@@ -28634,7 +31560,7 @@ struct FilterProcessorInplaceEndExtending
     C4_ALWAYS_INLINE csubstr sofar() const noexcept { return csubstr(src.str, wpos <= wcap ? wpos : wcap); }
     C4_ALWAYS_INLINE csubstr rem() const noexcept { return src.sub(rpos); }
 
-    C4_ALWAYS_INLINE char curr() const noexcept { RYML_ASSERT(rpos < src.len); return src[rpos]; }
+    C4_ALWAYS_INLINE char curr() const noexcept { _RYML_ASSERT_BASIC(rpos < src.len); return src[rpos]; }
     C4_ALWAYS_INLINE char next() const noexcept { return rpos+1 < src.len ? src[rpos+1] : '\0'; }
 
     C4_ALWAYS_INLINE void skip() noexcept { ++rpos; }
@@ -28642,7 +31568,7 @@ struct FilterProcessorInplaceEndExtending
 
     void set_at(size_t pos, char c) noexcept
     {
-        RYML_ASSERT(pos < wpos);
+        _RYML_ASSERT_BASIC(pos < wpos);
         const size_t save = wpos;
         wpos = pos;
         set(c);
@@ -28656,7 +31582,7 @@ struct FilterProcessorInplaceEndExtending
     }
     void set(char c, size_t num) noexcept
     {
-        RYML_ASSERT(num);
+        _RYML_ASSERT_BASIC(num);
         if(wpos + num <= wcap)  // respect write-capacity
             memset(src.str + wpos, c, num);
         wpos += num;
@@ -28664,8 +31590,8 @@ struct FilterProcessorInplaceEndExtending
 
     void copy() noexcept
     {
-        RYML_ASSERT(wpos <= rpos);
-        RYML_ASSERT(rpos < src.len);
+        _RYML_ASSERT_BASIC(wpos <= rpos);
+        _RYML_ASSERT_BASIC(rpos < src.len);
         if(wpos < wcap)  // respect write-capacity
             src.str[wpos] = src.str[rpos];
         ++rpos;
@@ -28673,9 +31599,9 @@ struct FilterProcessorInplaceEndExtending
     }
     void copy(size_t num) noexcept
     {
-        RYML_ASSERT(num);
-        RYML_ASSERT(rpos+num <= src.len);
-        RYML_ASSERT(wpos <= rpos);
+        _RYML_ASSERT_BASIC(num);
+        _RYML_ASSERT_BASIC(rpos+num <= src.len);
+        _RYML_ASSERT_BASIC(wpos <= rpos);
         if(wpos + num <= wcap)  // respect write-capacity
         {
             if(wpos + num <= rpos) // there is no overlap
@@ -28689,8 +31615,8 @@ struct FilterProcessorInplaceEndExtending
 
     void translate_esc(char c) noexcept
     {
-        RYML_ASSERT(rpos + 2 <= src.len);
-        RYML_ASSERT(wpos <= rpos);
+        _RYML_ASSERT_BASIC(rpos + 2 <= src.len);
+        _RYML_ASSERT_BASIC(wpos <= rpos);
         if(wpos < wcap) // respect write-capacity
             src.str[wpos] = c;
         rpos += 2; // add 1u to account for the escape character
@@ -28699,14 +31625,14 @@ struct FilterProcessorInplaceEndExtending
 
     void translate_esc_bulk(const char *C4_RESTRICT s, size_t nw, size_t nr) noexcept
     {
-        RYML_ASSERT(nw > 0);
-        RYML_ASSERT(nr > 0);
-        RYML_ASSERT(nw <= nr + 1u);
-        RYML_ASSERT(rpos+nr <= src.len);
-        RYML_ASSERT(wpos <= rpos);
+        _RYML_ASSERT_BASIC(nw > 0);
+        _RYML_ASSERT_BASIC(nr > 0);
+        _RYML_ASSERT_BASIC(nw <= nr + 1u);
+        _RYML_ASSERT_BASIC(rpos+nr <= src.len);
+        _RYML_ASSERT_BASIC(wpos <= rpos);
         const size_t wpos_next = wpos + nw;
         const size_t rpos_next = rpos + nr + 1u; // add 1u to account for the escape character
-        RYML_ASSERT(wpos_next <= rpos_next);
+        _RYML_ASSERT_BASIC(wpos_next <= rpos_next);
         if(wpos_next <= wcap)
             memcpy(src.str + wpos, s, nw);
         rpos = rpos_next;
@@ -28752,7 +31678,7 @@ struct FilterProcessorInplaceMidExtending
         , maxcap(src.len)
         , unfiltered_chars(false)
     {
-        RYML_ASSERT(wcap >= src.len);
+        _RYML_ASSERT_BASIC(wcap >= src.len);
     }
 
     C4_ALWAYS_INLINE void setwpos(size_t wpos_) noexcept { wpos = wpos_; }
@@ -28760,7 +31686,7 @@ struct FilterProcessorInplaceMidExtending
     C4_ALWAYS_INLINE void set_at_end() noexcept { skip(src.len - rpos); }
 
     C4_ALWAYS_INLINE bool has_more_chars() const noexcept { return rpos < src.len; }
-    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { RYML_ASSERT(maxpos <= src.len); return rpos < maxpos; }
+    C4_ALWAYS_INLINE bool has_more_chars(size_t maxpos) const noexcept { _RYML_ASSERT_BASIC(maxpos <= src.len); return rpos < maxpos; }
 
     C4_ALWAYS_INLINE FilterResultExtending result() const noexcept
     {
@@ -28774,7 +31700,7 @@ struct FilterProcessorInplaceMidExtending
     C4_ALWAYS_INLINE csubstr sofar() const noexcept { return csubstr(src.str, wpos <= wcap ? wpos : wcap); }
     C4_ALWAYS_INLINE csubstr rem() const noexcept { return src.sub(rpos); }
 
-    C4_ALWAYS_INLINE char curr() const noexcept { RYML_ASSERT(rpos < src.len); return src[rpos]; }
+    C4_ALWAYS_INLINE char curr() const noexcept { _RYML_ASSERT_BASIC(rpos < src.len); return src[rpos]; }
     C4_ALWAYS_INLINE char next() const noexcept { return rpos+1 < src.len ? src[rpos+1] : '\0'; }
 
     C4_ALWAYS_INLINE void skip() noexcept { ++rpos; }
@@ -28782,7 +31708,7 @@ struct FilterProcessorInplaceMidExtending
 
     void set_at(size_t pos, char c) noexcept
     {
-        RYML_ASSERT(pos < wpos);
+        _RYML_ASSERT_BASIC(pos < wpos);
         const size_t save = wpos;
         wpos = pos;
         set(c);
@@ -28805,7 +31731,7 @@ struct FilterProcessorInplaceMidExtending
     }
     void set(char c, size_t num) noexcept
     {
-        RYML_ASSERT(num);
+        _RYML_ASSERT_BASIC(num);
         if(wpos + num <= wcap)  // respect write-capacity
         {
             if((wpos <= rpos) && !unfiltered_chars)
@@ -28822,7 +31748,7 @@ struct FilterProcessorInplaceMidExtending
 
     void copy() noexcept
     {
-        RYML_ASSERT(rpos < src.len);
+        _RYML_ASSERT_BASIC(rpos < src.len);
         if(wpos < wcap)  // respect write-capacity
         {
             if((wpos < rpos) && !unfiltered_chars)  // write only if wpos is behind rpos
@@ -28839,8 +31765,8 @@ struct FilterProcessorInplaceMidExtending
     }
     void copy(size_t num) noexcept
     {
-        RYML_ASSERT(num);
-        RYML_ASSERT(rpos+num <= src.len);
+        _RYML_ASSERT_BASIC(num);
+        _RYML_ASSERT_BASIC(rpos+num <= src.len);
         if(wpos + num <= wcap)  // respect write-capacity
         {
             if((wpos < rpos) && !unfiltered_chars)  // write only if wpos is behind rpos
@@ -28863,7 +31789,7 @@ struct FilterProcessorInplaceMidExtending
 
     void translate_esc(char c) noexcept
     {
-        RYML_ASSERT(rpos + 2 <= src.len);
+        _RYML_ASSERT_BASIC(rpos + 2 <= src.len);
         if(wpos < wcap) // respect write-capacity
         {
             if((wpos <= rpos) && !unfiltered_chars)
@@ -28881,9 +31807,9 @@ struct FilterProcessorInplaceMidExtending
 
     C4_NO_INLINE void translate_esc_bulk(const char *C4_RESTRICT s, size_t nw, size_t nr) noexcept
     {
-        RYML_ASSERT(nw > 0);
-        RYML_ASSERT(nr > 0);
-        RYML_ASSERT(nr+1u >= nw);
+        _RYML_ASSERT_BASIC(nw > 0);
+        _RYML_ASSERT_BASIC(nr > 0);
+        _RYML_ASSERT_BASIC(nr+1u >= nw);
         const size_t wpos_next = wpos + nw;
         const size_t rpos_next = rpos + nr + 1u; // add 1u to account for the escape character
         if(wpos_next <= wcap)  // respect write-capacity
@@ -28903,9 +31829,9 @@ struct FilterProcessorInplaceMidExtending
 
     C4_NO_INLINE void translate_esc_extending(const char *C4_RESTRICT s, size_t nw, size_t nr) noexcept
     {
-        RYML_ASSERT(nw > 0);
-        RYML_ASSERT(nr > 0);
-        RYML_ASSERT(rpos+nr <= src.len);
+        _RYML_ASSERT_BASIC(nw > 0);
+        _RYML_ASSERT_BASIC(nr > 0);
+        _RYML_ASSERT_BASIC(rpos+nr <= src.len);
         const size_t wpos_next = wpos + nw;
         const size_t rpos_next = rpos + nr + 1u; // add 1u to account for the escape character
         if(wpos_next <= rpos_next) // read and write do not overlap. just do a vanilla copy.
@@ -28919,10 +31845,10 @@ struct FilterProcessorInplaceMidExtending
         else // there is overlap. move the (to-be-read) string to the right.
         {
             const size_t excess = wpos_next - rpos_next;
-            RYML_ASSERT(wpos_next > rpos_next);
+            _RYML_ASSERT_BASIC(wpos_next > rpos_next);
             if(src.len + excess <= wcap) // ensure we do not go past the end
             {
-                RYML_ASSERT(rpos+nr+excess <= src.len);
+                _RYML_ASSERT_BASIC(rpos+nr+excess <= src.len);
                 if(wpos_next <= wcap)
                 {
                     if(!unfiltered_chars)
@@ -28947,10 +31873,10 @@ struct FilterProcessorInplaceMidExtending
             else
             {
                 //const size_t unw = nw > (nr + 1u) ? nw - (nr + 1u) : 0;
-                RYML_ASSERT(rpos_next <= src.len);
+                _RYML_ASSERT_BASIC(rpos_next <= src.len);
                 const size_t required_size = wpos_next + (src.len - rpos_next);
                 _c4dbgip("inplace: add unfiltered {}->{}   maxcap={}->{}!", unfiltered_chars, true, maxcap, required_size > maxcap ? required_size : maxcap);
-                RYML_ASSERT(required_size > wcap);
+                _RYML_ASSERT_BASIC(required_size > wcap);
                 unfiltered_chars = true;
                 maxcap = required_size > maxcap ? required_size : maxcap;
                 wpos = wpos_next;
@@ -28984,13 +31910,13 @@ struct FilterProcessorInplaceMidExtending
 #ifndef _C4_YML_PARSER_STATE_HPP_
 #define _C4_YML_PARSER_STATE_HPP_
 
-#ifndef _C4_YML_COMMON_HPP_
+#ifndef _C4_YML_ERROR_HPP_
 // amalgamate: removed include of
-// c4/yml/common.hpp
-//#include "c4/yml/common.hpp"
-#if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
-#error "amalgamate: file c4/yml/common.hpp must have been included at this point"
-#endif /* C4_YML_COMMON_HPP_ */
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
 
 #endif
 
@@ -29008,8 +31934,8 @@ typedef enum : ParserFlag_t {
     RUNK = 0x01 <<  1,   ///< reading unknown state (when starting): must determine whether scalar, map or seq
     RMAP = 0x01 <<  2,   ///< reading a map
     RSEQ = 0x01 <<  3,   ///< reading a seq
-    FLOW = 0x01 <<  4,   ///< reading is inside explicit flow chars: [] or {}
-    BLCK = 0x01 <<  5,   ///< reading in block mode
+    RFLOW = 0x01 <<  4,   ///< reading is inside explicit flow chars: [] or {}
+    RBLCK = 0x01 <<  5,   ///< reading in block mode
     QMRK = 0x01 <<  6,   ///< reading an explicit key (`? key`)
     RKEY = 0x01 <<  7,   ///< reading a scalar as key
     RVAL = 0x01 <<  9,   ///< reading a scalar as val
@@ -29027,90 +31953,71 @@ typedef enum : ParserFlag_t {
     RSEQIMAP = 0x01 << 17,
 } ParserState_e;
 
-#ifdef RYML_DBG
+
 /** @cond dev */
+#ifdef RYML_DBG
 namespace detail {
 csubstr _parser_flags_to_str(substr buf, ParserFlag_t flags);
-} // namespace
-/** @endcond */
+} // namespace detail
 #endif
+/** @endcond */
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 /** Helper to control the line contents while parsing a buffer */
 struct LineContents
 {
-    substr  rem;         ///< the stripped line remainder; initially starts at the first non-space character
-    size_t  indentation; ///< the number of spaces on the beginning of the line
-    substr  full;        ///< the full line, including newlines on the right
-    substr  stripped;    ///< the stripped line, excluding newlines on the right
+    substr  rem;         ///< current line remainder, without newline characters
+    substr  full;        ///< full line, including newline characters `\n` and `\r`
+    size_t  num_cols;    ///< number of columns in the line, excluding newline
+                         ///< characters (ie the initial size of rem)
+    size_t  indentation; ///< number of spaces on the beginning of the line.
+                         ///< TODO this should not be a member of this object.
+                         ///< We only care about indentation in block mode, so
+                         ///< this should be moved to the parser state.
 
-    LineContents() = default;
+    LineContents() RYML_NOEXCEPT = default;
 
-    void reset_with_next_line(substr buf, size_t offset)
+    void reset_with_next_line(substr buf, size_t start) RYML_NOEXCEPT
     {
-        RYML_ASSERT(offset <= buf.len);
-        size_t e = offset;
+        _RYML_ASSERT_BASIC(start <= buf.len);
+        size_t end = start;
         // get the current line stripped of newline chars
-        while(e < buf.len && (buf.str[e] != '\n' && buf.str[e] != '\r'))
-            ++e;
-        RYML_ASSERT(e >= offset);
-        const substr stripped_ = buf.range(offset, e);
-        #if defined(__GNUC__) && __GNUC__ == 11
-        C4_DONT_OPTIMIZE(stripped_);
-        #endif
-        // advance pos to include the first line ending
-        if(e < buf.len && buf.str[e] == '\r')
-            ++e;
-        if(e < buf.len && buf.str[e] == '\n')
-            ++e;
-        const substr full_ = buf.range(offset, e);
-        reset(full_, stripped_);
-    }
-
-    void reset(substr full_, substr stripped_)
-    {
-        rem = stripped_;
-        indentation = stripped_.first_not_of(' ');  // find the first column where the character is not a space
-        full = full_;
-        stripped = stripped_;
+        while((end < buf.len) && (buf.str[end] != '\n'))
+            ++end;
+        if(end < buf.len)
+        {
+            _RYML_ASSERT_BASIC(buf[end] == '\n');
+            full = buf.range(start, end + 1);
+            rem = buf.range(start, end);
+        }
+        else
+        {
+            // buffer ends without newline
+            full = rem = buf.sub(start);
+        }
+        size_t pos = rem.last_not_of('\r');
+        rem.len = (pos != npos) ? pos + 1 : 0;
+        num_cols = rem.len;
+        _RYML_ASSERT_BASIC(rem.find('\r') == npos);
+        // TODO move this to the parser state
+        indentation = rem.first_not_of(' ');  // find the first column where the character is not a space
     }
 
     C4_ALWAYS_INLINE size_t current_col() const RYML_NOEXCEPT
     {
-        // WARNING: gcc x86 release builds were wrong (eg returning 0
-        // when the result should be 4 ) when this function was like
-        // this:
-        //
-        //return current_col(rem);
-        //
-        // (see below for the full definition of the called overload
-        // of current_col())
-        //
-        // ... so we explicitly inline the code in here:
-        RYML_ASSERT(rem.str >= full.str);
-        size_t col = static_cast<size_t>(rem.str - full.str);
-        return col;
-        //
-        // this was happening only on builds specifically with (gcc
-        // AND x86 AND release); no other builds were having the
-        // problem: not in debug, not in x64, not in other
-        // architectures, not in clang, not in visual studio. WTF!?
-        //
-        // Enabling debug prints with RYML_DBG made the problem go
-        // away, so these could not be used to debug the
-        // problem. Adding prints inside the called current_col() also
-        // made the problem go away! WTF!???
-        //
-        // a prize will be offered to anybody able to explain why this
-        // was happening.
+        _RYML_ASSERT_BASIC(rem.str >= full.str);
+        return static_cast<size_t>(rem.str - full.str);
     }
 
     C4_ALWAYS_INLINE size_t current_col(csubstr s) const RYML_NOEXCEPT
     {
-        RYML_ASSERT(s.str >= full.str);
-        RYML_ASSERT(full.is_super(s));
-        size_t col = static_cast<size_t>(s.str - full.str);
-        return col;
+        _RYML_ASSERT_BASIC(s.str >= full.str);
+        _RYML_ASSERT_BASIC(s.str <= rem.end());
+        return static_cast<size_t>(s.str - full.str);
     }
 };
 static_assert(std::is_standard_layout<LineContents>::value, "LineContents not standard");
@@ -29171,22 +32078,22 @@ public:
     }
     C4_ALWAYS_INLINE bool indentation_eq() const noexcept
     {
-        RYML_ASSERT(indref != npos);
+        _RYML_ASSERT_BASIC(indref != npos);
         return line_contents.indentation != npos && line_contents.indentation == indref;
     }
     C4_ALWAYS_INLINE bool indentation_ge() const noexcept
     {
-        RYML_ASSERT(indref != npos);
+        _RYML_ASSERT_BASIC(indref != npos);
         return line_contents.indentation != npos && line_contents.indentation >= indref;
     }
     C4_ALWAYS_INLINE bool indentation_gt() const noexcept
     {
-        RYML_ASSERT(indref != npos);
+        _RYML_ASSERT_BASIC(indref != npos);
         return line_contents.indentation != npos && line_contents.indentation > indref;
     }
     C4_ALWAYS_INLINE bool indentation_lt() const noexcept
     {
-        RYML_ASSERT(indref != npos);
+        _RYML_ASSERT_BASIC(indref != npos);
         return line_contents.indentation != npos && line_contents.indentation < indref;
     }
 };
@@ -29296,26 +32203,29 @@ public:
     state *C4_RESTRICT   m_parent;  ///< parent of the current stack level.
     pfn_relocate_arena   m_relocate_arena; ///< callback when the arena gets relocated
     void *               m_relocate_arena_data;
+    csubstr              m_src;
 
 protected:
 
-    EventHandlerStack() : m_stack(), m_curr(), m_parent(), m_relocate_arena(), m_relocate_arena_data() {}
-    EventHandlerStack(Callbacks const& cb) : m_stack(cb), m_curr(), m_parent(), m_relocate_arena(), m_relocate_arena_data() {}
+    EventHandlerStack() : m_stack(), m_curr(), m_parent(), m_relocate_arena(), m_relocate_arena_data(), m_src() {}
+    EventHandlerStack(Callbacks const& cb) : m_stack(cb), m_curr(), m_parent(), m_relocate_arena(), m_relocate_arena_data(), m_src() {}
 
 protected:
 
-    void _stack_start_parse(const char *filename, pfn_relocate_arena relocate_arena, void *relocate_arena_data)
+    void _stack_start_parse(const char *filename, csubstr ymlsrc, pfn_relocate_arena relocate_arena, void *relocate_arena_data)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_curr != nullptr);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, relocate_arena != nullptr);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, relocate_arena_data != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_curr != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, relocate_arena != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, relocate_arena_data != nullptr);
         m_curr->start_parse(filename, m_curr->node_id);
         m_relocate_arena = relocate_arena;
         m_relocate_arena_data = relocate_arena_data;
+        m_src = ymlsrc;
     }
 
     void _stack_finish_parse()
     {
+        m_src = {};
     }
 
 protected:
@@ -29347,8 +32257,8 @@ protected:
 
     void _stack_pop()
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_parent);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_stack.size() > 1);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_parent);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_stack.size() > 1);
         m_parent->reset_before_pop(*m_curr);
         m_stack.pop();
         m_parent = m_stack.size() > 1 ? &m_stack.top(1) : nullptr;
@@ -29388,20 +32298,18 @@ protected:
                 st.line_contents.rem = _stack_relocate_to_new_arena(st.line_contents.rem, prev, curr);
             if(st.line_contents.full.is_sub(prev))
                 st.line_contents.full = _stack_relocate_to_new_arena(st.line_contents.full, prev, curr);
-            if(st.line_contents.stripped.is_sub(prev))
-                st.line_contents.stripped = _stack_relocate_to_new_arena(st.line_contents.stripped, prev, curr);
         }
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_relocate_arena != nullptr);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_relocate_arena_data != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_relocate_arena != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_relocate_arena_data != nullptr);
         m_relocate_arena(m_relocate_arena_data, prev, curr);
     }
 
     substr _stack_relocate_to_new_arena(csubstr s, csubstr prev, substr curr)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, prev.is_super(s));
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, prev.is_super(s));
         auto pos = s.str - prev.str;
         substr out = {curr.str + pos, s.len};
-        _RYML_CB_ASSERT(m_stack.m_callbacks, curr.is_super(out));
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, curr.is_super(out));
         return out;
     }
 
@@ -29418,7 +32326,7 @@ public:
         const bool suspicious = _has_any_(MAP|SEQ|VAL);
         _c4dbgpf("target={} isroot={} suspicious={} ndoc={}", m_curr->node_id, is_root, suspicious, isndoc);
         if((is_root || _has_any_(DOC)) && suspicious && !isndoc)
-            _RYML_CB_ERR_(m_stack.m_callbacks, "parse error", m_curr->pos);
+            _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "parse error");
     }
 
 protected:
@@ -29534,13 +32442,13 @@ public:
     void reset(Tree *tree, id_type id)
     {
         if(C4_UNLIKELY(!tree))
-            _RYML_CB_ERR(m_stack.m_callbacks, "null tree");
+            _RYML_ERR_BASIC_(m_stack.m_callbacks, "null tree");
         if(C4_UNLIKELY(id >= tree->capacity()))
-            _RYML_CB_ERR(tree->callbacks(), "invalid node");
+            _RYML_ERR_BASIC_(tree->callbacks(), "invalid node");
         if(C4_UNLIKELY(!tree->is_root(id)))
             if(C4_UNLIKELY(tree->is_map(tree->parent(id))))
                 if(C4_UNLIKELY(!tree->has_key(id)))
-                    _RYML_CB_ERR(tree->callbacks(), "destination node belongs to a map and has no key");
+                    _RYML_ERR_BASIC_(tree->callbacks(), "destination node belongs to a map and has no key");
         m_tree = tree;
         m_id = id;
         if(m_tree->is_root(id))
@@ -29558,6 +32466,7 @@ public:
         m_yaml_directive = false;
     }
 
+    Callbacks const& callbacks() const { return m_stack.m_callbacks; }
     /** @} */
 
 public:
@@ -29565,17 +32474,17 @@ public:
     /** @name parse events
      * @{ */
 
-    void start_parse(const char* filename, detail::pfn_relocate_arena relocate_arena, void *relocate_arena_data)
+    void start_parse(const char* filename, csubstr ymlsrc, detail::pfn_relocate_arena relocate_arena, void *relocate_arena_data)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree != nullptr);
-        this->_stack_start_parse(filename, relocate_arena, relocate_arena_data);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree != nullptr);
+        this->_stack_start_parse(filename, ymlsrc, relocate_arena, relocate_arena_data);
     }
 
     void finish_parse()
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree != nullptr);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree != nullptr);
         if(m_num_directives && !m_tree->is_stream(m_tree->root_id()))
-            _RYML_CB_ERR_(m_stack.m_callbacks, "directives cannot be used without a document", {});
+            _RYML_ERR_BASIC_(m_stack.m_callbacks, "directives cannot be used without a document");
         this->_stack_finish_parse();
         /* This pointer is temporary. Remember that:
          *
@@ -29643,25 +32552,30 @@ public:
     void begin_doc_expl()
     {
         _c4dbgp("begin_doc_expl");
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree->root_id() == m_curr->node_id);
+        _RYML_ASSERT_VISIT_(m_stack.m_callbacks, m_tree->root_id() == m_curr->node_id, m_tree, m_curr->node_id);
         if(!m_tree->is_stream(m_tree->root_id())) //if(_should_push_on_begin_doc())
         {
             _c4dbgp("ensure stream");
             _set_root_as_stream();
-            id_type first = m_tree->first_child(m_tree->root_id());
-            _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree->is_stream(m_tree->root_id()));
-            _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree->num_children(m_tree->root_id()) == 1u);
-            if(m_tree->has_children(first) || m_tree->is_val(first))
+            const id_type root = m_tree->root_id();
+            const id_type first = m_tree->first_child(root);
+            _RYML_ASSERT_VISIT_(m_stack.m_callbacks, m_tree->is_stream(root), m_tree, root);
+            _RYML_ASSERT_VISIT_(m_stack.m_callbacks, m_tree->num_children(root) == 1u, m_tree, root);
+            if(m_tree->is_container(first) || m_tree->is_val(first))
             {
                 _c4dbgp("push!");
                 _push();
+                #ifdef RYML_WITH_COMMENTS
+                m_tree->_p(root)->m_first_comment = NONE;
+                m_tree->_p(root)->m_last_comment = NONE;
+                #endif
             }
             else
             {
                 _c4dbgp("tweak");
                 _push();
                 _remove_speculative();
-                m_curr->node_id = m_tree->last_child(m_tree->root_id());
+                m_curr->node_id = m_tree->last_child(root);
                 m_curr->tr_data = m_tree->_p(m_curr->node_id);
             }
         }
@@ -29694,17 +32608,17 @@ public:
 
     void begin_map_key_flow()
     {
-        _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
+        _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
     }
     void begin_map_key_block()
     {
-        _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
+        _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
     }
 
     void begin_map_val_flow()
     {
         _c4dbgpf("node[{}]: begin_map_val_flow", m_curr->node_id);
-        _RYML_CB_CHECK(m_stack.m_callbacks, !_has_any_(VAL));
+        _RYML_CHECK_BASIC_(m_stack.m_callbacks, !_has_any_(VAL));
         _enable_(MAP|FLOW_SL);
         _save_loc();
         _push();
@@ -29712,16 +32626,27 @@ public:
     void begin_map_val_block()
     {
         _c4dbgpf("node[{}]: begin_map_val_block", m_curr->node_id);
-        _RYML_CB_CHECK(m_stack.m_callbacks, !_has_any_(VAL));
+        _RYML_CHECK_BASIC_(m_stack.m_callbacks, !_has_any_(VAL));
         _enable_(MAP|BLOCK);
         _save_loc();
         _push();
     }
 
-    void end_map()
+    void end_map_block()
     {
+        _c4dbgpf("node[{}]: end_map_block", m_parent->node_id, m_parent->pos.line, m_curr->pos.line);
         _pop();
-        _c4dbgpf("node[{}]: end_map_val", m_curr->node_id);
+    }
+
+    void end_map_flow(bool multiline)
+    {
+        _c4dbgpf("node[{}]: end_map. multiline={} startline={} endline={}", m_parent->node_id, multiline, m_parent->pos.line, m_curr->pos.line);
+        _pop();
+        if(multiline)
+        {
+            _disable_(FLOW_SL);
+            _enable_(FLOW_ML);
+        }
     }
 
     /** @} */
@@ -29733,17 +32658,17 @@ public:
 
     void begin_seq_key_flow()
     {
-        _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
+        _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
     }
     void begin_seq_key_block()
     {
-        _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
+        _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
     }
 
     void begin_seq_val_flow()
     {
         _c4dbgpf("node[{}]: begin_seq_val_flow", m_curr->node_id);
-        _RYML_CB_CHECK(m_stack.m_callbacks, !_has_any_(VAL));
+        _RYML_CHECK_BASIC_(m_stack.m_callbacks, !_has_any_(VAL));
         _enable_(SEQ|FLOW_SL);
         _save_loc();
         _push();
@@ -29751,16 +32676,27 @@ public:
     void begin_seq_val_block()
     {
         _c4dbgpf("node[{}]: begin_seq_val_block", m_curr->node_id);
-        _RYML_CB_CHECK(m_stack.m_callbacks, !_has_any_(VAL));
+        _RYML_CHECK_BASIC_(m_stack.m_callbacks, !_has_any_(VAL));
         _enable_(SEQ|BLOCK);
         _save_loc();
         _push();
     }
 
-    void end_seq()
+    void end_seq_block()
     {
+        _c4dbgpf("node[{}]: end_seq_block", m_parent->node_id, m_parent->pos.line, m_curr->pos.line);
         _pop();
-        _c4dbgpf("node[{}]: end_seq_val", m_curr->node_id);
+    }
+
+    void end_seq_flow(bool multiline)
+    {
+        _c4dbgpf("node[{}]: end_seq. multiline={} startline={} endline={}", m_parent->node_id, multiline, m_parent->pos.line, m_curr->pos.line);
+        _pop();
+        if(multiline)
+        {
+            _disable_(FLOW_SL);
+            _enable_(FLOW_ML);
+        }
     }
 
     /** @} */
@@ -29772,17 +32708,17 @@ public:
 
     void add_sibling()
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_parent);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree->has_children(m_parent->node_id));
-        NodeData const* prev = m_tree->m_buf; // watchout against relocation of the tree nodes
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_parent);
+        _RYML_ASSERT_VISIT_(m_stack.m_callbacks, m_tree->has_children(m_parent->node_id), m_tree, m_parent->node_id);
+        NodeData const* const prev = m_tree->m_buf; // watchout against relocation of the tree nodes
         _set_state_(m_curr, m_tree->_append_child__unprotected(m_parent->node_id));
         if(prev != m_tree->m_buf)
             _refresh_after_relocation();
         _c4dbgpf("node[{}]: added sibling={} prev={}", m_parent->node_id, m_curr->node_id, m_tree->prev_sibling(m_curr->node_id));
     }
 
-    /** set the previous val as the first key of a new map, with flow style.
+    /** reset the previous val as the first key of a new map, with flow style.
      *
      * See the documentation for @ref doc_event_handlers, which has
      * important notes about this event.
@@ -29790,13 +32726,13 @@ public:
     void actually_val_is_first_key_of_new_map_flow()
     {
         if(C4_UNLIKELY(m_tree->is_container(m_curr->node_id)))
-            _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_parent);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree->is_seq(m_parent->node_id));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !m_tree->is_container(m_curr->node_id));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !m_tree->has_key(m_curr->node_id));
+            _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_parent);
+        _RYML_ASSERT_VISIT_(m_stack.m_callbacks, m_tree->is_seq(m_parent->node_id), m_tree, m_parent->node_id);
+        _RYML_ASSERT_VISIT_(m_stack.m_callbacks, !m_tree->is_container(m_curr->node_id), m_tree, m_curr->node_id);
+        _RYML_ASSERT_VISIT_(m_stack.m_callbacks, !m_tree->has_key(m_curr->node_id), m_tree, m_curr->node_id);
         const NodeData tmp = _val2key_(*m_curr->tr_data);
-        _disable_(_VALMASK|VAL_STYLE);
+        _disable_(_VALMASK|VAL_STYLE|VALNIL);
         m_curr->tr_data->m_val = {};
         begin_map_val_flow();
         m_curr->tr_data->m_type = tmp.m_type;
@@ -29811,7 +32747,7 @@ public:
      */
     void actually_val_is_first_key_of_new_map_block()
     {
-        _RYML_CB_ERR_(m_stack.m_callbacks, "ryml trees cannot handle containers as keys", m_curr->pos);
+        _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "ryml trees cannot handle containers as keys");
     }
 
     /** @} */
@@ -29924,18 +32860,18 @@ public:
     void set_key_anchor(csubstr anchor)
     {
         _c4dbgpf("node[{}]: set key anchor: [{}]~~~{}~~~", m_curr->node_id, anchor.len, anchor);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !_has_any_(KEYREF));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !anchor.begins_with('&'));
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, !_has_any_(KEYREF));
+        _RYML_ASSERT_PARSE_(m_tree->callbacks(), !anchor.begins_with('&'), m_curr->pos);
         _enable_(KEYANCH);
         m_curr->tr_data->m_key.anchor = anchor;
     }
     void set_val_anchor(csubstr anchor)
     {
         _c4dbgpf("node[{}]: set val anchor: [{}]~~~{}~~~", m_curr->node_id, anchor.len, anchor);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !_has_any_(VALREF));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !anchor.begins_with('&'));
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, !_has_any_(VALREF));
+        _RYML_ASSERT_PARSE_(m_tree->callbacks(), !anchor.begins_with('&'), m_curr->pos);
         _enable_(VALANCH);
         m_curr->tr_data->m_val.anchor = anchor;
     }
@@ -29943,10 +32879,10 @@ public:
     void set_key_ref(csubstr ref)
     {
         _c4dbgpf("node[{}]: set key ref: [{}]~~~{}~~~", m_curr->node_id, ref.len, ref);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
         if(C4_UNLIKELY(_has_any_(KEYANCH)))
-            _RYML_CB_ERR_(m_tree->callbacks(), "key cannot have both anchor and ref", m_curr->pos);
-        _RYML_CB_ASSERT(m_tree->callbacks(), ref.begins_with('*'));
+            _RYML_ERR_PARSE_(m_tree->callbacks(), m_curr->pos, "key cannot have both anchor and ref");
+        _RYML_ASSERT_PARSE_(m_tree->callbacks(), ref.begins_with('*'), m_curr->pos);
         _enable_(KEY|KEYREF);
         m_curr->tr_data->m_key.anchor = ref.sub(1);
         m_curr->tr_data->m_key.scalar = ref;
@@ -29954,10 +32890,10 @@ public:
     void set_val_ref(csubstr ref)
     {
         _c4dbgpf("node[{}]: set val ref: [{}]~~~{}~~~", m_curr->node_id, ref.len, ref);
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
         if(C4_UNLIKELY(_has_any_(VALANCH)))
-            _RYML_CB_ERR_(m_tree->callbacks(), "val cannot have both anchor and ref", m_curr->pos);
-        _RYML_CB_ASSERT(m_tree->callbacks(), ref.begins_with('*'));
+            _RYML_ERR_PARSE_(m_tree->callbacks(), m_curr->pos, "val cannot have both anchor and ref");
+        _RYML_ASSERT_PARSE_(m_tree->callbacks(), ref.begins_with('*'), m_curr->pos);
         _enable_(VAL|VALREF);
         m_curr->tr_data->m_val.anchor = ref.sub(1);
         m_curr->tr_data->m_val.scalar = ref;
@@ -29993,17 +32929,17 @@ public:
     C4_NO_INLINE void add_directive(csubstr directive)
     {
         _c4dbgpf("% directive! {}", directive);
-        _RYML_CB_ASSERT(m_tree->callbacks(), directive.begins_with('%'));
+        _RYML_ASSERT_PARSE_(m_tree->callbacks(), directive.begins_with('%'), m_curr->pos);
         if(directive.begins_with("%TAG"))
         {
             if(C4_UNLIKELY(!m_tree->add_tag_directive(directive)))
-                _RYML_CB_ERR_(m_stack.m_callbacks, "failed to add directive", m_curr->pos);
+                _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "failed to add directive");
         }
         else if(directive.begins_with("%YAML"))
         {
             _c4dbgpf("%YAML directive! ignoring...: {}", directive);
             if(C4_UNLIKELY(m_yaml_directive))
-                _RYML_CB_ERR_(m_stack.m_callbacks, "multiple yaml directives", m_curr->pos);
+                _RYML_ERR_PARSE_(m_stack.m_callbacks, m_curr->pos, "multiple yaml directives");
             m_yaml_directive = true;
         }
         else
@@ -30022,7 +32958,7 @@ public:
 
     substr alloc_arena(size_t len)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
         csubstr prev = m_tree->arena();
         substr out = m_tree->alloc_arena(len);
         substr curr = m_tree->arena();
@@ -30033,7 +32969,7 @@ public:
 
     substr alloc_arena(size_t len, substr *relocated)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
         csubstr prev = m_tree->arena();
         if(!prev.is_super(*relocated))
             return alloc_arena(len);
@@ -30051,7 +32987,7 @@ public:
     /** @cond dev */
     void _reset_parser_state(state* st, id_type parse_root, id_type node)
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
         _set_state_(st, node);
         const NodeType type = m_tree->type(node);
         #ifdef RYML_DBG
@@ -30089,7 +33025,7 @@ public:
         }
         else
         {
-            _RYML_CB_ERR(m_tree->callbacks(), "cannot append to node");
+            _RYML_ERR_VISIT_(m_tree->callbacks(), m_tree, node, "cannot append to node");
         }
         if(type.is_doc())
         {
@@ -30152,17 +33088,12 @@ public:
     void _set_root_as_stream()
     {
         _c4dbgp("set root as stream");
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->root_id() == 0u);
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_curr->node_id == 0u);
-        const bool hack = !m_tree->has_children(m_curr->node_id) && !m_tree->is_val(m_curr->node_id);
-        if(hack)
-            m_tree->_p(m_tree->root_id())->m_type.add(VAL);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->root_id() == 0u, m_tree, m_tree->root_id());
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_curr->node_id == 0u, m_tree, m_curr->node_id);
         m_tree->set_root_as_stream();
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_stream(m_tree->root_id()));
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->has_children(m_tree->root_id()));
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->is_doc(m_tree->first_child(m_tree->root_id())));
-        if(hack)
-            m_tree->_p(m_tree->first_child(m_tree->root_id()))->m_type.rem(VAL);
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_stream(m_tree->root_id()), m_tree, m_tree->root_id());
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->has_children(m_tree->root_id()), m_tree, m_tree->root_id());
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->is_doc(m_tree->first_child(m_tree->root_id())), m_tree, m_tree->root_id());
         _set_state_(m_curr, m_tree->root_id());
     }
 
@@ -30177,14 +33108,16 @@ public:
         r.m_type.type = ((d.m_type.type & (_VALMASK|VAL_STYLE)) >> 1u);
         r.m_type.type = (r.m_type.type & ~(_VALMASK|VAL_STYLE));
         r.m_type.type = (r.m_type.type | KEY);
+        if(d.m_type.type & VALNIL)
+            r.m_type.type = (r.m_type.type | KEYNIL);
         return r;
     }
 
     void _remove_speculative()
     {
         _c4dbgp("remove speculative node");
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->empty());
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_tree->callbacks(), !m_tree->empty());
         const id_type last_added = m_tree->size() - 1;
         if(m_tree->has_parent(last_added))
             if(m_tree->_p(last_added)->m_type == NOTYPE)
@@ -30193,10 +33126,10 @@ public:
 
     void _remove_speculative_with_parent()
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->empty());
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_tree->callbacks(), !m_tree->empty());
         const id_type last_added = m_tree->size() - 1;
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->has_parent(last_added));
+        _RYML_ASSERT_VISIT_(m_tree->callbacks(), m_tree->has_parent(last_added), m_tree, last_added);
         if(m_tree->_p(last_added)->m_type == NOTYPE)
         {
             _c4dbgpf("remove speculative node with parent. parent={} node={} parent(node)={}", m_parent->node_id, last_added, m_tree->parent(last_added));
@@ -30206,8 +33139,8 @@ public:
 
     C4_ALWAYS_INLINE void _save_loc()
     {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->_p(m_curr->node_id)->m_val.scalar.len == 0);
+        _RYML_ASSERT_BASIC_(m_stack.m_callbacks, m_tree);
+        _RYML_ASSERT_BASIC_(m_tree->callbacks(), m_tree->_p(m_curr->node_id)->m_val.scalar.len == 0);
         m_tree->_p(m_curr->node_id)->m_val.scalar.str = m_curr->line_contents.rem.str;
     }
 
@@ -30449,67 +33382,31 @@ namespace yml {
 class Tree;
 class NodeRef;
 class ConstNodeRef;
+struct FilterResult;
+struct FilterResultExtending;
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+typedef enum BlockChomp_ {
+    CHOMP_CLIP,    //!< single newline at end (default)
+    CHOMP_STRIP,   //!< no newline at end     (-)
+    CHOMP_KEEP     //!< all newlines from end (+)
+} BlockChomp_e;
 
-/** Options to give to the parser to control its behavior. */
-struct RYML_EXPORT ParserOptions
-{
-private:
 
-    typedef enum : uint32_t {
-        SCALAR_FILTERING = (1u << 0u),
-        LOCATIONS = (1u << 1u),
-        DEFAULTS = SCALAR_FILTERING,
-    } Flags_e;
-
-    uint32_t flags = DEFAULTS;
-
-public:
-
-    ParserOptions() = default;
-
-public:
-
-    /** @name source location tracking */
-    /** @{ */
-
-    /** enable/disable source location tracking */
-    ParserOptions& locations(bool enabled) noexcept
-    {
-        if(enabled)
-            flags |= LOCATIONS;
-        else
-            flags &= ~LOCATIONS;
-        return *this;
-    }
-    /** query source location tracking status */
-    C4_ALWAYS_INLINE bool locations() const noexcept { return (flags & LOCATIONS); }
-
-    /** @} */
-
-public:
-
-    /** @name scalar filtering status (experimental; disable at your discretion) */
-    /** @{ */
-
-    /** enable/disable scalar filtering while parsing */
-    ParserOptions& scalar_filtering(bool enabled) noexcept
-    {
-        if(enabled)
-            flags |= SCALAR_FILTERING;
-        else
-            flags &= ~SCALAR_FILTERING;
-        return *this;
-    }
-    /** query scalar filtering status */
-    C4_ALWAYS_INLINE bool scalar_filtering() const noexcept { return (flags & SCALAR_FILTERING); }
-
-    /** @} */
-};
+/** Quickly inspect the source to estimate the number of nodes the
+ * resulting tree is likely to have. If a tree is empty before
+ * parsing, considerable time will be spent growing it, so calling
+ * this to reserve the tree size prior to parsing is likely to
+ * result in a time gain. We encourage using this method before
+ * parsing, but as always measure its impact in performance to
+ * obtain a good trade-off.
+ *
+ * @note since this method is meant for optimizing performance, it
+ * is approximate. The result may be actually smaller than the
+ * resulting number of nodes, notably if the YAML uses implicit
+ * maps as flow seq members as in `[these: are, individual:
+ * maps]`. */
+RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-redundant-declaration)
 
 
 //-----------------------------------------------------------------------------
@@ -30613,7 +33510,7 @@ public:
     ParserOptions const& options() const { return m_options; }
 
     /** Get the current callbacks in the parser. */
-    Callbacks const& callbacks() const { RYML_ASSERT(m_evt_handler); return m_evt_handler->m_stack.m_callbacks; }
+    Callbacks const& callbacks() const { _RYML_ASSERT_BASIC(m_evt_handler); return m_evt_handler->m_stack.m_callbacks; }
 
     /** Get the name of the latest file parsed by this object. */
     csubstr filename() const { return m_file; }
@@ -30625,7 +33522,7 @@ public:
      * If no encoding was specified, UTF8 is assumed as per the YAML standard. */
     Encoding_e encoding() const { return m_encoding != NOBOM ? m_encoding : UTF8; }
 
-    id_type stack_capacity() const { RYML_ASSERT(m_evt_handler); return m_evt_handler->m_stack.capacity(); }
+    id_type stack_capacity() const { _RYML_ASSERT_BASIC(m_evt_handler); return m_evt_handler->m_stack.capacity(); }
     size_t locations_capacity() const { return m_newline_offsets_capacity; }
 
     RYML_DEPRECATED("filter arena no longer needed")
@@ -30645,37 +33542,6 @@ public:
     void parse_json_in_place_ev(csubstr filename, substr src);
 
     /** @} */
-
-public:
-
-    // deprecated parse methods
-
-    /** @cond dev */
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_place(csubstr filename, substr yaml                         );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_place(                  substr yaml                         );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(csubstr filename, csubstr yaml                         );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(                  csubstr yaml                         );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, Tree *t, size_t node_id);
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, Tree *t                );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, NodeRef node           );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(csubstr filename, substr yaml                         );
-    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(                  substr yaml                         );
-    /** @endcond */
 
 public:
 
@@ -30752,6 +33618,8 @@ private:
         BlockChomp_e chomp;
     };
 
+private:
+
     bool    _is_doc_begin(csubstr s);
     bool    _is_doc_end(csubstr s);
 
@@ -30813,10 +33681,13 @@ private:
 
     void  _handle_flow_skip_whitespace();
 
+    void  _end_map_flow();
+    void  _end_seq_flow();
     void  _end_map_blck();
     void  _end_seq_blck();
     void  _end2_map();
     void  _end2_seq();
+    void  _flow_container_was_a_key(size_t orig_indent);
 
     void  _begin2_doc();
     void  _begin2_doc_expl();
@@ -30940,13 +33811,15 @@ private:
     void _free();
     void _clr();
 
+    template<class ...Args> C4_NORETURN C4_NO_INLINE void _err(Location const& cpploc, const char *fmt, Args const& ...args) const;
+    template<class ...Args> C4_NORETURN C4_NO_INLINE void _err(Location const& cpploc, Location const& ymlloc, const char *fmt, Args const& ...args) const;
     #ifdef RYML_DBG
-    template<class ...Args> void _dbg(csubstr fmt, Args const& C4_RESTRICT ...args) const;
+    template<class ...Args> C4_NO_INLINE void _dbg(csubstr fmt, Args const& ...args) const;
+    template<class DumpFn>  C4_NO_INLINE void _fmt_msg(DumpFn &&dumpfn) const;
+    C4_NO_INLINE void _print_state_stack() const;
+    C4_NO_INLINE void _print_state_stack(substr buf) const;
     #endif
-    template<class ...Args> void _err(csubstr fmt, Args const& C4_RESTRICT ...args) const;
-    template<class ...Args> void _errloc(csubstr fmt, Location const& loc, Args const& C4_RESTRICT ...args) const;
 
-    template<class DumpFn>  void _fmt_msg(DumpFn &&dumpfn) const;
 
 private:
 
@@ -31005,6 +33878,10 @@ private:
     bool m_doc_empty = true;
     size_t m_prev_colon = npos;
 
+private:
+
+    size_t m_bom_len = 0;
+    size_t m_bom_line = 0;
     Encoding_e m_encoding = UTF8;
 
 private:
@@ -31014,23 +33891,39 @@ private:
     size_t  m_newline_offsets_capacity;
     csubstr m_newline_offsets_buf;
 
+public:
+
+    // deprecated parse methods
+
+    /** @cond dev */
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(                  substr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_place(csubstr filename, substr yaml                         );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_place(                  substr yaml                         );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, csubstr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  csubstr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(csubstr filename, csubstr yaml                         );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the function in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(                  csubstr yaml                         );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, Tree *t, size_t node_id);
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, Tree *t                );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(csubstr filename, substr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_arena(                  substr yaml, NodeRef node           );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(csubstr filename, substr yaml                         );
+    template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(                  substr yaml                         );
+    /** @endcond */
+
 };
 
-
-/** Quickly inspect the source to estimate the number of nodes the
- * resulting tree is likely have. If a tree is empty before
- * parsing, considerable time will be spent growing it, so calling
- * this to reserve the tree size prior to parsing is likely to
- * result in a time gain. We encourage using this method before
- * parsing, but as always measure its impact in performance to
- * obtain a good trade-off.
- *
- * @note since this method is meant for optimizing performance, it
- * is approximate. The result may be actually smaller than the
- * resulting number of nodes, notably if the YAML uses implicit
- * maps as flow seq members as in `[these: are, individual:
- * maps]`. */
-RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-redundant-declaration)
 
 /** @} */
 
@@ -31062,8 +33955,7 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-r
 /** @file preprocess.hpp Functions for preprocessing YAML prior to parsing. */
 
 #ifndef _C4_YML_COMMON_HPP_
-//included above:
-//#include "./common.hpp"
+#include "./common.hpp"
 #endif
 // amalgamate: removed include of
 // c4/substr.hpp
@@ -31402,24 +34294,24 @@ RYML_EXPORT Tree parse_json_in_place(Parser *parser,                   substr js
  */
 
 // this is vertically aligned to highlight the parameter differences.
-RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, Tree *t, id_type node_id); ///< (1) parse YAML into an existing tree node. The filename will be used in any error messages arising during the parse.
-RYML_EXPORT void parse_in_place(                  substr yaml, Tree *t, id_type node_id); ///< (2) like (1) but no filename will be reported
-RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, Tree *t                 ); ///< (3) parse YAML into an existing tree, into its root node.
-RYML_EXPORT void parse_in_place(                  substr yaml, Tree *t                 ); ///< (4) like (3) but no filename will be reported
-RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, NodeRef node            ); ///< (5) like (1) but the node is given as a NodeRef
-RYML_EXPORT void parse_in_place(                  substr yaml, NodeRef node            ); ///< (6) like (5) but no filename will be reported
-RYML_EXPORT Tree parse_in_place(csubstr filename, substr yaml                          ); ///< (7) create a new tree, and parse YAML into its root node.
-RYML_EXPORT Tree parse_in_place(                  substr yaml                          ); ///< (8) like (7) but no filename will be reported
+RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (1) parse YAML into an existing tree node. The filename will be used in any error messages arising during the parse.
+RYML_EXPORT void parse_in_place(                  substr yaml, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (2) like (1) but no filename will be reported
+RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, Tree *t                 , ParserOptions const& opts={}); ///< (3) parse YAML into an existing tree, into its root node.
+RYML_EXPORT void parse_in_place(                  substr yaml, Tree *t                 , ParserOptions const& opts={}); ///< (4) like (3) but no filename will be reported
+RYML_EXPORT void parse_in_place(csubstr filename, substr yaml, NodeRef node            , ParserOptions const& opts={}); ///< (5) like (1) but the node is given as a NodeRef
+RYML_EXPORT void parse_in_place(                  substr yaml, NodeRef node            , ParserOptions const& opts={}); ///< (6) like (5) but no filename will be reported
+RYML_EXPORT Tree parse_in_place(csubstr filename, substr yaml                          , ParserOptions const& opts={}); ///< (7) create a new tree, and parse YAML into its root node.
+RYML_EXPORT Tree parse_in_place(                  substr yaml                          , ParserOptions const& opts={}); ///< (8) like (7) but no filename will be reported
 
 // this is vertically aligned to highlight the parameter differences.
-RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, Tree *t, id_type node_id); ///< (1) parse JSON into an existing tree node. The filename will be used in any error messages arising during the parse.
-RYML_EXPORT void parse_json_in_place(                  substr json, Tree *t, id_type node_id); ///< (2) like (1) but no filename will be reported
-RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, Tree *t                 ); ///< (3) parse JSON into an existing tree, into its root node.
-RYML_EXPORT void parse_json_in_place(                  substr json, Tree *t                 ); ///< (4) like (3) but no filename will be reported
-RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, NodeRef node            ); ///< (5) like (1) but the node is given as a NodeRef
-RYML_EXPORT void parse_json_in_place(                  substr json, NodeRef node            ); ///< (6) like (5) but no filename will be reported
-RYML_EXPORT Tree parse_json_in_place(csubstr filename, substr json                          ); ///< (7) create a new tree, and parse JSON into its root node.
-RYML_EXPORT Tree parse_json_in_place(                  substr json                          ); ///< (8) like (7) but no filename will be reported
+RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (1) parse JSON into an existing tree node. The filename will be used in any error messages arising during the parse.
+RYML_EXPORT void parse_json_in_place(                  substr json, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (2) like (1) but no filename will be reported
+RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, Tree *t                 , ParserOptions const& opts={}); ///< (3) parse JSON into an existing tree, into its root node.
+RYML_EXPORT void parse_json_in_place(                  substr json, Tree *t                 , ParserOptions const& opts={}); ///< (4) like (3) but no filename will be reported
+RYML_EXPORT void parse_json_in_place(csubstr filename, substr json, NodeRef node            , ParserOptions const& opts={}); ///< (5) like (1) but the node is given as a NodeRef
+RYML_EXPORT void parse_json_in_place(                  substr json, NodeRef node            , ParserOptions const& opts={}); ///< (6) like (5) but no filename will be reported
+RYML_EXPORT Tree parse_json_in_place(csubstr filename, substr json                          , ParserOptions const& opts={}); ///< (7) create a new tree, and parse JSON into its root node.
+RYML_EXPORT Tree parse_json_in_place(                  substr json                          , ParserOptions const& opts={}); ///< (8) like (7) but no filename will be reported
 
 /** @} */
 
@@ -31461,7 +34353,7 @@ RYML_EXPORT Tree parse_json_in_place(                  substr json              
  * substr mutable_buffer = ...;
  * parser.parse_in_arena(mutable_buffer); // linker error
  *
- * csubstr immutable_buffer = ...;
+ * csubstr immutable_buffer = mutable_buffer; // convert first to csubstr
  * parser.parse_in_arena(immutable_buffer); // ok
  * ```
  *
@@ -31555,32 +34447,32 @@ RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) Tree parse_json_in_arena(Parser
  * substr mutable_buffer = ...;
  * parser.parse_in_arena(mutable_buffer); // linker error
  *
- * csubstr immutable_buffer = ...;
- * parser.parse_in_arena(immutable_buffer); // ok
+ * csubstr immutable_buffer = mutable_buffer; // convert first to csubstr
+ * parser.parse_in_arena(immutable_buffer); // ok now
  * ```
  *
  * @{
  */
 
 // this is vertically aligned to highlight the parameter differences.
-RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, Tree *t, id_type node_id); ///< (1) parse YAML into an existing tree node. The filename will be used in any error messages arising during the parse.
-RYML_EXPORT void parse_in_arena(                  csubstr yaml, Tree *t, id_type node_id); ///< (2) like (1) but no filename will be reported
-RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                 ); ///< (3) parse YAML into an existing tree, into its root node.
-RYML_EXPORT void parse_in_arena(                  csubstr yaml, Tree *t                 ); ///< (4) like (3) but no filename will be reported
-RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node            ); ///< (5) like (1) but the node is given as a NodeRef
-RYML_EXPORT void parse_in_arena(                  csubstr yaml, NodeRef node            ); ///< (6) like (5) but no filename will be reported
-RYML_EXPORT Tree parse_in_arena(csubstr filename, csubstr yaml                          ); ///< (7) create a new tree, and parse YAML into its root node.
-RYML_EXPORT Tree parse_in_arena(                  csubstr yaml                          ); ///< (8) like (7) but no filename will be reported
+RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (1) parse YAML into an existing tree node. The filename will be used in any error messages arising during the parse.
+RYML_EXPORT void parse_in_arena(                  csubstr yaml, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (2) like (1) but no filename will be reported
+RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                 , ParserOptions const& opts={}); ///< (3) parse YAML into an existing tree, into its root node.
+RYML_EXPORT void parse_in_arena(                  csubstr yaml, Tree *t                 , ParserOptions const& opts={}); ///< (4) like (3) but no filename will be reported
+RYML_EXPORT void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node            , ParserOptions const& opts={}); ///< (5) like (1) but the node is given as a NodeRef
+RYML_EXPORT void parse_in_arena(                  csubstr yaml, NodeRef node            , ParserOptions const& opts={}); ///< (6) like (5) but no filename will be reported
+RYML_EXPORT Tree parse_in_arena(csubstr filename, csubstr yaml                          , ParserOptions const& opts={}); ///< (7) create a new tree, and parse YAML into its root node.
+RYML_EXPORT Tree parse_in_arena(                  csubstr yaml                          , ParserOptions const& opts={}); ///< (8) like (7) but no filename will be reported
 
 // this is vertically aligned to highlight the parameter differences.
-RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, Tree *t, id_type node_id); ///< (1) parse JSON into an existing tree node. The filename will be used in any error messages arising during the parse.
-RYML_EXPORT void parse_json_in_arena(                  csubstr json, Tree *t, id_type node_id); ///< (2) like (1) but no filename will be reported
-RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                 ); ///< (3) parse JSON into an existing tree, into its root node.
-RYML_EXPORT void parse_json_in_arena(                  csubstr json, Tree *t                 ); ///< (4) like (3) but no filename will be reported
-RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node            ); ///< (5) like (1) but the node is given as a NodeRef
-RYML_EXPORT void parse_json_in_arena(                  csubstr json, NodeRef node            ); ///< (6) like (5) but no filename will be reported
-RYML_EXPORT Tree parse_json_in_arena(csubstr filename, csubstr json                          ); ///< (7) create a new tree, and parse JSON into its root node.
-RYML_EXPORT Tree parse_json_in_arena(                  csubstr json                          ); ///< (8) like (7) but no filename will be reported
+RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (1) parse JSON into an existing tree node. The filename will be used in any error messages arising during the parse.
+RYML_EXPORT void parse_json_in_arena(                  csubstr json, Tree *t, id_type node_id, ParserOptions const& opts={}); ///< (2) like (1) but no filename will be reported
+RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                 , ParserOptions const& opts={}); ///< (3) parse JSON into an existing tree, into its root node.
+RYML_EXPORT void parse_json_in_arena(                  csubstr json, Tree *t                 , ParserOptions const& opts={}); ///< (4) like (3) but no filename will be reported
+RYML_EXPORT void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node            , ParserOptions const& opts={}); ///< (5) like (1) but the node is given as a NodeRef
+RYML_EXPORT void parse_json_in_arena(                  csubstr json, NodeRef node            , ParserOptions const& opts={}); ///< (6) like (5) but no filename will be reported
+RYML_EXPORT Tree parse_json_in_arena(csubstr filename, csubstr json                          , ParserOptions const& opts={}); ///< (7) create a new tree, and parse JSON into its root node.
+RYML_EXPORT Tree parse_json_in_arena(                  csubstr json                          , ParserOptions const& opts={}); ///< (8) like (7) but no filename will be reported
 
 
 /* READ THE DEPRECATION NOTE!
@@ -31895,16 +34787,30 @@ int version_patch()
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
 #endif /* C4_YML_COMMON_HPP_ */
 
+// amalgamate: removed include of
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/error.def.hpp
+//#include "c4/yml/error.def.hpp"
+#if !defined(C4_YML_ERROR_DEF_HPP_) && !defined(_C4_YML_ERROR_DEF_HPP_)
+#error "amalgamate: file c4/yml/error.def.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_DEF_HPP_ */
+
 
 #ifndef RYML_NO_DEFAULT_CALLBACKS
 //included above:
 //#   include <stdlib.h>
 //included above:
 //#   include <stdio.h>
-#   ifdef RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS
-#       include <stdexcept>
-#   endif
 #endif // RYML_NO_DEFAULT_CALLBACKS
+#ifdef _RYML_EXCEPTIONS
+#       include <stdexcept>
+#endif
 
 
 namespace c4 {
@@ -31915,54 +34821,60 @@ C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4702/*unreachable code*/) // on the call to t
 
 namespace {
 Callbacks s_default_callbacks;
-} // anon namespace
 
 #ifndef RYML_NO_DEFAULT_CALLBACKS
-void report_error_impl(const char* msg, size_t length, Location loc, FILE *f)
+
+C4_NO_INLINE void dump2stderr(csubstr s)
 {
-    if(!f)
-        f = stderr;
-    if(loc)
-    {
-        if(!loc.name.empty())
-        {
-            // this is more portable than using fprintf("%.*s:") which
-            // is not available in some embedded platforms
-            fwrite(loc.name.str, 1, loc.name.len, f); // NOLINT
-            fputc(':', f); // NOLINT
-        }
-        fprintf(f, "%zu:", loc.line); // NOLINT
-        if(loc.col)
-            fprintf(f, "%zu:", loc.col); // NOLINT
-        if(loc.offset)
-            fprintf(f, " (%zuB):", loc.offset); // NOLINT
-        fputc(' ', f); // NOLINT
-    }
-    RYML_ASSERT(!csubstr(msg, length).ends_with('\0'));
-    fwrite(msg, 1, length, f); // NOLINT
-    fputc('\n', f); // NOLINT
-    fflush(f); // NOLINT
+    // using fwrite() is more portable than using fprintf("%.*s") which
+    // is not available in some embedded platforms
+    if(s.len)
+        fwrite(s.str, 1, s.len, stderr); // NOLINT
+}
+C4_NO_INLINE void endmsg()
+{
+    fputc('\n', stderr); // NOLINT
+    fflush(stderr); // NOLINT
 }
 
-[[noreturn]] void error_impl(const char* msg, size_t length, Location loc, void * /*user_data*/)
+[[noreturn]] C4_NO_INLINE void error_basic_impl(csubstr msg, ErrorDataBasic const& errdata, void * /*user_data*/)
 {
-    RYML_ASSERT(!csubstr(msg, length).ends_with('\0'));
-    report_error_impl(msg, length, loc, nullptr);
-#ifdef RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS
-    throw std::runtime_error(std::string(msg, length));
-#else
-    ::abort();
-#endif
+    err_basic_format(dump2stderr, msg, errdata);
+    endmsg();
+    #ifdef _RYML_WITH_EXCEPTIONS
+    throw ExceptionBasic(msg, errdata);
+    #else
+    abort(); // LCOV_EXCL_LINE
+    #endif
+}
+
+[[noreturn]] C4_NO_INLINE void error_parse_impl(csubstr msg, ErrorDataParse const& errdata, void * /*user_data*/)
+{
+    err_parse_format(dump2stderr, msg, errdata);
+    endmsg();
+    #ifdef _RYML_WITH_EXCEPTIONS
+    throw ExceptionParse(msg, errdata);
+    #else
+    abort(); // LCOV_EXCL_LINE
+    #endif
+}
+
+[[noreturn]] C4_NO_INLINE void error_visit_impl(csubstr msg, ErrorDataVisit const& errdata, void * /*user_data*/)
+{
+    err_visit_format(dump2stderr, msg, errdata);
+    endmsg();
+    #ifdef _RYML_WITH_EXCEPTIONS
+    throw ExceptionVisit(msg, errdata);
+    #else
+    abort(); // LCOV_EXCL_LINE
+    #endif
 }
 
 void* allocate_impl(size_t length, void * /*hint*/, void * /*user_data*/)
 {
     void *mem = ::malloc(length);
     if(mem == nullptr)
-    {
-        const char msg[] = "could not allocate memory";
-        error_impl(msg, sizeof(msg)-1, {}, nullptr);
-    }
+        error_basic_impl("could not allocate memory", ErrorDataBasic{RYML_LOC_HERE()}, nullptr); // LCOV_EXCL_LINE
     return mem;
 }
 
@@ -31970,42 +34882,10 @@ void free_impl(void *mem, size_t /*length*/, void * /*user_data*/)
 {
     ::free(mem);
 }
+
 #endif // RYML_NO_DEFAULT_CALLBACKS
 
-
-
-Callbacks::Callbacks() noexcept
-    :
-    m_user_data(nullptr),
-    #ifndef RYML_NO_DEFAULT_CALLBACKS
-    m_allocate(allocate_impl),
-    m_free(free_impl),
-    m_error(error_impl)
-    #else
-    m_allocate(nullptr),
-    m_free(nullptr),
-    m_error(nullptr)
-    #endif
-{
-}
-
-Callbacks::Callbacks(void *user_data, pfn_allocate alloc_, pfn_free free_, pfn_error error_)
-    :
-    m_user_data(user_data),
-    #ifndef RYML_NO_DEFAULT_CALLBACKS
-    m_allocate(alloc_ ? alloc_ : allocate_impl),
-    m_free(free_ ? free_ : free_impl),
-    m_error((error_ ? error_ : error_impl))
-    #else
-    m_allocate(alloc_),
-    m_free(free_),
-    m_error(error_)
-    #endif
-{
-    RYML_CHECK(m_allocate);
-    RYML_CHECK(m_free);
-    RYML_CHECK(m_error);
-}
+} // anon namespace
 
 
 void set_callbacks(Callbacks const& c)
@@ -32023,22 +34903,211 @@ void reset_callbacks()
     set_callbacks(Callbacks());
 }
 
-// the [[noreturn]] attribute needs to be here as well (UB otherwise)
-// https://en.cppreference.com/w/cpp/language/attributes/noreturn
-[[noreturn]] void error(Callbacks const& cb, const char *msg, size_t msg_len, Location loc)
+
+Callbacks::Callbacks() noexcept
+    :
+    m_user_data(nullptr),
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_allocate(allocate_impl),
+    m_free(free_impl),
+    m_error_basic(error_basic_impl),
+    m_error_parse(error_parse_impl),
+    m_error_visit(error_visit_impl)
+    #else
+    m_allocate(nullptr),
+    m_free(nullptr),
+    m_error_basic(nullptr),
+    m_error_parse(nullptr),
+    m_error_visit(nullptr)
+    #endif
 {
-    cb.m_error(msg, msg_len, loc, cb.m_user_data);
-    abort(); // call abort in case the error callback didn't interrupt execution
-    C4_UNREACHABLE();
 }
 
-// the [[noreturn]] attribute needs to be here as well (UB otherwise)
-// see https://en.cppreference.com/w/cpp/language/attributes/noreturn
-[[noreturn]] void error(const char *msg, size_t msg_len, Location loc)
+Callbacks::Callbacks(void *user_data, pfn_allocate alloc_, pfn_free free_, pfn_error_basic error_basic_)
+    :
+    m_user_data(user_data),
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_allocate(alloc_ ? alloc_ : allocate_impl),
+    m_free(free_ ? free_ : free_impl),
+    m_error_basic(error_basic_ ? error_basic_ : error_basic_impl),
+    m_error_parse(error_parse_impl),
+    m_error_visit(error_visit_impl)
+    #else
+    m_allocate(alloc_),
+    m_free(free_),
+    m_error_basic(error_basic_),
+    m_error_parse(nullptr),
+    m_error_visit(nullptr)
+    #endif
 {
-    error(s_default_callbacks, msg, msg_len, loc);
-    C4_UNREACHABLE();
 }
+
+
+Callbacks& Callbacks::set_user_data(void* user_data)
+{
+    m_user_data = user_data;
+    return *this;
+}
+
+Callbacks& Callbacks::set_allocate(pfn_allocate allocate)
+{
+    m_allocate = allocate;
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_allocate = m_allocate ? m_allocate : allocate_impl;
+    #endif
+    return *this;
+}
+
+Callbacks& Callbacks::set_free(pfn_free free)
+{
+    m_free = free;
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_free = m_free ? m_free : free_impl;
+    #endif
+    return *this;
+}
+
+Callbacks& Callbacks::set_error_basic(pfn_error_basic error_basic)
+{
+    m_error_basic = error_basic;
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_error_basic = m_error_basic ? m_error_basic : error_basic_impl;
+    #endif
+    return *this;
+}
+
+Callbacks& Callbacks::set_error_parse(pfn_error_parse error_parse)
+{
+    m_error_parse = error_parse;
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_error_parse = m_error_parse ? m_error_parse : error_parse_impl;
+    #endif
+    return *this;
+}
+
+Callbacks& Callbacks::set_error_visit(pfn_error_visit error_visit)
+{
+    m_error_visit = error_visit;
+    #ifndef RYML_NO_DEFAULT_CALLBACKS
+    m_error_visit = m_error_visit ? m_error_visit : error_visit_impl;
+    #endif
+    return *this;
+}
+
+
+C4_NORETURN C4_NO_INLINE void err_basic(ErrorDataBasic const& errdata, const char* msg)
+{
+    err_basic(get_callbacks(), errdata, msg);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+C4_NORETURN C4_NO_INLINE void err_basic(Callbacks const& callbacks, ErrorDataBasic const& errdata, const char* msg_)
+{
+    csubstr msg = to_csubstr(msg_);
+    callbacks.m_error_basic(msg, errdata, callbacks.m_user_data);
+    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+C4_NORETURN C4_NO_INLINE void err_parse(ErrorDataParse const& errdata, const char *msg)
+{
+    err_parse(get_callbacks(), errdata, msg);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+C4_NORETURN C4_NO_INLINE void err_parse(Callbacks const& callbacks, ErrorDataParse const& errdata, const char *msg_)
+{
+    csubstr msg = to_csubstr(msg_);
+    if(callbacks.m_error_parse)
+        callbacks.m_error_parse(msg, errdata, callbacks.m_user_data);
+    // fall to basic error if there is no parse handler set
+    else if(callbacks.m_error_basic)
+        callbacks.m_error_basic(msg, errdata.ymlloc, callbacks.m_user_data);
+    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+C4_NORETURN C4_NO_INLINE void err_visit(ErrorDataVisit const& errdata, const char *msg)
+{
+    err_visit(get_callbacks(), errdata, msg);
+    C4_UNREACHABLE_AFTER_ERR();
+}
+C4_NORETURN C4_NO_INLINE void err_visit(Callbacks const& callbacks, ErrorDataVisit const& errdata, const char *msg_)
+{
+    csubstr msg = to_csubstr(msg_);
+    if(callbacks.m_error_visit)
+        callbacks.m_error_visit(msg, errdata, callbacks.m_user_data);
+    // fall to basic error if there is no visit handler set
+    else if(callbacks.m_error_basic)
+        callbacks.m_error_basic(msg, errdata.cpploc, callbacks.m_user_data);
+    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    C4_UNREACHABLE_AFTER_ERR();
+}
+
+
+
+#ifdef _RYML_WITH_EXCEPTIONS
+ExceptionBasic::ExceptionBasic(csubstr msg_, ErrorDataBasic const& errdata_) noexcept
+    : errdata_basic(errdata_)
+    , msg()
+{
+    msg[0] = '\0';
+    if(msg_.len)
+    {
+        if(msg_.len >= sizeof(msg))
+        {
+            static_assert(sizeof(msg) > 6u, "message buffer too small");
+            msg_.len = sizeof(msg) - 6u;
+            msg[msg_.len     ] = '[';
+            msg[msg_.len + 1u] = '.';
+            msg[msg_.len + 2u] = '.';
+            msg[msg_.len + 3u] = '.';
+            msg[msg_.len + 4u] = ']';
+            msg[msg_.len + 5u] = '\0';
+        }
+        memcpy(msg, msg_.str, msg_.len);
+    }
+}
+ExceptionParse::ExceptionParse(csubstr msg_, ErrorDataParse const& errdata_) noexcept
+    : ExceptionBasic(msg_, {errdata_.ymlloc})
+    , errdata_parse(errdata_)
+{
+}
+ExceptionVisit::ExceptionVisit(csubstr msg_, ErrorDataVisit const& errdata_) noexcept
+    : ExceptionBasic(msg_, {errdata_.cpploc})
+    , errdata_visit(errdata_)
+{
+}
+#endif // _RYML_WITH_EXCEPTIONS
+
+
+namespace detail {
+RYML_EXPORT csubstr _get_text_region(csubstr text, size_t pos, size_t num_lines_before, size_t num_lines_after)
+{
+    if(pos > text.len)
+        return text.last(0);
+    size_t before = text.first(pos).last_of('\n');
+    size_t before_count = 0;
+    while((before != npos) && (++before_count <= num_lines_before))
+    {
+        if(before == 0)
+            break;
+        before = text.first(--before).last_of('\n');
+    }
+    if(before < text.len || before == npos)
+        ++before;
+    size_t after = text.first_of('\n', pos);
+    size_t after_count = 0;
+    while((after != npos) && (++after_count <= num_lines_after))
+    {
+        ++after;
+        if(after >= text.len)
+            break;
+        after = text.first_of('\n', after);
+    }
+    return before <= after ? text.range(before, after) : text.first(0);
+}
+} // namespace detail
 
 C4_SUPPRESS_WARNING_MSVC_POP
 C4_SUPPRESS_WARNING_GCC_CLANG_POP
@@ -32227,8 +35296,7 @@ bool scalar_style_query_plain(csubstr s) noexcept
     {
         return true;
     }
-    return s != ':'
-        && ( ! s.begins_with_any("-:?*&,'\"{}[]|>%#@`\r")) // @ and ` are reserved characters
+    return ( ! s.begins_with_any("-:?*&,'\"{}[]|>%#@`\r")) // @ and ` are reserved characters
         && ( ! s.ends_with_any(":#"))
              // make this check in the last place, as it has linear
              // complexity, while the previous ones are
@@ -32267,12 +35335,26 @@ NodeType_e scalar_style_json_choose(csubstr s) noexcept
             s.is_number()
             &&
             (
-                // quote integral numbers if they have a leading 0
-                // https://github.com/biojppm/rapidyaml/issues/291
-                (!(s.len > 1 && s.begins_with('0')))
-                // do not quote reals with leading 0
-                // https://github.com/biojppm/rapidyaml/issues/313
-                || (s.find('.') != csubstr::npos)
+                (
+                    // quote integral numbers if they have a leading 0
+                    // https://github.com/biojppm/rapidyaml/issues/291
+                    (!(s.len > 1 && s.begins_with('0')))
+                    // do not quote reals with leading 0
+                    // https://github.com/biojppm/rapidyaml/issues/313
+                    || (s.find('.') != csubstr::npos)
+                )
+            )
+        )
+        ||
+        (
+            (s.len > 3)
+            &&
+            (
+                (s[0] == '.' && (s == ".inf" || s == ".Inf" || s == ".INF"
+                                 ||
+                                 s == ".nan" || s == ".NaN" || s == ".NAN"))
+                ||
+                (s[0] == '-' && (s == "-.inf" || s == "-.Inf" || s == "-.INF"))
             )
         )
     );
@@ -32302,6 +35384,13 @@ NodeType_e scalar_style_json_choose(csubstr s) noexcept
 #if !defined(C4_YML_TAG_HPP_) && !defined(_C4_YML_TAG_HPP_)
 #error "amalgamate: file c4/yml/tag.hpp must have been included at this point"
 #endif /* C4_YML_TAG_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
 
 // amalgamate: removed include of
 // c4/yml/detail/dbgprint.hpp
@@ -32380,19 +35469,24 @@ YamlTag_e to_tag(csubstr tag)
     if(tag.begins_with("!!"))
         tag = tag.sub(2);
     else if(tag.begins_with('!'))
+    {
         return TAG_NONE;
-    else if(tag.begins_with("tag:yaml.org,2002:"))
-    {
-        RYML_ASSERT(csubstr("tag:yaml.org,2002:").len == 18);
-        tag = tag.sub(18);
     }
-    else if(tag.begins_with("<tag:yaml.org,2002:"))
+    else
     {
-        RYML_ASSERT(csubstr("<tag:yaml.org,2002:").len == 19);
-        tag = tag.sub(19);
-        if(!tag.len)
-            return TAG_NONE;
-        tag = tag.offs(0, 1);
+        csubstr pfx = "<tag:yaml.org,2002:";
+        csubstr pfx2 = pfx.sub(1);
+        if(tag.begins_with(pfx2))
+        {
+            tag = tag.sub(pfx2.len);
+        }
+        else if(tag.begins_with(pfx))
+        {
+            tag = tag.sub(pfx.len);
+            if(!tag.len)
+                return TAG_NONE;
+            tag = tag.offs(0, 1);
+        }
     }
 
     if(tag == "map")
@@ -32510,9 +35604,9 @@ csubstr from_tag(YamlTag_e tag)
 }
 
 
-bool TagDirective::create_from_str(csubstr directive_)
+bool TagDirective::create_from_str(csubstr directive)
 {
-    csubstr directive = directive_;
+    _RYML_CHECK_BASIC(directive.begins_with("%TAG "));
     directive = directive.sub(4);
     if(!directive.begins_with(' '))
         return false;
@@ -32534,14 +35628,14 @@ bool TagDirective::create_from_str(csubstr directive_)
 size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& callbacks, bool with_brackets) const
 {
     _c4dbgpf("%TAG: handle={} prefix={} next_node={}. tag={}", handle, prefix, next_node_id, tag);
-    _RYML_CB_ASSERT(callbacks, tag.len >= handle.len);
+    _RYML_ASSERT_BASIC_(callbacks, tag.len >= handle.len);
     csubstr rest = tag.sub(handle.len);
     _c4dbgpf("%TAG: rest={}", rest);
     if(rest.begins_with('<'))
     {
         _c4dbgpf("%TAG: begins with <. rest={}", rest);
         if(C4_UNLIKELY(!rest.ends_with('>')))
-            _RYML_CB_ERR(callbacks, "malformed tag");
+            _RYML_ERR_BASIC_(callbacks, "malformed tag");
         rest = rest.offs(1, 1);
         if(rest.begins_with(prefix))
         {
@@ -32575,13 +35669,13 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
     {
         // need to decode URI % sequences
         size_t pos = rest.find('%');
-        _RYML_CB_ASSERT(callbacks, pos != npos);
+        _RYML_ASSERT_BASIC_(callbacks, pos != npos);
         do {
             size_t next = rest.first_not_of("0123456789abcdefABCDEF", pos+1);
             if(next == npos)
                 next = rest.len;
-            _RYML_CB_CHECK(callbacks, pos+1 < next);
-            _RYML_CB_CHECK(callbacks, pos+1 + 2 <= next);
+            _RYML_CHECK_BASIC_(callbacks, pos+1 < next);
+            _RYML_CHECK_BASIC_(callbacks, pos+1 + 2 <= next);
             size_t delta = next - (pos+1);
             len -= delta;
             pos = rest.find('%', pos+1);
@@ -32595,28 +35689,28 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
                 appendchar('<');
             appendstr(prefix);
             pos = rest.find('%');
-            _RYML_CB_ASSERT(callbacks, pos != npos);
+            _RYML_ASSERT_BASIC_(callbacks, pos != npos);
             do {
                 size_t next = rest.first_not_of("0123456789abcdefABCDEF", pos+1);
                 if(next == npos)
                     next = rest.len;
-                _RYML_CB_CHECK(callbacks, pos+1 < next);
-                _RYML_CB_CHECK(callbacks, pos+1 + 2 <= next);
+                _RYML_CHECK_BASIC_(callbacks, pos+1 < next);
+                _RYML_CHECK_BASIC_(callbacks, pos+1 + 2 <= next);
                 uint8_t val;
                 if(C4_UNLIKELY(!read_hex(rest.range(pos+1, next), &val) || val > 127))
-                    _RYML_CB_ERR(callbacks, "invalid URI character");
+                    _RYML_ERR_BASIC_(callbacks, "invalid URI character");
                 appendstr(rest.range(prev, pos));
                 appendchar(static_cast<char>(val));
                 prev = next;
                 pos = rest.find('%', pos+1);
             } while(pos != npos);
-            _RYML_CB_ASSERT(callbacks, pos == npos);
-            _RYML_CB_ASSERT(callbacks, prev > 0);
-            _RYML_CB_ASSERT(callbacks, rest.len >= prev);
+            _RYML_ASSERT_BASIC_(callbacks, pos == npos);
+            _RYML_ASSERT_BASIC_(callbacks, prev > 0);
+            _RYML_ASSERT_BASIC_(callbacks, rest.len >= prev);
             appendstr(rest.sub(prev));
             if(with_brackets)
                 appendchar('>');
-            _RYML_CB_ASSERT(callbacks, wpos == len);
+            _RYML_ASSERT_BASIC_(callbacks, wpos == len);
         }
     }
     return len;
@@ -32702,11 +35796,11 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
 #error "amalgamate: file c4/yml/detail/print.hpp must have been included at this point"
 #endif /* C4_YML_DETAIL_PRINT_HPP_ */
 
-#define _c4err_(fmt, ...) do { RYML_DEBUG_BREAK(); this->_err("ERROR:\n" "{}:{}: " fmt, __FILE__, __LINE__, __VA_ARGS__); } while(0)
-#define _c4err(fmt) do { RYML_DEBUG_BREAK(); this->_err("ERROR:\n" "{}:{}: " fmt, __FILE__, __LINE__); } while(0)
+#define _c4err(...)   \
+    do { RYML_DEBUG_BREAK(); this->_err(RYML_LOC_HERE(), __VA_ARGS__); } while(0)
 #else
-#define _c4err_(fmt, ...) this->_err("ERROR: " fmt, __VA_ARGS__)
-#define _c4err(fmt) this->_err("ERROR: {}", fmt)
+#define _c4err(...)   \
+    this->_err(RYML_LOC_HERE(), __VA_ARGS__)
 #endif
 
 
@@ -32759,25 +35853,25 @@ namespace { // NOLINT
 
 C4_HOT C4_ALWAYS_INLINE bool _is_blck_token(csubstr s) noexcept
 {
-    RYML_ASSERT(s.len > 0);
-    RYML_ASSERT(s.str[0] == '-' || s.str[0] == ':' || s.str[0] == '?');
+    _RYML_ASSERT_BASIC(s.len > 0);
+    _RYML_ASSERT_BASIC(s.str[0] == '-' || s.str[0] == ':' || s.str[0] == '?');
     return ((s.len == 1) || ((s.str[1] == ' ') _RYML_WITH_TAB_TOKENS( || (s.str[1] == '\t'))));
 }
 
 inline bool _is_doc_begin_token(csubstr s)
 {
-    RYML_ASSERT(s.begins_with('-'));
-    RYML_ASSERT(!s.ends_with("\n"));
-    RYML_ASSERT(!s.ends_with("\r"));
+    _RYML_ASSERT_BASIC(s.begins_with('-'));
+    _RYML_ASSERT_BASIC(!s.ends_with("\n"));
+    _RYML_ASSERT_BASIC(!s.ends_with("\r"));
     return (s.len >= 3 && s.str[1] == '-' && s.str[2] == '-')
         && (s.len == 3 || (s.str[3] == ' ' _RYML_WITH_TAB_TOKENS(|| s.str[3] == '\t')));
 }
 
 inline bool _is_doc_end_token(csubstr s)
 {
-    RYML_ASSERT(s.begins_with('.'));
-    RYML_ASSERT(!s.ends_with("\n"));
-    RYML_ASSERT(!s.ends_with("\r"));
+    _RYML_ASSERT_BASIC(s.begins_with('.'));
+    _RYML_ASSERT_BASIC(!s.ends_with("\n"));
+    _RYML_ASSERT_BASIC(!s.ends_with("\r"));
     return (s.len >= 3 && s.str[1] == '.' && s.str[2] == '.')
         && (s.len == 3 || (s.str[3] == ' ' _RYML_WITH_TAB_TOKENS(|| s.str[3] == '\t')));
 }
@@ -32823,7 +35917,7 @@ inline bool _is_doc_token(csubstr s) noexcept
 
 inline size_t _is_special_json_scalar(csubstr s)
 {
-    RYML_ASSERT(s.len);
+    _RYML_ASSERT_BASIC(s.len);
     switch(s.str[0])
     {
     case 'f':
@@ -32870,7 +35964,7 @@ inline substr from_next_line(substr rem)
 
 inline size_t _count_following_newlines(csubstr r, size_t *C4_RESTRICT i)
 {
-    RYML_ASSERT(r[*i] == '\n');
+    _RYML_ASSERT_BASIC(r[*i] == '\n');
     size_t numnl_following = 0;
     ++(*i);
     for( ; *i < r.len; ++(*i))
@@ -32890,7 +35984,7 @@ inline size_t _count_following_newlines(csubstr r, size_t *C4_RESTRICT i)
  * @return the number of empty lines after the initial position */
 inline size_t _count_following_newlines(csubstr r, size_t *C4_RESTRICT i, size_t indentation)
 {
-    RYML_ASSERT(r[*i] == '\n');
+    _RYML_ASSERT_BASIC(r[*i] == '\n');
     size_t numnl_following = 0;
     ++(*i);
     if(indentation == 0)
@@ -32919,7 +36013,7 @@ inline size_t _count_following_newlines(csubstr r, size_t *C4_RESTRICT i, size_t
                 {
                     if(r.str[*i] != ' ' && r.str[*i] != '\r')
                         break;
-                    RYML_ASSERT(*i < stop);
+                    _RYML_ASSERT_BASIC(*i < stop);
                 }
                 C4_UNUSED(stop);
             }
@@ -32964,7 +36058,7 @@ ParseEngine<EventHandler>::ParseEngine(EventHandler *evt_handler, ParserOptions 
     , m_newline_offsets_capacity(0)
     , m_newline_offsets_buf()
 {
-    RYML_CHECK(evt_handler);
+    _RYML_CHECK_BASIC(evt_handler);
 }
 
 template<class EventHandler>
@@ -33007,7 +36101,7 @@ ParseEngine<EventHandler>::ParseEngine(ParseEngine const& that)
     if(that.m_newline_offsets_capacity)
     {
         _resize_locations(that.m_newline_offsets_capacity);
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity == that.m_newline_offsets_capacity);
+        _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity == that.m_newline_offsets_capacity);
         memcpy(m_newline_offsets, that.m_newline_offsets, that.m_newline_offsets_size * sizeof(size_t));
         m_newline_offsets_size = that.m_newline_offsets_size;
     }
@@ -33053,8 +36147,8 @@ ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine cons
         m_encoding = that.m_encoding;
         if(that.m_newline_offsets_capacity > m_newline_offsets_capacity)
             _resize_locations(that.m_newline_offsets_capacity);
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_capacity);
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_size);
+        _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_capacity);
+        _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_size);
         memcpy(m_newline_offsets, that.m_newline_offsets, that.m_newline_offsets_size * sizeof(size_t));
         m_newline_offsets_size = that.m_newline_offsets_size;
         m_newline_offsets_buf = that.m_newline_offsets_buf;
@@ -33105,7 +36199,9 @@ void ParseEngine<EventHandler>::_reset()
     m_doc_empty = true;
     m_was_inside_qmrk = false;
     m_prev_colon = npos;
+    m_bom_len = 0;
     m_encoding = NOBOM;
+    m_bom_line = 0;
     if(m_options.locations())
     {
         _prepare_locations();
@@ -33141,26 +36237,27 @@ void ParseEngine<EventHandler>::_s_relocate_arena(void* data, csubstr prev_arena
 
 //-----------------------------------------------------------------------------
 
+#ifdef RYML_DBG
 template<class EventHandler>
 template<class DumpFn>
-void ParseEngine<EventHandler>::_fmt_msg(DumpFn &&dumpfn) const
+C4_NO_INLINE void ParseEngine<EventHandler>::_fmt_msg(DumpFn &&dumpfn) const
 {
     auto const *const C4_RESTRICT st = m_evt_handler->m_curr;
     auto const& lc = st->line_contents;
-    csubstr contents = lc.stripped;
+    csubstr contents = lc.full.first(lc.num_cols);
     if(contents.len)
     {
         // print the yaml src line
         size_t offs = 3u + to_chars(substr{}, st->pos.line) + to_chars(substr{}, st->pos.col);
         if(m_file.len)
         {
-            detail::_dump(std::forward<DumpFn>(dumpfn), "{}:", m_file);
+            _dbg_dump(std::forward<DumpFn>(dumpfn), "{}:", m_file);
             offs += m_file.len + 1;
         }
-        detail::_dump(std::forward<DumpFn>(dumpfn), "{}:{}: ", st->pos.line, st->pos.col);
+        _dbg_dump(std::forward<DumpFn>(dumpfn), "{}:{}: ", st->pos.line, st->pos.col);
         csubstr maybe_full_content = (contents.len < 80u ? contents : contents.first(80u));
         csubstr maybe_ellipsis = (contents.len < 80u ? csubstr{} : csubstr("..."));
-        detail::_dump(std::forward<DumpFn>(dumpfn), "{}{}  (size={})\n", maybe_full_content, maybe_ellipsis, contents.len);
+        _dbg_dump(std::forward<DumpFn>(dumpfn), "{}{}  (size={})\n", maybe_full_content, maybe_ellipsis, contents.len);
         // highlight the remaining portion of the previous line
         size_t firstcol = (size_t)(lc.rem.begin() - lc.full.begin());
         size_t lastcol = firstcol + lc.rem.len;
@@ -33169,38 +36266,54 @@ void ParseEngine<EventHandler>::_fmt_msg(DumpFn &&dumpfn) const
         std::forward<DumpFn>(dumpfn)("^");
         for(size_t i = 1, e = (lc.rem.len < 80u ? lc.rem.len : 80u); i < e; ++i)
             std::forward<DumpFn>(dumpfn)("~");
-        detail::_dump(std::forward<DumpFn>(dumpfn), "{}  (cols {}-{})\n", maybe_ellipsis, firstcol+1, lastcol+1);
+        _dbg_dump(std::forward<DumpFn>(dumpfn), "{}  (cols {}-{})\n", maybe_ellipsis, firstcol+1, lastcol+1);
     }
     else
     {
         std::forward<DumpFn>(dumpfn)("\n");
     }
-
-#ifdef RYML_DBG
     // next line: print the state flags
     {
         char flagbuf_[128];
-        detail::_dump(std::forward<DumpFn>(dumpfn), "top state: {}\n", detail::_parser_flags_to_str(flagbuf_, m_evt_handler->m_curr->flags));
+        _dbg_dump(std::forward<DumpFn>(dumpfn), "top state: {}\n", detail::_parser_flags_to_str(flagbuf_, m_evt_handler->m_curr->flags));
     }
-#endif
 }
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_print_state_stack(substr buf) const
+{
+    if(_dbg_enabled())
+    {
+        for(typename EventHandler::state const& s : m_evt_handler->m_stack)
+            _dbg_printf("state[{}]: ind={} node={} flags={}\n", s.level, s.indref, s.node_id, detail::_parser_flags_to_str(buf, s.flags));
+    }
+}
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_print_state_stack() const
+{
+    char buf[128];
+    _print_state_stack(buf);
+}
+#endif
 
 
 //-----------------------------------------------------------------------------
 
 template<class EventHandler>
 template<class ...Args>
-void ParseEngine<EventHandler>::_err(csubstr fmt, Args const& C4_RESTRICT ...args) const
+C4_NORETURN C4_NO_INLINE void ParseEngine<EventHandler>::_err(Location const& cpploc, Location const& ymlloc, const char* fmt, Args const& ...args) const
 {
-    char errmsg[RYML_ERRMSG_SIZE];
-    detail::_SubstrWriter writer(errmsg);
-    auto dumpfn = [&writer](csubstr s){ writer.append(s); };
-    detail::_dump(dumpfn, fmt, args...);
-    writer.append('\n');
-    _fmt_msg(dumpfn);
-    size_t len = writer.pos < RYML_ERRMSG_SIZE ? writer.pos : RYML_ERRMSG_SIZE;
     m_evt_handler->cancel_parse();
-    m_evt_handler->m_stack.m_callbacks.m_error(errmsg, len, m_evt_handler->m_curr->pos, m_evt_handler->m_stack.m_callbacks.m_user_data);
+    err_parse(m_evt_handler->m_stack.m_callbacks, ErrorDataParse{cpploc, ymlloc}, fmt, args...);
+}
+
+template<class EventHandler>
+template<class ...Args>
+C4_NORETURN C4_NO_INLINE void ParseEngine<EventHandler>::_err(Location const& cpploc, const char *fmt, Args const& ...args) const
+{
+    m_evt_handler->cancel_parse();
+    err_parse(m_evt_handler->m_stack.m_callbacks, ErrorDataParse{cpploc, m_evt_handler->m_curr->pos}, fmt, args...);
 }
 
 
@@ -33208,14 +36321,13 @@ void ParseEngine<EventHandler>::_err(csubstr fmt, Args const& C4_RESTRICT ...arg
 #ifdef RYML_DBG
 template<class EventHandler>
 template<class ...Args>
-void ParseEngine<EventHandler>::_dbg(csubstr fmt, Args const& C4_RESTRICT ...args) const
+void ParseEngine<EventHandler>::_dbg(csubstr fmt, Args const& ...args) const
 {
     if(_dbg_enabled())
     {
-        auto dumpfn = [](csubstr s){ if(s.str) fwrite(s.str, 1, s.len, stdout); };
-        detail::_dump(dumpfn, fmt, args...);
-        dumpfn("\n");
-        _fmt_msg(dumpfn);
+        _dbg_printf(fmt, args...);
+        _dbg_dumper("\n");
+        _fmt_msg(_dbg_dumper);
     }
 }
 #endif
@@ -33292,7 +36404,7 @@ template<class EventHandler>
 template<size_t N>
 void ParseEngine<EventHandler>::_skipchars(const char (&chars)[N])
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.begins_with_any(chars));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.begins_with_any(chars));
     size_t pos = m_evt_handler->m_curr->line_contents.rem.first_not_of(chars);
     if(pos == npos)
         pos = m_evt_handler->m_curr->line_contents.rem.len; // maybe the line is just whitespace
@@ -33303,21 +36415,21 @@ void ParseEngine<EventHandler>::_skipchars(const char (&chars)[N])
 template<class EventHandler>
 void ParseEngine<EventHandler>::_skip_comment()
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.begins_with('#'));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.is_sub(m_evt_handler->m_curr->line_contents.full));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.begins_with('#'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.is_sub(m_evt_handler->m_curr->line_contents.full));
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
-    csubstr full = m_evt_handler->m_curr->line_contents.full;
+    csubstr line = m_evt_handler->m_curr->line_contents.full;
     // raise an error if the comment is not preceded by whitespace
-    if(!full.begins_with('#'))
+    if(!line.begins_with('#'))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.str > full.str);
-        const char c = full[(size_t)(rem.str - full.str - 1)];
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.str > line.str);
+        const char c = line[(size_t)(rem.str - line.str - 1)];
         if(C4_UNLIKELY(c != ' ' && c != '\t'))
-            _RYML_CB_ERR(m_evt_handler->m_stack.m_callbacks, "comment not preceded by whitespace");
+            _c4err("comment not preceded by whitespace");
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.str == full.str);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.str == line.str);
     }
     _c4dbgpf("comment was '{}'", rem);
     _line_progressed(rem.len);
@@ -33349,9 +36461,15 @@ bool ParseEngine<EventHandler>::_maybe_scan_following_colon() noexcept
         }
         if(m_evt_handler->m_curr->line_contents.rem.len && (m_evt_handler->m_curr->line_contents.rem.str[0] == ':'))
         {
-            _c4dbgp("found ':' colon next");
-            _line_progressed(1);
-            return true;
+            if(m_evt_handler->m_curr->line_contents.rem.len == 1
+               || m_evt_handler->m_curr->line_contents.rem.str[1] == ' '
+               _RYML_WITH_TAB_TOKENS(|| m_evt_handler->m_curr->line_contents.rem.str[1] == '\t')
+               )
+            {
+                _c4dbgp("found ':' colon next");
+                _line_progressed(1);
+                return true;
+            }
         }
     }
     return false;
@@ -33387,7 +36505,7 @@ template<class EventHandler>
 csubstr ParseEngine<EventHandler>::_scan_anchor()
 {
     csubstr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('&'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('&'));
     csubstr anchor = s.range(1, s.first_of(' '));
     _line_progressed(1u + anchor.len);
     _maybe_skipchars(' ');
@@ -33398,7 +36516,7 @@ template<class EventHandler>
 csubstr ParseEngine<EventHandler>::_scan_ref_seq()
 {
     csubstr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('*'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('*'));
     csubstr ref = s.first(s.first_of(",] :"));
     _line_progressed(ref.len);
     return ref;
@@ -33408,7 +36526,7 @@ template<class EventHandler>
 csubstr ParseEngine<EventHandler>::_scan_ref_map()
 {
     csubstr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('*'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('*'));
     csubstr ref = s.first(s.first_of(",} "));
     _line_progressed(ref.len);
     return ref;
@@ -33418,12 +36536,12 @@ template<class EventHandler>
 csubstr ParseEngine<EventHandler>::_scan_tag()
 {
     csubstr rem = m_evt_handler->m_curr->line_contents.rem.triml(' ');
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.begins_with('!'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.begins_with('!'));
     csubstr t;
     if(rem.begins_with("!!"))
     {
         _c4dbgp("begins with '!!'");
-        if(has_any(FLOW))
+        if(has_any(RFLOW))
             t = rem.left_of(rem.first_of(" ,"));
         else
             t = rem.left_of(rem.first_of(' '));
@@ -33442,9 +36560,9 @@ csubstr ParseEngine<EventHandler>::_scan_tag()
     #endif
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.begins_with('!'));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.begins_with('!'));
         _c4dbgp("begins with '!'");
-        if(has_any(FLOW))
+        if(has_any(RFLOW))
             t = rem.left_of(rem.first_of(" ,"));
         else
             t = rem.left_of(rem.first_of(' '));
@@ -33460,7 +36578,7 @@ csubstr ParseEngine<EventHandler>::_scan_tag()
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.empty());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.empty());
 
     // it's not a scalar if it starts with any of these characters:
     switch(s.str[0])
@@ -33476,6 +36594,7 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
     case '|':
     case '>':
     case '#':
+    case ',':
         _c4dbgpf("not a scalar: found non-scalar token '{}'", _c4prc(s.str[0]));
         return false;
     // '-' and ':' are illegal at the beginning if not followed by a scalar character
@@ -33485,21 +36604,22 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
         {
             switch(s.str[1])
             {
-            case '\n':
-            case '\r':
-            case '{':
-            case '[':
-            //_RYML_WITHOUT_TAB_TOKENS(case '\t'):
-                _c4err_("invalid token \":{}\"", _c4prc(s.str[1]));
-                break;
             case ' ':
+            case '\n':
             case '}':
             case ']':
+            case '\r':
+            _RYML_WITH_TAB_TOKENS(case '\t':)
                 if(s.str[0] == ':')
                 {
                     _c4dbgpf("not a scalar: found non-scalar token '{}{}'", s.str[0], s.str[1]);
                     return false;
                 }
+                break;
+            case '{':
+            case '[':
+            //_RYML_WITHOUT_TAB_TOKENS(case '\t'):
+                _c4err("invalid token \":{}\"", _c4prc(s.str[1]));
                 break;
             default:
                 break;
@@ -33525,7 +36645,7 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
             case '}':
             case '[':
             case ']':
-                _c4err_("invalid token \"?{}\"", _c4prc(s.str[1]));
+                _c4err("invalid token \"?{}\"", _c4prc(s.str[1]));
                 break;
             default:
                 break;
@@ -33547,122 +36667,120 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_seq_flow(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ|RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ|RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
 
-    substr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with('\n'));
+    substr s = m_buf.sub(m_evt_handler->m_curr->pos.offset);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with('\n'));
 
-    if(!s.len)
-        return false;
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with(m_evt_handler->m_curr->line_contents.rem));
 
-    if(!_is_valid_start_scalar_plain_flow(s))
+    if(!s.len || !_is_valid_start_scalar_plain_flow(s))
         return false;
 
     _c4dbgp("scanning seqflow scalar...");
 
-    const size_t start_offset = m_evt_handler->m_curr->pos.offset;
     bool needs_filter = false;
-    while(true)
+    size_t col = 0; // zero-based column
+    size_t offs = 0;
+    size_t offsp1;
+    for( ; offs < s.len; ++offs, ++col)
     {
-        _c4dbgpf("scanning scalar: curr line=[{}]~~~{}~~~", s.len, s);
-        for(size_t i = 0; i < s.len; ++i)
+        const char c = s.str[offs];
+        switch(c)
         {
-            const char c = s.str[i];
-            switch(c)
+        case ',':
+        case ']':
+            _c4dbgpf("found terminating character at {}: '{}'", offs, c);
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, offs > 0);
+            goto ended_scalar;
+        case '\n':
+            _c4dbgpf("found newline. offs={} col={}", offs, col);
+            offsp1 = offs + 1;
+            if(s.len > offsp1)
             {
-            case ',':
-                _c4dbgpf("found terminating character at {}: '{}'", i, c);
-                _line_progressed(i);
-                if(m_evt_handler->m_curr->pos.offset + i > start_offset)
+                csubstr next_line = s.sub(offsp1).triml(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+                if(next_line.begins_with_any(",]#")) // any of the characters we're interested in
                 {
+                    _c4dbgpf("found terminating character beginning next line: '{}'", next_line.str[0]);
+                    goto ended_scalar;
+                }
+            }
+            col = (size_t)-1; // so that col is 0 in the next loop iteration
+            needs_filter = true;
+            _line_progressed(m_evt_handler->m_curr->line_contents.rem.len);
+            _line_ended();
+            _scan_line();
+            break;
+        case '\r':
+            --col; // don't count \r when calling _line_progressed()
+            needs_filter = true;
+            break;
+        case ':':
+            _c4dbgp("found suspicious ':'");
+            offsp1 = offs + 1;
+            if(s.len > offsp1)
+            {
+                char next = s.str[offsp1];
+                _c4dbgpf("next char is '{}'", _c4prc(next));
+                if(next == '\r')
+                {
+                    csubstr after = s.sub(offsp1).triml('\r');
+                    if(after.len)
+                    {
+                        next = after.str[0];
+                        _c4dbgpf("skip \\r to '{}'", _c4prc(next));
+                    }
+                }
+                // no else here.
+                if(next == ' ' _RYML_WITH_TAB_TOKENS(|| next == '\t') || next == ',' || next == '\n' || next == ']')
+                {
+                    _c4dbgp("map starting!");
                     goto ended_scalar;
                 }
                 else
                 {
-                    _c4dbgp("at the beginning. no scalar here.");
-                    return false;
+                    _c4dbgp("':' nothing to see here");
                 }
-                break;
-            case ']':
-                _c4dbgpf("found terminating character at {}: '{}'", i, c);
-                _line_progressed(i);
-                goto ended_scalar;
-                break;
-            case '#':
+            }
+            else
+            {
+                _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.len == offsp1);
+                _line_progressed(col);
+                _c4err("missing termination: '{}'", c); // noreturn
+            }
+            break;
+        case '#':
+            {
                 _c4dbgp("found suspicious '#'");
-                if(!i || (s.str[i-1] == ' ' _RYML_WITH_TAB_TOKENS(|| s.str[i-1] == '\t')))
+                _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, offs > 0);
+                char prev = s.str[offs - 1];
+                if(prev == ' ' _RYML_WITH_TAB_TOKENS(|| prev == '\t'))
                 {
-                    _c4dbgpf("found terminating character at {}: '{}'", i, c);
-                    _line_progressed(i);
+                    _c4dbgpf("found terminating character at {}: '{}'", offs, c);
                     goto ended_scalar;
                 }
-                break;
-            case ':':
-                _c4dbgp("found suspicious ':'");
-                if(s.len > i+1)
-                {
-                    const char next = s.str[i+1];
-                    _c4dbgpf("next char is '{}'", _c4prc(next));
-                    if(next == ' ' || next == ',' _RYML_WITH_TAB_TOKENS(|| next == '\t'))
-                    {
-                        _c4dbgp("map starting!");
-                        if(m_evt_handler->m_curr->pos.offset + i > start_offset)
-                        {
-                            _c4dbgp("scalar finished!");
-                            _line_progressed(i);
-                            goto ended_scalar;
-                        }
-                        else
-                        {
-                            _c4dbgp("at the beginning. no scalar here.");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        _c4dbgp("it's a scalar indeed.");
-                        ++i; // skip the next char
-                    }
-                }
-                else if(s.len == i+1)
-                {
-                    _c4dbgp("':' at line end. map starting!");
-                    return false;
-                }
-                break;
-            case '[':
-            case '{':
-            case '}':
-                _line_progressed(i);
-                _c4err_("invalid character: '{}'", c); // noreturn
-            default:
-                ;
             }
+            break;
+        case '[':
+        case '{':
+        case '}':
+            _line_progressed(col);
+            _c4err("invalid character: '{}'", c); // noreturn
+        default:
+            ;
         }
-        _line_progressed(s.len);
-        if(!_finished_file())
-        {
-            _c4dbgp("next line!");
-            _line_ended();
-            _scan_line();
-        }
-        else
-        {
-            _c4dbgp("file finished!");
-            goto ended_scalar;
-        }
-        s = m_evt_handler->m_curr->line_contents.rem;
-        needs_filter = true;
     }
 
 ended_scalar:
 
-    sc->scalar = m_buf.range(start_offset, m_evt_handler->m_curr->pos.offset).trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+    _line_progressed(col);
+    s = s.first(offs);
+    sc->scalar = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
     sc->needs_filter = needs_filter;
 
     _c4prscalar("scanned plain scalar", sc->scalar, /*keep_newlines*/true);
@@ -33673,14 +36791,14 @@ ended_scalar:
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_map_flow(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ) || has_any(RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RMAP|RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL|QMRK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ) || has_any(RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RMAP|RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL|QMRK));
 
     substr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
 
     if(!s.len)
         return false;
@@ -33715,14 +36833,14 @@ bool ParseEngine<EventHandler>::_scan_scalar_plain_map_flow(ScannedScalar *C4_RE
             case '{':
             case '[':
                 _line_progressed(i);
-                _c4err_("invalid character: '{}'", c); // noreturn
+                _c4err("invalid character: '{}'", c); // noreturn
                 break;
             case ']':
                 _line_progressed(i);
                 if(has_any(RSEQIMAP))
                     goto ended_scalar;
                 else
-                    _c4err_("invalid character: '{}'", c); // noreturn
+                    _c4err("invalid character: '{}'", c); // noreturn
                 break;
             case '#':
                 if(!i || s.str[i-1] == ' ' _RYML_WITH_TAB_TOKENS(|| s.str[i-1] == '\t'))
@@ -33766,13 +36884,13 @@ ended_scalar:
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_seq_json(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(FLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RFLOW));
 
     substr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
 
     if(!s.len)
         return false;
@@ -33842,14 +36960,14 @@ ended_scalar:
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_map_json(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL));
 
     substr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
 
     if(!s.len)
         return false;
@@ -33910,26 +37028,26 @@ ended_scalar:
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_is_doc_begin(csubstr s)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s[0] == '-');
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s[0] == '-');
     return (m_evt_handler->m_curr->line_contents.indentation == 0u && _at_line_begin() && _is_doc_begin_token(s));
 }
 
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_is_doc_end(csubstr s)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s[0] == '.');
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s[0] == '.');
     return (m_evt_handler->m_curr->line_contents.indentation == 0u && _at_line_begin() && _is_doc_end_token(s));
 }
 
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_blck(ScannedScalar *C4_RESTRICT sc, size_t indentation)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(BLCK|RUNK|USTY));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RBLCK|RUNK|USTY));
 
     substr s = m_evt_handler->m_curr->line_contents.rem;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !s.begins_with(' '));
 
     if(!s.len)
         return false;
@@ -34093,30 +37211,30 @@ ended_scalar:
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_seq_blck(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
     return _scan_scalar_plain_blck(sc, m_evt_handler->m_curr->indref + 1u);
 }
 
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_map_blck(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL|QMRK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RVAL|QMRK));
     return _scan_scalar_plain_blck(sc, m_evt_handler->m_curr->indref + 1u);
 }
 
 template<class EventHandler>
 bool ParseEngine<EventHandler>::_scan_scalar_plain_unk(ScannedScalar *C4_RESTRICT sc)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  has_any(RUNK|USTY));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  has_any(RUNK|USTY));
     return _scan_scalar_plain_blck(sc, m_evt_handler->m_curr->indref);
 }
 
@@ -34159,16 +37277,22 @@ void ParseEngine<EventHandler>::_scan_line()
     if(C4_LIKELY(m_evt_handler->m_curr->pos.offset < m_buf.len))
         m_evt_handler->m_curr->line_contents.reset_with_next_line(m_buf, m_evt_handler->m_curr->pos.offset);
     else
-        m_evt_handler->m_curr->line_contents.reset(m_buf.last(0), m_buf.last(0));
+        m_evt_handler->m_curr->line_contents.reset_with_next_line(m_buf.last(0), 0);
 }
 
 template<class EventHandler>
 void ParseEngine<EventHandler>::_line_progressed(size_t ahead)
 {
-    _c4dbgpf("line[{}] ({} cols) progressed by {}:  col {}-->{}   offset {}-->{}", m_evt_handler->m_curr->pos.line, m_evt_handler->m_curr->line_contents.full.len, ahead, m_evt_handler->m_curr->pos.col, m_evt_handler->m_curr->pos.col+ahead, m_evt_handler->m_curr->pos.offset, m_evt_handler->m_curr->pos.offset+ahead);
+    _c4dbgpf("line[{}] ({} cols) progressed by {}:  col {}-->{}   offset {}-->{}",
+             m_evt_handler->m_curr->pos.line,
+             m_evt_handler->m_curr->line_contents.full.len,
+             ahead, m_evt_handler->m_curr->pos.col,
+             m_evt_handler->m_curr->pos.col+ahead,
+             m_evt_handler->m_curr->pos.offset,
+             m_evt_handler->m_curr->pos.offset+ahead);
     m_evt_handler->m_curr->pos.offset += ahead;
     m_evt_handler->m_curr->pos.col += ahead;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col <= m_evt_handler->m_curr->line_contents.stripped.len+1);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col <= m_evt_handler->m_curr->line_contents.num_cols+1);
     m_evt_handler->m_curr->line_contents.rem = m_evt_handler->m_curr->line_contents.rem.sub(ahead);
 }
 
@@ -34178,10 +37302,10 @@ void ParseEngine<EventHandler>::_line_ended()
     _c4dbgpf("line[{}] ({} cols) ended! offset {}-->{} / col {}-->{}",
              m_evt_handler->m_curr->pos.line,
              m_evt_handler->m_curr->line_contents.full.len,
-             m_evt_handler->m_curr->pos.offset, m_evt_handler->m_curr->pos.offset + m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.stripped.len,
+             m_evt_handler->m_curr->pos.offset, m_evt_handler->m_curr->pos.offset + m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.num_cols,
              m_evt_handler->m_curr->pos.col, 1);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col == m_evt_handler->m_curr->line_contents.stripped.len + 1);
-    m_evt_handler->m_curr->pos.offset += m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.stripped.len;
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col == m_evt_handler->m_curr->line_contents.num_cols + 1);
+    m_evt_handler->m_curr->pos.offset += m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.num_cols;
     ++m_evt_handler->m_curr->pos.line;
     m_evt_handler->m_curr->pos.col = 1;
 }
@@ -34189,16 +37313,16 @@ void ParseEngine<EventHandler>::_line_ended()
 template<class EventHandler>
 void ParseEngine<EventHandler>::_line_ended_undo()
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col == 1u);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.line > 0u);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.offset >= m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.stripped.len);
-    const size_t delta = m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.stripped.len;
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.col == 1u);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.line > 0u);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.offset >= m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.num_cols);
+    const size_t delta = m_evt_handler->m_curr->line_contents.full.len - m_evt_handler->m_curr->line_contents.num_cols;
     _c4dbgpf("line[{}] undo ended! line {}-->{}, offset {}-->{}", m_evt_handler->m_curr->pos.line, m_evt_handler->m_curr->pos.line, m_evt_handler->m_curr->pos.line - 1, m_evt_handler->m_curr->pos.offset, m_evt_handler->m_curr->pos.offset - delta);
     m_evt_handler->m_curr->pos.offset -= delta;
     --m_evt_handler->m_curr->pos.line;
-    m_evt_handler->m_curr->pos.col = m_evt_handler->m_curr->line_contents.stripped.len + 1u;
+    m_evt_handler->m_curr->pos.col = m_evt_handler->m_curr->line_contents.num_cols + 1u;
     // don't forget to undo also the changes to the remainder of the line
-    //_RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.offset >= m_buf.len || m_buf[m_evt_handler->m_curr->pos.offset] == '\n' || m_buf[m_evt_handler->m_curr->pos.offset] == '\r');
+    //_RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.offset >= m_buf.len || m_buf[m_evt_handler->m_curr->pos.offset] == '\n' || m_buf[m_evt_handler->m_curr->pos.offset] == '\r');
     m_evt_handler->m_curr->line_contents.rem = m_buf.sub(m_evt_handler->m_curr->pos.offset, 0);
 }
 
@@ -34214,13 +37338,48 @@ void ParseEngine<EventHandler>::_set_indentation(size_t indentation)
 template<class EventHandler>
 void ParseEngine<EventHandler>::_save_indentation()
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.begin() >= m_evt_handler->m_curr->line_contents.full.begin());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.rem.is_sub(m_evt_handler->m_curr->line_contents.full));
     m_evt_handler->m_curr->indref = m_evt_handler->m_curr->line_contents.current_col();
     _c4dbgpf("state[{}]: saving indentation: {}", m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 }
 
 
 //-----------------------------------------------------------------------------
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_flow_container_was_a_key(size_t orig_indent)
+{
+    if(_maybe_scan_following_colon())
+    {
+        _c4dbgpf("flow container is followed by colon! orig_indent={}", orig_indent);
+        m_evt_handler->actually_val_is_first_key_of_new_map_block();
+        addrem_flags(RMAP|RVAL|RBLCK, RKCL|RUNK);
+        _set_indentation(orig_indent);
+        _maybe_skip_whitespace_tokens();
+    }
+}
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_end_map_flow()
+{
+    bool multiline = m_options.detect_flow_ml() && m_evt_handler->m_parent->pos.line < m_evt_handler->m_curr->pos.line;
+    size_t orig_indent = m_evt_handler->m_curr->indref;
+    _c4dbgpf("mapflow: end, multiline={}", multiline);
+    m_evt_handler->end_map_flow(multiline);
+    if(has_none(RFLOW) && (has_any(RUNK|RSEQ) || m_was_inside_qmrk))
+        _flow_container_was_a_key(orig_indent);
+}
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_end_seq_flow()
+{
+    bool multiline = m_options.detect_flow_ml() && m_evt_handler->m_parent->pos.line < m_evt_handler->m_curr->pos.line;
+    size_t orig_indent = m_evt_handler->m_curr->indref;
+    _c4dbgpf("seqflow: end, multiline={}", multiline);
+    m_evt_handler->end_seq_flow(multiline);
+    if(has_none(RFLOW) && (has_any(RUNK|RSEQ) || m_was_inside_qmrk))
+        _flow_container_was_a_key(orig_indent);
+}
 
 template<class EventHandler>
 void ParseEngine<EventHandler>::_end_map_blck()
@@ -34240,7 +37399,7 @@ void ParseEngine<EventHandler>::_end_map_blck()
         _handle_annotations_before_blck_val_scalar();
         m_evt_handler->set_val_scalar_plain_empty();
     }
-    m_evt_handler->end_map();
+    m_evt_handler->end_map_block();
 }
 
 template<class EventHandler>
@@ -34252,22 +37411,22 @@ void ParseEngine<EventHandler>::_end_seq_blck()
         _handle_annotations_before_blck_val_scalar();
         m_evt_handler->set_val_scalar_plain_empty();
     }
-    m_evt_handler->end_seq();
+    m_evt_handler->end_seq_block();
 }
 
 template<class EventHandler>
 void ParseEngine<EventHandler>::_end2_map()
 {
     _c4dbgp("map: end");
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
-    if(has_any(BLCK))
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RMAP));
+    if(has_any(RBLCK))
     {
         _end_map_blck();
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(FLOW));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(USTY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RFLOW));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(USTY));
         m_evt_handler->_pop();
     }
 }
@@ -34276,15 +37435,15 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_end2_seq()
 {
     _c4dbgp("seq: end");
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
-    if(has_any(BLCK))
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RSEQ));
+    if(has_any(RBLCK))
     {
         _end_seq_blck();
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(FLOW));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(USTY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RFLOW));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(USTY));
         m_evt_handler->_pop();
     }
 }
@@ -34292,6 +37451,7 @@ void ParseEngine<EventHandler>::_end2_seq()
 template<class EventHandler>
 void ParseEngine<EventHandler>::_begin2_doc()
 {
+    _c4dbgp("begin_doc");
     m_doc_empty = true;
     add_flags(RDOC);
     m_evt_handler->begin_doc();
@@ -34301,6 +37461,7 @@ void ParseEngine<EventHandler>::_begin2_doc()
 template<class EventHandler>
 void ParseEngine<EventHandler>::_begin2_doc_expl()
 {
+    _c4dbgp("begin_doc_expl");
     m_doc_empty = true;
     add_flags(RDOC);
     m_evt_handler->begin_doc_expl();
@@ -34311,7 +37472,7 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_end2_doc()
 {
     _c4dbgp("doc: end");
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RDOC));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RDOC));
     if(m_doc_empty || (m_pending_tags.num_entries || m_pending_anchors.num_entries))
     {
         _c4dbgp("doc was empty; add empty val");
@@ -34319,6 +37480,7 @@ void ParseEngine<EventHandler>::_end2_doc()
         m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc();
+    m_bom_len = 0;
 }
 
 template<class EventHandler>
@@ -34332,6 +37494,7 @@ void ParseEngine<EventHandler>::_end2_doc_expl()
         m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc_expl();
+    m_bom_len = 0;
 }
 
 template<class EventHandler>
@@ -34364,7 +37527,7 @@ void ParseEngine<EventHandler>::_maybe_end_doc()
 template<class EventHandler>
 void ParseEngine<EventHandler>::_end_doc_suddenly__pop()
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
     if(m_evt_handler->m_stack[0].flags & RDOC)
     {
         _c4dbgp("root is RDOC");
@@ -34381,7 +37544,7 @@ void ParseEngine<EventHandler>::_end_doc_suddenly__pop()
     {
         _c4err("internal error");
     }
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RDOC));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RDOC));
 }
 
 template<class EventHandler>
@@ -34406,9 +37569,9 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_end_stream()
 {
     _c4dbgpf("end_stream, level={} node_id={}", m_evt_handler->m_curr->level, m_evt_handler->m_curr->node_id);
-    if(has_all(RSEQ|FLOW))
+    if(has_all(RSEQ|RFLOW))
         _c4err("missing terminating ]");
-    else if(has_all(RMAP|FLOW))
+    else if(has_all(RMAP|RFLOW))
         _c4err("missing terminating }");
     if(m_evt_handler->m_stack.size() > 1)
         _handle_indentation_pop(m_evt_handler->m_stack.begin());
@@ -34464,16 +37627,11 @@ void ParseEngine<EventHandler>::_handle_indentation_pop_from_block_seq()
     using state_type = typename EventHandler::state;
     state_type const* popto = nullptr;
     auto &stack = m_evt_handler->m_stack;
-    _RYML_CB_ASSERT(stack.m_callbacks, stack.is_contiguous()); // this search relies on the stack being contiguous
-    _RYML_CB_ASSERT(stack.m_callbacks, m_evt_handler->m_curr >= stack.begin() && m_evt_handler->m_curr < stack.end());
+    _RYML_ASSERT_BASIC_(stack.m_callbacks, stack.is_contiguous()); // this search relies on the stack being contiguous
+    _RYML_ASSERT_BASIC_(stack.m_callbacks, m_evt_handler->m_curr >= stack.begin() && m_evt_handler->m_curr < stack.end());
     const size_t ind = m_evt_handler->m_curr->line_contents.indentation;
     #ifdef RYML_DBG
-    if(_dbg_enabled())
-    {
-        char flagbuf_[128];
-        for(state_type const& s : stack)
-            _dbg_printf("state[{}]: ind={} node={} flags={}\n", s.level, s.indref, s.node_id, detail::_parser_flags_to_str(flagbuf_, s.flags));
-    }
+    _print_state_stack();
     #endif
     for(state_type const* s = m_evt_handler->m_curr-1; s >= stack.begin(); --s)
     {
@@ -34498,17 +37656,13 @@ void ParseEngine<EventHandler>::_handle_indentation_pop_from_block_map()
     // search the stack frame to jump to based on its indentation
     using state_type = typename EventHandler::state;
     auto &stack = m_evt_handler->m_stack;
-    _RYML_CB_ASSERT(stack.m_callbacks, stack.is_contiguous()); // this search relies on the stack being contiguous
-    _RYML_CB_ASSERT(stack.m_callbacks, m_evt_handler->m_curr >= stack.begin() && m_evt_handler->m_curr < stack.end());
+    _RYML_ASSERT_BASIC_(stack.m_callbacks, stack.is_contiguous()); // this search relies on the stack being contiguous
+    _RYML_ASSERT_BASIC_(stack.m_callbacks, m_evt_handler->m_curr >= stack.begin() && m_evt_handler->m_curr < stack.end());
     const size_t ind = m_evt_handler->m_curr->line_contents.indentation;
     state_type const* popto = nullptr;
     #ifdef RYML_DBG
     char flagbuf_[128];
-    if(_dbg_enabled())
-    {
-        for(state_type const& s : stack)
-            _dbg_printf("state[{}]: ind={} node={} flags={}\n", s.level, s.indref, s.node_id, detail::_parser_flags_to_str(flagbuf_, s.flags));
-    }
+    _print_state_stack(flagbuf_);
     #endif
     for(state_type const* s = m_evt_handler->m_curr-1; s > stack.begin(); --s) // never go to the stack bottom. that's the root
     {
@@ -34525,11 +37679,11 @@ void ParseEngine<EventHandler>::_handle_indentation_pop_from_block_map()
                 break;
             }
             popto = s;
-            if(has_all(RSEQ|BLCK, s))
+            if(has_all(RSEQ|RBLCK, s))
             {
                 csubstr rem = m_evt_handler->m_curr->line_contents.rem;
                 const size_t first = rem.first_not_of(' ');
-                _RYML_CB_ASSERT(stack.m_callbacks, first == ind || first == npos);
+                _RYML_ASSERT_BASIC_(stack.m_callbacks, first == ind || first == npos);
                 rem = rem.right_of(first, true);
                 _c4dbgpf("indentless? rem='{}' first={}", rem, first);
                 if(rem.begins_with('-') && _is_blck_token(rem))
@@ -34561,12 +37715,12 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
     if(s.begins_with(' '))
     {
         s = s.triml(' ');
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.sub(b).is_super(s));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begin() >= m_buf.sub(b).begin());
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf.sub(b).is_super(s));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begin() >= m_buf.sub(b).begin());
         _line_progressed((size_t)(s.begin() - m_buf.sub(b).begin()));
     }
     b = m_evt_handler->m_curr->pos.offset; // take this into account
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('\''));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('\''));
 
     // skip the opening quote
     _line_progressed(1);
@@ -34617,8 +37771,8 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
         }
         else
         {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, pos >= 0 && pos < m_buf.len);
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf[m_evt_handler->m_curr->pos.offset + pos] == '\'');
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, pos >= 0 && pos < m_buf.len);
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf[m_evt_handler->m_curr->pos.offset + pos] == '\'');
             _line_progressed(pos + 1); // progress beyond the quote
             pos = m_evt_handler->m_curr->pos.offset - b - 1; // but we stop before it
             break;
@@ -34634,9 +37788,9 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, pos > 0);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.end() >= m_buf.begin() && s.end() <= m_buf.end());
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.end() == m_buf.end() || *s.end() == '\'');
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, pos > 0);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.end() >= m_buf.begin() && s.end() <= m_buf.end());
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.end() == m_buf.end() || *s.end() == '\'');
         s = s.sub(0, pos-1);
     }
 
@@ -34659,12 +37813,12 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
     if(s.begins_with(' '))
     {
         s = s.triml(' ');
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.sub(b).is_super(s));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begin() >= m_buf.sub(b).begin());
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf.sub(b).is_super(s));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begin() >= m_buf.sub(b).begin());
         _line_progressed((size_t)(s.begin() - m_buf.sub(b).begin()));
     }
     b = m_evt_handler->m_curr->pos.offset; // take this into account
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('"'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('"'));
 
     // skip the opening quote
     _line_progressed(1);
@@ -34674,14 +37828,15 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
 
     size_t numlines = 1; // we already have one line
     size_t pos = npos; // find the pos of the matching quote
+    auto *st = m_evt_handler->m_curr; // prevent erroneous hoist of the assignment out of the loop
     while( ! _finished_file())
     {
-        const csubstr line = m_evt_handler->m_curr->line_contents.rem;
-        #if defined(__GNUC__) && __GNUC__ == 11
+        const csubstr line = st->line_contents.rem;
+        #if defined(__GNUC__) && (__GNUC__ == 11 || __GNUC__ == 8)
         C4_DONT_OPTIMIZE(line); // prevent erroneous hoist of the assignment out of the loop
         #endif
         bool line_is_blank = true;
-        _c4dbgpf("scanning double quoted scalar @ line[{}]:  line='{}'", m_evt_handler->m_curr->pos.line, line);
+        _c4dbgpf("scanning double quoted scalar @ line[{}]:  line='{}'", st->pos.line, line);
         for(size_t i = 0; i < line.len; ++i)
         {
             const char curr = line.str[i];
@@ -34715,10 +37870,10 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
         }
         else
         {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, pos >= 0 && pos < m_buf.len);
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf[m_evt_handler->m_curr->pos.offset + pos] == '"');
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, pos >= 0 && pos < m_buf.len);
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf[st->pos.offset + pos] == '"');
             _line_progressed(pos + 1); // progress beyond the quote
-            pos = m_evt_handler->m_curr->pos.offset - b - 1; // but we stop before it
+            pos = st->pos.offset - b - 1; // but we stop before it
             break;
         }
 
@@ -34732,15 +37887,15 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, pos > 0);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.end() == m_buf.end() || *s.end() == '"');
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.end() >= m_buf.begin() && s.end() <= m_buf.end());
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, pos > 0);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.end() == m_buf.end() || *s.end() == '"');
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.end() >= m_buf.begin() && s.end() <= m_buf.end());
         s = s.sub(0, pos-1);
     }
 
     _c4prscalar("scanned dquoted scalar", s, /*keep_newlines*/true);
 
-    return ScannedScalar { s, needs_filter };
+    return ScannedScalar{s, needs_filter};
 }
 
 
@@ -34749,7 +37904,7 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t indref)
 {
     _c4dbgpf("blck: indref={}", indref);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, indref != npos);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, indref != npos);
 
     // nice explanation here: http://yaml-multiline.info/
     csubstr s = m_evt_handler->m_curr->line_contents.rem;
@@ -34757,11 +37912,11 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
     if(trimmed.str > s.str)
     {
         _c4dbgp("skipping whitespace");
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, trimmed.str >= s.str);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, trimmed.str >= s.str);
         _line_progressed(static_cast<size_t>(trimmed.str - s.str));
         s = trimmed;
     }
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with('|') || s.begins_with('>'));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with('|') || s.begins_with('>'));
 
     _c4dbgpf("blck: specs=[{}]~~~{}~~~", s.len, s);
 
@@ -34771,10 +37926,10 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
     csubstr digits;
     if(s.len > 1)
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.begins_with_any("|>"));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.begins_with_any("|>"));
         csubstr t = s.sub(1);
         _c4dbgpf("blck: spec is multichar: '{}'", t);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, t.len >= 1);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, t.len >= 1);
         size_t pos = t.first_of("-+");
         _c4dbgpf("blck: spec chomp char at {}", pos);
         if(pos != npos)
@@ -34813,7 +37968,7 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
 
     // start with a zero-length block, already pointing at the right place
     substr raw_block(m_buf.data() + m_evt_handler->m_curr->pos.offset, size_t(0));// m_evt_handler->m_curr->line_contents.full.sub(0, 0);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, raw_block.begin() == m_evt_handler->m_curr->line_contents.full.begin());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, raw_block.begin() == m_evt_handler->m_curr->line_contents.full.str);
 
     // read every full line into a raw block,
     // from which newlines are to be stripped as needed.
@@ -34832,7 +37987,7 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
         #if defined(__GNUC__) && (__GNUC__ == 12 || __GNUC__ == 13)
         C4_DONT_OPTIMIZE(lc.rem);
         #endif
-        _c4dbgpf("blck: peeking at [{}]~~~{}~~~", lc.stripped.len, lc.stripped);
+        _c4dbgpf("blck: peeking at [{}]~~~{}~~~", lc.rem.trimr("\r\n").len, lc.rem.trimr("\r\n"));
         // evaluate termination conditions
         if(indentation != npos)
         {
@@ -34862,12 +38017,12 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
         }
         else
         {
-            const size_t fns = lc.stripped.first_not_of(' ');
+            const size_t fns = lc.rem.first_not_of(' ');
             _c4dbgpf("blck: indentation ref not set. firstnonws={}", fns);
             if(fns != npos) // non-empty line
             {
                 _RYML_WITH_TAB_TOKENS(
-                    if(C4_UNLIKELY(lc.stripped.begins_with('\t')))
+                    if(C4_UNLIKELY(lc.full.begins_with('\t')))
                         _c4err("parse error");
                 )
                 _c4dbgpf("blck: line not empty. indref={} indprov={} indentation={}", indref, provisional_indentation, lc.indentation);
@@ -34911,13 +38066,13 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
             }
             else // empty line
             {
-                _c4dbgpf("blck: line empty or {} spaces. line_indentation={} prov_indentation={}", lc.stripped.len, lc.indentation, provisional_indentation);
+                _c4dbgpf("blck: line empty or {} spaces. line_indentation={} prov_indentation={}", lc.rem.len, lc.indentation, provisional_indentation);
                 if(provisional_indentation != npos)
                 {
-                    if(lc.stripped.len >= provisional_indentation)
+                    if(lc.rem.len >= provisional_indentation)
                     {
-                        _c4dbgpf("blck: increase provisional_ref {} -> {}", provisional_indentation, lc.stripped.len);
-                        provisional_indentation = lc.stripped.len;
+                        _c4dbgpf("blck: increase provisional_ref {} -> {}", provisional_indentation, lc.rem.len);
+                        provisional_indentation = lc.rem.len;
                     }
                     #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
                     else if(lc.indentation >= provisional_indentation && lc.indentation != npos)
@@ -34933,7 +38088,7 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
                     _c4dbgpf("blck: initialize provisional_ref={}", provisional_indentation);
                     if(provisional_indentation == npos)
                     {
-                        provisional_indentation = lc.stripped.len ? lc.stripped.len : has_any(RSEQ|RVAL);
+                        provisional_indentation = lc.rem.len ? lc.rem.len : has_any(RSEQ|RVAL);
                         _c4dbgpf("blck: initialize provisional_ref={}", provisional_indentation);
                     }
                     if(provisional_indentation < indref)
@@ -34952,7 +38107,7 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
         _line_ended();
         ++num_lines;
     }
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.line == (first + num_lines) || (raw_block.len == 0));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->pos.line == (first + num_lines) || (raw_block.len == 0));
     C4_UNUSED(num_lines);
     C4_UNUSED(first);
 
@@ -34990,7 +38145,7 @@ template<class FilterProcessor>
 bool ParseEngine<EventHandler>::_filter_ws_handle_to_first_non_space(FilterProcessor &proc)
 {
     _c4dbgfws("found whitespace '{}'", _c4prc(proc.curr()));
-    _RYML_CB_ASSERT(this->callbacks(), proc.curr() == ' ' || proc.curr() == '\t');
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.curr() == ' ' || proc.curr() == '\t');
 
     const size_t first_pos = proc.rpos > 0 ? proc.src.first_not_of(" \t", proc.rpos) : proc.src.first_not_of(' ', proc.rpos);
     if(first_pos != npos)
@@ -35054,7 +38209,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_nl_plain(FilterProcessor &C4_RESTRICT proc, size_t indentation)
 {
-    _RYML_CB_ASSERT(this->callbacks(), proc.curr() == '\n');
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.curr() == '\n');
 
     _c4dbgfps("found newline. sofar=[{}]~~~{}~~~", proc.wpos, proc.sofar());
     size_t ii = proc.rpos;
@@ -35085,7 +38240,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 auto ParseEngine<EventHandler>::_filter_plain(FilterProcessor &C4_RESTRICT proc, size_t indentation) -> decltype(proc.result())
 {
-    _RYML_CB_ASSERT(this->callbacks(), indentation != npos);
+    _RYML_ASSERT_BASIC_(this->callbacks(), indentation != npos);
     _c4dbgfps("before=[{}]~~~{}~~~", proc.src.len, proc.src);
 
     while(proc.has_more_chars())
@@ -35152,7 +38307,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_nl_squoted(FilterProcessor &C4_RESTRICT proc)
 {
-    _RYML_CB_ASSERT(this->callbacks(), proc.curr() == '\n');
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.curr() == '\n');
 
     _c4dbgfsq("found newline. sofar=[{}]~~~{}~~~", proc.wpos, proc.sofar());
     size_t ii = proc.rpos;
@@ -35263,7 +38418,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_nl_dquoted(FilterProcessor &C4_RESTRICT proc)
 {
-    _RYML_CB_ASSERT(this->callbacks(), proc.curr() == '\n');
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.curr() == '\n');
 
     _c4dbgfdq("found newline. sofar=[{}]~~~{}~~~", proc.wpos, proc.sofar());
     size_t ii = proc.rpos;
@@ -35358,48 +38513,48 @@ void ParseEngine<EventHandler>::_filter_dquoted_backslash(FilterProcessor &C4_RE
     else if(next == 'x') // 2-digit Unicode escape (\xXX), code point 0x00–0xFF
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 2u >= proc.src.len))
-            _c4err_("\\x requires 2 hex digits. scalar pos={}", proc.rpos);
+            _c4err("\\x requires 2 hex digits. scalar pos={}", proc.rpos);
         char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 2u);
         _c4dbgfdq("utf8 ~~~{}~~~ rpos={} rem=~~~{}~~~", codepoint, proc.rpos, proc.src.sub(proc.rpos));
         uint32_t codepoint_val = {};
         if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
-            _c4err_("failed to read \\x codepoint. scalar pos={}", proc.rpos);
+            _c4err("failed to read \\x codepoint. scalar pos={}", proc.rpos);
         const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
         if(C4_UNLIKELY(numbytes == 0))
-            _c4err_("failed to decode code point={}", proc.rpos);
-        _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
+            _c4err("failed to decode code point={}", proc.rpos);
+        _RYML_ASSERT_BASIC_(callbacks(), numbytes <= 4);
         proc.translate_esc_bulk(readbuf, numbytes, /*nread*/3u);
         _c4dbgfdq("utf8 after rpos={} rem=~~~{}~~~", proc.rpos, proc.src.sub(proc.rpos));
     }
     else if(next == 'u') // 4-digit Unicode escape (\uXXXX), code point 0x0000–0xFFFF
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 4u >= proc.src.len))
-            _c4err_("\\u requires 4 hex digits. scalar pos={}", proc.rpos);
+            _c4err("\\u requires 4 hex digits. scalar pos={}", proc.rpos);
         char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 4u);
         uint32_t codepoint_val = {};
         if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
-            _c4err_("failed to parse \\u codepoint. scalar pos={}", proc.rpos);
+            _c4err("failed to parse \\u codepoint. scalar pos={}", proc.rpos);
         const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
         if(C4_UNLIKELY(numbytes == 0))
-            _c4err_("failed to decode code point={}", proc.rpos);
-        _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
+            _c4err("failed to decode code point={}", proc.rpos);
+        _RYML_ASSERT_BASIC_(callbacks(), numbytes <= 4);
         proc.translate_esc_bulk(readbuf, numbytes, /*nread*/5u);
     }
     else if(next == 'U') // 8-digit Unicode escape (\UXXXXXXXX), full 32-bit code point
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 8u >= proc.src.len))
-            _c4err_("\\U requires 8 hex digits. scalar pos={}", proc.rpos);
+            _c4err("\\U requires 8 hex digits. scalar pos={}", proc.rpos);
         char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 8u);
         uint32_t codepoint_val = {};
         if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
-            _c4err_("failed to parse \\U codepoint. scalar pos={}", proc.rpos);
+            _c4err("failed to parse \\U codepoint. scalar pos={}", proc.rpos);
         const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
         if(C4_UNLIKELY(numbytes == 0))
-            _c4err_("failed to decode code point={}", proc.rpos);
-        _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
+            _c4err("failed to decode code point={}", proc.rpos);
+        _RYML_ASSERT_BASIC_(callbacks(), numbytes <= 4);
         proc.translate_esc_bulk(readbuf, numbytes, /*nread*/9u);
     }
     // https://yaml.org/spec/1.2.2/#rule-c-ns-esc-char
@@ -35471,7 +38626,7 @@ void ParseEngine<EventHandler>::_filter_dquoted_backslash(FilterProcessor &C4_RE
     }
     else
     {
-        _c4err_("unknown character '{}' after '\\' pos={}", _c4prc(next), proc.rpos);
+        _c4err("unknown character '{}' after '\\' pos={}", _c4prc(next), proc.rpos);
     }
     _c4dbgfdq("backslash...sofar=[{}]~~~{}~~~", proc.wpos, proc.sofar());
 }
@@ -35570,8 +38725,8 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_chomp(FilterProcessor &C4_RESTRICT proc, BlockChomp_e chomp, size_t indentation)
 {
-    _RYML_CB_ASSERT(this->callbacks(), chomp == CHOMP_CLIP || chomp == CHOMP_KEEP || chomp == CHOMP_STRIP);
-    _RYML_CB_ASSERT(this->callbacks(), proc.rem().first_not_of(" \n\r") == npos);
+    _RYML_ASSERT_BASIC_(this->callbacks(), chomp == CHOMP_CLIP || chomp == CHOMP_KEEP || chomp == CHOMP_STRIP);
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.rem().first_not_of(" \n\r") == npos);
 
     // a debugging scaffold:
     #if 0
@@ -35587,7 +38742,7 @@ void ParseEngine<EventHandler>::_filter_chomp(FilterProcessor &C4_RESTRICT proc,
         {
             _c4dbgchomp("found newline and larger indentation. last={}", last);
             last = proc.rpos + last + size_t(1) + indentation;  // last started at to-be-read.
-            _RYML_CB_ASSERT(this->callbacks(), last <= proc.src.len);
+            _RYML_ASSERT_BASIC_(this->callbacks(), last <= proc.src.len);
             // remove indentation spaces, copy the rest
             while((proc.rpos < last) && proc.has_more_chars())
             {
@@ -35794,7 +38949,7 @@ size_t ParseEngine<EventHandler>::_extend_to_chomp(FilterProcessor &C4_RESTRICT 
 {
     _c4dbgfb("contents_len={}", contents_len);
 
-    _RYML_CB_ASSERT(this->callbacks(), contents_len > 0u);
+    _RYML_ASSERT_BASIC_(this->callbacks(), contents_len > 0u);
 
     // extend contents to just before the first newline at the end,
     // in case it is preceded by spaces
@@ -35955,12 +39110,12 @@ size_t ParseEngine<EventHandler>::_filter_block_folded_newlines_compress(FilterP
         break;
     case 2u:
         _c4dbgfbf("... this is the second newline. prev space (at wpos={}) must be newline", wpos_at_first_newl);
-        _RYML_CB_ASSERT(this->callbacks(), wpos_at_first_newl != npos);
-        _RYML_CB_ASSERT(this->callbacks(), proc.sofar()[wpos_at_first_newl] == ' ');
-        _RYML_CB_ASSERT(this->callbacks(), wpos_at_first_newl + 1u == proc.wpos);
+        _RYML_ASSERT_BASIC_(this->callbacks(), wpos_at_first_newl != npos);
+        _RYML_ASSERT_BASIC_(this->callbacks(), proc.sofar()[wpos_at_first_newl] == ' ');
+        _RYML_ASSERT_BASIC_(this->callbacks(), wpos_at_first_newl + 1u == proc.wpos);
         proc.skip();
         proc.set_at(wpos_at_first_newl, '\n');
-        _RYML_CB_ASSERT(this->callbacks(), proc.sofar()[wpos_at_first_newl] == '\n');
+        _RYML_ASSERT_BASIC_(this->callbacks(), proc.sofar()[wpos_at_first_newl] == '\n');
         break;
     default:
         _c4dbgfbf("... subsequent newline (num_newl={}). copy", num_newl);
@@ -35974,7 +39129,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_block_folded_newlines(FilterProcessor &C4_RESTRICT proc, size_t indentation, size_t len)
 {
-    _RYML_CB_ASSERT(this->callbacks(), proc.curr() == '\n');
+    _RYML_ASSERT_BASIC_(this->callbacks(), proc.curr() == '\n');
     size_t num_newl = 0;
     size_t wpos_at_first_newl = npos;
     while(proc.has_more_chars(len))
@@ -36063,7 +39218,7 @@ template<class EventHandler>
 template<class FilterProcessor>
 void ParseEngine<EventHandler>::_filter_block_folded_indented_block(FilterProcessor &C4_RESTRICT proc, size_t indentation, size_t len, size_t curr_indentation) noexcept
 {
-    _RYML_CB_ASSERT(this->callbacks(), (proc.rem().first_not_of(" \t") == curr_indentation) || (proc.rem().first_not_of(" \t") == npos));
+    _RYML_ASSERT_BASIC_(this->callbacks(), (proc.rem().first_not_of(" \t") == curr_indentation) || (proc.rem().first_not_of(" \t") == npos));
     if(curr_indentation)
         proc.copy(curr_indentation);
     while(proc.has_more_chars(len))
@@ -36187,7 +39342,7 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_plain(substr s, size_t indenta
 {
     _c4dbgpf("filtering plain scalar: s=[{}]~~~{}~~~", s.len, s);
     FilterResult r = this->filter_scalar_plain_in_place(s, s.len, indentation);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, r.valid());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, r.valid());
     _c4dbgpf("filtering plain scalar: success! s=[{}]~~~{}~~~", r.get().len, r.get());
     return r.get();
 }
@@ -36199,7 +39354,7 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_squot(substr s)
 {
     _c4dbgpf("filtering squo scalar: s=[{}]~~~{}~~~", s.len, s);
     FilterResult r = this->filter_scalar_squoted_in_place(s, s.len);
-    _RYML_CB_ASSERT(this->callbacks(), r.valid());
+    _RYML_ASSERT_BASIC_(this->callbacks(), r.valid());
     _c4dbgpf("filtering squo scalar: success! s=[{}]~~~{}~~~", r.get().len, r.get());
     return r.get();
 }
@@ -36225,11 +39380,11 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_dquot(substr s)
         _c4dbgpf("filtering dquo scalar: dst.len={}", dst.len);
         if(dst.str)
         {
-            _RYML_CB_ASSERT(this->callbacks(), dst.len == len);
+            _RYML_ASSERT_BASIC_(this->callbacks(), dst.len == len);
             FilterResult rsd = this->filter_scalar_dquoted(s, dst);
             _c4dbgpf("filtering dquo scalar: ... result now needs {} was {}", rsd.required_len(), len);
-            _RYML_CB_ASSERT(this->callbacks(), rsd.required_len() <= len); // may be smaller!
-            _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, rsd.valid());
+            _RYML_ASSERT_BASIC_(this->callbacks(), rsd.required_len() <= len); // may be smaller!
+            _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, rsd.valid());
             _c4dbgpf("filtering dquo scalar: success! s=[{}]~~~{}~~~", rsd.get().len, rsd.get());
             return rsd.get();
         }
@@ -36245,8 +39400,8 @@ csubstr ParseEngine<EventHandler>::_move_scalar_left_and_add_newline(substr s)
 {
     if(s.is_sub(m_buf))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.str > m_buf.str);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.str-1 >= m_buf.str);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.str > m_buf.str);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, s.str-1 >= m_buf.str);
         if(s.len)
             memmove(s.str - 1, s.str, s.len);
         --s.str;
@@ -36277,7 +39432,7 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_literal(substr s, size_t inden
     else
     {
         _c4dbgpf("filtering block literal scalar: not enough space: needs {}, have {}", r.required_len(), s.len);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
         // this can only happen when adding a single newline in clip mode.
         // so we shift left the scalar by one place
         result = _move_scalar_left_and_add_newline(s);
@@ -36301,7 +39456,7 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_folded(substr s, size_t indent
     else
     {
         _c4dbgpf("filtering block folded scalar: not enough space: needs {}, have {}", r.required_len(), s.len);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
         // this can only happen when adding a single newline in clip mode.
         // so we shift left the scalar by one place
         result = _move_scalar_left_and_add_newline(s);
@@ -36584,8 +39739,8 @@ inline C4_NO_INLINE csubstr detail::_parser_flags_to_str(substr buf, ParserFlag_
     _prflag(RUNK);
     _prflag(RMAP);
     _prflag(RSEQ);
-    _prflag(FLOW);
-    _prflag(BLCK);
+    _prflag(RFLOW);
+    _prflag(RBLCK);
     _prflag(QMRK);
     _prflag(RKEY);
     _prflag(RVAL);
@@ -36605,7 +39760,7 @@ inline C4_NO_INLINE csubstr detail::_parser_flags_to_str(substr buf, ParserFlag_
         if(buf.len > 0)
             buf[pos++] = '0';
 
-    RYML_CHECK(pos <= buf.len);
+    _RYML_CHECK_BASIC(pos <= buf.len);
 
     return buf.first(pos);
 }
@@ -36620,7 +39775,7 @@ inline C4_NO_INLINE csubstr detail::_parser_flags_to_str(substr buf, ParserFlag_
 template<class EventHandler>
 csubstr ParseEngine<EventHandler>::location_contents(Location const& loc) const
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, loc.offset < m_buf.len);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, loc.offset < m_buf.len);
     return m_buf.sub(loc.offset);
 }
 
@@ -36629,19 +39784,19 @@ Location ParseEngine<EventHandler>::val_location(const char *val) const
 {
     if(C4_UNLIKELY(val == nullptr))
         return {m_file, 0, 0, 0};
-    _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_options.locations());
+    _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_options.locations());
     // NOTE: if any of these checks fails, the parser needs to be
     // instantiated with locations enabled.
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.str == m_newline_offsets_buf.str);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.len == m_newline_offsets_buf.len);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_options.locations());
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, !_locations_dirty());
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_newline_offsets != nullptr);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_size > 0);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf.str == m_newline_offsets_buf.str);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_buf.len == m_newline_offsets_buf.len);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_options.locations());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, !_locations_dirty());
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets != nullptr);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_size > 0);
     // NOTE: the pointer needs to belong to the buffer that was used to parse.
     csubstr src = m_buf;
-    _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, val != nullptr || src.str == nullptr);
-    _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, (val >= src.begin() && val <= src.end()) || (src.str == nullptr && val == nullptr));
+    _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, val != nullptr || src.str == nullptr);
+    _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, (val >= src.begin() && val <= src.end()) || (src.str == nullptr && val == nullptr));
     // ok. search the first stored newline after the given ptr
     using lineptr_type = size_t const* C4_RESTRICT;
     lineptr_type lineptr = nullptr;
@@ -36683,9 +39838,9 @@ Location ParseEngine<EventHandler>::val_location(const char *val) const
             }
         }
     }
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, lineptr >= m_newline_offsets);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, lineptr <= m_newline_offsets + m_newline_offsets_size);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, *lineptr > offset);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, lineptr >= m_newline_offsets);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, lineptr <= m_newline_offsets + m_newline_offsets_size);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, *lineptr > offset);
     Location loc;
     loc.name = m_file;
     loc.offset = offset;
@@ -36708,7 +39863,7 @@ void ParseEngine<EventHandler>::_prepare_locations()
         if(m_buf[i] == '\n')
             m_newline_offsets[m_newline_offsets_size++] = i;
     m_newline_offsets[m_newline_offsets_size++] = m_buf.len;
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_size == numnewlines);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_size == numnewlines);
 }
 
 template<class EventHandler>
@@ -36794,9 +39949,9 @@ bool ParseEngine<EventHandler>::_handle_indentation_from_annotations()
 {
     if(m_pending_anchors.num_entries == 1u || m_pending_tags.num_entries == 1u)
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.num_entries < 2u && m_pending_tags.num_entries < 2u);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.annotations[0].line < m_evt_handler->m_curr->pos.line);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_tags.annotations[1].line < m_evt_handler->m_curr->pos.line);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.num_entries < 2u && m_pending_tags.num_entries < 2u);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.annotations[0].line < m_evt_handler->m_curr->pos.line);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_tags.annotations[1].line < m_evt_handler->m_curr->pos.line);
         size_t to_skip = m_evt_handler->m_curr->indref;
         if(m_pending_anchors.num_entries)
             to_skip = m_pending_anchors.annotations[0].indentation > to_skip ? m_pending_anchors.annotations[0].indentation : to_skip;
@@ -36822,12 +39977,12 @@ void ParseEngine<EventHandler>::_check_tag(csubstr tag)
     if(!tag.begins_with("!<"))
     {
         if(C4_UNLIKELY(tag.first_of("[]{},") != npos))
-            _RYML_CB_ERR_(m_evt_handler->m_stack.m_callbacks, "tags must not contain any of '[]{},'", m_evt_handler->m_curr->pos);
+            _c4err("tags must not contain any of '[]{},'");
     }
     else
     {
         if(C4_UNLIKELY(!tag.ends_with('>')))
-            _RYML_CB_ERR_(m_evt_handler->m_stack.m_callbacks, "malformed tag", m_evt_handler->m_curr->pos);
+            _c4err("malformed tag");
     }
 }
 
@@ -36955,8 +40110,8 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_annotations_and_indentation_after_start_mapblck(size_t key_indentation, size_t key_line)
 {
     _c4dbgp("annotations_after_start_mapblck");
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_tags.num_entries <= 2);
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.num_entries <= 2);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_tags.num_entries <= 2);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_anchors.num_entries <= 2);
     if(m_pending_anchors.num_entries || m_pending_tags.num_entries)
     {
         key_indentation = _select_indentation_from_annotations(key_indentation, key_line);
@@ -36991,7 +40146,7 @@ void ParseEngine<EventHandler>::_handle_annotations_and_indentation_after_start_
 template<class EventHandler>
 size_t ParseEngine<EventHandler>::_select_indentation_from_annotations(size_t val_indentation, size_t val_line)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_pending_tags.num_entries || m_pending_anchors.num_entries);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_pending_tags.num_entries || m_pending_anchors.num_entries);
     // select the left-most annotation on the max line
     auto const *C4_RESTRICT curr = m_pending_anchors.num_entries ? &m_pending_anchors.annotations[0] : &m_pending_tags.annotations[0];
     for(size_t i = 0; i < m_pending_anchors.num_entries; ++i)
@@ -37016,7 +40171,7 @@ size_t ParseEngine<EventHandler>::_select_indentation_from_annotations(size_t va
 template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_directive(csubstr rem)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.is_sub(m_evt_handler->m_curr->line_contents.rem));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.is_sub(m_evt_handler->m_curr->line_contents.rem));
     const size_t pos = rem.find('#');
     _c4dbgpf("handle_directive: pos={} rem={}", pos, rem);
     if(pos == npos) // no comments
@@ -37043,18 +40198,20 @@ bool ParseEngine<EventHandler>::_handle_bom()
         const csubstr rest = rem.sub(1);
         // https://yaml.org/spec/1.2.2/#52-character-encodings
         #define _rymlisascii(c) ((c) > '\0' && (c) <= '\x7f') // is the character ASCII?
-        if(rem.begins_with({"\x00\x00\xfe\xff", 4}) || (rem.begins_with({"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[3])))
+        if(rem.begins_with(csubstr{"\x00\x00\xfe\xff", 4}) || (rem.begins_with(csubstr{"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[3])))
         {
             _c4dbgp("byte order mark: UTF32BE");
             _handle_bom(UTF32BE);
             _line_progressed(4);
+            m_bom_len = 4;
             return true;
         }
-        else if(rem.begins_with("\xff\xfe\x00\x00") || (rest.begins_with({"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[0])))
+        else if(rem.begins_with(csubstr{"\xff\xfe\x00\x00", 4}) || (rest.begins_with(csubstr{"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[0])))
         {
             _c4dbgp("byte order mark: UTF32LE");
             _handle_bom(UTF32LE);
             _line_progressed(4);
+            m_bom_len = 4;
             return true;
         }
         else if(rem.begins_with("\xfe\xff") || (rem.begins_with('\x00') && rem.len >= 2u && _rymlisascii(rem.str[1])))
@@ -37062,6 +40219,7 @@ bool ParseEngine<EventHandler>::_handle_bom()
             _c4dbgp("byte order mark: UTF16BE");
             _handle_bom(UTF16BE);
             _line_progressed(2);
+            m_bom_len = 2;
             return true;
         }
         else if(rem.begins_with("\xff\xfe") || (rest.begins_with('\x00') && rem.len >= 2u && _rymlisascii(rem.str[0])))
@@ -37069,6 +40227,7 @@ bool ParseEngine<EventHandler>::_handle_bom()
             _c4dbgp("byte order mark: UTF16LE");
             _handle_bom(UTF16LE);
             _line_progressed(2);
+            m_bom_len = 2;
             return true;
         }
         else if(rem.begins_with("\xef\xbb\xbf"))
@@ -37076,6 +40235,7 @@ bool ParseEngine<EventHandler>::_handle_bom()
             _c4dbgp("byte order mark: UTF8");
             _handle_bom(UTF8);
             _line_progressed(3);
+            m_bom_len = 3;
             return true;
         }
         #undef _rymlisascii
@@ -37088,8 +40248,7 @@ void ParseEngine<EventHandler>::_handle_bom(Encoding_e enc)
 {
     if(m_encoding == NOBOM)
     {
-        const bool is_beginning_of_file = m_evt_handler->m_curr->line_contents.rem.str == m_buf.str;
-        if(enc == UTF8 || is_beginning_of_file)
+        if(enc == UTF8 || /*beginning of file*/(m_evt_handler->m_curr->line_contents.rem.str == m_buf.str))
             m_encoding = enc;
         else
             _c4err("non-UTF8 byte order mark can appear only at the beginning of the file");
@@ -37109,11 +40268,11 @@ void ParseEngine<EventHandler>::_handle_seq_json()
 seqjson_start:
     _c4dbgpf("handle2_seq_json: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RVAL) != has_all(RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RVAL) != has_all(RNXT));
 
     _handle_flow_skip_whitespace();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -37122,7 +40281,7 @@ seqjson_start:
 
     if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         const char first = rem.str[0];
         _c4dbgpf("mapjson[RVAL]: '{}'", first);
         switch(first)
@@ -37158,9 +40317,9 @@ seqjson_start:
         {
             _c4dbgp("seqjson[RVAL]: end!");
             rem_flags(RSEQ);
-            m_evt_handler->end_seq();
+            _end_seq_flow();
             _line_progressed(1);
-            if(!has_all(RSEQ|FLOW))
+            if(!has_all(RSEQ|RFLOW))
                 goto seqjson_finish;
             break;
         }
@@ -37183,8 +40342,8 @@ seqjson_start:
     }
     else // RNXT
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
         const char first = rem.str[0];
         _c4dbgpf("mapjson[RNXT]: '{}'", first);
         switch(first)
@@ -37200,7 +40359,7 @@ seqjson_start:
         case ']':
         {
             _c4dbgp("seqjson[RNXT]: end!");
-            m_evt_handler->end_seq();
+            _end_seq_flow();
             _line_progressed(1);
             goto seqjson_finish;
         }
@@ -37239,11 +40398,11 @@ void ParseEngine<EventHandler>::_handle_map_json()
 mapjson_start:
     _c4dbgpf("handle2_map_json: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT)));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT)));
 
     _handle_flow_skip_whitespace();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -37252,10 +40411,10 @@ mapjson_start:
 
     if(has_any(RKEY))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapjson[RKEY]: '{}'", first);
         switch(first)
@@ -37272,7 +40431,7 @@ mapjson_start:
         case '}': // this happens on a trailing comma like ", }"
         {
             _c4dbgp("mapjson[RKEY]: end!");
-            m_evt_handler->end_map();
+            _end_map_flow();
             _line_progressed(1);
             goto mapjson_finish;
         }
@@ -37282,10 +40441,10 @@ mapjson_start:
     }
     else if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapjson[RVAL]: '{}'", first);
         switch(first)
@@ -37340,10 +40499,10 @@ mapjson_start:
     }
     else if(has_any(RKCL)) // read the key colon
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapjson[RKCL]: '{}'", first);
         if(first == ':')
@@ -37359,10 +40518,10 @@ mapjson_start:
     }
     else if(has_any(RNXT))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         _c4dbgpf("mapjson[RNXT]: '{}'", rem.str[0]);
         if(rem.begins_with(','))
         {
@@ -37374,7 +40533,7 @@ mapjson_start:
         else if(rem.begins_with('}'))
         {
             _c4dbgp("mapjson[RNXT]: end!");
-            m_evt_handler->end_map();
+            _end_map_flow();
             _line_progressed(1);
             goto mapjson_finish;
         }
@@ -37414,11 +40573,11 @@ void ParseEngine<EventHandler>::_handle_seq_imap()
 seqimap_start:
     _c4dbgpf("handle2_seq_imap: node_id={} level={} indref={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RSEQIMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT|QMRK|RKCL));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, 1 == has_all(RVAL) + has_all(RNXT) + has_all(QMRK) + has_all(RKCL));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 3);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RSEQIMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT|QMRK|RKCL));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, 1 == has_all(RVAL) + has_all(RNXT) + has_all(QMRK) + has_all(RKCL));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 3);
 
     _handle_flow_skip_whitespace();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -37427,10 +40586,10 @@ seqimap_start:
 
     if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
         const char first = rem.str[0];
         _c4dbgpf("seqimap[RVAL]: '{}'", _c4prc(first));
         ScannedScalar sc;
@@ -37440,7 +40599,7 @@ seqimap_start:
             sc = _scan_scalar_squot();
             csubstr maybe_filtered = _maybe_filter_val_scalar_squot(sc);
             m_evt_handler->set_val_scalar_squoted(maybe_filtered);
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else if(first == '"')
@@ -37449,7 +40608,7 @@ seqimap_start:
             sc = _scan_scalar_dquot();
             csubstr maybe_filtered = _maybe_filter_val_scalar_dquot(sc);
             m_evt_handler->set_val_scalar_dquoted(maybe_filtered);
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         // block scalars (ie | and >) cannot appear in flow containers
@@ -37458,7 +40617,7 @@ seqimap_start:
             _c4dbgp("seqimap[RVAL]: it's a scalar.");
             csubstr maybe_filtered = _maybe_filter_val_scalar_plain(sc, m_evt_handler->m_curr->indref);
             m_evt_handler->set_val_scalar_plain(maybe_filtered);
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else if(first == '[')
@@ -37485,7 +40644,7 @@ seqimap_start:
         {
             _c4dbgp("seqimap[RVAL]: finish without val.");
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else if(first == '&')
@@ -37508,10 +40667,10 @@ seqimap_start:
     }
     else if(has_any(RNXT))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
         const char first = rem.str[0];
         _c4dbgpf("seqimap[RNXT]: '{}'", _c4prc(first));
         if(first == ',' || first == ']')
@@ -37519,7 +40678,7 @@ seqimap_start:
             // we may get here because a map or a seq started and we
             // return later
             _c4dbgp("seqimap: done");
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else
@@ -37529,10 +40688,10 @@ seqimap_start:
     }
     else if(has_any(QMRK))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(QMRK));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
         const char first = rem.str[0];
         _c4dbgpf("seqimap[QMRK]: '{}'", _c4prc(first));
         ScannedScalar sc;
@@ -37588,7 +40747,7 @@ seqimap_start:
             _c4dbgp("seqimap[QMRK]: finish without key.");
             m_evt_handler->set_key_scalar_plain_empty();
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else if(first == '&')
@@ -37611,10 +40770,10 @@ seqimap_start:
     }
     else if(has_any(RKCL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKCL));
         const char first = rem.str[0];
         _c4dbgpf("seqimap[RKCL]: '{}'", _c4prc(first));
         if(first == ':')
@@ -37628,7 +40787,7 @@ seqimap_start:
         {
             _c4dbgp("seqimap[RKCL]: found ','. finish without val");
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
+            _end_map_flow();
             goto seqimap_finish;
         }
         else
@@ -37665,14 +40824,14 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_seq_flow()
 {
 seqflow_start:
-    _c4dbgpf("handle2_seq_flow: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
+    _c4dbgpf("handle_seq_flow: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RVAL) != has_all(RNXT));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indref != npos);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RVAL) != has_all(RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indref != npos);
 
     _handle_flow_skip_whitespace();
     // don't assign to csubstr rem: otherwise, gcc12,13,14 -O3 -m32 misbuilds
@@ -37681,7 +40840,7 @@ seqflow_start:
 
     if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         const char first = m_evt_handler->m_curr->line_contents.rem.str[0];
         ScannedScalar sc;
         if(first == '\'')
@@ -37727,11 +40886,11 @@ seqflow_start:
             _line_progressed(1);
             goto seqflow_finish;
         }
-        else if(first == ']') // this happens on a trailing comma like ", ]"
+        else if(first == ']') // this happens on cases such as [] or [.., ]
         {
             _c4dbgp("seqflow[RVAL]: end!");
             _line_progressed(1);
-            m_evt_handler->end_seq();
+            _end_seq_flow();
             goto seqflow_finish;
         }
         else if(first == '*')
@@ -37796,8 +40955,8 @@ seqflow_start:
     }
     else // RNXT
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
         const char first = m_evt_handler->m_curr->line_contents.rem.str[0];
         if(first == ',')
         {
@@ -37809,8 +40968,8 @@ seqflow_start:
         else if(first == ']')
         {
             _c4dbgp("seqflow[RNXT]: end!");
-            m_evt_handler->end_seq();
             _line_progressed(1);
+            _end_seq_flow();
             goto seqflow_finish;
         }
         else if(first == ':')
@@ -37856,12 +41015,12 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_map_flow()
 {
 mapflow_start:
-    _c4dbgpf("handle2_map_flow: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
+    _c4dbgpf("handle_map_flow: node_id={} level={} indentation={}", m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(FLOW));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT|QMRK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT) + has_any(QMRK)));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RFLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT|QMRK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT) + has_any(QMRK)));
 
     _handle_flow_skip_whitespace();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -37870,10 +41029,10 @@ mapflow_start:
 
     if(has_any(RKEY))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapflow[RKEY]: '{}'", first);
         ScannedScalar sc;
@@ -37927,8 +41086,8 @@ mapflow_start:
         else if(first == '}') // this happens on a trailing comma like ", }"
         {
             _c4dbgp("mapflow[RKEY]: end!");
-            m_evt_handler->end_map();
             _line_progressed(1);
+            _end_map_flow();
             goto mapflow_finish;
         }
         else if(first == '&')
@@ -37947,8 +41106,8 @@ mapflow_start:
         else if(first == '[')
         {
             // RYML's tree cannot store container keys, but that's
-            // handled inside the tree sink. Other sink types may be
-            // able to handle it.
+            // handled inside the tree event handler. Other handler
+            // types may be able to handle it.
             _c4dbgp("mapflow[RKEY]: start child seqflow (!)");
             addrem_flags(RKCL, RKEY);
             m_evt_handler->begin_seq_key_flow();
@@ -37960,8 +41119,8 @@ mapflow_start:
         else if(first == '{')
         {
             // RYML's tree cannot store container keys, but that's
-            // handled inside the tree sink. Other sink types may be
-            // able to handle it.
+            // handled inside the tree event handler. Other handler
+            // types may be able to handle it.
             _c4dbgp("mapflow[RKEY]: start child mapflow (!)");
             addrem_flags(RKCL, RKEY);
             m_evt_handler->begin_map_key_flow();
@@ -37984,10 +41143,10 @@ mapflow_start:
     }
     else if(has_any(RKCL)) // read the key colon
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapflow[RKCL]: '{}'", first);
         if(first == ':')
@@ -38001,8 +41160,8 @@ mapflow_start:
             _c4dbgp("mapflow[RKCL]: end with missing val!");
             addrem_flags(RVAL, RKCL);
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
             _line_progressed(1);
+            _end_map_flow();
             goto mapflow_finish;
         }
         else if(first == ',')
@@ -38020,10 +41179,10 @@ mapflow_start:
     }
     else if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         const char first = rem.str[0];
         _c4dbgpf("mapflow[RVAL]: '{}'", first);
         ScannedScalar sc;
@@ -38075,8 +41234,8 @@ mapflow_start:
         {
             _c4dbgp("mapflow[RVAL]: end!");
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
             _line_progressed(1);
+            _end_map_flow();
             goto mapflow_finish;
         }
         else if(first == ',')
@@ -38113,10 +41272,10 @@ mapflow_start:
     }
     else if(has_any(RNXT))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         _c4dbgpf("mapflow[RNXT]: '{}'", rem.str[0]);
         if(rem.begins_with(','))
         {
@@ -38128,8 +41287,8 @@ mapflow_start:
         else if(rem.begins_with('}'))
         {
             _c4dbgp("mapflow[RNXT]: end!");
-            m_evt_handler->end_map();
             _line_progressed(1);
+            _end_map_flow();
             goto mapflow_finish;
         }
         else
@@ -38139,10 +41298,10 @@ mapflow_start:
     }
     else if(has_any(QMRK))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         const char first = rem.str[0];
         _c4dbgpf("mapflow[QMRK]: '{}'", first);
         ScannedScalar sc;
@@ -38183,7 +41342,7 @@ mapflow_start:
             _c4dbgp("mapflow[QMRK]: end!");
             m_evt_handler->set_key_scalar_plain_empty();
             m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->end_map();
+            _end_map_flow();
             _line_progressed(1);
             goto mapflow_finish;
         }
@@ -38274,12 +41433,12 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_seq_block()
 {
 seqblck_start:
-    _c4dbgpf("handle2_seq_block: seq_id={} node_id={} level={} indent={}", m_evt_handler->m_parent->node_id, m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
+    _c4dbgpf("handle_seq_block: seq_id={} node_id={} level={} indent={}", m_evt_handler->m_parent->node_id, m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RVAL) + has_any(RNXT)));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RSEQ));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RVAL|RNXT));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RVAL) + has_any(RNXT)));
 
     _maybe_skip_comment();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -38289,7 +41448,7 @@ seqblck_start:
     if(has_any(RVAL))
     {
         _c4dbgpf("seqblck[RVAL]: col={}", m_evt_handler->m_curr->pos.col);
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         if(m_evt_handler->m_curr->at_line_beginning())
         {
             _c4dbgpf("seqblck[RVAL]: indref={} indentation={}", m_evt_handler->m_curr->indref, m_evt_handler->m_curr->line_contents.indentation);
@@ -38334,13 +41493,13 @@ seqblck_start:
             }
         }
         #endif
-        _RYML_CB_ASSERT(callbacks(), rem.len);
+        _RYML_ASSERT_BASIC_(callbacks(), rem.len);
         _c4dbgpf("seqblck[RVAL]: '{}' node_id={}", rem.str[0], m_evt_handler->m_curr->node_id);
         const char first = rem.str[0];
         const size_t startline = m_evt_handler->m_curr->pos.line;
         // warning: the gcc optimizer on x86 builds is brittle with
         // this function:
-        const size_t startindent = m_evt_handler->m_curr->line_contents.current_col();
+        const size_t startindent = m_evt_handler->m_curr->line_contents.current_col() - m_bom_len;
         ScannedScalar sc;
         if(first == '\'')
         {
@@ -38446,11 +41605,11 @@ seqblck_start:
                     _maybe_skip_whitespace_tokens();
                     goto seqblck_finish;
                 }
-                else if(m_evt_handler->m_parent && m_evt_handler->m_parent->indref == startindent && has_any(RMAP|BLCK, m_evt_handler->m_parent))
+                else if(m_evt_handler->m_parent && m_evt_handler->m_parent->indref == startindent && has_any(RMAP|RBLCK, m_evt_handler->m_parent))
                 {
                     _c4dbgp("seqblck[RVAL]: empty val + end indentless seq + set key");
                     m_evt_handler->set_val_scalar_plain_empty();
-                    m_evt_handler->end_seq();
+                    m_evt_handler->end_seq_block();
                     m_evt_handler->add_sibling();
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref);  // KEY!
                     m_evt_handler->set_key_scalar_plain(maybe_filtered);
@@ -38470,7 +41629,7 @@ seqblck_start:
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
-            addrem_flags(FLOW|RVAL, BLCK|RNXT);
+            addrem_flags(RFLOW|RVAL, RBLCK|RNXT);
             _line_progressed(1);
             _set_indentation(m_evt_handler->m_parent->indref + 1u);
             goto seqblck_finish;
@@ -38481,7 +41640,7 @@ seqblck_start:
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_flow();
-            addrem_flags(RMAP|RKEY|FLOW, BLCK|RSEQ|RVAL|RNXT);
+            addrem_flags(RMAP|RKEY|RFLOW, RBLCK|RSEQ|RVAL|RNXT);
             _line_progressed(1);
             _set_indentation(m_evt_handler->m_parent->indref + 1u);
             goto seqblck_finish;
@@ -38499,12 +41658,12 @@ seqblck_start:
             else
             {
                 _c4dbgp("seqblck[RVAL]: start child seqblck");
-                _RYML_CB_ASSERT(this->callbacks(), startindent > m_evt_handler->m_curr->indref);
+                _RYML_ASSERT_BASIC_(this->callbacks(), startindent > m_evt_handler->m_curr->indref);
                 addrem_flags(RNXT, RVAL);
                 _handle_annotations_before_blck_val_scalar();
                 m_evt_handler->begin_seq_val_block();
                 addrem_flags(RVAL, RNXT);
-                _save_indentation();
+                _set_indentation(startindent);
                 // keep going on inside this function
             }
             _line_progressed(1);
@@ -38572,7 +41731,7 @@ seqblck_start:
             m_was_inside_qmrk = true;
             m_evt_handler->begin_map_val_block();
             addrem_flags(RMAP|QMRK, RSEQ|RNXT);
-            _save_indentation();
+            _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
             goto seqblck_finish;
@@ -38584,8 +41743,8 @@ seqblck_start:
     }
     else // RNXT
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
         //
         // handle indentation
         //
@@ -38606,10 +41765,10 @@ seqblck_start:
             {
                 _c4dbgp("seqblck[RNXT]: smaller indentation!");
                 _handle_indentation_pop_from_block_seq();
-                if(has_all(RSEQ|BLCK))
+                if(has_all(RSEQ|RBLCK))
                 {
                     _c4dbgp("seqblck[RNXT]: still seqblck!");
-                    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+                    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
                     _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
                     rem = m_evt_handler->m_curr->line_contents.rem;
                     if(!rem.len)
@@ -38682,7 +41841,7 @@ seqblck_start:
             if(C4_LIKELY(prev_state && (prev_state->flags & RMAP)))
             {
                 _c4dbgp("seqblck[RNXT]: actually this seq was '?' key of parent map");
-                m_evt_handler->end_seq();
+                m_evt_handler->end_seq_block();
                 goto seqblck_finish;
             }
             else
@@ -38718,12 +41877,12 @@ seqblck_start:
                 _dbg_printf("state[{}]: ind={} node={} flags={}\n", s.level, s.indref, s.node_id, detail::_parser_flags_to_str(flagbuf_, s.flags));
             }
             #endif
-            if(m_evt_handler->m_parent && has_all(RMAP|BLCK, m_evt_handler->m_parent) && m_evt_handler->m_curr->indref == m_evt_handler->m_parent->indref)
+            if(m_evt_handler->m_parent && has_all(RMAP|RBLCK, m_evt_handler->m_parent) && m_evt_handler->m_curr->indref == m_evt_handler->m_parent->indref)
             {
                 _c4dbgpf("seqblck[RNXT]: end indentless seq, go to parent={}. node={}", m_evt_handler->m_parent->node_id, m_evt_handler->m_curr->node_id);
-                _RYML_CB_ASSERT(this->callbacks(), m_evt_handler->m_curr != m_evt_handler->m_parent);
+                _RYML_ASSERT_BASIC_(this->callbacks(), m_evt_handler->m_curr != m_evt_handler->m_parent);
                 _handle_indentation_pop(m_evt_handler->m_parent);
-                _RYML_CB_ASSERT(this->callbacks(), has_all(RMAP|BLCK));
+                _RYML_ASSERT_BASIC_(this->callbacks(), has_all(RMAP|RBLCK));
                 m_evt_handler->add_sibling();
                 addrem_flags(RKEY, RNXT);
                 goto seqblck_finish;
@@ -38739,6 +41898,7 @@ seqblck_start:
     _c4dbgt("seqblck: go again", 0);
     if(_finished_line())
     {
+        m_bom_len = 0;
         _line_ended();
         _scan_line();
         if(_finished_file())
@@ -38762,13 +41922,13 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_map_block()
 {
 mapblck_start:
-    _c4dbgpf("handle2_map_block: map_id={} node_id={} level={} indref={}", m_evt_handler->m_parent->node_id, m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
+    _c4dbgpf("handle_map_block: map_id={} node_id={} level={} indref={}", m_evt_handler->m_parent->node_id, m_evt_handler->m_curr->node_id, m_evt_handler->m_curr->level, m_evt_handler->m_curr->indref);
 
     // states: RKEY|QMRK -> RKCL -> RVAL -> RNXT
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(BLCK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT|QMRK));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT) + has_any(QMRK)));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RBLCK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY|RKCL|RVAL|RNXT|QMRK));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, 1 == (has_any(RKEY) + has_any(RKCL) + has_any(RVAL) + has_any(RNXT) + has_any(QMRK)));
 
     _maybe_skip_comment();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -38777,10 +41937,10 @@ mapblck_start:
 
     if(has_any(RKEY))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         //
         // handle indentation
         //
@@ -38799,10 +41959,10 @@ mapblck_start:
                 _c4dbgp("mapblck[RKEY]: smaller indentation!");
                 _handle_indentation_pop_from_block_map();
                 _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
-                if(has_all(RMAP|BLCK))
+                if(has_all(RMAP|RBLCK))
                 {
                     _c4dbgp("mapblck[RKEY]: still mapblck!");
-                    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RKEY));
+                    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_any(RKEY));
                     rem = m_evt_handler->m_curr->line_contents.rem;
                     if(!rem.len)
                         goto mapblck_again;
@@ -38815,7 +41975,7 @@ mapblck_start:
             }
             else
             {
-                _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indentation_gt());
+                _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indentation_gt());
                 _c4err("invalid indentation");
             }
         }
@@ -38855,11 +42015,11 @@ mapblck_start:
         // appear in an explicit QMRK scope (ie, after the ? token),
         else if(C4_UNLIKELY(first == '|'))
         {
-            _c4err("block literal keys must be enclosed in '?'");
+            _c4err("block map: literal keys must be enclosed in '?'");
         }
         else if(C4_UNLIKELY(first == '>'))
         {
-            _c4err("block literal keys must be enclosed in '?'");
+            _c4err("block map: folded keys must be enclosed in '?'");
         }
         else if(_scan_scalar_plain_map_blck(&sc))
         {
@@ -38922,7 +42082,7 @@ mapblck_start:
             addrem_flags(RKCL, RKEY);
             _handle_annotations_before_blck_key_scalar();
             m_evt_handler->begin_seq_key_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RMAP|BLCK|RKCL);
+            addrem_flags(RSEQ|RFLOW|RVAL, RMAP|RBLCK|RKCL);
             _line_progressed(1);
             _set_indentation(startindent);
             goto mapblck_finish;
@@ -38936,7 +42096,7 @@ mapblck_start:
             addrem_flags(RKCL, RKEY);
             _handle_annotations_before_blck_key_scalar();
             m_evt_handler->begin_map_key_flow();
-            addrem_flags(FLOW|RKEY, BLCK|RKCL);
+            addrem_flags(RFLOW|RKEY, RBLCK|RKCL);
             _line_progressed(1);
             _set_indentation(startindent);
             goto mapblck_finish;
@@ -38986,10 +42146,10 @@ mapblck_start:
     }
     else if(has_any(RKCL)) // read the key colon
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         //
         // handle indentation
         //
@@ -39020,7 +42180,7 @@ mapblck_start:
         else if(first == '?')
         {
             _c4dbgp("mapblck[RKCL]: got '?'. val was empty");
-            _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_was_inside_qmrk);
+            _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_was_inside_qmrk);
             m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
             addrem_flags(QMRK, RKCL);
@@ -39032,7 +42192,7 @@ mapblck_start:
             if(m_evt_handler->m_curr->indref == 0 || m_evt_handler->m_curr->line_contents.indentation == 0 || _is_doc_begin_token(rem))
             {
                 _c4dbgp("mapblck[RKCL]: end+start doc");
-                _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, _is_doc_begin_token(rem));
+                _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, _is_doc_begin_token(rem));
                 _start_doc_suddenly();
                 _line_progressed(3);
                 _maybe_skip_whitespace_tokens();
@@ -39061,7 +42221,7 @@ mapblck_start:
         }
         else if(m_was_inside_qmrk)
         {
-            _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indentation_eq());
+            _RYML_CHECK_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indentation_eq());
             _c4dbgp("mapblck[RKCL]: missing :");
             m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
@@ -39075,10 +42235,10 @@ mapblck_start:
     }
     else if(has_any(RVAL))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         //
         // handle indentation
         //
@@ -39140,7 +42300,7 @@ mapblck_start:
             {
                 _c4dbgp("mapblck[RVAL]: smaller indentation!");
                 _handle_indentation_pop_from_block_map();
-                if(has_all(RMAP|BLCK))
+                if(has_all(RMAP|RBLCK))
                 {
                     _c4dbgp("mapblck[RVAL]: still mapblck!");
                     _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
@@ -39332,7 +42492,7 @@ mapblck_start:
             else if(m_evt_handler->m_curr->indref == 0 || m_evt_handler->m_curr->line_contents.indentation == 0 || _is_doc_begin_token(rem))
             {
                 _c4dbgp("mapblck[RVAL]: end+start doc");
-                _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, _is_doc_begin_token(rem));
+                _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, _is_doc_begin_token(rem));
                 _start_doc_suddenly();
                 _line_progressed(3);
                 _maybe_skip_whitespace_tokens();
@@ -39349,7 +42509,7 @@ mapblck_start:
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RMAP|BLCK|RNXT);
+            addrem_flags(RSEQ|RFLOW|RVAL, RMAP|RBLCK|RNXT);
             _set_indentation(m_evt_handler->m_curr->indref + 1u);
             _line_progressed(1);
             goto mapblck_finish;
@@ -39360,7 +42520,7 @@ mapblck_start:
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_flow();
-            addrem_flags(RKEY|FLOW, BLCK|RVAL|RNXT);
+            addrem_flags(RKEY|RFLOW, RBLCK|RVAL|RNXT);
             m_evt_handler->m_curr->scalar_col = m_evt_handler->m_curr->line_contents.indentation;
             _set_indentation(m_evt_handler->m_curr->indref + 1u);
             _line_progressed(1);
@@ -39379,7 +42539,7 @@ mapblck_start:
             else
             {
                 _c4dbgpf("mapblck[RVAL]: larger indentation {}>{}", startindent, m_evt_handler->m_curr->indref);
-                _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, startindent > m_evt_handler->m_curr->indref);
+                _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, startindent > m_evt_handler->m_curr->indref);
                 if(_maybe_scan_following_colon())
                 {
                     _c4dbgp("mapblck[RVAL]: start child map, block");
@@ -39448,7 +42608,7 @@ mapblck_start:
                 addrem_flags(RNXT, RVAL);
                 _handle_annotations_before_blck_val_scalar();
                 m_evt_handler->begin_map_val_block();
-                addrem_flags(QMRK|BLCK, RNXT);
+                addrem_flags(QMRK|RBLCK, RNXT);
                 _set_indentation(startindent);
             }
             else
@@ -39519,10 +42679,10 @@ mapblck_start:
     }
     else if(has_any(RNXT))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(QMRK));
         //
         // handle indentation
         //
@@ -39542,7 +42702,7 @@ mapblck_start:
             {
                 _c4dbgp("mapblck[RNXT]: smaller indentation!");
                 _handle_indentation_pop_from_block_map();
-                if(has_all(RMAP|BLCK))
+                if(has_all(RMAP|RBLCK))
                 {
                     _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
                     if(!has_any(RKCL))
@@ -39580,7 +42740,7 @@ mapblck_start:
         //
         // handle tokens
         //
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.len > 0);
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.len > 0);
         const char first = rem.str[0];
         _c4dbgpf("mapblck[RNXT]: '{}'", _c4prc(first));
         if(first == ':')
@@ -39612,16 +42772,16 @@ mapblck_start:
     }
     else if(has_any(QMRK))
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKEY));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RKCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
         //
         // handle indentation
         //
         if(m_evt_handler->m_curr->at_line_beginning())
         {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.indentation != npos);
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->line_contents.indentation != npos);
             if(m_evt_handler->m_curr->indentation_eq())
             {
                 _c4dbgpf("mapblck[QMRK]: skip {} from indref", m_evt_handler->m_curr->indref);
@@ -39635,13 +42795,10 @@ mapblck_start:
                 _c4dbgp("mapblck[QMRK]: smaller indentation!");
                 _handle_indentation_pop_from_block_map();
                 _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
-                if(has_all(RMAP|BLCK))
+                if(has_all(RMAP|RBLCK))
                 {
                     _c4dbgp("mapblck[QMRK]: still mapblck!");
-                    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(QMRK));
-                    rem = m_evt_handler->m_curr->line_contents.rem;
-                    if(!rem.len)
-                        goto mapblck_again;
+                    goto mapblck_again;
                 }
                 else
                 {
@@ -39854,28 +43011,43 @@ mapblck_start:
             _c4dbgp("mapblck[QMRK]: start child seqflow (!)");
             addrem_flags(RKCL, RKEY|QMRK);
             m_evt_handler->begin_seq_key_flow();
-            addrem_flags(RVAL|RSEQ|FLOW, RMAP|RKCL|QMRK|BLCK);
-            _set_indentation(m_evt_handler->m_parent->indref);
+            addrem_flags(RVAL|RSEQ|RFLOW, RMAP|RKCL|QMRK|RBLCK);
+            _set_indentation(startindent);
             _line_progressed(1);
             goto mapblck_finish;
         }
         else if(first == '{')
         {
-            _c4dbgp("mapblck[QMRK]: start child mapblck (!)");
+            _c4dbgp("mapblck[QMRK]: start child mapflow (!)");
             addrem_flags(RKCL, RKEY|QMRK);
             m_evt_handler->begin_map_key_flow();
-            addrem_flags(RKEY|FLOW, RVAL|RKCL|QMRK|BLCK);
-            _set_indentation(m_evt_handler->m_parent->indref);
+            addrem_flags(RKEY|RFLOW, RVAL|RKCL|QMRK|RBLCK);
+            _set_indentation(startindent);
             _line_progressed(1);
             goto mapblck_finish;
         }
         else if(first == '?')
         {
             _c4dbgp("mapblck[QMRK]: another QMRK '?'");
-            m_evt_handler->set_key_scalar_plain_empty();
-            m_evt_handler->set_val_scalar_plain_empty();
-            m_evt_handler->add_sibling();
+            if(m_evt_handler->m_curr->indentation_eq())
+            {
+                _c4dbgp("mapblck[QMRK]: ? indent eq - prev ? was for an empty keyval");
+                m_evt_handler->set_key_scalar_plain_empty();
+                m_evt_handler->set_val_scalar_plain_empty();
+                m_evt_handler->add_sibling();
+            }
+            else
+            {
+                _RYML_ASSERT_BASIC_(callbacks(), m_evt_handler->m_curr->indentation_gt());
+                _c4dbgp("mapblck[QMRK]: ? indent gt - start child mapblck (!)");
+                addrem_flags(RKCL, RKEY|QMRK);
+                m_evt_handler->begin_map_key_block();
+                addrem_flags(RBLCK|QMRK, RVAL|RKCL);
+                _set_indentation(startindent);
+            }
+            // indentation_lt() should be handled elsewhere
             _line_progressed(1);
+            _maybe_skip_whitespace_tokens();
         }
         else if(first == '.')
         {
@@ -39927,8 +43099,8 @@ void ParseEngine<EventHandler>::_handle_unk_json()
 {
     _c4dbgpf("handle_unk_json indref={} target={}", m_evt_handler->m_curr->indref, m_evt_handler->m_curr->node_id);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT|RSEQ|RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RTOP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT|RSEQ|RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RTOP));
 
     _maybe_skip_comment();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -39953,7 +43125,7 @@ void ParseEngine<EventHandler>::_handle_unk_json()
         m_evt_handler->check_trailing_doc_token();
         _maybe_begin_doc();
         m_evt_handler->begin_seq_val_flow();
-        addrem_flags(RSEQ|FLOW|RVAL, RUNK|RTOP|RDOC);
+        addrem_flags(RSEQ|RFLOW|RVAL, RUNK|RTOP|RDOC);
         _set_indentation(m_evt_handler->m_curr->line_contents.current_col(rem));
         m_doc_empty = false;
         _line_progressed(1);
@@ -39964,7 +43136,7 @@ void ParseEngine<EventHandler>::_handle_unk_json()
         m_evt_handler->check_trailing_doc_token();
         _maybe_begin_doc();
         m_evt_handler->begin_map_val_flow();
-        addrem_flags(RMAP|FLOW|RKEY, RVAL|RTOP|RUNK|RDOC);
+        addrem_flags(RMAP|RFLOW|RKEY, RVAL|RTOP|RUNK|RDOC);
         m_doc_empty = false;
         _set_indentation(m_evt_handler->m_curr->line_contents.current_col(rem));
         _line_progressed(1);
@@ -39975,7 +43147,7 @@ void ParseEngine<EventHandler>::_handle_unk_json()
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
         _maybe_skip_whitespace_tokens();
         csubstr s = m_evt_handler->m_curr->line_contents.rem;
         if(!s.len)
@@ -40037,8 +43209,8 @@ void ParseEngine<EventHandler>::_handle_unk()
 {
     _c4dbgpf("handle_unk indref={} target={}", m_evt_handler->m_curr->indref, m_evt_handler->m_curr->node_id);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT|RSEQ|RMAP));
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RTOP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RNXT|RSEQ|RMAP));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RTOP));
 
     _maybe_skip_comment();
     csubstr rem = m_evt_handler->m_curr->line_contents.rem;
@@ -40057,15 +43229,15 @@ void ParseEngine<EventHandler>::_handle_unk()
         _c4dbgpf("rem is now [{}]~~~{}~~~", rem.len, rem);
     }
 
-    if(m_evt_handler->m_curr->line_contents.indentation == 0u && _at_line_begin())
+    if(m_evt_handler->m_curr->line_contents.indentation == 0u && (_at_line_begin() || (m_bom_len && (m_evt_handler->m_curr->pos.line == m_bom_line))))
     {
-        _c4dbgp("rtop: zero indent + at line begin");
+        _c4dbgpf("rtop: zero indent + at line begin. offset={}", m_evt_handler->m_curr->pos.offset);
+        _c4dbgp("check BOM");
         if(_handle_bom())
         {
-            _c4dbgp("byte order mark!");
-            rem = m_evt_handler->m_curr->line_contents.rem;
-            if(!rem.len)
-                return;
+            m_bom_line = m_evt_handler->m_curr->pos.line;
+            _c4dbgpf("byte order mark! line={} offset={}", m_bom_line, m_evt_handler->m_curr->pos.offset);
+            return;
         }
         const char first = rem.str[0];
         if(first == '-')
@@ -40107,7 +43279,7 @@ void ParseEngine<EventHandler>::_handle_unk()
         {
             _c4dbgpf("directive: {}", rem);
             if(C4_UNLIKELY(!m_doc_empty && has_none(NDOC)))
-                _RYML_CB_ERR(m_evt_handler->m_stack.m_callbacks, "need document footer before directives");
+                _c4err("need document footer before directives");
             _handle_directive(rem);
             return;
         }
@@ -40116,30 +43288,46 @@ void ParseEngine<EventHandler>::_handle_unk()
     /* no else-if! */
     char first = rem.str[0];
 
+    const size_t startindent = m_evt_handler->m_curr->line_contents.indentation;
+    size_t remindent = m_evt_handler->m_curr->line_contents.current_col(rem);
+    if(m_bom_len)
+    {
+        _c4dbgpf("prev BOMlen={}", m_bom_len);
+        if(m_evt_handler->m_curr->pos.line == m_bom_line)
+        {
+            _c4dbgpf("BOM remindent={} offset={}", remindent, m_evt_handler->m_curr->pos.offset);
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, remindent >= m_bom_len);
+            remindent -= m_bom_len;
+        }
+        else
+        {
+            m_bom_len = 0;
+        }
+    }
+
     if(first == '[')
     {
         m_evt_handler->check_trailing_doc_token();
         _maybe_begin_doc();
         m_doc_empty = false;
-        const size_t startindent = m_evt_handler->m_curr->line_contents.current_col(rem);
         if(C4_LIKELY( ! _annotations_require_key_container()))
         {
             _c4dbgp("it's a seq, flow");
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RUNK|RTOP|RDOC);
-            _set_indentation(startindent);
+            addrem_flags(RSEQ|RFLOW|RVAL, RUNK|RTOP|RDOC);
+            _set_indentation(remindent);
         }
         else
         {
             _c4dbgp("start new block map, set flow seq as key (!)");
             _handle_annotations_before_start_mapblck(m_evt_handler->m_curr->pos.line);
             m_evt_handler->begin_map_val_block();
-            addrem_flags(RMAP|BLCK|RKCL, RUNK|RTOP|RDOC);
-            _handle_annotations_and_indentation_after_start_mapblck(startindent, m_evt_handler->m_curr->pos.line);
+            addrem_flags(RMAP|RBLCK|RKCL, RUNK|RTOP|RDOC);
+            _handle_annotations_and_indentation_after_start_mapblck(remindent, m_evt_handler->m_curr->pos.line);
             m_evt_handler->begin_seq_key_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RMAP|BLCK|RKCL);
-            _set_indentation(startindent);
+            addrem_flags(RSEQ|RFLOW|RVAL, RMAP|RBLCK|RKCL);
+            _set_indentation(remindent);
         }
         _line_progressed(1);
     }
@@ -40148,25 +43336,24 @@ void ParseEngine<EventHandler>::_handle_unk()
         m_evt_handler->check_trailing_doc_token();
         _maybe_begin_doc();
         m_doc_empty = false;
-        const size_t startindent = m_evt_handler->m_curr->line_contents.current_col(rem);
         if(C4_LIKELY( ! _annotations_require_key_container()))
         {
             _c4dbgp("it's a map, flow");
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_flow();
-            addrem_flags(RMAP|FLOW|RKEY, RVAL|RTOP|RUNK|RDOC);
-            _set_indentation(startindent);
+            addrem_flags(RMAP|RFLOW|RKEY, RVAL|RTOP|RUNK|RDOC);
+            _set_indentation(remindent);
         }
         else
         {
             _c4dbgp("start new block map, set flow map as key (!)");
             _handle_annotations_before_start_mapblck(m_evt_handler->m_curr->pos.line);
             m_evt_handler->begin_map_val_block();
-            addrem_flags(RMAP|BLCK|RKCL, RUNK|RTOP|RDOC);
-            _handle_annotations_and_indentation_after_start_mapblck(startindent, m_evt_handler->m_curr->pos.line);
+            addrem_flags(RMAP|RBLCK|RKCL, RUNK|RTOP|RDOC);
+            _handle_annotations_and_indentation_after_start_mapblck(remindent, m_evt_handler->m_curr->pos.line);
             m_evt_handler->begin_map_key_flow();
-            addrem_flags(RMAP|FLOW|RKEY, BLCK|RKCL);
-            _set_indentation(startindent);
+            addrem_flags(RMAP|RFLOW|RKEY, RBLCK|RKCL);
+            _set_indentation(remindent);
         }
         _line_progressed(1);
     }
@@ -40177,9 +43364,9 @@ void ParseEngine<EventHandler>::_handle_unk()
         _maybe_begin_doc();
         _handle_annotations_before_blck_val_scalar();
         m_evt_handler->begin_seq_val_block();
-        addrem_flags(RSEQ|BLCK|RVAL, RNXT|RTOP|RUNK|RDOC);
+        addrem_flags(RSEQ|RBLCK|RVAL, RNXT|RTOP|RUNK|RDOC);
         m_doc_empty = false;
-        _set_indentation(m_evt_handler->m_curr->line_contents.current_col(rem));
+        _set_indentation(remindent);
         _line_progressed(1);
         _maybe_skip_whitespace_tokens();
     }
@@ -40190,10 +43377,10 @@ void ParseEngine<EventHandler>::_handle_unk()
         _maybe_begin_doc();
         _handle_annotations_before_blck_val_scalar();
         m_evt_handler->begin_map_val_block();
-        addrem_flags(RMAP|BLCK|QMRK, RKEY|RVAL|RTOP|RUNK);
+        addrem_flags(RMAP|RBLCK|QMRK, RKEY|RVAL|RTOP|RUNK|RDOC);
         m_doc_empty = false;
         m_was_inside_qmrk = true;
-        _save_indentation();
+        _set_indentation(remindent); //_save_indentation();
         _line_progressed(1);
         _maybe_skip_whitespace_tokens();
     }
@@ -40202,7 +43389,6 @@ void ParseEngine<EventHandler>::_handle_unk()
         if(m_doc_empty)
         {
             _c4dbgp("it's a map with an empty key");
-            const size_t startindent = m_evt_handler->m_curr->line_contents.indentation; // save
             const size_t startline = m_evt_handler->m_curr->pos.line; // save
             m_evt_handler->check_trailing_doc_token();
             _maybe_begin_doc();
@@ -40221,7 +43407,7 @@ void ParseEngine<EventHandler>::_handle_unk()
             m_evt_handler->actually_val_is_first_key_of_new_map_block();
             _set_indentation(prev_indentation);
         }
-        addrem_flags(RMAP|BLCK|RVAL, RTOP|RUNK|RDOC);
+        addrem_flags(RMAP|RBLCK|RVAL, RTOP|RUNK|RDOC);
         _line_progressed(1);
         _maybe_skip_whitespace_tokens();
     }
@@ -40231,9 +43417,8 @@ void ParseEngine<EventHandler>::_handle_unk()
         _c4dbgpf("anchor! [{}]~~~{}~~~", anchor.len, anchor);
         m_evt_handler->check_trailing_doc_token();
         _maybe_begin_doc();
-        const size_t indentation = m_evt_handler->m_curr->line_contents.current_col(rem);
         const size_t line = m_evt_handler->m_curr->pos.line;
-        _add_annotation(&m_pending_anchors, anchor, indentation, line);
+        _add_annotation(&m_pending_anchors, anchor, remindent, line);
         _set_indentation(m_evt_handler->m_curr->line_contents.current_col(rem));
         m_doc_empty = false;
     }
@@ -40253,7 +43438,6 @@ void ParseEngine<EventHandler>::_handle_unk()
         else
         {
             _c4dbgp("runk: start new block map, set ref as key");
-            const size_t startindent = m_evt_handler->m_curr->line_contents.indentation; // save
             const size_t startline = m_evt_handler->m_curr->pos.line; // save
             _handle_annotations_before_start_mapblck(startline);
             m_evt_handler->begin_map_val_block();
@@ -40261,7 +43445,7 @@ void ParseEngine<EventHandler>::_handle_unk()
             m_evt_handler->set_key_ref(ref);
             _maybe_skip_whitespace_tokens();
             _set_indentation(startindent);
-            addrem_flags(RMAP|BLCK|RVAL, RTOP|RUNK|RDOC);
+            addrem_flags(RMAP|RBLCK|RVAL, RTOP|RUNK|RDOC);
         }
     }
     else if(first == '!')
@@ -40276,12 +43460,11 @@ void ParseEngine<EventHandler>::_handle_unk()
     }
     else
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
         _maybe_skip_whitespace_tokens();
         csubstr s = m_evt_handler->m_curr->line_contents.rem;
         if(!s.len)
             return;
-        const size_t startindent = m_evt_handler->m_curr->line_contents.indentation; // save
         const size_t startline = m_evt_handler->m_curr->pos.line; // save
         first = s.str[0];
         ScannedScalar sc;
@@ -40311,7 +43494,7 @@ void ParseEngine<EventHandler>::_handle_unk()
                 m_evt_handler->set_key_scalar_squoted(maybe_filtered);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
-                addrem_flags(RMAP|BLCK|RVAL, RTOP|RUNK|RDOC);
+                addrem_flags(RMAP|RBLCK|RVAL, RTOP|RUNK|RDOC);
             }
         }
         else if(first == '"')
@@ -40340,7 +43523,7 @@ void ParseEngine<EventHandler>::_handle_unk()
                 m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
-                addrem_flags(RMAP|BLCK|RVAL, RTOP|RUNK|RDOC);
+                addrem_flags(RMAP|RBLCK|RVAL, RTOP|RUNK|RDOC);
             }
         }
         else if(first == '|')
@@ -40410,7 +43593,7 @@ void ParseEngine<EventHandler>::_handle_unk()
                 m_evt_handler->set_key_scalar_plain(maybe_filtered);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
-                addrem_flags(RMAP|BLCK|RVAL, RTOP|RUNK|RDOC);
+                addrem_flags(RMAP|RBLCK|RVAL, RTOP|RUNK|RDOC);
             }
         }
     }
@@ -40424,7 +43607,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
 {
     _c4dbgpf("handle_usty target={}", m_evt_handler->m_curr->indref, m_evt_handler->m_curr->node_id);
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(BLCK|FLOW));
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_none(RBLCK|RFLOW));
 
     #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
     if(has_any(RNXT))
@@ -40451,19 +43634,19 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
         _c4dbgpf("rem is now [{}]~~~{}~~~", rem.len, rem);
     }
 
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, rem.len > 0);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, rem.len > 0);
     size_t startindent = m_evt_handler->m_curr->line_contents.indentation; // save
     char first = rem.str[0];
     if(has_any(RSEQ)) // destination is a sequence
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(RMAP));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(RMAP));
         _c4dbgpf("usty[RSEQ]: first='{}'", _c4prc(first));
         if(first == '[')
         {
             _c4dbgp("usty[RSEQ]: it's a flow seq. merging it");
             add_flags(RNXT);
             m_evt_handler->_push();
-            addrem_flags(FLOW|RVAL, RNXT|USTY);
+            addrem_flags(RFLOW|RVAL, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40473,7 +43656,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             _c4dbgp("usty[RSEQ]: it's a block seq. merging it");
             add_flags(RNXT);
             m_evt_handler->_push();
-            addrem_flags(BLCK|RVAL, RNXT|USTY);
+            addrem_flags(RBLCK|RVAL, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40485,7 +43668,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
     }
     else if(has_any(RMAP)) // destination is a map
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(RSEQ));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(RSEQ));
         _c4dbgpf("usty[RMAP]: first='{}'", _c4prc(first));
         if(first == '{')
         {
@@ -40493,7 +43676,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->_push();
-            addrem_flags(RMAP|FLOW|RKEY, RNXT|USTY);
+            addrem_flags(RMAP|RFLOW|RKEY, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40504,7 +43687,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->_push();
-            addrem_flags(RMAP|BLCK|QMRK, RNXT|USTY);
+            addrem_flags(RMAP|RBLCK|QMRK, RNXT|USTY);
             m_was_inside_qmrk = true;
             _save_indentation();
             _line_progressed(1);
@@ -40517,7 +43700,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->_push();
             m_evt_handler->set_key_scalar_plain_empty();
-            addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+            addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
             _save_indentation();
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40550,7 +43733,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                 m_evt_handler->set_key_ref(ref);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
-                addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
             }
         }
         else if(first == '!')
@@ -40569,7 +43752,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
         }
         else
         {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
             startindent = m_evt_handler->m_curr->line_contents.indentation; // save
             const size_t startline = m_evt_handler->m_curr->pos.line; // save
             ScannedScalar sc;
@@ -40592,7 +43775,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc);
                     m_evt_handler->set_key_scalar_squoted(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40614,7 +43797,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc);
                     m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40643,7 +43826,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, startindent);
                     m_evt_handler->set_key_scalar_plain(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40655,7 +43838,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
     }
     else // destination is unknown
     {
-        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(RSEQ));
+        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(RSEQ));
         _c4dbgpf("usty[UNK]: first='{}'", _c4prc(first));
         if(first == '[')
         {
@@ -40663,7 +43846,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RNXT|USTY);
+            addrem_flags(RSEQ|RFLOW|RVAL, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40674,7 +43857,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_block();
-            addrem_flags(RSEQ|BLCK|RVAL, RNXT|USTY);
+            addrem_flags(RSEQ|RBLCK|RVAL, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40685,7 +43868,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_flow();
-            addrem_flags(RMAP|FLOW|RKEY, RNXT|USTY);
+            addrem_flags(RMAP|RFLOW|RKEY, RNXT|USTY);
             _set_indentation(startindent);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40696,7 +43879,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_block();
-            addrem_flags(RMAP|BLCK|QMRK, RNXT|USTY);
+            addrem_flags(RMAP|RBLCK|QMRK, RNXT|USTY);
             m_was_inside_qmrk = true;
             _save_indentation();
             _line_progressed(1);
@@ -40709,7 +43892,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_block();
             m_evt_handler->set_key_scalar_plain_empty();
-            addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+            addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
             _save_indentation();
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -40744,7 +43927,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                 m_evt_handler->set_key_ref(ref);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
-                addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
             }
         }
         else if(first == '!')
@@ -40759,7 +43942,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
         }
         else
         {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
             startindent = m_evt_handler->m_curr->line_contents.indentation; // save
             const size_t startline = m_evt_handler->m_curr->pos.line; // save
             first = rem.str[0];
@@ -40787,7 +43970,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc);
                     m_evt_handler->set_key_scalar_squoted(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40813,7 +43996,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc);
                     m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40860,7 +44043,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, startindent);
                     m_evt_handler->set_key_scalar_plain(maybe_filtered);
                     _set_indentation(startindent);
-                    addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
+                    addrem_flags(RMAP|RBLCK|RVAL, RNXT|USTY);
                     _maybe_skip_whitespace_tokens();
                 }
             }
@@ -40878,11 +44061,11 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
 template<class EventHandler>
 void ParseEngine<EventHandler>::parse_json_in_place_ev(csubstr filename, substr src)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
     m_file = filename;
     m_buf = src;
     _reset();
-    m_evt_handler->start_parse(filename.str, &_s_relocate_arena, this);
+    m_evt_handler->start_parse(filename.str, src, &_s_relocate_arena, this);
     m_evt_handler->begin_stream();
     while( ! _finished_file())
     {
@@ -40890,7 +44073,7 @@ void ParseEngine<EventHandler>::parse_json_in_place_ev(csubstr filename, substr 
         while( ! _finished_line())
         {
             _c4dbgnextline();
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! m_evt_handler->m_curr->line_contents.rem.empty());
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! m_evt_handler->m_curr->line_contents.rem.empty());
             if(has_any(RSEQ))
             {
                 _handle_seq_json();
@@ -40922,11 +44105,11 @@ void ParseEngine<EventHandler>::parse_json_in_place_ev(csubstr filename, substr 
 template<class EventHandler>
 void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
 {
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
+    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_stack.size() >= 1);
     m_file = filename;
     m_buf = src;
     _reset();
-    m_evt_handler->start_parse(filename.str, &_s_relocate_arena, this);
+    m_evt_handler->start_parse(filename.str, src, &_s_relocate_arena, this);
     m_evt_handler->begin_stream();
     while( ! _finished_file())
     {
@@ -40934,8 +44117,8 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
         while( ! _finished_line())
         {
             _c4dbgnextline();
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! m_evt_handler->m_curr->line_contents.rem.empty());
-            if(has_any(FLOW))
+            _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks,  ! m_evt_handler->m_curr->line_contents.rem.empty());
+            if(has_any(RFLOW))
             {
                 if(has_none(RSEQIMAP))
                 {
@@ -40945,7 +44128,7 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
                     }
                     else
                     {
-                        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
+                        _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
                         _handle_map_flow();
                     }
                 }
@@ -40954,7 +44137,7 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
                     _handle_seq_imap();
                 }
             }
-            else if(has_any(BLCK))
+            else if(has_any(RBLCK))
             {
                 if(has_any(RSEQ))
                 {
@@ -40962,7 +44145,7 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
                 }
                 else
                 {
-                    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
+                    _RYML_ASSERT_BASIC_(m_evt_handler->m_stack.m_callbacks, has_all(RMAP));
                     _handle_map_block();
                 }
             }
@@ -41053,8 +44236,42 @@ C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 C4_SUPPRESS_WARNING_GCC("-Wtype-limits")
 C4_SUPPRESS_WARNING_GCC("-Wuseless-cast")
 
+
 namespace c4 {
 namespace yml {
+
+
+csubstr serialize_to_arena(Tree * C4_RESTRICT tree, csubstr a)
+{
+    if(a.len > 0)
+    {
+        substr rem(tree->m_arena.sub(tree->m_arena_pos));
+        size_t num = to_chars(rem, a);
+        if(num > rem.len)
+        {
+            rem = tree->_grow_arena(num);
+            num = to_chars(rem, a);
+            _RYML_ASSERT_VISIT_(tree->m_callbacks, num <= rem.len, tree, NONE);
+        }
+        return tree->_request_span(num);
+    }
+    else
+    {
+        if(a.str == nullptr)
+        {
+            return csubstr{};
+        }
+        else if(tree->m_arena.str == nullptr)
+        {
+            // Arena is empty and we want to store a non-null
+            // zero-length string.
+            // Even though the string has zero length, we need
+            // some "memory" to store a non-nullptr string
+            tree->_grow_arena(1);
+        }
+        return tree->_request_span(0);
+    }
+}
 
 
 //-----------------------------------------------------------------------------
@@ -41077,17 +44294,17 @@ ConstNodeRef Tree::crootref() const
 
 NodeRef Tree::ref(id_type id)
 {
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, id != NONE && id >= 0 && id < m_cap, this, id);
     return NodeRef(this, id);
 }
 ConstNodeRef Tree::ref(id_type id) const
 {
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, id != NONE && id >= 0 && id < m_cap, this, id);
     return ConstNodeRef(this, id);
 }
 ConstNodeRef Tree::cref(id_type id) const
 {
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, id != NONE && id >= 0 && id < m_cap, this, id);
     return ConstNodeRef(this, id);
 }
 
@@ -41125,6 +44342,11 @@ ConstNodeRef Tree::cdocref(id_type i) const
 
 //-----------------------------------------------------------------------------
 Tree::Tree(Callbacks const& cb)
+    : Tree(RYML_DEFAULT_TREE_CAPACITY, RYML_DEFAULT_TREE_ARENA_CAPACITY, cb)
+{
+}
+
+Tree::Tree(id_type node_capacity, size_t arena_capacity, Callbacks const& cb)
     : m_buf(nullptr)
     , m_cap(0)
     , m_size(0)
@@ -41135,13 +44357,10 @@ Tree::Tree(Callbacks const& cb)
     , m_callbacks(cb)
     , m_tag_directives()
 {
-}
-
-Tree::Tree(id_type node_capacity, size_t arena_capacity, Callbacks const& cb)
-    : Tree(cb)
-{
-    reserve(node_capacity);
-    reserve_arena(arena_capacity);
+    if(node_capacity)
+        reserve(node_capacity);
+    if(arena_capacity)
+        reserve_arena(arena_capacity);
 }
 
 Tree::~Tree()
@@ -41150,9 +44369,16 @@ Tree::~Tree()
 }
 
 
-Tree::Tree(Tree const& that) : Tree(that.m_callbacks)
+Tree::Tree(Tree const& that) : m_callbacks(that.m_callbacks)
 {
+    _clear();
     _copy(that);
+}
+
+Tree::Tree(Tree && that) noexcept : m_callbacks(that.m_callbacks)
+{
+    _clear();
+    _move(that);
 }
 
 Tree& Tree::operator= (Tree const& that)
@@ -41164,11 +44390,6 @@ Tree& Tree::operator= (Tree const& that)
         _copy(that);
     }
     return *this;
-}
-
-Tree::Tree(Tree && that) noexcept : Tree(that.m_callbacks)
-{
-    _move(that);
 }
 
 Tree& Tree::operator= (Tree && that) noexcept
@@ -41186,12 +44407,12 @@ void Tree::_free()
 {
     if(m_buf)
     {
-        _RYML_CB_ASSERT(m_callbacks, m_cap > 0);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_cap > 0, this, NONE);
         _RYML_CB_FREE(m_callbacks, m_buf, NodeData, (size_t)m_cap);
     }
     if(m_arena.str)
     {
-        _RYML_CB_ASSERT(m_callbacks, m_arena.len > 0);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_arena.len > 0, this, NONE);
         _RYML_CB_FREE(m_callbacks, m_arena.str, char, m_arena.len);
     }
     _clear();
@@ -41218,9 +44439,9 @@ void Tree::_clear()
 
 void Tree::_copy(Tree const& that)
 {
-    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_buf == nullptr, this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_arena.str == nullptr, this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_arena.len == 0, this, NONE);
     if(that.m_cap)
     {
         m_buf = _RYML_CB_ALLOC_HINT(m_callbacks, NodeData, (size_t)that.m_cap, that.m_buf);
@@ -41234,7 +44455,7 @@ void Tree::_copy(Tree const& that)
     m_arena = that.m_arena;
     if(that.m_arena.str)
     {
-        _RYML_CB_ASSERT(m_callbacks, that.m_arena.len > 0);
+        _RYML_ASSERT_VISIT_(m_callbacks, that.m_arena.len > 0, this, NONE);
         substr arena;
         arena.str = _RYML_CB_ALLOC_HINT(m_callbacks, char, that.m_arena.len, that.m_arena.str);
         arena.len = that.m_arena.len;
@@ -41247,9 +44468,9 @@ void Tree::_copy(Tree const& that)
 
 void Tree::_move(Tree & that) noexcept
 {
-    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_buf == nullptr, this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_arena.str == nullptr, this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_arena.len == 0, this, NONE);
     m_buf = that.m_buf;
     m_cap = that.m_cap;
     m_size = that.m_size;
@@ -41264,10 +44485,12 @@ void Tree::_move(Tree & that) noexcept
 
 void Tree::_relocate(substr next_arena)
 {
-    _RYML_CB_ASSERT(m_callbacks, next_arena.not_empty());
-    _RYML_CB_ASSERT(m_callbacks, next_arena.len >= m_arena.len);
+    _RYML_ASSERT_VISIT_(m_callbacks, next_arena.not_empty(), this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, next_arena.len >= m_arena.len, this, NONE);
     if(m_arena_pos)
+    {
         memcpy(next_arena.str, m_arena.str, m_arena_pos);
+    }
     for(NodeData *C4_RESTRICT n = m_buf, *e = m_buf + m_cap; n != e; ++n)
     {
         if(in_arena(n->m_key.scalar))
@@ -41310,20 +44533,20 @@ void Tree::reserve(id_type cap)
         _clear_range(first, del);
         if(m_free_head != NONE)
         {
-            _RYML_CB_ASSERT(m_callbacks, m_buf != nullptr);
-            _RYML_CB_ASSERT(m_callbacks, m_free_tail != NONE);
+            _RYML_ASSERT_VISIT_(m_callbacks, m_buf != nullptr, this, NONE);
+            _RYML_ASSERT_VISIT_(m_callbacks, m_free_tail != NONE, this, NONE);
             m_buf[m_free_tail].m_next_sibling = first;
             m_buf[first].m_prev_sibling = m_free_tail;
             m_free_tail = cap-1;
         }
         else
         {
-            _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE);
+            _RYML_ASSERT_VISIT_(m_callbacks, m_free_tail == NONE, this, NONE);
             m_free_head = first;
             m_free_tail = cap-1;
         }
-        _RYML_CB_ASSERT(m_callbacks, m_free_head == NONE || (m_free_head >= 0 && m_free_head < cap));
-        _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE || (m_free_tail >= 0 && m_free_tail < cap));
+        _RYML_ASSERT_VISIT_(m_callbacks, m_free_head == NONE || (m_free_head >= 0 && m_free_head < cap), this, NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_free_tail == NONE || (m_free_tail >= 0 && m_free_tail < cap), this, NONE);
 
         if( ! m_size)
             _claim_root();
@@ -41338,7 +44561,7 @@ void Tree::clear()
     m_size = 0;
     if(m_buf)
     {
-        _RYML_CB_ASSERT(m_callbacks, m_cap >= 0);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_cap >= 0, this, NONE);
         m_free_head = 0;
         m_free_tail = m_cap-1;
         _claim_root();
@@ -41355,7 +44578,7 @@ void Tree::clear()
 void Tree::_claim_root()
 {
     id_type r = _claim();
-    _RYML_CB_ASSERT(m_callbacks, r == 0);
+    _RYML_ASSERT_VISIT_(m_callbacks, r == 0, this, r);
     _set_hierarchy(r, NONE, NONE);
 }
 
@@ -41365,7 +44588,7 @@ void Tree::_clear_range(id_type first, id_type num)
 {
     if(num == 0)
         return; // prevent overflow when subtracting
-    _RYML_CB_ASSERT(m_callbacks, first >= 0 && first + num <= m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, first >= 0 && first + num <= m_cap, this, first);
     memset(m_buf + first, 0, (size_t)num * sizeof(NodeData)); // TODO we should not need this
     for(id_type i = first, e = first + num; i < e; ++i)
     {
@@ -41383,7 +44606,7 @@ C4_SUPPRESS_WARNING_GCC_POP
 //-----------------------------------------------------------------------------
 void Tree::_release(id_type i)
 {
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, i >= 0 && i < m_cap, this, i);
 
     _rem_hierarchy(i);
     _free_list_add(i);
@@ -41396,7 +44619,7 @@ void Tree::_release(id_type i)
 // add to the front of the free list
 void Tree::_free_list_add(id_type i)
 {
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, i >= 0 && i < m_cap, this, i);
     NodeData &C4_RESTRICT w = m_buf[i];
 
     w.m_parent = NONE;
@@ -41424,11 +44647,11 @@ id_type Tree::_claim()
         id_type sz = 2 * m_cap;
         sz = sz ? sz : 16;
         reserve(sz);
-        _RYML_CB_ASSERT(m_callbacks, m_free_head != NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_free_head != NONE, this, NONE);
     }
 
-    _RYML_CB_ASSERT(m_callbacks, m_size < m_cap);
-    _RYML_CB_ASSERT(m_callbacks, m_free_head >= 0 && m_free_head < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_size < m_cap, this, NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, m_free_head >= 0 && m_free_head < m_cap, this, NONE);
 
     id_type ichild = m_free_head;
     NodeData *child = m_buf + ichild;
@@ -41438,7 +44661,7 @@ id_type Tree::_claim()
     if(m_free_head == NONE)
     {
         m_free_tail = NONE;
-        _RYML_CB_ASSERT(m_callbacks, m_size == m_cap);
+        _RYML_ASSERT_VISIT_(m_callbacks, m_size == m_cap, this, NONE);
     }
 
     _clear(ichild);
@@ -41462,9 +44685,9 @@ C4_SUPPRESS_WARNING_GCC("-Wanalyzer-fd-leak")
 
 void Tree::_set_hierarchy(id_type ichild, id_type iparent, id_type iprev_sibling)
 {
-    _RYML_CB_ASSERT(m_callbacks, ichild >= 0 && ichild < m_cap);
-    _RYML_CB_ASSERT(m_callbacks, iparent == NONE || (iparent >= 0 && iparent < m_cap));
-    _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE || (iprev_sibling >= 0 && iprev_sibling < m_cap));
+    _RYML_ASSERT_VISIT_(m_callbacks, ichild >= 0 && ichild < m_cap, this, ichild);
+    _RYML_ASSERT_VISIT_(m_callbacks, iparent == NONE || (iparent >= 0 && iparent < m_cap), this, iparent);
+    _RYML_ASSERT_VISIT_(m_callbacks, iprev_sibling == NONE || (iprev_sibling >= 0 && iprev_sibling < m_cap), this, iprev_sibling);
 
     NodeData *C4_RESTRICT child = _p(ichild);
 
@@ -41474,8 +44697,8 @@ void Tree::_set_hierarchy(id_type ichild, id_type iparent, id_type iprev_sibling
 
     if(iparent == NONE)
     {
-        _RYML_CB_ASSERT(m_callbacks, ichild == 0);
-        _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, ichild == 0, this, ichild);
+        _RYML_ASSERT_VISIT_(m_callbacks, iprev_sibling == NONE, this, iprev_sibling);
     }
 
     if(iparent == NONE)
@@ -41488,23 +44711,23 @@ void Tree::_set_hierarchy(id_type ichild, id_type iparent, id_type iprev_sibling
 
     if(psib)
     {
-        _RYML_CB_ASSERT(m_callbacks, next_sibling(iprev_sibling) == id(nsib));
+        _RYML_ASSERT_VISIT_(m_callbacks, next_sibling(iprev_sibling) == id(nsib), this, iprev_sibling);
         child->m_prev_sibling = id(psib);
         psib->m_next_sibling = id(child);
-        _RYML_CB_ASSERT(m_callbacks, psib->m_prev_sibling != psib->m_next_sibling || psib->m_prev_sibling == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, psib->m_prev_sibling != psib->m_next_sibling || psib->m_prev_sibling == NONE, this, iprev_sibling);
     }
 
     if(nsib)
     {
-        _RYML_CB_ASSERT(m_callbacks, prev_sibling(inext_sibling) == id(psib));
+        _RYML_ASSERT_VISIT_(m_callbacks, prev_sibling(inext_sibling) == id(psib), this, inext_sibling);
         child->m_next_sibling = id(nsib);
         nsib->m_prev_sibling = id(child);
-        _RYML_CB_ASSERT(m_callbacks, nsib->m_prev_sibling != nsib->m_next_sibling || nsib->m_prev_sibling == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, nsib->m_prev_sibling != nsib->m_next_sibling || nsib->m_prev_sibling == NONE, this, inext_sibling);
     }
 
     if(parent->m_first_child == NONE)
     {
-        _RYML_CB_ASSERT(m_callbacks, parent->m_last_child == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, parent->m_last_child == NONE, this, parent->m_last_child);
         parent->m_first_child = id(child);
         parent->m_last_child = id(child);
     }
@@ -41525,7 +44748,7 @@ C4_SUPPRESS_WARNING_CLANG_POP
 //-----------------------------------------------------------------------------
 void Tree::_rem_hierarchy(id_type i)
 {
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+    _RYML_ASSERT_VISIT_(m_callbacks, i >= 0 && i < m_cap, this, i);
 
     NodeData &C4_RESTRICT w = m_buf[i];
 
@@ -41590,8 +44813,8 @@ void Tree::reorder()
 /** @cond dev */
 void Tree::_swap(id_type n_, id_type m_)
 {
-    _RYML_CB_ASSERT(m_callbacks, (parent(n_) != NONE) || type(n_) == NOTYPE);
-    _RYML_CB_ASSERT(m_callbacks, (parent(m_) != NONE) || type(m_) == NOTYPE);
+    _RYML_ASSERT_VISIT_(m_callbacks, (parent(n_) != NONE) || type(n_) == NOTYPE, this, n_);
+    _RYML_ASSERT_VISIT_(m_callbacks, (parent(m_) != NONE) || type(m_) == NOTYPE, this, m_);
     NodeType tn = type(n_);
     NodeType tm = type(m_);
     if(tn != NOTYPE && tm != NOTYPE)
@@ -41708,15 +44931,15 @@ void Tree::_swap_hierarchy(id_type ia, id_type ib)
     {
         if(a.m_next_sibling == ib) // n will go after m
         {
-            _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling == ia);
+            _RYML_ASSERT_VISIT_(m_callbacks, b.m_prev_sibling == ia, this, ia);
             if(a.m_prev_sibling != NONE)
             {
-                _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ib);
+                _RYML_ASSERT_VISIT_(m_callbacks, a.m_prev_sibling != ib, this, ib);
                 _p(a.m_prev_sibling)->m_next_sibling = ib;
             }
             if(b.m_next_sibling != NONE)
             {
-                _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ia);
+                _RYML_ASSERT_VISIT_(m_callbacks, b.m_next_sibling != ia, this, ia);
                 _p(b.m_next_sibling)->m_prev_sibling = ia;
             }
             id_type ns = b.m_next_sibling;
@@ -41727,15 +44950,15 @@ void Tree::_swap_hierarchy(id_type ia, id_type ib)
         }
         else if(a.m_prev_sibling == ib) // m will go after n
         {
-            _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling == ia);
+            _RYML_ASSERT_VISIT_(m_callbacks, b.m_next_sibling == ia, this, ia);
             if(b.m_prev_sibling != NONE)
             {
-                _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ia);
+                _RYML_ASSERT_VISIT_(m_callbacks, b.m_prev_sibling != ia, this, ia);
                 _p(b.m_prev_sibling)->m_next_sibling = ia;
             }
             if(a.m_next_sibling != NONE)
             {
-                _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ib);
+                _RYML_ASSERT_VISIT_(m_callbacks, a.m_next_sibling != ib, this, ib);
                 _p(a.m_next_sibling)->m_prev_sibling = ib;
             }
             id_type ns = b.m_prev_sibling;
@@ -41749,10 +44972,10 @@ void Tree::_swap_hierarchy(id_type ia, id_type ib)
             C4_NEVER_REACH();
         }
     }
-    _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ia);
-    _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ia);
-    _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ib);
-    _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ib);
+    _RYML_ASSERT_VISIT_(m_callbacks, a.m_next_sibling != ia, this, ia);
+    _RYML_ASSERT_VISIT_(m_callbacks, a.m_prev_sibling != ia, this, ia);
+    _RYML_ASSERT_VISIT_(m_callbacks, b.m_next_sibling != ib, this, ib);
+    _RYML_ASSERT_VISIT_(m_callbacks, b.m_prev_sibling != ib, this, ib);
 
     if(a.m_parent != ib && b.m_parent != ia)
     {
@@ -41824,10 +45047,10 @@ void Tree::_swap_props(id_type n_, id_type m_)
 //-----------------------------------------------------------------------------
 void Tree::move(id_type node, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, node != after);
-    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
-    _RYML_CB_ASSERT(m_callbacks, (after == NONE) || (has_sibling(node, after) && has_sibling(after, node)));
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != after, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! is_root(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, (after == NONE) || (has_sibling(node, after) && has_sibling(after, node)), this, node);
 
     _rem_hierarchy(node);
     _set_hierarchy(node, parent(node), after);
@@ -41837,12 +45060,12 @@ void Tree::move(id_type node, id_type after)
 
 void Tree::move(id_type node, id_type new_parent, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, node != after);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != node);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
-    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != after, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, new_parent != NONE, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, new_parent != node, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, new_parent != after, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! is_root(node), this, node);
 
     _rem_hierarchy(node);
     _set_hierarchy(node, new_parent, after);
@@ -41850,10 +45073,10 @@ void Tree::move(id_type node, id_type new_parent, id_type after)
 
 id_type Tree::move(Tree *src, id_type node, id_type new_parent, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
+    _RYML_ASSERT_VISIT_(m_callbacks, src != nullptr, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, new_parent != NONE, this, new_parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, new_parent != after, this, new_parent);
 
     id_type dup = duplicate(src, node, new_parent, after);
     src->remove(node);
@@ -41868,7 +45091,13 @@ void Tree::set_root_as_stream()
     // don't use _add_flags() because it's checked and will fail
     if(!has_children(root))
     {
-        if(is_val(root))
+        if(is_container(root))
+        {
+            id_type next_doc = append_child(root);
+            _copy_props_wo_key(next_doc, root);
+            _p(next_doc)->m_type.add(DOC);
+        }
+        else
         {
             _p(root)->m_type.add(SEQ);
             id_type next_doc = append_child(root);
@@ -41879,7 +45108,7 @@ void Tree::set_root_as_stream()
         _p(root)->m_type = STREAM;
         return;
     }
-    _RYML_CB_ASSERT(m_callbacks, !has_key(root));
+    _RYML_ASSERT_VISIT_(m_callbacks, !has_key(root), this, root);
     id_type next_doc = append_child(root);
     _copy_props_wo_key(next_doc, root);
     _add_flags(next_doc, DOC);
@@ -41899,7 +45128,7 @@ void Tree::set_root_as_stream()
 //-----------------------------------------------------------------------------
 void Tree::remove_children(id_type node)
 {
-    _RYML_CB_ASSERT(m_callbacks, get(node) != nullptr);
+    _RYML_ASSERT_VISIT_(m_callbacks, get(node) != nullptr, this, node);
     #if __GNUC__ >= 6
     C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
     #endif
@@ -41910,7 +45139,7 @@ void Tree::remove_children(id_type node)
     while(ich != NONE)
     {
         remove_children(ich);
-        _RYML_CB_ASSERT(m_callbacks, get(ich) != nullptr);
+        _RYML_ASSERT_VISIT_(m_callbacks, get(ich) != nullptr, this, node);
         id_type next = get(ich)->m_next_sibling;
         _release(ich);
         if(ich == get(node)->m_last_child)
@@ -41921,9 +45150,9 @@ void Tree::remove_children(id_type node)
 
 bool Tree::change_type(id_type node, NodeType type)
 {
-    _RYML_CB_ASSERT(m_callbacks, type.is_val() || type.is_map() || type.is_seq());
-    _RYML_CB_ASSERT(m_callbacks, type.is_val() + type.is_map() + type.is_seq() == 1);
-    _RYML_CB_ASSERT(m_callbacks, type.has_key() == has_key(node) || (has_key(node) && !type.has_key()));
+    _RYML_ASSERT_VISIT_(m_callbacks, type.is_val() || type.is_map() || type.is_seq(), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, type.is_val() + type.is_map() + type.is_seq() == 1, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, type.has_key() == has_key(node) || (has_key(node) && !type.has_key()), this, node);
     NodeData *d = _p(node);
     if(type.is_map() && is_map(node))
         return false;
@@ -41931,7 +45160,7 @@ bool Tree::change_type(id_type node, NodeType type)
         return false;
     else if(type.is_val() && is_val(node))
         return false;
-    d->m_type = (d->m_type & (~(MAP|SEQ|VAL))) | type;
+    d->m_type = (d->m_type & (~(MAP|SEQ|VAL|CONTAINER_STYLE|KEY_STYLE|VAL_STYLE))) | type;
     remove_children(node);
     return true;
 }
@@ -41945,10 +45174,10 @@ id_type Tree::duplicate(id_type node, id_type parent, id_type after)
 
 id_type Tree::duplicate(Tree const* src, id_type node, id_type parent, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks,  ! src->is_root(node));
+    _RYML_ASSERT_VISIT_(m_callbacks, src != nullptr, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent != NONE, this, parent);
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! src->is_root(node), src, node);
 
     id_type copy = _claim();
 
@@ -41967,10 +45196,10 @@ id_type Tree::duplicate_children(id_type node, id_type parent, id_type after)
 
 id_type Tree::duplicate_children(Tree const* src, id_type node, id_type parent, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
+    _RYML_ASSERT_VISIT_(m_callbacks, src != nullptr, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent != NONE, this, parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, after == NONE || has_child(parent, after), this, parent);
 
     id_type prev = after;
     for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
@@ -41989,9 +45218,9 @@ void Tree::duplicate_contents(id_type node, id_type where)
 
 void Tree::duplicate_contents(Tree const *src, id_type node, id_type where)
 {
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, where != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, src != nullptr, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, where != NONE, this, where);
     _copy_props_wo_key(where, src, node);
     duplicate_children(src, node, where, last_child(where));
 }
@@ -42004,9 +45233,9 @@ id_type Tree::duplicate_children_no_rep(id_type node, id_type parent, id_type af
 
 id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type parent, id_type after)
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, src, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent != NONE, this, parent);
+    _RYML_ASSERT_VISIT_(m_callbacks, after == NONE || has_child(parent, after), this, parent);
 
     // don't loop using pointers as there may be a relocation
 
@@ -42022,7 +45251,7 @@ id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type p
                 break;
             }
         }
-        _RYML_CB_ASSERT(m_callbacks, after_pos != NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, after_pos != NONE, this, node);
     }
 
     // for each child to be duplicated...
@@ -42030,7 +45259,7 @@ id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type p
     for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
     {
         _c4dbgpf("duplicate_no_rep: {} -> {}/{}", i, parent, prev);
-        _RYML_CB_CHECK(m_callbacks, this != src || (parent != i && !is_ancestor(parent, i)));
+        _RYML_CHECK_VISIT_(m_callbacks, this != src || (parent != i && !is_ancestor(parent, i)), this, parent);
         if(is_seq(parent))
         {
             _c4dbgpf("duplicate_no_rep: {} is seq", parent);
@@ -42039,7 +45268,7 @@ id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type p
         else
         {
             _c4dbgpf("duplicate_no_rep: {} is map", parent);
-            _RYML_CB_ASSERT(m_callbacks, is_map(parent));
+            _RYML_ASSERT_VISIT_(m_callbacks, is_map(parent), this, parent);
             // does the parent already have a node with key equal to that of the current duplicate?
             id_type dstnode_dup = NONE, dstnode_dup_pos = NONE;
             {
@@ -42099,12 +45328,12 @@ id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type p
 
 void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
 {
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    _RYML_ASSERT_VISIT_(m_callbacks, src != nullptr, src, src_node);
     if(src_node == NONE)
         src_node = src->root_id();
     if(dst_node == NONE)
         dst_node = root_id();
-    _RYML_CB_ASSERT(m_callbacks, src->has_val(src_node) || src->is_seq(src_node) || src->is_map(src_node));
+    _RYML_ASSERT_VISIT_(m_callbacks, src->has_val(src_node) || src->is_seq(src_node) || src->is_map(src_node), src, src_node);
     if(src->has_val(src_node))
     {
         type_bits mask_src = ~STYLE; // keep the existing style if it is already a val
@@ -42120,7 +45349,7 @@ void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
         }
         else
         {
-            _RYML_CB_ASSERT(m_callbacks, src->is_val(src_node));
+            _RYML_ASSERT_VISIT_(m_callbacks, src->is_val(src_node), src, src_node);
             _copy_props_wo_key(dst_node, src, src_node, mask_src);
         }
     }
@@ -42146,7 +45375,7 @@ void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
     }
     else
     {
-        _RYML_CB_ASSERT(m_callbacks, src->is_map(src_node));
+        _RYML_ASSERT_VISIT_(m_callbacks, src->is_map(src_node), src, src_node);
         if( ! is_map(dst_node))
         {
             if(has_children(dst_node))
@@ -42202,7 +45431,7 @@ id_type Tree::num_children(id_type node) const
 
 id_type Tree::child(id_type node, id_type pos) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
     id_type count = 0;
     for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
     {
@@ -42214,7 +45443,7 @@ id_type Tree::child(id_type node, id_type pos) const
 
 id_type Tree::child_pos(id_type node, id_type ch) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
     id_type count = 0;
     for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
     {
@@ -42239,16 +45468,16 @@ id_type Tree::child_pos(id_type node, id_type ch) const
 
 id_type Tree::find_child(id_type node, csubstr const& name) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, is_map(node));
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, is_map(node), this, node);
     if(get(node)->m_first_child == NONE)
     {
-        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, _p(node)->m_last_child == NONE, this, node);
         return NONE;
     }
     else
     {
-        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child != NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, _p(node)->m_last_child != NONE, this, node);
     }
     for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
     {
@@ -42281,13 +45510,13 @@ id_type depth_desc_(Tree const& C4_RESTRICT t, id_type id, id_type currdepth=0, 
 
 id_type Tree::depth_desc(id_type node) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
     return depth_desc_(*this, node);
 }
 
 id_type Tree::depth_asc(id_type node) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
     id_type depth = 0;
     while(!is_root(node))
     {
@@ -42299,7 +45528,7 @@ id_type Tree::depth_asc(id_type node) const
 
 bool Tree::is_ancestor(id_type node, id_type ancestor) const
 {
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, node);
     id_type p = parent(node);
     while(p != NONE)
     {
@@ -42315,8 +45544,8 @@ bool Tree::is_ancestor(id_type node, id_type ancestor) const
 
 void Tree::to_val(id_type node, csubstr val, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || ! parent_is_map(node), this, node);
     _set_flags(node, VAL|more_flags);
     _p(node)->m_key.clear();
     _p(node)->m_val = val;
@@ -42324,8 +45553,8 @@ void Tree::to_val(id_type node, csubstr val, type_bits more_flags)
 
 void Tree::to_keyval(id_type node, csubstr key, csubstr val, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || parent_is_map(node), this, node);
     _set_flags(node, KEYVAL|more_flags);
     _p(node)->m_key = key;
     _p(node)->m_val = val;
@@ -42333,8 +45562,8 @@ void Tree::to_keyval(id_type node, csubstr key, csubstr val, type_bits more_flag
 
 void Tree::to_map(id_type node, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node)); // parent must not have children with keys
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || ! parent_is_map(node), this, node); // parent must not have children with keys
     _set_flags(node, MAP|more_flags);
     _p(node)->m_key.clear();
     _p(node)->m_val.clear();
@@ -42342,8 +45571,8 @@ void Tree::to_map(id_type node, type_bits more_flags)
 
 void Tree::to_map(id_type node, csubstr key, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || parent_is_map(node), this, node);
     _set_flags(node, KEY|MAP|more_flags);
     _p(node)->m_key = key;
     _p(node)->m_val.clear();
@@ -42351,8 +45580,8 @@ void Tree::to_map(id_type node, csubstr key, type_bits more_flags)
 
 void Tree::to_seq(id_type node, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_seq(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || parent_is_seq(node), this, node);
     _set_flags(node, SEQ|more_flags);
     _p(node)->m_key.clear();
     _p(node)->m_val.clear();
@@ -42360,8 +45589,8 @@ void Tree::to_seq(id_type node, type_bits more_flags)
 
 void Tree::to_seq(id_type node, csubstr key, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
+    _RYML_ASSERT_VISIT_(m_callbacks, parent(node) == NONE || parent_is_map(node), this, node);
     _set_flags(node, KEY|SEQ|more_flags);
     _p(node)->m_key = key;
     _p(node)->m_val.clear();
@@ -42369,7 +45598,7 @@ void Tree::to_seq(id_type node, csubstr key, type_bits more_flags)
 
 void Tree::to_doc(id_type node, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
     _set_flags(node, DOC|more_flags);
     _p(node)->m_key.clear();
     _p(node)->m_val.clear();
@@ -42377,7 +45606,7 @@ void Tree::to_doc(id_type node, type_bits more_flags)
 
 void Tree::to_stream(id_type node, type_bits more_flags)
 {
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_ASSERT_VISIT_(m_callbacks,  ! has_children(node), this, node);
     _set_flags(node, STREAM|more_flags);
     _p(node)->m_key.clear();
     _p(node)->m_val.clear();
@@ -42433,14 +45662,14 @@ void Tree::clear_tag_directives()
 
 id_type Tree::add_tag_directive(TagDirective const& td)
 {
-    _RYML_CB_CHECK(m_callbacks, !td.handle.empty());
-    _RYML_CB_CHECK(m_callbacks, !td.prefix.empty());
-    _RYML_CB_CHECK(m_callbacks, td.handle.begins_with('!'));
-    _RYML_CB_CHECK(m_callbacks, td.handle.ends_with('!'));
+    _RYML_CHECK_BASIC_(m_callbacks, !td.handle.empty());
+    _RYML_CHECK_BASIC_(m_callbacks, !td.prefix.empty());
+    _RYML_CHECK_BASIC_(m_callbacks, td.handle.begins_with('!'));
+    _RYML_CHECK_BASIC_(m_callbacks, td.handle.ends_with('!'));
     // https://yaml.org/spec/1.2.2/#rule-ns-word-char
-    _RYML_CB_CHECK(m_callbacks, td.handle == '!' || td.handle == "!!" || td.handle.trim('!').first_not_of("01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-") == npos);
+    _RYML_CHECK_BASIC_(m_callbacks, td.handle == '!' || td.handle == "!!" || td.handle.trim('!').first_not_of("01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-") == npos);
     id_type pos = num_tag_directives();
-    _RYML_CB_CHECK(m_callbacks, pos < RYML_MAX_TAG_DIRECTIVES);
+    _RYML_CHECK_BASIC_(m_callbacks, pos < RYML_MAX_TAG_DIRECTIVES);
     m_tag_directives[pos] = td;
     return pos;
 }
@@ -42448,10 +45677,10 @@ id_type Tree::add_tag_directive(TagDirective const& td)
 namespace {
 bool _create_tag_directive_from_str(csubstr directive_, TagDirective *td, Tree *tree)
 {
-    _RYML_CB_CHECK(tree->callbacks(), directive_.begins_with("%TAG "));
+    _RYML_CHECK_BASIC_(tree->callbacks(), directive_.begins_with("%TAG "));
     if(!td->create_from_str(directive_))
     {
-        _RYML_CB_ERR(tree->callbacks(), "invalid tag directive");
+        _RYML_ERR_BASIC_(tree->callbacks(), "invalid tag directive");
     }
     td->next_node_id = tree->size();
     if(!tree->empty())
@@ -42493,7 +45722,7 @@ size_t Tree::resolve_tag(substr output, csubstr tag, id_type node_id) const
     {
         if(is_custom_tag(tag))
         {
-            _RYML_CB_ERR(m_callbacks, "tag directive not found");
+            _RYML_ERR_VISIT_(m_callbacks, this, node_id, "tag directive not found");
         }
     }
     return 0; // return 0 to signal that the tag is local and cannot be resolved
@@ -42513,9 +45742,9 @@ csubstr _transform_tag(Tree *t, csubstr tag, id_type node)
     }
     const char *prev_arena = t->arena().str;(void)prev_arena;
     substr buf = t->alloc_arena(required_size);
-    _RYML_CB_ASSERT(t->m_callbacks, t->arena().str == prev_arena);
+    _RYML_ASSERT_VISIT_(t->m_callbacks, t->arena().str == prev_arena, t, node);
     size_t actual_size = t->resolve_tag(buf, tag, node);
-    _RYML_CB_ASSERT(t->m_callbacks, actual_size <= required_size);
+    _RYML_ASSERT_VISIT_(t->m_callbacks, actual_size <= required_size, t, node);
     _c4dbgpf("[{}] resolved tag: ~~~{}~~~", node, buf.first(actual_size));
     return buf.first(actual_size);
 }
@@ -42701,23 +45930,23 @@ id_type Tree::_next_node(lookup_result * r, _lookup_path_token *parent) const
     csubstr prev = token.value;
     if(token.type == MAP || token.type == SEQ)
     {
-        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
-        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
-        _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
+        _RYML_ASSERT_VISIT_(m_callbacks, !token.value.begins_with('['), this, r->closest);
+        //_RYML_ASSERT_VISIT_(m_callbacks, is_container(r->closest) || r->closest == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, is_map(r->closest), this, r->closest);
         node = find_child(r->closest, token.value);
     }
     else if(token.type == KEYVAL)
     {
-        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
+        _RYML_ASSERT_VISIT_(m_callbacks, r->unresolved().empty(), this, r->closest);
         if(is_map(r->closest))
             node = find_child(r->closest, token.value);
     }
     else if(token.type == KEY)
     {
-        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
+        _RYML_ASSERT_VISIT_(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'), this, r->closest);
         token.value = token.value.offs(1, 1).trim(' ');
         id_type idx = 0;
-        _RYML_CB_CHECK(m_callbacks, from_chars(token.value, &idx));
+        _RYML_CHECK_BASIC_(m_callbacks, from_chars(token.value, &idx));
         node = child(r->closest, idx);
     }
     else
@@ -42749,8 +45978,8 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
     id_type node = NONE;
     if(token.type == MAP || token.type == SEQ)
     {
-        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
-        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
+        _RYML_ASSERT_VISIT_(m_callbacks, !token.value.begins_with('['), this, r->closest);
+        //_RYML_ASSERT_VISIT_(m_callbacks, is_container(r->closest) || r->closest == NONE);
         if( ! is_container(r->closest))
         {
             if(has_key(r->closest))
@@ -42765,14 +45994,14 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
             else
             {
                 id_type pos = NONE;
-                _RYML_CB_CHECK(m_callbacks, c4::atox(token.value, &pos));
-                _RYML_CB_ASSERT(m_callbacks, pos != NONE);
+                _RYML_CHECK_BASIC_(m_callbacks, c4::atox(token.value, &pos));
+                _RYML_ASSERT_VISIT_(m_callbacks, pos != NONE, this, r->closest);
                 node = child(r->closest, pos);
             }
         }
         if(node == NONE)
         {
-            _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
+            _RYML_ASSERT_VISIT_(m_callbacks, is_map(r->closest), this, r->closest);
             node = append_child(r->closest);
             NodeData *n = _p(node);
             n->m_key.scalar = token.value;
@@ -42781,7 +46010,7 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
     }
     else if(token.type == KEYVAL)
     {
-        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
+        _RYML_ASSERT_VISIT_(m_callbacks, r->unresolved().empty(), this, r->closest);
         if(is_map(r->closest))
         {
             node = find_child(r->closest, token.value);
@@ -42790,7 +46019,7 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
         }
         else
         {
-            _RYML_CB_ASSERT(m_callbacks, !is_seq(r->closest));
+            _RYML_ASSERT_VISIT_(m_callbacks, !is_seq(r->closest), this, r->closest);
             _add_flags(r->closest, MAP);
             node = append_child(r->closest);
         }
@@ -42801,7 +46030,7 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
     }
     else if(token.type == KEY)
     {
-        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
+        _RYML_ASSERT_VISIT_(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'), this, r->closest);
         token.value = token.value.offs(1, 1).trim(' ');
         id_type idx;
         if( ! from_chars(token.value, &idx))
@@ -42820,11 +46049,11 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
                 to_seq(r->closest);
             }
         }
-        _RYML_CB_ASSERT(m_callbacks, is_container(r->closest));
+        _RYML_ASSERT_VISIT_(m_callbacks, is_container(r->closest), this, r->closest);
         node = child(r->closest, idx);
         if(node == NONE)
         {
-            _RYML_CB_ASSERT(m_callbacks, num_children(r->closest) <= idx);
+            _RYML_ASSERT_VISIT_(m_callbacks, num_children(r->closest) <= idx, this, r->closest);
             for(id_type i = num_children(r->closest); i <= idx; ++i)
             {
                 node = append_child(r->closest);
@@ -42843,7 +46072,7 @@ id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
         C4_NEVER_REACH();
     }
 
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_ASSERT_VISIT_(m_callbacks, node != NONE, this, r->closest);
     *parent = token;
     return node;
 }
@@ -42883,15 +46112,15 @@ Tree::_lookup_path_token Tree::_next_token(lookup_result *r, _lookup_path_token 
     }
 
     // it's either a map or a seq
-    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '.' || unres[pos] == '[');
+    _RYML_ASSERT_VISIT_(m_callbacks, unres[pos] == '.' || unres[pos] == '[', this, r->closest);
     if(unres[pos] == '.')
     {
-        _RYML_CB_ASSERT(m_callbacks, pos != 0);
+        _RYML_ASSERT_VISIT_(m_callbacks, pos != 0, this, r->closest);
         _advance(r, pos + 1);
         return {unres.first(pos), MAP};
     }
 
-    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '[');
+    _RYML_ASSERT_VISIT_(m_callbacks, unres[pos] == '[', this, r->closest);
     _advance(r, pos);
     return {unres.first(pos), SEQ};
 }
@@ -42946,8 +46175,8 @@ bool Tree::_location_from_node(Parser const& parser, id_type node, Location *C4_
         csubstr k = key(node);
         if(C4_LIKELY(k.str != nullptr))
         {
-            _RYML_CB_ASSERT(m_callbacks, k.is_sub(parser.source()));
-            _RYML_CB_ASSERT(m_callbacks, parser.source().is_super(k));
+            _RYML_ASSERT_BASIC_(m_callbacks, k.is_sub(parser.source()));
+            _RYML_ASSERT_BASIC_(m_callbacks, parser.source().is_super(k));
             *loc = parser.val_location(k.str);
             return true;
         }
@@ -42958,8 +46187,8 @@ bool Tree::_location_from_node(Parser const& parser, id_type node, Location *C4_
         csubstr v = val(node);
         if(C4_LIKELY(v.str != nullptr))
         {
-            _RYML_CB_ASSERT(m_callbacks, v.is_sub(parser.source()));
-            _RYML_CB_ASSERT(m_callbacks, parser.source().is_super(v));
+            _RYML_ASSERT_BASIC_(m_callbacks, v.is_sub(parser.source()));
+            _RYML_ASSERT_BASIC_(m_callbacks, parser.source().is_super(v));
             *loc = parser.val_location(v.str);
             return true;
         }
@@ -43006,7 +46235,7 @@ bool Tree::_location_from_node(Parser const& parser, id_type node, Location *C4_
 
 bool Tree::_location_from_cont(Parser const& parser, id_type node, Location *C4_RESTRICT loc) const
 {
-    _RYML_CB_ASSERT(m_callbacks, is_container(node));
+    _RYML_ASSERT_BASIC_(m_callbacks, is_container(node));
     if(!is_stream(node))
     {
         const char *node_start = _p(node)->m_val.scalar.str;  // this was stored in the container
@@ -43133,26 +46362,22 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
                 for(id_type ich = m_tree->first_child(n); ich != NONE; ich = m_tree->next_sibling(ich))
                 {
                     _c4dbgpf("node[{}]: instance [{}]: val ref, inheriting multiple: {} '{}'", n, m_refs.size(), ich, m_tree->val_ref(ich));
-                    if(m_tree->is_container(ich))
-                    {
-                        detail::_report_err(m_tree->m_callbacks, "ERROR: node {} child {}: refs for << cannot be containers.'", n, ich);
-                        C4_UNREACHABLE_AFTER_ERR();
-                    }
+                    if(C4_UNLIKELY(m_tree->is_container(ich)))
+                        _RYML_ERR_VISIT_(m_tree->m_callbacks, m_tree, n, "child={}: refs for << cannot be containers.", ich);
                     m_refs.push({VALREF, ich, NONE, NONE, n, m_tree->next_sibling(n)});
                 }
                 return; // don't descend into the seq
             }
             else
             {
-                detail::_report_err(m_tree->m_callbacks, "ERROR: node {}: refs for << must be either val or seq", n);
-                C4_UNREACHABLE_AFTER_ERR();
+                _RYML_ERR_VISIT_(m_tree->m_callbacks, m_tree, n, "refs for << must be either val or seq");
             }
         }
         else if(m_tree->is_key_ref(n))
         {
             _c4dbgpf("node[{}]: instance[{}]: key ref: '{}', key='{}'", n, m_refs.size(), m_tree->key_ref(n), m_tree->has_key(n) ? m_tree->key(n) : csubstr{"-"});
-            _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->key(n) != "<<");
-            _RYML_CB_CHECK(m_tree->m_callbacks, (!m_tree->has_key(n)) || m_tree->key(n).ends_with(m_tree->key_ref(n)));
+            _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree->key(n) != "<<", m_tree, n);
+            _RYML_CHECK_VISIT_(m_tree->m_callbacks, (!m_tree->has_key(n)) || m_tree->key(n).ends_with(m_tree->key_ref(n)), m_tree, n);
             m_refs.push({KEYREF, n, NONE, NONE, NONE, NONE});
         }
     }
@@ -43160,20 +46385,20 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
     if(m_tree->is_val_ref(n) && (!m_tree->has_key(n) || m_tree->key(n) != "<<"))
     {
         _c4dbgpf("node[{}]: instance[{}]: val ref: '{}'", n, m_refs.size(), m_tree->val_ref(n));
-        RYML_CHECK((!m_tree->has_val(n)) || m_tree->val(n).ends_with(m_tree->val_ref(n)));
+        _RYML_CHECK_VISIT((!m_tree->has_val(n)) || m_tree->val(n).ends_with(m_tree->val_ref(n)), m_tree, n);
         m_refs.push({VALREF, n, NONE, NONE, NONE, NONE});
     }
     // anchors
     if(m_tree->has_key_anchor(n))
     {
         _c4dbgpf("node[{}]: instance[{}]: key anchor: '{}'", n, m_refs.size(), m_tree->key_anchor(n));
-        RYML_CHECK(m_tree->has_key(n));
+        _RYML_CHECK_VISIT(m_tree->has_key(n), m_tree, n);
         m_refs.push({KEYANCH, n, NONE, NONE, NONE, NONE});
     }
     if(m_tree->has_val_anchor(n))
     {
         _c4dbgpf("node[{}]: instance[{}]: val anchor: '{}'", n, m_refs.size(), m_tree->val_anchor(n));
-        RYML_CHECK(m_tree->has_val(n) || m_tree->is_container(n));
+        _RYML_CHECK_VISIT(m_tree->has_val(n) || m_tree->is_container(n), m_tree, n);
         m_refs.push({VALANCH, n, NONE, NONE, NONE, NONE});
     }
     // recurse
@@ -43216,8 +46441,8 @@ id_type ReferenceResolver::lookup_(RefData const* C4_RESTRICT ra)
     id_type instance = static_cast<id_type>(ra-m_refs.m_stack);
     id_type node = ra->node;
     #endif
-    RYML_ASSERT(ra->type.is_key_ref() || ra->type.is_val_ref());
-    RYML_ASSERT(ra->type.is_key_ref() != ra->type.is_val_ref());
+    _RYML_ASSERT_VISIT_(m_tree->m_callbacks, ra->type.is_key_ref() || ra->type.is_val_ref(), m_tree, ra->node);
+    _RYML_ASSERT_VISIT_(m_tree->m_callbacks, ra->type.is_key_ref() != ra->type.is_val_ref(), m_tree, ra->node);
     csubstr refname;
     _c4dbgpf("instance[{}:node{}]: lookup from node={}...", instance, node, ra->node);
     if(ra->type.is_val_ref())
@@ -43227,7 +46452,7 @@ id_type ReferenceResolver::lookup_(RefData const* C4_RESTRICT ra)
     }
     else
     {
-        RYML_ASSERT(ra->type.is_key_ref());
+        _RYML_ASSERT_VISIT_(m_tree->m_callbacks, ra->type.is_key_ref(), m_tree, ra->node);
         refname = m_tree->key_ref(ra->node);
         _c4dbgpf("instance[{}:node{}]: keyref: '{}'", instance, node, refname);
     }
@@ -43243,7 +46468,7 @@ id_type ReferenceResolver::lookup_(RefData const* C4_RESTRICT ra)
             return ra->node;
         }
     }
-    detail::_report_err(m_tree->m_callbacks, "ERROR: anchor not found: '{}'", refname);
+    _RYML_ERR_VISIT_(m_tree->m_callbacks, m_tree, ra->node, "anchor not found: '{}'", refname);
     C4_UNREACHABLE_AFTER_ERR();
 }
 
@@ -43288,7 +46513,7 @@ void ReferenceResolver::resolve_()
         if(refdata.parent_ref != NONE)
         {
             _c4dbgpf("instance[{}:node{}] has parent: {}", i, refdata.node, refdata.parent_ref);
-            _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_seq(refdata.parent_ref));
+            _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree->is_seq(refdata.parent_ref), m_tree, refdata.node);
             const id_type p = m_tree->parent(refdata.parent_ref);
             const id_type after = (prev_parent_ref != refdata.parent_ref) ?
                 refdata.parent_ref//prev_sibling(rd.parent_ref_sibling)
@@ -43304,7 +46529,7 @@ void ReferenceResolver::resolve_()
             if(m_tree->has_key(refdata.node) && m_tree->key(refdata.node) == "<<")
             {
                 _c4dbgpf("instance[{}:node{}] is inheriting", i, refdata.node);
-                _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_keyval(refdata.node));
+                _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree->is_keyval(refdata.node), m_tree, refdata.node);
                 const id_type p = m_tree->parent(refdata.node);
                 const id_type after = m_tree->prev_sibling(refdata.node);
                 _c4dbgpf("instance[{}:node{}] p={} after={}", i, refdata.node, p, after);
@@ -43314,13 +46539,13 @@ void ReferenceResolver::resolve_()
             else if(refdata.type.is_key_ref())
             {
                 _c4dbgpf("instance[{}:node{}] is key ref", i, refdata.node);
-                _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_key_ref(refdata.node));
-                _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->has_key_anchor(refdata.target) || m_tree->has_val_anchor(refdata.target));
+                _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree->is_key_ref(refdata.node), m_tree, refdata.node);
+                _RYML_ASSERT_VISIT_(m_tree->m_callbacks, m_tree->has_key_anchor(refdata.target) || m_tree->has_val_anchor(refdata.target), m_tree, refdata.node);
                 if(m_tree->has_val_anchor(refdata.target) && m_tree->val_anchor(refdata.target) == m_tree->key_ref(refdata.node))
                 {
                     _c4dbgpf("instance[{}:node{}] target.anchor==val.anchor=={}", i, refdata.node, m_tree->val_anchor(refdata.target));
-                    _RYML_CB_CHECK(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
-                    _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->has_val(refdata.target));
+                    _RYML_CHECK_VISIT_(m_tree->m_callbacks, !m_tree->is_container(refdata.target), m_tree, refdata.target);
+                    _RYML_CHECK_VISIT_(m_tree->m_callbacks, m_tree->has_val(refdata.target), m_tree, refdata.target);
                     const type_bits existing_style_flags = VAL_STYLE & m_tree->_p(refdata.target)->m_type.type;
                     static_assert((VAL_STYLE >> 1u) == (KEY_STYLE), "bad flags");
                     m_tree->_p(refdata.node)->m_key.scalar = m_tree->val(refdata.target);
@@ -43329,7 +46554,7 @@ void ReferenceResolver::resolve_()
                 else
                 {
                     _c4dbgpf("instance[{}:node{}] don't inherit container flags", i, refdata.node);
-                    _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->key_anchor(refdata.target) == m_tree->key_ref(refdata.node));
+                    _RYML_CHECK_BASIC_(m_tree->m_callbacks, m_tree->key_anchor(refdata.target) == m_tree->key_ref(refdata.node));
                     m_tree->_p(refdata.node)->m_key.scalar = m_tree->key(refdata.target);
                     // keys cannot be containers, so don't inherit container flags
                     const type_bits existing_style_flags = KEY_STYLE & m_tree->_p(refdata.target)->m_type.type;
@@ -43339,12 +46564,12 @@ void ReferenceResolver::resolve_()
             else // val ref
             {
                 _c4dbgpf("instance[{}:node{}] is val ref", i, refdata.node);
-                _RYML_CB_ASSERT(m_tree->m_callbacks, refdata.type.is_val_ref());
+                _RYML_ASSERT_VISIT_(m_tree->m_callbacks, refdata.type.is_val_ref(), m_tree, refdata.node);
                 if(m_tree->has_key_anchor(refdata.target) && m_tree->key_anchor(refdata.target) == m_tree->val_ref(refdata.node))
                 {
                     _c4dbgpf("instance[{}:node{}] target.anchor==key.anchor=={}", i, refdata.node, m_tree->key_anchor(refdata.target));
-                    _RYML_CB_CHECK(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
-                    _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->has_val(refdata.target));
+                    _RYML_CHECK_BASIC_(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
+                    _RYML_CHECK_BASIC_(m_tree->m_callbacks, m_tree->has_val(refdata.target));
                     // keys cannot be containers, so don't inherit container flags
                     const type_bits existing_style_flags = (KEY_STYLE) & m_tree->_p(refdata.target)->m_type.type;
                     static_assert((KEY_STYLE << 1u) == (VAL_STYLE), "bad flags");
@@ -43481,12 +46706,12 @@ template class ParseEngine<EventHandlerTree>;
 namespace {
 inline void _reset_tree_handler(Parser *parser, Tree *t, id_type node_id)
 {
-    RYML_ASSERT(parser);
-    RYML_ASSERT(t);
+    _RYML_ASSERT_BASIC(parser);
+    _RYML_ASSERT_BASIC(t);
     if(!parser->m_evt_handler)
-        _RYML_CB_ERR(t->m_callbacks, "event handler is not set");
+        _RYML_ERR_BASIC_(t->m_callbacks, "event handler is not set");
     parser->m_evt_handler->reset(t, node_id);
-    RYML_ASSERT(parser->m_evt_handler->m_tree == t);
+    _RYML_ASSERT_BASIC(parser->m_evt_handler->m_tree == t);
 }
 } // namespace
 
@@ -43505,84 +46730,84 @@ void parse_json_in_place(Parser *parser, csubstr filename, substr json, Tree *t,
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_in_place(Parser *parser,                   substr yaml, Tree *t, id_type node_id) { parse_in_place(parser, {}, yaml, t, node_id); }
-void parse_in_place(Parser *parser, csubstr filename, substr yaml, Tree *t                ) { RYML_CHECK(t); parse_in_place(parser, filename, yaml, t, t->root_id()); }
-void parse_in_place(Parser *parser,                   substr yaml, Tree *t                ) { RYML_CHECK(t); parse_in_place(parser, {}      , yaml, t, t->root_id()); }
-void parse_in_place(Parser *parser, csubstr filename, substr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); parse_in_place(parser, filename, yaml, node.tree(), node.id()); }
-void parse_in_place(Parser *parser,                   substr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); parse_in_place(parser, {}      , yaml, node.tree(), node.id()); }
-Tree parse_in_place(Parser *parser, csubstr filename, substr yaml                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_in_place(parser, filename, yaml, &tree, tree.root_id()); return tree; }
-Tree parse_in_place(Parser *parser,                   substr yaml                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_in_place(parser, {}      , yaml, &tree, tree.root_id()); return tree; }
+void parse_in_place(Parser *parser, csubstr filename, substr yaml, Tree *t                 ) { _RYML_CHECK_BASIC(t); if(t->empty()) { t->reserve(); } parse_in_place(parser, filename, yaml, t, t->root_id()); }
+void parse_in_place(Parser *parser,                   substr yaml, Tree *t                 ) { _RYML_CHECK_BASIC(t); if(t->empty()) { t->reserve(); } parse_in_place(parser, {}      , yaml, t, t->root_id()); }
+void parse_in_place(Parser *parser, csubstr filename, substr yaml, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); parse_in_place(parser, filename, yaml, node.tree(), node.id()); }
+void parse_in_place(Parser *parser,                   substr yaml, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); parse_in_place(parser, {}      , yaml, node.tree(), node.id()); }
+Tree parse_in_place(Parser *parser, csubstr filename, substr yaml                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_in_place(parser, filename, yaml, &tree, tree.root_id()); return tree; }
+Tree parse_in_place(Parser *parser,                   substr yaml                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_in_place(parser, {}      , yaml, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
-void parse_in_place(csubstr filename, substr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, t, node_id); }
-void parse_in_place(                  substr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, t, node_id); }
-void parse_in_place(csubstr filename, substr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, t, t->root_id()); }
-void parse_in_place(                  substr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, t, t->root_id()); }
-void parse_in_place(csubstr filename, substr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, node.tree(), node.id()); }
-void parse_in_place(                  substr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, node.tree(), node.id()); }
-Tree parse_in_place(csubstr filename, substr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, filename, yaml, &tree, tree.root_id()); return tree; }
-Tree parse_in_place(                  substr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, {}      , yaml, &tree, tree.root_id()); return tree; }
+void parse_in_place(csubstr filename, substr yaml, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); parse_in_place(&parser, filename, yaml, t, node_id); }
+void parse_in_place(                  substr yaml, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); parse_in_place(&parser, {}      , yaml, t, node_id); }
+void parse_in_place(csubstr filename, substr yaml, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); if(t->empty()) { t->reserve(); } parse_in_place(&parser, filename, yaml, t, t->root_id()); }
+void parse_in_place(                  substr yaml, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); if(t->empty()) { t->reserve(); } parse_in_place(&parser, {}      , yaml, t, t->root_id()); }
+void parse_in_place(csubstr filename, substr yaml, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); parse_in_place(&parser, filename, yaml, node.tree(), node.id()); }
+void parse_in_place(                  substr yaml, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); parse_in_place(&parser, {}      , yaml, node.tree(), node.id()); }
+Tree parse_in_place(csubstr filename, substr yaml                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); parse_in_place(&parser, filename, yaml, &tree, tree.root_id()); return tree; }
+Tree parse_in_place(                  substr yaml                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); parse_in_place(&parser, {}      , yaml, &tree, tree.root_id()); return tree; }
 
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_json_in_place(Parser *parser,                   substr json, Tree *t, id_type node_id) { parse_json_in_place(parser, {}, json, t, node_id); }
-void parse_json_in_place(Parser *parser, csubstr filename, substr json, Tree *t                 ) { RYML_CHECK(t); parse_json_in_place(parser, filename, json, t, t->root_id()); }
-void parse_json_in_place(Parser *parser,                   substr json, Tree *t                 ) { RYML_CHECK(t); parse_json_in_place(parser, {}      , json, t, t->root_id()); }
-void parse_json_in_place(Parser *parser, csubstr filename, substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, filename, json, node.tree(), node.id()); }
-void parse_json_in_place(Parser *parser,                   substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, {}      , json, node.tree(), node.id()); }
-Tree parse_json_in_place(Parser *parser, csubstr filename, substr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, filename, json, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_place(Parser *parser,                   substr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, {}      , json, &tree, tree.root_id()); return tree; }
+void parse_json_in_place(Parser *parser, csubstr filename, substr json, Tree *t                 ) { _RYML_CHECK_BASIC(t); if(t->empty()) { t->reserve(); } parse_json_in_place(parser, filename, json, t, t->root_id()); }
+void parse_json_in_place(Parser *parser,                   substr json, Tree *t                 ) { _RYML_CHECK_BASIC(t); if(t->empty()) { t->reserve(); } parse_json_in_place(parser, {}      , json, t, t->root_id()); }
+void parse_json_in_place(Parser *parser, csubstr filename, substr json, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); parse_json_in_place(parser, filename, json, node.tree(), node.id()); }
+void parse_json_in_place(Parser *parser,                   substr json, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); parse_json_in_place(parser, {}      , json, node.tree(), node.id()); }
+Tree parse_json_in_place(Parser *parser, csubstr filename, substr json                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, filename, json, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_place(Parser *parser,                   substr json                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, {}      , json, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
-void parse_json_in_place(csubstr filename, substr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, t, node_id); }
-void parse_json_in_place(                  substr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, t, node_id); }
-void parse_json_in_place(csubstr filename, substr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, t, t->root_id()); }
-void parse_json_in_place(                  substr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, t, t->root_id()); }
-void parse_json_in_place(csubstr filename, substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, node.tree(), node.id()); }
-void parse_json_in_place(                  substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, node.tree(), node.id()); }
-Tree parse_json_in_place(csubstr filename, substr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, filename, json, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_place(                  substr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, {}      , json, &tree, tree.root_id()); return tree; }
-
-
-// this is vertically aligned to highlight the parameter differences.
-void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, node_id); }
-void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, node_id); }
-void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, t->root_id()); }
-void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, t->root_id()); }
-void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, filename, src, node.tree(), node.id()); }
-void parse_in_arena(Parser *parser,                   csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, {}      , src, node.tree(), node.id()); }
-Tree parse_in_arena(Parser *parser, csubstr filename, csubstr yaml                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_in_arena(Parser *parser,                   csubstr yaml                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
-
-// this is vertically aligned to highlight the parameter differences.
-void parse_in_arena(csubstr filename, csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, node_id); }
-void parse_in_arena(                  csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, node_id); }
-void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, t->root_id()); }
-void parse_in_arena(                  csubstr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, t->root_id()); }
-void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, filename, src, node.tree(), node.id()); }
-void parse_in_arena(                  csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, node.tree(), node.id()); }
-Tree parse_in_arena(csubstr filename, csubstr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_in_arena(                  csubstr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_json_in_place(csubstr filename, substr json, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); parse_json_in_place(&parser, filename, json, t, node_id); }
+void parse_json_in_place(                  substr json, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); parse_json_in_place(&parser, {}      , json, t, node_id); }
+void parse_json_in_place(csubstr filename, substr json, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); if(t->empty()) { t->reserve(); } parse_json_in_place(&parser, filename, json, t, t->root_id()); }
+void parse_json_in_place(                  substr json, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); if(t->empty()) { t->reserve(); } parse_json_in_place(&parser, {}      , json, t, t->root_id()); }
+void parse_json_in_place(csubstr filename, substr json, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); parse_json_in_place(&parser, filename, json, node.tree(), node.id()); }
+void parse_json_in_place(                  substr json, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); parse_json_in_place(&parser, {}      , json, node.tree(), node.id()); }
+Tree parse_json_in_place(csubstr filename, substr json                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); parse_json_in_place(&parser, filename, json, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_place(                  substr json                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); parse_json_in_place(&parser, {}      , json, &tree, tree.root_id()); return tree; }
 
 
 // this is vertically aligned to highlight the parameter differences.
-void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, node_id); }
-void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, node_id); }
-void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, t->root_id()); }
-void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, t->root_id()); }
-void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, filename, src, node.tree(), node.id()); }
-void parse_json_in_arena(Parser *parser,                   csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, {}      , src, node.tree(), node.id()); }
-Tree parse_json_in_arena(Parser *parser, csubstr filename, csubstr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_arena(Parser *parser,                   csubstr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t, id_type node_id) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, node_id); }
+void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t, id_type node_id) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, node_id); }
+void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t                 ) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(yaml); if(t->empty()) { t->reserve(); } parse_in_place(parser, filename, src, t, t->root_id()); }
+void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t                 ) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(yaml); if(t->empty()) { t->reserve(); } parse_in_place(parser, {}      , src, t, t->root_id()); }
+void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, filename, src, node.tree(), node.id()); }
+void parse_in_arena(Parser *parser,                   csubstr yaml, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, {}      , src, node.tree(), node.id()); }
+Tree parse_in_arena(Parser *parser, csubstr filename, csubstr yaml                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_in_arena(Parser *parser,                   csubstr yaml                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
-void parse_json_in_arena(csubstr filename, csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, node_id); }
-void parse_json_in_arena(                  csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, node_id); }
-void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, t->root_id()); }
-void parse_json_in_arena(                  csubstr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, t->root_id()); }
-void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, filename, src, node.tree(), node.id()); }
-void parse_json_in_arena(                  csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, node.tree(), node.id()); }
-Tree parse_json_in_arena(csubstr filename, csubstr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_arena(                  csubstr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_in_arena(csubstr filename, csubstr yaml, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, node_id); }
+void parse_in_arena(                  csubstr yaml, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, node_id); }
+void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(yaml); if(t->empty()) { t->reserve(); } parse_in_place(&parser, filename, src, t, t->root_id()); }
+void parse_in_arena(                  csubstr yaml, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(yaml); if(t->empty()) { t->reserve(); } parse_in_place(&parser, {}      , src, t, t->root_id()); }
+void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, filename, src, node.tree(), node.id()); }
+void parse_in_arena(                  csubstr yaml, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, node.tree(), node.id()); }
+Tree parse_in_arena(csubstr filename, csubstr yaml                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_in_arena(                  csubstr yaml                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
+
+
+// this is vertically aligned to highlight the parameter differences.
+void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t, id_type node_id) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, node_id); }
+void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t, id_type node_id) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, node_id); }
+void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t                 ) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(json); if(t->empty()) { t->reserve(); } parse_json_in_place(parser, filename, src, t, t->root_id()); }
+void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t                 ) { _RYML_CHECK_BASIC(t); substr src = t->copy_to_arena(json); if(t->empty()) { t->reserve(); } parse_json_in_place(parser, {}      , src, t, t->root_id()); }
+void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, filename, src, node.tree(), node.id()); }
+void parse_json_in_arena(Parser *parser,                   csubstr json, NodeRef node            ) { _RYML_CHECK_BASIC(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, {}      , src, node.tree(), node.id()); }
+Tree parse_json_in_arena(Parser *parser, csubstr filename, csubstr json                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_arena(Parser *parser,                   csubstr json                          ) { _RYML_CHECK_BASIC(parser); _RYML_CHECK_BASIC(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
+
+// this is vertically aligned to highlight the parameter differences.
+void parse_json_in_arena(csubstr filename, csubstr json, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, node_id); }
+void parse_json_in_arena(                  csubstr json, Tree *t, id_type node_id, ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, node_id); }
+void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(json); if(t->empty()) { t->reserve(); } parse_json_in_place(&parser, filename, src, t, t->root_id()); }
+void parse_json_in_arena(                  csubstr json, Tree *t                 , ParserOptions const& opts) { _RYML_CHECK_BASIC(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler, opts); substr src = t->copy_to_arena(json); if(t->empty()) { t->reserve(); } parse_json_in_place(&parser, {}      , src, t, t->root_id()); }
+void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, filename, src, node.tree(), node.id()); }
+void parse_json_in_arena(                  csubstr json, NodeRef node            , ParserOptions const& opts) { _RYML_CHECK_BASIC(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler, opts); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, node.tree(), node.id()); }
+Tree parse_json_in_arena(csubstr filename, csubstr json                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_arena(                  csubstr json                          , ParserOptions const& opts) { Parser::handler_type event_handler; Parser parser(&event_handler, opts); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 
 //-----------------------------------------------------------------------------
@@ -43674,6 +46899,13 @@ size_t NodeRef::set_val_serialized(c4::fmt::const_base64_wrapper w)
 #endif /* C4_YML_PREPROCESS_HPP_ */
 
 // amalgamate: removed include of
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
+
+// amalgamate: removed include of
 // c4/yml/detail/dbgprint.hpp
 //#include "c4/yml/detail/dbgprint.hpp"
 #if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
@@ -43720,7 +46952,7 @@ size_t preprocess_rxmap(csubstr s, substr buf)
 
     if(s.begins_with('{'))
     {
-        RYML_CHECK(s.ends_with('}'));
+        _RYML_CHECK_BASIC(s.ends_with('}'));
         s = s.offs(1, 1);
     }
 
@@ -44053,6 +47285,7 @@ namespace yml {
 
 C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 C4_SUPPRESS_WARNING_GCC("-Wuseless-cast")
+C4_SUPPRESS_WARNING_GCC("-Wattributes")
 
 inline const char* _container_style_code(Tree const& p, id_type node)
 {
@@ -44099,16 +47332,14 @@ inline char _scalar_code_val(Tree const& p, id_type node)
 {
     return _scalar_code_key(p._p(node)->m_type);
 }
-inline id_type print_node(Tree const& p, id_type node, int level, id_type count, bool print_children)
+inline C4_NO_INLINE id_type print_node(Tree const& p, id_type node, int level, id_type count, bool print_children, bool print_address=false)
 {
-    printf("[%zu]%*s[%zu] %p", (size_t)count, (2*level), "", (size_t)node, (void const*)p.get(node));
-    if(p.is_root(node))
-    {
-        printf(" [ROOT]");
-    }
+    printf("[%zu]%*s[%zu]", (size_t)count, (2*level), "", (size_t)node);
+    if(print_address) printf(" %p", (void const*)p.get(node));
+    if(p.is_root(node)) printf(" [ROOT]");
     char typebuf[128];
     csubstr typestr = p.type(node).type_str(typebuf);
-    RYML_CHECK(typestr.str);
+    _RYML_CHECK_BASIC(typestr.str);
     printf(" %.*s", (int)typestr.len, typestr.str);
     if(p.has_key(node))
     {
@@ -44129,7 +47360,7 @@ inline id_type print_node(Tree const& p, id_type node, int level, id_type count,
     if(p.has_val_anchor(node))
     {
         csubstr a = p.val_anchor(node);
-        printf(" &%.*s'", (int)a.len, a.str);
+        printf(" &%.*s", (int)a.len, a.str);
     }
     if(p.has_val_tag(node))
     {
@@ -44170,9 +47401,9 @@ inline id_type print_node(Tree const& p, id_type node, int level, id_type count,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-inline void print_node(ConstNodeRef const& p, int level=0)
+inline void print_node(ConstNodeRef const& p, int level=0, bool print_address=false) // LCOV_EXCL_LINE
 {
-    print_node(*p.tree(), p.id(), level, 0, true);
+    print_node(*p.tree(), p.id(), level, 0, true, print_address); // LCOV_EXCL_LINE
 }
 
 
@@ -44180,7 +47411,7 @@ inline void print_node(ConstNodeRef const& p, int level=0)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-inline id_type print_tree(const char *message, Tree const& p, id_type node=NONE)
+inline id_type print_tree(const char *message, Tree const& p, id_type node=NONE, bool print_address=false)
 {
     printf("--------------------------------------\n");
     if(message != nullptr)
@@ -44190,24 +47421,24 @@ inline id_type print_tree(const char *message, Tree const& p, id_type node=NONE)
     {
         if(node == NONE)
             node = p.root_id();
-        ret = print_node(p, node, 0, 0, true);
+        ret = print_node(p, node, 0, 0, true, print_address);
     }
     printf("#nodes=%zu vs #printed=%zu\n", (size_t)p.size(), (size_t)ret);
     printf("--------------------------------------\n");
     return ret;
 }
 
-inline id_type print_tree(Tree const& p, id_type node=NONE)
+inline id_type print_tree(Tree const& p, id_type node=NONE, bool print_address=false)
 {
-    return print_tree(nullptr, p, node);
+    return print_tree(nullptr, p, node, print_address);
 }
 
-inline void print_tree(ConstNodeRef const& p, int level)
+inline void print_tree(ConstNodeRef const& p, int level, bool print_address=false)
 {
-    print_node(p, level);
+    print_node(p, level, print_address);
     for(ConstNodeRef ch : p.children())
     {
-        print_tree(ch, level+1);
+        print_tree(ch, level+1, print_address);
     }
 }
 
