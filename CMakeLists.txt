@@ -162,7 +162,7 @@ function(configure_jsonnet_obj_target LIB_TARGET_NAME)
     else()
         target_sources(${LIB_TARGET_NAME}
             PRIVATE
-                third_party/rapidyaml/rapidyaml-0.10.0.hpp
+                third_party/rapidyaml/rapidyaml-0.11.1.hpp
                 third_party/rapidyaml/rapidyaml.cpp
         )
     endif()
