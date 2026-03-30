@@ -32,6 +32,9 @@ limitations under the License.
 #ifdef USE_SYSTEM_RAPIDYAML
 #include <ryml.hpp>
 #include <ryml_std.hpp>
+#ifdef RYML_NEW_ERROR_API
+#include <c4/yml/error.def.hpp>
+#endif
 #else
 #include "rapidyaml-0.10.0.hpp"
 #endif
@@ -1715,10 +1718,22 @@ class Interpreter {
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
         json j;
         try {
+#ifdef RYML_NEW_ERROR_API
+            // rapidyaml >= 0.11.0: positional Callbacks constructor is deprecated;
+            // use setter API.  Pass the source buffer as userdata so the error
+            // handler can reconstruct the source-context lines that 0.10.0
+            // provided automatically inside the pre-formatted inner_msg.
+            c4::csubstr src = ryml::to_csubstr(value);
+            ryml::Callbacks cb{};
+            cb.m_user_data = &src;
+            cb.set_error_parse(&Interpreter::handleRapidYamlError);
+            ryml::EventHandlerTree et{cb};
+#else
             // Use a custom EventHandler so we can attach error handling.
             ryml::EventHandlerTree et{ryml::Callbacks{
                 nullptr, nullptr, nullptr, &Interpreter::handleRapidYamlError
             }};
+#endif
             ryml::Parser pe(&et);
             ryml::Tree tree = ryml::parse_in_arena(&pe, ryml::to_csubstr(value));
 
@@ -3474,6 +3489,55 @@ class Interpreter {
         return r;
     }
 
+#ifdef RYML_NEW_ERROR_API
+    static void handleRapidYamlError(c4::csubstr msg, const c4::yml::ErrorDataParse& data, void* userdata)
+    {
+        std::ostringstream out;
+        const c4::yml::Location& loc = data.ymlloc;
+
+        out << "YAML error: ";
+        if (loc.line != ryml::npos) {
+            out << loc.line << ":";
+            out << (loc.col != ryml::npos ? loc.col : loc.offset) << ":";
+        }
+        out << " ERROR: " << std::string_view(msg.str, msg.len);
+
+        // Emit a single context line matching the old format:
+        //   line:col: snippet (size=N)
+        //             ^  (cols C-C)
+        if (userdata && loc.line != ryml::npos) {
+            const auto& src = *static_cast<const c4::csubstr*>(userdata);
+
+            // Find the source line referenced by loc (loc.line is 1-based)
+            size_t line_start = 0;
+            size_t line_num = 1;
+            while (line_num < loc.line && line_start < src.len) {
+                if (src.str[line_start] == '\n')
+                    ++line_num;
+                ++line_start;
+            }
+            size_t line_end = line_start;
+            while (line_end < src.len && src.str[line_end] != '\n')
+                ++line_end;
+            c4::csubstr srcline = src.sub(line_start, line_end - line_start);
+
+            // Format: \nline:col: snippet (size=N)\n<spaces>^  (cols C-C)
+            size_t col = (loc.col != ryml::npos ? loc.col : 1);
+            out << "\n" << loc.line << ":" << col
+                << ": " << std::string_view(srcline.str, srcline.len)
+                << "  (size=" << srcline.len << ")";
+
+            // Caret line: pad to align under the column
+            out << "\n" << std::string(
+                    /* prefix width */ std::to_string(loc.line).size() + 1 +
+                                       std::to_string(col).size() + 2 + (col - 1),
+                    ' ')
+                << "^  (cols " << col << "-" << col << ")\n";
+        }
+
+        throw RapidYamlError(out.str());
+    }
+#else
     static void handleRapidYamlError(const char* inner_msg, size_t length, ryml::Location loc, void * /* unused: userdata */)
     {
         std::ostringstream msg;
@@ -3486,6 +3550,7 @@ class Interpreter {
         msg << " " << std::string_view(inner_msg, length);
         throw RapidYamlError(msg.str());
     }
+#endif
 };
 
 }  // namespace
