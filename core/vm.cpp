@@ -16,6 +16,7 @@ limitations under the License.
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 
 #include <memory>
@@ -2670,16 +2671,25 @@ class Interpreter {
                                     int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
 
-                                    // Additional safety check for left shifts to prevent undefined behavior.
-                                    // Left-shift that would move the highest set bit into the sign bit position is undefined.
-                                    if (long_r >= 1 && abs(long_l) >= (1LL << (63 - long_r))) {
-                                        throw makeError(ast.location,
-                                            "numeric value outside safe integer range for bitwise operation.");
+                                    if (long_r > 0) {
+                                        // Compute bounds without UB
+                                        uint64_t abs_l = long_l < 0
+                                            ? static_cast<uint64_t>(-static_cast<uint64_t>(long_l))
+                                            : static_cast<uint64_t>(long_l);
+
+                                        // Avoid (1LL << 63) UB by staying in unsigned
+                                        uint64_t limit = UINT64_C(1) << (63 - long_r);
+
+                                        if (abs_l >= limit) {
+                                            throw makeError(
+                                                ast.location,
+                                                "numeric value outside safe integer range for bitwise operation.");
+                                        }
                                     }
 
-                                    // Left-shift of a negative number is undefined until C++20.
-                                    // Perform the shift on unsigned int to avoid that.
-                                    scratch = makeNumber(static_cast<int64_t>(static_cast<uint64_t>(long_l) << long_r));
+                                    // Shift in unsigned domain to avoid UB
+                                    uint64_t result = static_cast<uint64_t>(long_l) << long_r;
+                                    scratch = makeNumber(static_cast<int64_t>(result));
                                 } break;
 
                                 case BOP_SHIFT_R: {
@@ -2689,7 +2699,21 @@ class Interpreter {
                                     int64_t long_l = safeDoubleToInt64(lhs.v.d, ast.location);
                                     int64_t long_r = safeDoubleToInt64(rhs.v.d, ast.location);
                                     long_r = long_r % 64;
-                                    scratch = makeNumber(long_l >> long_r);
+
+                                    // Avoid implementation-defined behavior for negative values
+                                    if (long_l >= 0) {
+                                        scratch = makeNumber(static_cast<int64_t>(
+                                            static_cast<uint64_t>(long_l) >> long_r));
+                                    } else {
+                                        if (long_r == 0) {
+                                            scratch = makeNumber(long_l);
+                                        } else {
+                                            uint64_t u = static_cast<uint64_t>(long_l);
+                                            uint64_t shifted = u >> long_r;
+                                            uint64_t sign_mask = (~UINT64_C(0)) << (64 - long_r);
+                                            scratch = makeNumber(static_cast<int64_t>(shifted | sign_mask));
+                                        }
+                                    }
                                 } break;
 
                                 case BOP_BITWISE_AND: {
