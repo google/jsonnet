@@ -70,6 +70,7 @@ if(USE_SYSTEM_JSON)
 endif()
 
 if(USE_SYSTEM_RAPIDYAML)
+    find_package(c4core)
     find_package(ryml 0.10.0 REQUIRED)
 endif()
 
@@ -159,6 +160,9 @@ function(configure_jsonnet_obj_target LIB_TARGET_NAME)
     if(USE_SYSTEM_RAPIDYAML)
         target_link_libraries(${LIB_TARGET_NAME} PRIVATE ryml::ryml)
         target_compile_definitions(${LIB_TARGET_NAME} PRIVATE USE_SYSTEM_RAPIDYAML)
+        if(ryml_VERSION VERSION_GREATER_EQUAL "0.11.0")
+            target_compile_definitions(${LIB_TARGET_NAME} PRIVATE RYML_NEW_ERROR_API)
+        endif()
     else()
         target_sources(${LIB_TARGET_NAME}
             PRIVATE
