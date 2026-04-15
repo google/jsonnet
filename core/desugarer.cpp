@@ -228,12 +228,14 @@ class Desugarer {
    public:
     Desugarer(Allocator *alloc, bool isStdlib = false) : alloc(alloc), isStdlib(isStdlib) {}
 
-    void desugarParams(ArgParams &params, unsigned obj_level)
+    static constexpr unsigned MAX_DESUGAR_DEPTH = 500;
+
+    void desugarParams(ArgParams &params, unsigned obj_level, unsigned depth)
     {
         for (auto &param : params) {
             if (param.expr) {
                 // Default arg.
-                desugar(param.expr, obj_level);
+                desugar(param.expr, obj_level, depth);
             }
         }
     }
@@ -242,16 +244,16 @@ class Desugarer {
     // If self occurs, also map the self identifier to nullptr.
     typedef std::vector<std::pair<const Identifier *, AST *>> SuperVars;
 
-    SuperVars desugarFields(AST *ast, ObjectFields &fields, unsigned obj_level)
+    SuperVars desugarFields(AST *ast, ObjectFields &fields, unsigned obj_level, unsigned depth)
     {
         // Desugar children
         for (auto &field : fields) {
             if (field.expr1 != nullptr)
-                desugar(field.expr1, obj_level);
-            desugar(field.expr2, obj_level + 1);
+                desugar(field.expr1, obj_level, depth);
+            desugar(field.expr2, obj_level + 1, depth);
             if (field.expr3 != nullptr)
-                desugar(field.expr3, obj_level + 1);
-            desugarParams(field.params, obj_level + 1);
+                desugar(field.expr3, obj_level + 1, depth);
+            desugarParams(field.params, obj_level + 1, depth);
         }
 
         // Simplify asserts
@@ -583,7 +585,7 @@ class Desugarer {
         return in;
     }
 
-    AST* makeObject(Object *ast, unsigned obj_level) {
+    AST* makeObject(Object *ast, unsigned obj_level, unsigned depth) {
         // Hidden variable to allow outer/top binding.
         if (obj_level == 0) {
             const Identifier *hidden_var = id(U"$");
@@ -591,7 +593,7 @@ class Desugarer {
             ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
         }
 
-        SuperVars svs = desugarFields(ast, ast->fields, obj_level);
+        SuperVars svs = desugarFields(ast, ast->fields, obj_level, depth);
 
         DesugaredObject::Fields new_fields;
         ASTs new_asserts;
@@ -624,7 +626,7 @@ class Desugarer {
         return retval;
     }
 
-    AST* makeObjectComprehension(ObjectComprehension *ast, unsigned obj_level) {
+    AST* makeObjectComprehension(ObjectComprehension *ast, unsigned obj_level, unsigned depth) {
         // Hidden variable to allow outer/top binding.
         if (obj_level == 0) {
             const Identifier *hidden_var = id(U"$");
@@ -632,7 +634,7 @@ class Desugarer {
             ast->fields.push_back(ObjectField::Local(EF, EF, hidden_var, EF, body, EF));
         }
 
-        SuperVars svs = desugarFields(ast, ast->fields, obj_level);
+        SuperVars svs = desugarFields(ast, ast->fields, obj_level, depth);
 
         AST *field = ast->fields.front().expr1;
         AST *value = ast->fields.front().expr2;
@@ -673,7 +675,7 @@ class Desugarer {
                                             false,
                                             ast->specs,
                                             EF);
-        desugar(arr, obj_level);
+        desugar(arr, obj_level, depth);
         return make<ObjectComprehensionSimple>(
             ast->location,
             make<Index>(E, EF, var(_arr), EF, false, zero, EF, nullptr, EF, nullptr, EF),
@@ -682,37 +684,41 @@ class Desugarer {
             arr);
     }
 
-    void desugar(AST *&ast_, unsigned obj_level)
+    void desugar(AST *&ast_, unsigned obj_level, unsigned depth = 0)
     {
+        if (depth > MAX_DESUGAR_DEPTH) {
+            throw StaticError(ast_->location,
+                              "Maximum expression nesting depth exceeded during desugaring.");
+        }
         if (auto *ast = dynamic_cast<Apply *>(ast_)) {
-            desugar(ast->target, obj_level);
+            desugar(ast->target, obj_level, depth + 1);
             for (ArgParam &arg : ast->args)
-                desugar(arg.expr, obj_level);
+                desugar(arg.expr, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
-            desugar(ast->left, obj_level);
-            desugar(ast->right, obj_level);
+            desugar(ast->left, obj_level, depth + 1);
+            desugar(ast->right, obj_level, depth + 1);
             ast_ =
                 make<Binary>(ast->location, ast->openFodder, ast->left, EF, BOP_PLUS, ast->right);
 
         } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
             for (auto &el : ast->elements)
-                desugar(el.expr, obj_level);
+                desugar(el.expr, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
             for (ComprehensionSpec &spec : ast->specs)
-                desugar(spec.expr, obj_level);
-            desugar(ast->body, obj_level + 1);
+                desugar(spec.expr, obj_level, depth + 1);
+            desugar(ast->body, obj_level + 1, depth + 1);
 
             ast_ = makeArrayComprehension(ast);
 
         } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
-            desugar(ast->cond, obj_level);
+            desugar(ast->cond, obj_level, depth + 1);
             if (ast->message == nullptr) {
                 ast->message = str(U"Assertion failed.");
             }
-            desugar(ast->message, obj_level);
-            desugar(ast->rest, obj_level);
+            desugar(ast->message, obj_level, depth + 1);
+            desugar(ast->rest, obj_level, depth + 1);
 
             // if cond then rest else error msg
             AST *branch_false = make<Error>(ast->location, EF, ast->message);
@@ -720,8 +726,8 @@ class Desugarer {
                 ast->location, ast->openFodder, ast->cond, EF, ast->rest, EF, branch_false);
 
         } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
-            desugar(ast->left, obj_level);
-            desugar(ast->right, obj_level);
+            desugar(ast->left, obj_level, depth + 1);
+            desugar(ast->right, obj_level, depth + 1);
 
             bool invert = false;
 
@@ -750,11 +756,11 @@ class Desugarer {
             // Nothing to do.
 
         } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
-            desugar(ast->cond, obj_level);
-            desugar(ast->branchTrue, obj_level);
+            desugar(ast->cond, obj_level, depth + 1);
+            desugar(ast->branchTrue, obj_level, depth + 1);
             if (ast->branchFalse == nullptr)
                 ast->branchFalse = null();
-            desugar(ast->branchFalse, obj_level);
+            desugar(ast->branchFalse, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
             if (obj_level == 0) {
@@ -763,47 +769,47 @@ class Desugarer {
             ast_ = var(id(U"$"));
 
         } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
-            desugar(ast->expr, obj_level);
+            desugar(ast->expr, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
-            desugar(ast->body, obj_level);
-            desugarParams(ast->params, obj_level);
+            desugar(ast->body, obj_level, depth + 1);
+            desugarParams(ast->params, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
             // TODO(dcunnin): Abstract this into a template function if it becomes more common.
             AST *file = ast->file;
-            desugar(file, obj_level);
+            desugar(file, obj_level, depth + 1);
             ast->file = dynamic_cast<LiteralString *>(file);
 
         } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
             // TODO(dcunnin): Abstract this into a template function if it becomes more common.
             AST *file = ast->file;
-            desugar(file, obj_level);
+            desugar(file, obj_level, depth + 1);
             ast->file = dynamic_cast<LiteralString *>(file);
 
         } else if (auto *ast = dynamic_cast<Importbin *>(ast_)) {
             // TODO(dcunnin): Abstract this into a template function if it becomes more common.
             AST *file = ast->file;
-            desugar(file, obj_level);
+            desugar(file, obj_level, depth + 1);
             ast->file = dynamic_cast<LiteralString *>(file);
 
         } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
-            desugar(ast->element, obj_level);
+            desugar(ast->element, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
-            desugar(ast->target, obj_level);
+            desugar(ast->target, obj_level, depth + 1);
             if (ast->isSlice) {
                 if (ast->index == nullptr)
                     ast->index = null();
-                desugar(ast->index, obj_level);
+                desugar(ast->index, obj_level, depth + 1);
 
                 if (ast->end == nullptr)
                     ast->end = null();
-                desugar(ast->end, obj_level);
+                desugar(ast->end, obj_level, depth + 1);
 
                 if (ast->step == nullptr)
                     ast->step = null();
-                desugar(ast->step, obj_level);
+                desugar(ast->step, obj_level, depth + 1);
 
                 ast_ = make<Apply>(
                     ast->location,
@@ -828,17 +834,17 @@ class Desugarer {
                     ast->index = str(ast->id->name);
                     ast->id = nullptr;
                 }
-                desugar(ast->index, obj_level);
+                desugar(ast->index, obj_level, depth + 1);
             }
 
         } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
             for (auto &bind : ast->binds)
-                desugar(bind.body, obj_level);
-            desugar(ast->body, obj_level);
+                desugar(bind.body, obj_level, depth + 1);
+            desugar(ast->body, obj_level, depth + 1);
 
             for (auto &bind : ast->binds) {
                 if (bind.functionSugar) {
-                    desugarParams(bind.params, obj_level);
+                    desugarParams(bind.params, obj_level, depth + 1);
                     bind.body = make<Function>(ast->location,
                                                ast->openFodder,
                                                bind.parenLeftFodder,
@@ -872,27 +878,27 @@ class Desugarer {
 
         } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
             for (auto &field : ast->fields) {
-                desugar(field.name, obj_level);
-                desugar(field.body, obj_level + 1);
+                desugar(field.name, obj_level, depth + 1);
+                desugar(field.body, obj_level + 1, depth + 1);
             }
             for (AST *assert : ast->asserts) {
-                desugar(assert, obj_level + 1);
+                desugar(assert, obj_level + 1, depth + 1);
             }
 
         } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
-            ast_ = makeObject(ast, obj_level);
+            ast_ = makeObject(ast, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
-            ast_ = makeObjectComprehension(ast, obj_level);
+            ast_ = makeObjectComprehension(ast, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
-            desugar(ast->field, obj_level);
-            desugar(ast->value, obj_level + 1);
-            desugar(ast->array, obj_level);
+            desugar(ast->field, obj_level, depth + 1);
+            desugar(ast->value, obj_level + 1, depth + 1);
+            desugar(ast->array, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
             // Strip parens.
-            desugar(ast->expr, obj_level);
+            desugar(ast->expr, obj_level, depth + 1);
             ast_ = ast->expr;
 
         } else if (dynamic_cast<const Self *>(ast_)) {
@@ -904,10 +910,10 @@ class Desugarer {
                 ast->index = str(ast->id->name);
                 ast->id = nullptr;
             }
-            desugar(ast->index, obj_level);
+            desugar(ast->index, obj_level, depth + 1);
 
         } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
-            desugar(ast->expr, obj_level);
+            desugar(ast->expr, obj_level, depth + 1);
 
         } else if (dynamic_cast<const Var *>(ast_)) {
             // Nothing to do.
