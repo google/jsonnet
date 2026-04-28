@@ -565,7 +565,7 @@ local exampleDocMultiline(mid, ex) =
           |||,
         },
         {
-          name: 'escapeStringXml',
+          name: 'escapeStringXML',
           params: ['str'],
           availableSince: '0.10.0',
           description: |||
