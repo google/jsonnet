@@ -613,7 +613,7 @@ limitations under the License.
 
     // Render floating point in scientific form
     local render_float_sci(n__, zero_pad, blank, plus, ensure_pt, trailing, caps, prec) =
-      local exponent = if n__ == 0 then 0 else std.floor(std.log(std.abs(n__)) / std.log(10));
+      local exponent = if n__ == 0 then 0 else std.floor(std.log(std.abs(n__)) / std.log(10) + 1e-12);
       local suff = (if caps then 'E' else 'e')
                    + render_int(exponent < 0, std.abs(exponent), 3, 0, false, true, 10, '');
       local mantissa = if exponent == -324 then
@@ -688,7 +688,7 @@ limitations under the License.
           error 'Format required number at '
                 + i + ', got ' + std.type(val)
         else
-          local exponent = if val != 0 then std.floor(std.log(std.abs(val)) / std.log(10)) else 0;
+          local exponent = if val != 0 then std.floor(std.log(std.abs(val)) / std.log(10) + 1e-12) else 0;
           if exponent < -4 || exponent >= fpprec then
             render_float_sci(val,
                              zp,
