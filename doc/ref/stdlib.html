@@ -625,6 +625,14 @@ title: Standard Library
       <p>
         Example: <code>std.stripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbb"</code>.
       </p>
+      <p>
+        The <code>chars</code> parameter may also be an array of single-character strings. When an
+        array is provided, only single-character string elements are used as characters to strip;
+        non-string elements and multi-character strings are silently ignored.
+      </p>
+      <p>
+        Example: <code>std.stripChars("abcba", ["a", "c"])</code> yields <code>"bcb"</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -660,6 +668,14 @@ title: Standard Library
       <p>
         Example: <code>std.lstripChars("cacabbbbaacc", "ac")</code> yields <code>"bbbbaacc"</code>.
       </p>
+      <p>
+        The <code>chars</code> parameter may also be an array of single-character strings. When an
+        array is provided, only single-character string elements are used as characters to strip;
+        non-string elements and multi-character strings are silently ignored.
+      </p>
+      <p>
+        Example: <code>std.lstripChars("abcba", ["a", "c"])</code> yields <code>"bcba"</code>.
+      </p>
     </div>
     <div style="clear: both"></div>
   </div>
@@ -694,6 +710,14 @@ title: Standard Library
       </p>
       <p>
         Example: <code>std.rstripChars("cacabbbbaacc", "ac")</code> yields <code>"cacabbbb"</code>.
+      </p>
+      <p>
+        The <code>chars</code> parameter may also be an array of single-character strings. When an
+        array is provided, only single-character string elements are used as characters to strip;
+        non-string elements and multi-character strings are silently ignored.
+      </p>
+      <p>
+        Example: <code>std.rstripChars("abcba", ["a", "c"])</code> yields <code>"abcb"</code>.
       </p>
     </div>
     <div style="clear: both"></div>
