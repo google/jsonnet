@@ -281,6 +281,18 @@ std.assertEqual(std.format('%10.5G', [1100]), '      1100') &&
 std.assertEqual(std.format('%10.5G', [110]), '       110') &&
 std.assertEqual(std.format('%10.5G', [1.1]), '       1.1') &&
 
+// boolean coercion (Python: bool is a subclass of int)
+std.assertEqual(std.format('%d', [true]), '1') &&
+std.assertEqual(std.format('%d', [false]), '0') &&
+std.assertEqual(std.format('%f', [true]), '1.000000') &&
+std.assertEqual(std.format('%f', [false]), '0.000000') &&
+std.assertEqual(std.format('%x', [true]), '1') &&
+std.assertEqual(std.format('%o', [true]), '1') &&
+std.assertEqual(std.format('%e', [true]), '1.000000e+00') &&
+std.assertEqual(std.format('%g', [true]), '1') &&
+std.assertEqual(std.format('%s', [true]), 'true') &&
+std.assertEqual(std.format('%s', [false]), 'false') &&
+
 // lots together, also test % operator
 std.assertEqual('%s[%05d]-%2x%2x%2x%c' % ['foo', 3991, 17, 18, 17, 100], 'foo[03991]-111211d') &&
 

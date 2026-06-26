@@ -633,92 +633,96 @@ limitations under the License.
       local zp = if cflags.zero && !cflags.left then fw else 0;
       if code.ctype == 's' then
         std.toString(val)
-      else if code.ctype == 'd' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          render_int(val <= -1, std.floor(std.abs(val)), zp, iprec, cflags.blank, cflags.plus, 10, '')
-      else if code.ctype == 'o' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          local zero_prefix = if cflags.alt then '0' else '';
-          render_int(val <= -1, std.floor(std.abs(val)), zp, iprec, cflags.blank, cflags.plus, 8, zero_prefix)
-      else if code.ctype == 'x' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          render_hex(std.floor(val),
-                     zp,
-                     iprec,
-                     cflags.blank,
-                     cflags.plus,
-                     cflags.alt,
-                     code.caps)
-      else if code.ctype == 'f' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          render_float_dec(val,
-                           zp,
-                           cflags.blank,
-                           cflags.plus,
-                           cflags.alt,
-                           true,
-                           fpprec)
-      else if code.ctype == 'e' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          render_float_sci(val,
-                           zp,
-                           cflags.blank,
-                           cflags.plus,
-                           cflags.alt,
-                           true,
-                           code.caps,
-                           fpprec)
-      else if code.ctype == 'g' then
-        if std.type(val) != 'number' then
-          error 'Format required number at '
-                + i + ', got ' + std.type(val)
-        else
-          local exponent = if val != 0 then std.floor(std.log(std.abs(val)) / std.log(10)) else 0;
-          if exponent < -4 || exponent >= fpprec then
-            render_float_sci(val,
-                             zp,
-                             cflags.blank,
-                             cflags.plus,
-                             cflags.alt,
-                             cflags.alt,
-                             code.caps,
-                             fpprec - 1)
-          else
-            local digits_before_pt = std.max(1, exponent + 1);
-            render_float_dec(val,
-                             zp,
-                             cflags.blank,
-                             cflags.plus,
-                             cflags.alt,
-                             cflags.alt,
-                             fpprec - digits_before_pt)
-      else if code.ctype == 'c' then
-        if std.type(val) == 'number' then
-          std.char(val)
-        else if std.type(val) == 'string' then
-          if std.length(val) == 1 then
-            val
-          else
-            error '%c expected 1-sized string got: ' + std.length(val)
-        else
-          error '%c expected number / string, got: ' + std.type(val)
       else
-        error 'Unknown code: ' + code.ctype;
+        // Coerce booleans to 0/1 for numeric conversion codes, matching
+        // Python's behavior where bool is a subclass of int.
+        local num_val = if std.type(val) == 'boolean' then (if val then 1 else 0) else val;
+        if code.ctype == 'd' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            render_int(num_val <= -1, std.floor(std.abs(num_val)), zp, iprec, cflags.blank, cflags.plus, 10, '')
+        else if code.ctype == 'o' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            local zero_prefix = if cflags.alt then '0' else '';
+            render_int(num_val <= -1, std.floor(std.abs(num_val)), zp, iprec, cflags.blank, cflags.plus, 8, zero_prefix)
+        else if code.ctype == 'x' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            render_hex(std.floor(num_val),
+                       zp,
+                       iprec,
+                       cflags.blank,
+                       cflags.plus,
+                       cflags.alt,
+                       code.caps)
+        else if code.ctype == 'f' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            render_float_dec(num_val,
+                             zp,
+                             cflags.blank,
+                             cflags.plus,
+                             cflags.alt,
+                             true,
+                             fpprec)
+        else if code.ctype == 'e' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            render_float_sci(num_val,
+                             zp,
+                             cflags.blank,
+                             cflags.plus,
+                             cflags.alt,
+                             true,
+                             code.caps,
+                             fpprec)
+        else if code.ctype == 'g' then
+          if std.type(num_val) != 'number' then
+            error 'Format required number at '
+                  + i + ', got ' + std.type(num_val)
+          else
+            local exponent = if num_val != 0 then std.floor(std.log(std.abs(num_val)) / std.log(10)) else 0;
+            if exponent < -4 || exponent >= fpprec then
+              render_float_sci(num_val,
+                               zp,
+                               cflags.blank,
+                               cflags.plus,
+                               cflags.alt,
+                               cflags.alt,
+                               code.caps,
+                               fpprec - 1)
+            else
+              local digits_before_pt = std.max(1, exponent + 1);
+              render_float_dec(num_val,
+                               zp,
+                               cflags.blank,
+                               cflags.plus,
+                               cflags.alt,
+                               cflags.alt,
+                               fpprec - digits_before_pt)
+        else if code.ctype == 'c' then
+          if std.type(num_val) == 'number' then
+            std.char(num_val)
+          else if std.type(num_val) == 'string' then
+            if std.length(num_val) == 1 then
+              num_val
+            else
+              error '%c expected 1-sized string got: ' + std.length(num_val)
+          else
+            error '%c expected number / string, got: ' + std.type(num_val)
+        else
+          error 'Unknown code: ' + code.ctype;
 
     // Render a parsed format string with an array of values.
     local format_codes_arr(codes, arr, i, j, v) =
