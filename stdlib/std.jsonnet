@@ -720,6 +720,12 @@ limitations under the License.
       else
         error 'Unknown code: ' + code.ctype;
 
+    local validate_dynamic_format_arg(name, value) =
+      if std.isInteger(value) then
+        value
+      else
+        error 'Format ' + name + ' must be an integer, got ' + std.type(value);
+
     // Render a parsed format string with an array of values.
     local format_codes_arr(codes, arr, i, j, v) =
       if i >= std.length(codes) then
@@ -737,7 +743,7 @@ limitations under the License.
             fw: if j >= std.length(arr) then
               error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + j)
             else
-              arr[j],
+              validate_dynamic_format_arg('width', arr[j]),
           } else {
             j: j,
             fw: code.fw,
@@ -747,7 +753,7 @@ limitations under the License.
             prec: if tmp.j >= std.length(arr) then
               error ('Not enough values to format: ' + std.length(arr) + ', expected at least ' + tmp.j)
             else
-              arr[tmp.j],
+              validate_dynamic_format_arg('precision', arr[tmp.j]),
           } else {
             j: tmp.j,
             prec: code.prec,
