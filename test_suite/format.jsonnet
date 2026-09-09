@@ -281,6 +281,15 @@ std.assertEqual(std.format('%10.5G', [1100]), '      1100') &&
 std.assertEqual(std.format('%10.5G', [110]), '       110') &&
 std.assertEqual(std.format('%10.5G', [1.1]), '       1.1') &&
 
+// Scaling integral floats by the precision must not invent fractional digits.
+std.assertEqual(std.format('%f', 1e20), '100000000000000000000.000000') &&
+std.assertEqual(std.format('%.3f', -1e20), '-100000000000000000000.000') &&
+std.assertEqual(std.format('%+.0f', 1e20), '+100000000000000000000') &&
+std.assertEqual(std.format('%#.0f', 1e20), '100000000000000000000.') &&
+std.assertEqual(std.format('%.6f', 9007199254740991), '9007199254740991.000000') &&
+std.assertEqual(std.format('%08.2f', 42), '00042.00') &&
+std.assertEqual(std.format('%.2f', 1.999), '2.00') &&
+
 // lots together, also test % operator
 std.assertEqual('%s[%05d]-%2x%2x%2x%c' % ['foo', 3991, 17, 18, 17, 100], 'foo[03991]-111211d') &&
 
