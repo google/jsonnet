@@ -448,10 +448,10 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         num_params = PyTuple_Size(params);
         /* Include space for terminating NULL. */
         const char **params_c = malloc(sizeof(const char*) * (num_params + 1));
+        struct StrRefAndObj *params_utf8 = malloc(sizeof(*params_utf8) * num_params);
         for (i = 0; i < num_params ; ++i) {
-            struct StrRefAndObj param_c_utf8 = get_py_utf8_string(PyTuple_GetItem(params, i));
-            params_c[i] = param_c_utf8.cstr;
-            release_py_utf8_string(&param_c_utf8);
+            params_utf8[i] = get_py_utf8_string(PyTuple_GetItem(params, i));
+            params_c[i] = params_utf8[i].cstr;
         }
         params_c[num_params] = NULL;
         (*ctxs)[num_natives].vm = vm;
@@ -461,6 +461,11 @@ static int handle_native_callbacks(struct JsonnetVm *vm, PyObject *native_callba
         jsonnet_native_callback(vm, key_utf8.cstr, cpython_native_callback, &(*ctxs)[num_natives],
                                 params_c);
         release_py_utf8_string(&key_utf8);
+        /* Registration copies the names, so keep their UTF-8 storage alive until now. */
+        for (i = 0; i < num_params ; ++i) {
+            release_py_utf8_string(&params_utf8[i]);
+        }
+        free(params_utf8);
         free(params_c);
         num_natives++;
     }

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import sys
 import unittest
@@ -84,6 +85,19 @@ class JsonnetTests(unittest.TestCase):
         self.test_filename = os.path.join(base_dir, "test.jsonnet")
         with open(self.input_filename, "r") as infile:
             self.input_snippet = infile.read()
+
+    def test_native_callback_multichar_parameter_names(self):
+        for params, arguments, expected in (
+            (("target", "path"), '("hello", "world")', ["hello", "world"]),
+            (("first", "second", "third"), '("one", "two", "three")', ["one", "two", "three"]),
+            (("target", "path"), '(path="world", target="hello")', ["hello", "world"]),
+        ):
+            with self.subTest(params=params, arguments=arguments):
+                result = _jsonnet.evaluate_snippet(
+                    "test", 'std.native("collect")' + arguments,
+                    native_callbacks={"collect": (params, lambda *values: list(values))},
+                )
+                self.assertEqual(json.loads(result), expected)
 
     def test_version(self):
         self.assertEqual(type(_jsonnet.version), str)
