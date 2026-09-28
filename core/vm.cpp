@@ -1702,7 +1702,9 @@ class Interpreter {
 
             bool filled;
             otherJsonToHeap(j, filled, scratch);
-        } catch (const json::parse_error &e) {
+        } catch (const json::exception &e) {
+            // parse_error and out_of_range (e.g. 1E999) must become RuntimeError,
+            // not escape to libjsonnet's CATCH and abort. See #1337.
             throw makeError(loc, e.what());
         }
 
@@ -1737,6 +1739,10 @@ class Interpreter {
             }
         } catch (const RapidYamlError& exc) {
             throw makeError(loc, exc.msg_);
+        } catch (const json::exception &e) {
+            // RapidYAML may emit JSON text that json::parse rejects with
+            // out_of_range (number overflow), not only parse_error. See #1337.
+            throw makeError(loc, e.what());
         }
         bool filled_unused;
         otherJsonToHeap(j, filled_unused, scratch);
