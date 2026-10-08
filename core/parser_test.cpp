@@ -343,5 +343,33 @@ TEST(Parser, TestInvalidOverride)
     testParseError("a{b c}", R"(test:1:5: expected token OPERATOR but got (IDENTIFIER, "c"))");
 }
 
+TEST(Parser, TestMaxDepthLimit)
+{
+    // Test that deeply nested bracket expressions fail gracefully with depth limit error.
+    std::string deep_brackets = std::string(1000, '[') + "1" + std::string(1000, ']');
+    testParseError(deep_brackets.c_str(), "test:1:501: Exceeded maximum parse depth limit.");
+
+    // Test that deeply nested parens fail gracefully with depth limit error.
+    std::string deep_parens = std::string(1000, '(') + "1" + std::string(1000, ')');
+    testParseError(deep_parens.c_str(), "test:1:501: Exceeded maximum parse depth limit.");
+
+    // Test that deeply nested unary chains fail gracefully.
+    std::string deep_unary = std::string(1000, '!') + "true";
+    testParseError(deep_unary.c_str(), "test:1:501: Exceeded maximum parse depth limit.");
+
+    // Test that flat chained operations (binary +, indexing) parse fine without false positive depth errors.
+    std::string flat_binary = "1";
+    for (int i = 0; i < 1000; ++i) {
+        flat_binary += " + 1";
+    }
+    testParse(flat_binary.c_str());
+
+    std::string flat_index = "x";
+    for (int i = 0; i < 1000; ++i) {
+        flat_index += "[0]";
+    }
+    testParse(flat_index.c_str());
+}
+
 }  // namespace
 }  // namespace jsonnet::internal

@@ -216,8 +216,11 @@ class Parser {
      */
     ArgParams parseParams(const std::string &element_kind, bool &got_comma, Fodder &close_fodder, unsigned current_depth)
     {
+        if (current_depth >= MAX_PARSER_DEPTH) {
+            throw StaticError(peek().location, "Exceeded maximum parse depth limit.");
+        }
         ArgParams params;
-        Token paren_r = parseArgs(params, element_kind, got_comma, current_depth);
+        Token paren_r = parseArgs(params, element_kind, got_comma, current_depth + 1);
 
         // Check they're all identifiers
         // parseArgs returns f(x) with x as an expression.  Convert it here.
@@ -259,7 +262,7 @@ class Parser {
         if (peek().kind == Token::PAREN_L) {
             Token paren_l = pop();
             fodder_l = paren_l.fodder;
-            params = parseParams("function parameter", trailing_comma, fodder_r, current_depth);
+            params = parseParams("function parameter", trailing_comma, fodder_r, current_depth + 1);
             is_function = true;
         }
         Token eq = popExpect(Token::OPERATOR, "=");
@@ -428,7 +431,7 @@ class Parser {
                     if (peek().kind == Token::PAREN_L) {
                         Token paren_l = pop();
                         fodder_l = paren_l.fodder;
-                        params = parseParams("method parameter", meth_comma, fodder_r, current_depth);
+                        params = parseParams("method parameter", meth_comma, fodder_r, current_depth + 1);
                         is_method = true;
                     }
 
@@ -519,7 +522,7 @@ class Parser {
                         Token paren_l = pop();
                         paren_l_fodder = paren_l.fodder;
                         is_method = true;
-                        params = parseParams("function parameter", func_comma, paren_r_fodder, current_depth);
+                        params = parseParams("function parameter", func_comma, paren_r_fodder, current_depth + 1);
                     }
                     Token eq = popExpect(Token::OPERATOR, "=");
                     AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
@@ -879,7 +882,7 @@ class Parser {
                     std::vector<AST *> params_asts;
                     bool got_comma;
                     Fodder paren_r_fodder;
-                    ArgParams params = parseParams("function parameter", got_comma, paren_r_fodder, current_depth);
+                    ArgParams params = parseParams("function parameter", got_comma, paren_r_fodder, current_depth + 1);
                     AST *body = parse(MAX_PRECEDENCE, current_depth + 1);
                     return alloc->make<Function>(span(begin, body),
                                                  begin.fodder,
@@ -1129,7 +1132,7 @@ class Parser {
                 case Token::PAREN_L: {
                     ArgParams args;
                     bool got_comma;
-                    Token end = parseArgs(args, "function argument", got_comma, current_depth);
+                    Token end = parseArgs(args, "function argument", got_comma, current_depth + 1);
                     bool got_named = false;
                     for (const auto& arg : args) {
                         if (arg.id != nullptr) {
