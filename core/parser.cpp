@@ -60,7 +60,7 @@ static const Fodder EMPTY_FODDER;
  * This is especially important when parsing deeply nested structures that could lead to
  * excessive recursion in the parser functions.
  */
-static const unsigned MAX_PARSER_DEPTH = 1000;
+static const unsigned MAX_PARSER_DEPTH = 500;
 
 static bool op_is_unary(const std::string &op, UnaryOp &uop)
 {

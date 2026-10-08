@@ -1,0 +1,2 @@
+STATIC ERROR: error.parse.deep_if_nesting.jsonnet:1:9984-9988: Exceeded maximum parse depth limit.
+
