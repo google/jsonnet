@@ -399,6 +399,14 @@ static bool write_multi_output_files(JsonnetVm *vm, char *output, const std::str
 
     for (const auto &pair : r) {
         const std::string &new_content = pair.second;
+        if (pair.first.find("..") != std::string::npos) {
+            std::cerr << "ERROR: output filename contains '..': " << pair.first << std::endl;
+            return false;
+        }
+        if (!pair.first.empty() && pair.first[0] == '/') {
+            std::cerr << "ERROR: output filename is an absolute path: " << pair.first << std::endl;
+            return false;
+        }
         const std::string &filename = output_dir + pair.first;
         (*o) << filename << std::endl;
         {
