@@ -1702,7 +1702,7 @@ class Interpreter {
 
             bool filled;
             otherJsonToHeap(j, filled, scratch);
-        } catch (const json::parse_error &e) {
+        } catch (const json::exception &e) {
             throw makeError(loc, e.what());
         }
 
@@ -1735,9 +1735,11 @@ class Interpreter {
                 jsonText << ryml::as_json(tree);
                 j = json::parse(jsonText.str());
             }
-        } catch (const RapidYamlError& exc) {
-            throw makeError(loc, exc.msg_);
-        }
+           } catch (const RapidYamlError& exc) {
+   	   throw makeError(loc, exc.msg_);
+	} catch (const json::exception &e) {
+   	   throw makeError(loc, e.what());
+	}
         bool filled_unused;
         otherJsonToHeap(j, filled_unused, scratch);
         return nullptr;
