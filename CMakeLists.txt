@@ -51,6 +51,7 @@ option(BUILD_MAN_PAGES "Build manpages." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 option(USE_SYSTEM_RAPIDYAML "Use the system-provided rapidyaml library" OFF)
+option(BUILD_FUZZERS "Build libFuzzer-based fuzz targets in fuzz/ (requires clang)." OFF)
 
 #### Compute derived values from user-configurable state.
 #
@@ -293,6 +294,13 @@ if(BUILD_JSONNETFMT OR BUILD_TESTS)
     if(BUILD_JSONNETFMT)
         install(TARGETS jsonnetfmt)
     endif()
+endif()
+
+#### libFuzzer-based fuzz targets.
+#
+
+if(BUILD_FUZZERS)
+    add_subdirectory(fuzz)
 endif()
 
 #### GoogleTest based tests.
