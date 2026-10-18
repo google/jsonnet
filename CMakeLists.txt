@@ -414,7 +414,6 @@ if(CMAKE_VERSION VERSION_GREATER "3.25")
         # Print specific properties for specific targets
         cmake_print_properties(
             TARGETS
-                to_c_array
                 stdlib_h
                 jsonnet_obj_static
                 jsonnet_obj_shared
