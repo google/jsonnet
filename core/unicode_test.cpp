@@ -59,7 +59,7 @@ TEST(Unicode, TestUTF8)
 
 TEST(Unicode, TestUTF8RejectBad)
 {
-    const auto test_cases = std::array<const char*, 20>{
+    const auto test_cases = std::array<const char*, 31>{
         "\x80",  // Continuation byte without leading byte
         "\xa0",  // Continuation byte without leading byte
         "\xbf",  // Continuation byte without leading byte
@@ -80,6 +80,17 @@ TEST(Unicode, TestUTF8RejectBad)
         "\xf0\x80\x80\xcf",  // Leading byte for 4-byte sequence (incorrect tail)
         "\xf0\x80\xcf\x80",  // Leading byte for 4-byte sequence (incorrect tail)
         "\xf0\xcf\x80\x80",  // Leading byte for 4-byte sequence (incorrect tail)
+        "\xc0\x80",  // Overlong encoding of U+0000
+        "\xc0\xaf",  // Overlong encoding of U+002F '/'
+        "\xc1\xbf",  // Overlong encoding of U+007F
+        "\xe0\x80\xaf",  // Overlong encoding of U+002F '/'
+        "\xe0\x9f\xbf",  // Overlong encoding of U+07FF
+        "\xf0\x80\x80\xaf",  // Overlong encoding of U+002F '/'
+        "\xf0\x8f\xbf\xbf",  // Overlong encoding of U+FFFF
+        "\xed\xa0\x80",  // UTF-16 surrogate U+D800
+        "\xed\xbf\xbf",  // UTF-16 surrogate U+DFFF
+        "\xf4\x90\x80\x80",  // U+110000 (beyond the last codepoint U+10FFFF)
+        "\xf7\xbf\xbf\xbf",  // U+1FFFFF (beyond the last codepoint U+10FFFF)
     };
     for (size_t i = 0; i < test_cases.size(); ++i) {
         const auto str = test_cases[i];
@@ -90,13 +101,27 @@ TEST(Unicode, TestUTF8RejectBad)
     }
 }
 
+TEST(Unicode, TestUTF8EncodeSubstitutesInvalid)
+{
+    // Surrogates and values beyond U+10FFFF cannot be encoded as UTF-8; they
+    // must be substituted so that the output is always well-formed.
+    const auto test_cases = std::array<char32_t, 5>{0xd800, 0xdbff, 0xdc00, 0xdfff, 0x110000};
+    for (size_t i = 0; i < test_cases.size(); ++i) {
+        std::string buffer;
+        size_t len = encode_utf8(test_cases[i], buffer);
+        EXPECT_EQ(len, 3u) << "case " << i << std::endl;
+        EXPECT_EQ(buffer, "\xef\xbf\xbd") << "case " << i << std::endl;
+    }
+}
+
 TEST(Unicode, TestUTF8RoundTripExhaustive)
 {
     // Encode every Unicode code-point as UTF-8 and verify that
     // it decodes to the same value.
     std::string buffer;
     for (int x = 0; x < JSONNET_CODEPOINT_MAX; ++x) {
-        if (x == JSONNET_CODEPOINT_ERROR) {
+        if (x == JSONNET_CODEPOINT_ERROR || (x >= 0xd800 && x < 0xe000)) {
+            // U+FFFD is the substitute for invalid input, and surrogates are not valid codepoints.
             continue;
         }
         buffer.clear();

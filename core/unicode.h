@@ -31,7 +31,7 @@ namespace jsonnet::internal {
  */
 static inline int encode_utf8(char32_t x, std::string &s)
 {
-    if (x >= JSONNET_CODEPOINT_MAX)
+    if (x >= JSONNET_CODEPOINT_MAX || (x >= 0xD800 && x < 0xE000))
         x = JSONNET_CODEPOINT_ERROR;
 
     // 00ZZZzzz 00zzYYYY 00Yyyyxx 00xxxxxx
@@ -84,7 +84,11 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
         if ((c1 & 0xC0) != 0x80) {
             return JSONNET_CODEPOINT_ERROR;
         }
-        return ((c0 & 0x1F) << 6ul) | (c1 & 0x3F);
+        char32_t cp = ((c0 & 0x1F) << 6ul) | (c1 & 0x3F);
+        if (cp < 0x80) {  // Overlong encoding.
+            return JSONNET_CODEPOINT_ERROR;
+        }
+        return cp;
     } else if ((c0 & 0xF0) == 0xE0) {  // 1110yyyy 10yyyyxx 10xxxxxx
         if (i + 2 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
@@ -97,7 +101,11 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
         if ((c2 & 0xC0) != 0x80) {
             return JSONNET_CODEPOINT_ERROR;
         }
-        return ((c0 & 0xF) << 12ul) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+        char32_t cp = ((c0 & 0xF) << 12ul) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+        if (cp < 0x800 || (cp >= 0xD800 && cp < 0xE000)) {  // Overlong encoding or surrogate.
+            return JSONNET_CODEPOINT_ERROR;
+        }
+        return cp;
     } else if ((c0 & 0xF8) == 0xF0) {  // 11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
         if (i + 3 >= str.length()) {
             return JSONNET_CODEPOINT_ERROR;
@@ -114,7 +122,12 @@ static inline char32_t decode_utf8(const std::string &str, size_t &i)
         if ((c3 & 0xC0) != 0x80) {
             return JSONNET_CODEPOINT_ERROR;
         }
-        return ((c0 & 0x7) << 18ul) | ((c1 & 0x3F) << 12ul) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+        char32_t cp =
+            ((c0 & 0x7) << 18ul) | ((c1 & 0x3F) << 12ul) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+        if (cp < 0x10000 || cp >= JSONNET_CODEPOINT_MAX) {  // Overlong encoding or beyond U+10FFFF.
+            return JSONNET_CODEPOINT_ERROR;
+        }
+        return cp;
     } else {
         return JSONNET_CODEPOINT_ERROR;
     }
