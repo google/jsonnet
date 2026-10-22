@@ -51,6 +51,7 @@ option(BUILD_MAN_PAGES "Build manpages." ON)
 option(USE_SYSTEM_GTEST "Use system-provided gtest library" OFF)
 option(USE_SYSTEM_JSON "Use the system-provided json library" OFF)
 option(USE_SYSTEM_RAPIDYAML "Use the system-provided rapidyaml library" OFF)
+option(BUILD_FUZZERS "Build libFuzzer-based fuzz targets in fuzz/ (requires clang)." OFF)
 
 #### Compute derived values from user-configurable state.
 #
@@ -209,7 +210,7 @@ endfunction()
 #### Static library target setup.
 #
 
-if(BUILD_STATIC_LIBS OR (BUILD_SOME_BINARIES AND NOT BUILD_SHARED_BINARIES))
+if(BUILD_STATIC_LIBS OR (BUILD_SOME_BINARIES AND NOT BUILD_SHARED_BINARIES) OR (BUILD_FUZZERS AND NOT BUILD_SHARED_BINARIES))
     add_library(jsonnet_obj_static OBJECT)
     configure_jsonnet_obj_target(jsonnet_obj_static)
 
@@ -227,7 +228,7 @@ endif()
 #### Shared library target setup.
 #
 
-if(BUILD_SHARED_LIBS OR (BUILD_SOME_BINARIES AND BUILD_SHARED_BINARIES))
+if(BUILD_SHARED_LIBS OR (BUILD_SOME_BINARIES AND BUILD_SHARED_BINARIES) OR (BUILD_FUZZERS AND BUILD_SHARED_BINARIES))
     add_library(jsonnet_obj_shared OBJECT)
     set_property(TARGET jsonnet_obj_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
     configure_jsonnet_obj_target(jsonnet_obj_shared)
@@ -293,6 +294,13 @@ if(BUILD_JSONNETFMT OR BUILD_TESTS)
     if(BUILD_JSONNETFMT)
         install(TARGETS jsonnetfmt)
     endif()
+endif()
+
+#### libFuzzer-based fuzz targets.
+#
+
+if(BUILD_FUZZERS)
+    add_subdirectory(fuzz)
 endif()
 
 #### GoogleTest based tests.
