@@ -210,7 +210,7 @@ endfunction()
 #### Static library target setup.
 #
 
-if(BUILD_STATIC_LIBS OR (BUILD_SOME_BINARIES AND NOT BUILD_SHARED_BINARIES))
+if(BUILD_STATIC_LIBS OR (BUILD_SOME_BINARIES AND NOT BUILD_SHARED_BINARIES) OR (BUILD_FUZZERS AND NOT BUILD_SHARED_BINARIES))
     add_library(jsonnet_obj_static OBJECT)
     configure_jsonnet_obj_target(jsonnet_obj_static)
 
@@ -228,7 +228,7 @@ endif()
 #### Shared library target setup.
 #
 
-if(BUILD_SHARED_LIBS OR (BUILD_SOME_BINARIES AND BUILD_SHARED_BINARIES))
+if(BUILD_SHARED_LIBS OR (BUILD_SOME_BINARIES AND BUILD_SHARED_BINARIES) OR (BUILD_FUZZERS AND BUILD_SHARED_BINARIES))
     add_library(jsonnet_obj_shared OBJECT)
     set_property(TARGET jsonnet_obj_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
     configure_jsonnet_obj_target(jsonnet_obj_shared)

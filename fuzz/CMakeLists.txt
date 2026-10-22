@@ -2,6 +2,10 @@
 # Only built with -DBUILD_FUZZERS=ON and requires clang. See README.md
 # in this directory.
 
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "Building the fuzzers requires the Clang compiler (-fsanitize=fuzzer).")
+endif()
+
 set(JSONNET_FUZZ_TARGETS
     convert_jsonnet_fuzzer_regular
     convert_jsonnet_fuzzer_stream

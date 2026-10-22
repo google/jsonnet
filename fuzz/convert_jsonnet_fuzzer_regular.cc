@@ -24,9 +24,15 @@ extern "C" {
 
 int ImportCallback(void* ctx, const char* base, const char* rel,
                      char** found_here, char **buf, size_t *buflen) {
-  // Don't load file and mark it as failure.
-  *buf = NULL;
-  *buflen = 0;
+  // Refuse to load any file. Per the JsonnetImportCallback contract, a
+  // failure (return value 1) must deliver an error message in *buf,
+  // allocated with jsonnet_realloc and without a trailing null byte.
+  JsonnetVm* jvm = static_cast<JsonnetVm*>(ctx);
+  const char* msg = "imports are disabled";
+  size_t len = std::strlen(msg);
+  *buf = jsonnet_realloc(jvm, nullptr, len);
+  std::memcpy(*buf, msg, len);
+  *buflen = len;
   return 1;
 }
 
