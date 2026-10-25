@@ -1,0 +1,2 @@
+RUNTIME ERROR: multi mode: file name contains a NUL character: "file1\u0000"
+	During manifestation	

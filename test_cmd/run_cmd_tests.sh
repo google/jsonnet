@@ -141,11 +141,14 @@ unset -v SED_STDOUT
 do_test "nonewline_yaml1" 1 --no-trailing-newline --yaml-stream -e '[{a:1},{b:2},{c:3}]'
 
 do_test "multi4" 1 -m -- -e 'null'
+do_test "multi5" 1 -S -m "${OUT_DIR}/multi5" -e '{ file1: "a\u0000../file2\u0000b" }'
+do_test "multi6" 1 -m "${OUT_DIR}/multi6" -e '{ "file1\u0000": "a" }'
 do_test "yaml1" 0 -y -e '[1,2,3]'
 do_test "yaml2" 1 -y -e 'null'
 if do_test "yaml3" 0 -y -o "${OUT_DIR}/yaml3/stream" -e '[1,2,3]'; then
     check_file "yaml3" "${OUT_DIR}/yaml3/stream" "yaml3.golden.stream"
 fi
+do_test "yaml4" 1 -S -y -e '["a\u0000b"]'
 do_test "string1" 0 -S -e '"A long\nparagraph."'
 do_test "string2" 1 -S -e 'null'
 

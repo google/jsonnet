@@ -1,0 +1,3 @@
+RUNTIME ERROR: multi mode: content of file "file1" contains a NUL character
+	<cmdline>:1:10-34	object <anonymous>
+	During manifestation	

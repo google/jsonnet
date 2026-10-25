@@ -3426,12 +3426,27 @@ class Interpreter {
             fields[f->name] = f;
         }
         for (const auto &f : fields) {
+            // The C API returns the files as NUL-terminated strings, so a NUL inside a name or
+            // its content would be read as a separator.
+            if (f.first.find(U'\0') != UString::npos) {
+                std::stringstream ss;
+                ss << "multi mode: file name contains a NUL character: "
+                   << encode_utf8(jsonnet_string_unparse(f.first, false));
+                throw makeError(loc, ss.str());
+            }
             // pushes FRAME_CALL
             const AST *body = objectIndex(loc, obj, f.second, 0);
             stack.top().val = scratch;
             evaluate(body, stack.size());
             auto vstr =
                 string ? manifestString(body->location) : manifestJson(body->location, true, U"");
+            if (vstr.find(U'\0') != UString::npos) {
+                std::stringstream ss;
+                ss << "multi mode: content of file "
+                   << encode_utf8(jsonnet_string_unparse(f.first, false))
+                   << " contains a NUL character";
+                throw makeError(body->location, ss.str());
+            }
             // Reset scratch so that the object we're manifesting doesn't
             // get GC'd.
             scratch = stack.top().val;
@@ -3467,6 +3482,10 @@ class Interpreter {
                 evaluate(thunk->body, stack.size());
             }
             UString element = string ? manifestString(tloc) : manifestJson(tloc, true, U"");
+            // The C API returns the documents as NUL-terminated strings.
+            if (element.find(U'\0') != UString::npos) {
+                throw makeError(tloc, "stream mode: document contains a NUL character");
+            }
             scratch = stack.top().val;
             stack.pop();
             r.push_back(encode_utf8(element));
