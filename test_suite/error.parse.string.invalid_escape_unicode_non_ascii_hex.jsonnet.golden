@@ -1,0 +1,1 @@
+STATIC ERROR: error.parse.string.invalid_escape_unicode_non_ascii_hex.jsonnet:1:1-11: Malformed unicode escape character, should be hex: 'Ł'

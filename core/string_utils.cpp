@@ -67,9 +67,9 @@ unsigned long jsonnet_string_parse_unicode(const LocationRange &loc, const char3
     unsigned long codepoint = 0;
     // Expect 4 hex digits.
     for (unsigned i = 0; i < 4; ++i) {
-        auto x = (unsigned char)(c[i]);
+        char32_t x = c[i];
         unsigned digit;
-        if (x == '\0') {
+        if (x == U'\0') {
             auto msg = "Truncated unicode escape sequence in string literal.";
             throw StaticError(loc, msg);
         } else if (x >= '0' && x <= '9') {
@@ -80,8 +80,10 @@ unsigned long jsonnet_string_parse_unicode(const LocationRange &loc, const char3
             digit = x - 'A' + 10;
         } else {
             std::stringstream ss;
+            std::string utf8;
+            encode_utf8(x, utf8);
             ss << "Malformed unicode escape character, "
-               << "should be hex: '" << x << "'";
+               << "should be hex: '" << utf8 << "'";
             throw StaticError(loc, ss.str());
         }
         codepoint *= 16;
