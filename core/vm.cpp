@@ -3246,7 +3246,8 @@ class Interpreter {
                                 case UOP_MINUS: scratch = makeNumber(-scratch.v.d); break;
 
                                 case UOP_BITWISE_NOT:
-                                    scratch = makeNumber(~(long)(scratch.v.d));
+                                    scratch = makeNumber(
+                                        ~safeDoubleToInt64(scratch.v.d, ast.location));
                                     break;
 
                                 default:
