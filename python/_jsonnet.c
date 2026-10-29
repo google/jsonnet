@@ -196,6 +196,7 @@ static struct JsonnetJsonValue *cpython_native_callback(
         if (param_str != NULL) {
             pyobj = PyUnicode_FromString(param_str);
         } else if (param_null) {
+            Py_INCREF(Py_None);
             pyobj = Py_None;
         } else if (param_bool != 2) {
             pyobj = PyBool_FromLong(param_bool);

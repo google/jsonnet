@@ -70,9 +70,14 @@ def return_types():
         },
     }
 
+def is_null(x):
+    return x is None
+
+
 native_callbacks = {
     'concat': (('a', 'b'), concat),
     'return_types': ((), return_types),
+    'is_null': (('x',), is_null),
 }
 
 
@@ -178,6 +183,16 @@ class JsonnetTests(unittest.TestCase):
             native_callbacks=native_callbacks,
         )
         self.assertEqual(json_str, "84\n")
+
+    def test_native_null_param_refcount(self):
+        before = sys.getrefcount(None)
+        json_str = _jsonnet.evaluate_snippet(
+            self.test_filename,
+            "std.all([std.native('is_null')(null) for i in std.range(1, 100)])",
+            native_callbacks=native_callbacks,
+        )
+        self.assertEqual(json_str, "true\n")
+        self.assertEqual(sys.getrefcount(None), before)
 
 if __name__ == '__main__':
     unittest.main()
