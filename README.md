@@ -93,7 +93,7 @@ To run the reformatter, run:
 ### Bazel
 
 Bazel builds are also supported.
-Install [Bazel](https://www.bazel.io/versions/master/docs/install.html) if it is
+Install [Bazel](https://bazel.build/install) if it is
 not installed already. Then, run the following command to build with GCC:
 
 ```
