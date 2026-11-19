@@ -1,8 +1,7 @@
 name: Build and Publish Python Package
 
 # Be very careful granting extra permissions here, as this workflow uses third party actions.
-# Prefer to pin to exact commits for third-party actions. I'm making an exception for actions
-# maintained by GitHub itself.
+# Prefer to pin to exact commits for third-party actions.
 
 # For now, just trigger this workflow manually.
 on:
@@ -20,6 +19,9 @@ on:
           - testpypi
           - pypi
 
+permissions:
+  contents: read
+
 jobs:
   build_sdist:
     name: Build Python sdist
@@ -28,15 +30,17 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.8"
           cache: "pip"
       - run: pip install 'build==1.2.2'
       - name: Build sdist
         run: python3 -m build --sdist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sdist
           path: ./dist/*.gz
@@ -54,7 +58,9 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Build wheels
         uses: pypa/cibuildwheel@298ed2fb2c105540f5ed055e8a6ad78d82dd3a7e # v3.3.1
@@ -66,7 +72,7 @@ jobs:
           CIBW_TEST_COMMAND: >
             python {package}/python/_jsonnet_test.py
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -79,16 +85,16 @@ jobs:
     if: "${{ inputs.upload_to_pypi }}"
     permissions:
       contents: read
-      id-token: write # Needed for PyPI Trusted Publishing
+      id-token: write # Needed for OIDC authentication
     environment:
       name: "${{ inputs.pypi_environment }}"
       url: "${{ inputs.pypi_environment == 'pypi' && 'https://pypi.org/p/jsonnet' || 'https://test.pypi.org/p/jsonnet' }}"
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: cibw-wheels
           pattern: cibw-wheels-*
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: sdist
           name: sdist
@@ -97,9 +103,79 @@ jobs:
           mkdir dist
           find cibw-wheels/ -type f -name '*.whl' -exec mv '{}' ./dist/ ';'
           find sdist/ -type f -name '*.gz' -exec mv '{}' ./dist/ ';'
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+
+      - name: Publish to TestPyPI
+        if: inputs.pypi_environment == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           verbose: true
           print-hash: true
-          repository-url: "${{ inputs.pypi_environment == 'testpypi' && 'https://test.pypi.org/legacy/' || '' }}"
+          repository-url: 'https://test.pypi.org/legacy/'
+
+      - name: Set up Python for twine
+        if: inputs.pypi_environment == 'pypi'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install twine
+        if: inputs.pypi_environment == 'pypi'
+        run: python -m pip install --upgrade pip twine
+
+      - name: Authenticate to Google Cloud (OSS Exit Gate)
+        if: inputs.pypi_environment == 'pypi'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: 'projects/305452601764/locations/global/workloadIdentityPools/builders/providers/github'
+
+      - name: Set up Cloud SDK
+        if: inputs.pypi_environment == 'pypi'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Clean up failed staging attempt for this exact version (if any)
+        if: inputs.pypi_environment == 'pypi'
+        run: |
+          python3 - <<'PY'
+          import email, glob, re, subprocess, tarfile, zipfile
+          seen = set()
+          for f in sorted(glob.glob("dist/**/*.whl", recursive=True) + glob.glob("dist/**/*.tar.gz", recursive=True)):
+            try:
+              if f.endswith(".whl"):
+                with zipfile.ZipFile(f) as zf:
+                  meta = [n for n in zf.namelist() if n.endswith(".dist-info/METADATA")][0]
+                  msg = email.message_from_bytes(zf.read(meta))
+              else:
+                with tarfile.open(f) as tf:
+                  info = [m for m in tf.getmembers() if m.name.endswith("/PKG-INFO") or m.name == "PKG-INFO"][0]
+                  msg = email.message_from_bytes(tf.extractfile(info).read())
+              pkg = re.sub(r"[-_.]+", "-", msg["Name"].strip()).lower()
+              ver = msg["Version"].strip()
+            except Exception:
+              continue
+            if (pkg, ver) in seen:
+              continue
+            seen.add((pkg, ver))
+            if subprocess.run([
+                "gcloud", "artifacts", "versions", "describe", ver,
+                f"--package={pkg}", "--project=oss-exit-gate-prod", "--location=us", "--repository=jsonnet--pypi"
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+              subprocess.run([
+                  "gcloud", "artifacts", "versions", "delete", ver,
+                  f"--package={pkg}", "--project=oss-exit-gate-prod", "--location=us", "--repository=jsonnet--pypi", "--quiet"
+              ], check=False)
+          PY
+
+      - name: Stage to OSS Exit Gate and upload manifest
+        if: inputs.pypi_environment == 'pypi'
+        env:
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python -m twine upload \
+            --repository-url "https://us-python.pkg.dev/oss-exit-gate-prod/jsonnet--pypi/" \
+            -u oauth2accesstoken \
+            -p "$(gcloud auth print-access-token)" \
+            dist/*
+          echo '{"publish_all": true}' > manifest.json
+          gcloud storage cp manifest.json \
+            "gs://oss-exit-gate-prod-projects-bucket/jsonnet/pypi/manifests/manifest-${GH_RUN_ID}-${GH_RUN_ATTEMPT}.json"
